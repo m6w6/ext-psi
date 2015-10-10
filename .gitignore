@@ -1,0 +1,7 @@
+*.dSYM
+/idl/lexer.c
+/idl/parser
+/idl/parser.h
+/idl/parser.c
+/idl/parser.out
+/idl/makeheaders*

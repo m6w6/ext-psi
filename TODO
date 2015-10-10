@@ -1,0 +1,2 @@
+* move numbers to the lexer
+* avoid allocs inside structures by reallocating the whole structure
