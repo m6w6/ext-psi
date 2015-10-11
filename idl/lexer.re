@@ -19,11 +19,18 @@
 PSI_Token *PSI_TokenAlloc(PSI_Lexer *L, token_t t)
 {
 	PSI_Token *T;
-	size_t token_len = L->cur - L->tok;
+	size_t token_len;
+
+	if (L->cur <= L->tok) {
+		return NULL;
+	}
+
+	token_len = L->cur - L->tok;
 
 	T = malloc(sizeof(*T) + token_len);
 	T->type = t;
 	T->line = L->line;
+	T->size = token_len;
 	T->text[token_len] = 0;
 	memcpy(T->text, L->tok, token_len);
 
@@ -73,21 +80,17 @@ void PSI_LexerDtor(PSI_Lexer *L)
 	if (L->fn) {
 		free(L->fn);
 	}
-	if (L->decl.list) {
-		size_t i;
-
-		for (i = 0; i < L->decl.count; ++i) {
-			free_decl(L->decl.list[i]);
-		}
-		free(L->decl.list);
+	if (L->lib) {
+		free(L->lib);
 	}
-	if (L->impl.list) {
-		size_t i;
-
-		for (i = 0; i < L->impl.count; ++i) {
-			free_impl(L->impl.list[i]);
-		}
-		free(L->impl.list);
+	if (L->defs) {
+		free_decl_typedefs(L->defs);
+	}
+	if (L->decls) {
+		free_decls(L->decls);
+	}
+	if (L->impls) {
+		free_impls(L->impls);
 	}
 	memset(L, 0, sizeof(*L));
 }
@@ -141,7 +144,8 @@ token_t PSI_LexerScan(PSI_Lexer *L)
 		B = [^a-zA-Z0-9_];
 		W = [a-zA-Z0-9_];
 		NAME = W+;
-		NSNAME = NAME ("\\" NAME)+;
+		NSNAME = (NAME)? ("\\" NAME)+;
+		QUOTED_STRING = "\"" ([^\"])+ "\"";
 		NULL = 'NULL';
 		MIXED = 'mixed';
 		VOID = 'void';
@@ -151,9 +155,17 @@ token_t PSI_LexerScan(PSI_Lexer *L)
 		DOUBLE = 'double';
 		SINT8 = 'sint8';
 		UINT8 = 'uint8';
+		SINT16 = 'sint16';
+		UINT16 = 'uint16';
+		SINT32 = 'sint32';
+		UINT32 = 'uint32';
+		SINT64 = 'sint64';
+		UINT64 = 'uint64';
 		STRING = 'string';
 		ARRAY = 'array';
 		FUNCTION = 'function';
+		TYPEDEF = 'typedef';
+		LIB = 'lib';
 		LET = 'let';
 		SET = 'set';
 		RET = 'ret';
@@ -172,8 +184,8 @@ token_t PSI_LexerScan(PSI_Lexer *L)
 		";" {return PSI_T_EOS;}
 		"," {return PSI_T_COMMA;}
 		":" {return PSI_T_COLON;}
-		"{" {return PSI_T_LCURLY;}
-		"}" {return PSI_T_RCURLY;}
+		"{" {return PSI_T_LBRACE;}
+		"}" {return PSI_T_RBRACE;}
 		"." {return PSI_T_DOT;}
 		"=" {return PSI_T_EQUALS;}
 		"$" {return PSI_T_DOLLAR;}
@@ -190,9 +202,17 @@ token_t PSI_LexerScan(PSI_Lexer *L)
 		DOUBLE {return PSI_T_DOUBLE;}
 		SINT8 {return PSI_T_SINT8;}
 		UINT8 {return PSI_T_UINT8;}
+		SINT16 {return PSI_T_SINT16;}
+		UINT16 {return PSI_T_UINT16;}
+		SINT32 {return PSI_T_SINT32;}
+		UINT32 {return PSI_T_UINT32;}
+		SINT64 {return PSI_T_SINT64;}
+		UINT64 {return PSI_T_UINT64;}
 		STRING {return PSI_T_STRING;}
 		ARRAY {return PSI_T_ARRAY;}
 		FUNCTION {return PSI_T_FUNCTION;}
+		TYPEDEF {return PSI_T_TYPEDEF;}
+		LIB {return PSI_T_LIB;}
 		LET {return PSI_T_LET;}
 		SET {return PSI_T_SET;}
 		RET {return PSI_T_RET;}
@@ -205,8 +225,9 @@ token_t PSI_LexerScan(PSI_Lexer *L)
 		TO_FLOAT {return PSI_T_TO_FLOAT;}
 		TO_BOOL {return PSI_T_TO_BOOL;}
 		[0-9] {return PSI_T_DIGIT;}
-		NSNAME {return PSI_T_NSNAME;}
 		NAME {return PSI_T_NAME;}
+		NSNAME {return PSI_T_NSNAME;}
+		QUOTED_STRING {return PSI_T_QUOTED_STRING;}
 		*/
 	}
 	return -1;

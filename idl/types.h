@@ -7,13 +7,55 @@ typedef struct decl_type {
 static inline decl_type *init_decl_type(token_t type, text *name) {
 	decl_type *t = malloc(sizeof(*t));
 	t->type = type;
-	t->name = (text *) strdup((const char *) name);
+	t->name = strdup(name);
 	return t;
 }
 
 static inline void free_decl_type(decl_type *type) {
 	free(type->name);
 	free(type);
+}
+
+typedef struct decl_typedef {
+	char *alias;
+	decl_type *type;
+} decl_typedef;
+
+static inline decl_typedef *init_decl_typedef(text *name, decl_type *type) {
+	decl_typedef *t = malloc(sizeof(*t));
+	t->alias = strdup(name);
+	t->type = type;
+	return t;
+}
+
+static inline void free_decl_typedef(decl_typedef *t) {
+	free(t->alias);
+	free_decl_type(t->type);
+	free(t);
+}
+
+typedef struct decl_typedefs {
+	size_t count;
+	decl_typedef **list;
+} decl_typedefs;
+
+static decl_typedefs *add_decl_typedef(decl_typedefs *defs, decl_typedef *def) {
+	if (!defs) {
+		defs = calloc(1, sizeof(*defs));
+	}
+	defs->list = realloc(defs->list, ++defs->count * sizeof(*defs->list));
+	defs->list[defs->count-1] = def;
+	return defs;
+}
+
+static void free_decl_typedefs(decl_typedefs *defs) {
+	size_t i;
+
+	for (i = 0; i < defs->count; ++i) {
+		free_decl_typedef(defs->list[i]);
+	}
+	free(defs->list);
+	free(defs);
 }
 
 typedef struct decl_var {
@@ -127,6 +169,30 @@ static inline void free_decl(decl *d) {
 	free(d);
 }
 
+typedef struct decls {
+	size_t count;
+	decl **list;
+} decls;
+
+static inline decls *add_decl(decls *decls, decl *decl) {
+	if (!decls) {
+		decls = calloc(1, sizeof(*decls));
+	}
+	decls->list = realloc(decls->list, ++decls->count * sizeof(*decls->list));
+	decls->list[decls->count-1] = decl;
+	return decls;
+}
+
+static inline void free_decls(decls *decls) {
+	size_t i;
+
+	for (i = 0; i < decls->count; ++i) {
+		free_decl(decls->list[i]);
+	}
+	free(decls->list);
+	free(decls);
+}
+
 typedef struct impl_type {
 	text *name;
 	token_t type;
@@ -212,9 +278,14 @@ typedef struct impl_args {
 
 static inline impl_args *init_impl_args(impl_arg *arg) {
 	impl_args *args = malloc(sizeof(*args));
-	args->count = 1;
 	args->args = malloc(sizeof(*args->args));
-	args->args[0] = arg;
+	if (arg) {
+		args->count = 1;
+		args->args[0] = arg;
+	} else {
+		args->count = 0;
+		args->args = NULL;
+	}
 	return args;
 }
 
@@ -242,8 +313,8 @@ typedef struct impl_func {
 
 static inline impl_func *init_impl_func(text *name, impl_args *args, impl_type *type) {
 	impl_func *func = malloc(sizeof(*func));
-	func->name = (text *) strdup((const char *) name);
-	func->args = args;
+	func->name = strdup(name);
+	func->args = args ? args : init_impl_args(NULL);
 	func->return_type = type;
 	return func;
 }
@@ -278,17 +349,11 @@ typedef struct let_value {
 	unsigned null_pointer_ref:1;
 } let_value;
 
-static inline let_value *init_let_value(let_func *func, impl_var *var) {
+static inline let_value *init_let_value(let_func *func, impl_var *var, int null_pointer_ref) {
 	let_value *val = malloc(sizeof(*val));
-
-	if (!func || !var) {
-		val->null_pointer_ref = 1;
-	} else {
-		val->null_pointer_ref = 0;
-	}
+	val->null_pointer_ref = null_pointer_ref;
 	val->func = func;
 	val->var = var;
-
 	return val;
 }
 
@@ -468,4 +533,28 @@ static inline void free_impl(impl *impl) {
 	free_impl_func(impl->func);
 	free_impl_stmts(impl->stmts);
 	free(impl);
+}
+
+typedef struct impls {
+	size_t count;
+	impl **list;
+} impls;
+
+static impls *add_impl(impls *impls, impl *impl) {
+	if (!impls) {
+		impls = calloc(1, sizeof(*impls));
+	}
+	impls->list = realloc(impls->list, ++impls->count * sizeof(*impls->list));
+	impls->list[impls->count-1] = impl;
+	return impls;
+}
+
+static void free_impls(impls *impls) {
+	size_t i;
+
+	for (i = 0; i < impls->count; ++i) {
+		free_impl(impls->list[i]);
+	}
+	free(impls->list);
+	free(impls);
 }

@@ -4,7 +4,7 @@
 #include "lexer.h"
 #include "parser.h"
 
-static volatile int TRACE;
+static int TRACE;
 
 static void loop(PSI_Lexer *L, void *P)
 {
@@ -16,12 +16,14 @@ static void loop(PSI_Lexer *L, void *P)
 	}
 
 	while (-1 != (t = PSI_LexerScan(L))) {
-		T = PSI_TokenAlloc(L, t);
+		if (!(T = PSI_TokenAlloc(L, t))) {
+			break;
+		}
 
 		if (TRACE) {
 			printf("# Token: <%s>(%d)\n", T->text, t);
 		}
-		
+
 		PSI_Parser(P, t, T, L);
 	}
 	PSI_Parser(P, 0, T, L);

@@ -1,28 +1,26 @@
 #define BSIZE 256
 
 typedef int token_t;
-typedef unsigned char text;
+typedef char text;
 
 typedef struct PSI_Token {
 	token_t type;
 	unsigned line;
+	size_t size;
 	text text[1];
 } PSI_Token;
 
-typedef struct impl impl;
-typedef struct decl decl;
+typedef struct impls impls;
+typedef struct decls decls;
+typedef struct decl_typedefs decl_typedefs;
 
 typedef struct PSI_Lexer {
 	FILE *fp;
 	char *fn;
-	struct {
-		size_t count;
-		decl **list;
-	} decl;
-	struct {
-		size_t count;
-		impl **list;
-	} impl;
+	char *lib;
+	decl_typedefs *defs;
+	decls *decls;
+	impls *impls;
 	size_t line;
 	text *cur, *tok, *lim, *eof, *ctx, *mrk, buf[BSIZE];
 } PSI_Lexer;

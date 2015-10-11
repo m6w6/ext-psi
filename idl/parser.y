@@ -2,9 +2,22 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 #include "lexer.h"
 #include "parser.h"
 #include "types.h"
+
+static void syntax_error(const char *fn, size_t ln, const char *msg, ...) {
+	fprintf(stderr, "WARNING: Syntax error on line %zu in '%s'%s", ln, fn, msg ? ": ": "\n");
+	if (msg) {
+		va_list argv;
+
+		va_start(argv, msg);
+		vfprintf(stderr, msg, argv);
+		va_end(argv);
+	}
+}
+
 }
 
 %name PSI_Parser
@@ -12,25 +25,42 @@
 %token_type {PSI_Token *}
 %token_destructor {free($$);}
 %extra_argument {PSI_Lexer *L}
+/* TOKEN is defined inside syntax_error */
 %syntax_error {
-	printf("ERROR: Syntax error on line %zu in '%s': '%s...'\n", L->line, L->fn, L->tok);
-	exit(1);
+	syntax_error(L->fn, L->line, "Unexpected token '%s'.\n", TOKEN->text);
 }
-
 file ::= blocks.
 
 blocks ::= block.
 blocks ::= blocks block.
 
-block ::= decl(decl_). {
-	L->decl.list = realloc(L->decl.list, ++L->decl.count * sizeof(*L->decl.list));
-	L->decl.list[L->decl.count-1] = decl_;
-}
-block ::= impl(impl_). {
-	L->impl.list = realloc(L->impl.list, ++L->impl.count * sizeof(*L->impl.list));
-	L->impl.list[L->impl.count-1] = impl_;
-}
 block ::= COMMENT.
+
+block ::= LIB(T) QUOTED_STRING(libname) EOS. {
+	if (L->lib) {
+		syntax_error(L->fn, T->line, "Extra 'lib %s' statement has no effect.\n", libname->text);
+	} else {
+		L->lib = strndup(libname->text + 1, libname->size - 2);
+	}
+	free(libname);
+	free(T);
+}
+
+block ::= decl(decl). {
+	L->decls = add_decl(L->decls, decl);
+}
+block ::= impl(impl). {
+	L->impls = add_impl(L->impls, impl);
+}
+block ::= decl_typedef(def). {
+	L->defs = add_decl_typedef(L->defs, def);
+}
+
+%type decl_typedef {decl_typedef*}
+decl_typedef(def) ::= TYPEDEF NAME(ALIAS) decl_type(type) EOS. {
+	def = init_decl_typedef(ALIAS->text, type);
+	free(ALIAS);
+}
 
 %type decl {decl*}
 decl(decl) ::= decl_arg(func) LPAREN decl_args(args) RPAREN EOS. {
@@ -92,15 +122,47 @@ decl_type(type_) ::= UINT8(T). {
 	type_ = init_decl_type(T->type, T->text);
 	free(T);
 }
+decl_type(type_) ::= SINT16(T). {
+	type_ = init_decl_type(T->type, T->text);
+	free(T);
+}
+decl_type(type_) ::= UINT16(T). {
+	type_ = init_decl_type(T->type, T->text);
+	free(T);
+}
+decl_type(type_) ::= SINT32(T). {
+	type_ = init_decl_type(T->type, T->text);
+	free(T);
+}
+decl_type(type_) ::= UINT32(T). {
+	type_ = init_decl_type(T->type, T->text);
+	free(T);
+}
+decl_type(type_) ::= SINT64(T). {
+	type_ = init_decl_type(T->type, T->text);
+	free(T);
+}
+decl_type(type_) ::= UINT64(T). {
+	type_ = init_decl_type(T->type, T->text);
+	free(T);
+}
+decl_type(type_) ::= NAME(T). {
+	type_ = init_decl_type(T->type, T->text);
+	free(T);
+}
 
 %type impl {impl*}
-impl(impl) ::= impl_func(func) LCURLY impl_stmts(stmts) RCURLY. {
+impl(impl) ::= impl_func(func) LBRACE impl_stmts(stmts) RBRACE. {
 	impl = init_impl(func, stmts);
 }
 
 %type impl_func {impl_func*}
 impl_func(func) ::= FUNCTION NSNAME(NAME) LPAREN impl_args(args) RPAREN COLON impl_type(type). {
 	func = init_impl_func(NAME->text, args, type);
+	free(NAME);
+}
+impl_func(func) ::= FUNCTION NSNAME(NAME) LPAREN RPAREN COLON impl_type(type). {
+	func = init_impl_func(NAME->text, NULL, type);
 	free(NAME);
 }
 
@@ -166,13 +228,14 @@ let_stmt(let) ::= LET decl_var(var) EQUALS let_value(val) EOS. {
 
 %type let_value {let_value*}
 let_value(val) ::= let_func(func) LPAREN impl_var(var) RPAREN. {
-	val = init_let_value(func, var);
+	val = init_let_value(func, var, 0);
 }
-let_value(val) ::= let_reference_null_pointer. {
-	val = init_let_value(NULL, NULL);
+let_value(val) ::= REFERENCE NULL. {
+	val = init_let_value(NULL, NULL, 1);
 }
-
-let_reference_null_pointer ::= REFERENCE NULL.
+let_value(val) ::= NULL. {
+	val = init_let_value(NULL, NULL, 0);
+}
 
 %type let_func {let_func*}
 let_func(func) ::= STRVAL(T). {
