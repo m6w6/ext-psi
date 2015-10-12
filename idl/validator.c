@@ -3,10 +3,19 @@
 #include <string.h>
 #include <dlfcn.h>
 #include <sys/param.h>
-#include "lexer.h"
-#include "parser.h"
-#include "types.h"
+
 #include "validator.h"
+
+#if INTERFACE
+typedef struct PSI_Validator {
+	decl_typedefs *defs;
+	decls *decls;
+	impls *impls;
+	char *lib;
+	char *fn;
+	void *dlopened;
+} PSI_Validator;
+#endif
 
 PSI_Validator *PSI_ValidatorInit(PSI_Validator *V, PSI_Lexer *L)
 {

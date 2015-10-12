@@ -1,17 +1,12 @@
-typedef struct PSI_Data {
-	decl_typedefs *defs;
-	decls *decls;
-	impls *impls;
-	char *lib;
-	char *fn;
-} PSI_Data;
 
-static inline void PSI_DataExchange(PSI_Data *dest, PSI_Data *src) {
-	memcpy(dest, src, sizeof(*dest));
-	memset(src, 0, sizeof(*src));
-}
+typedef int token_t;
 
-struct decl_typedef;
+typedef struct PSI_Token {
+	token_t type;
+	unsigned line;
+	size_t size;
+	char text[1];
+} PSI_Token;
 
 typedef struct decl_type {
 	char *name;
@@ -591,4 +586,32 @@ static void free_impls(impls *impls) {
 	}
 	free(impls->list);
 	free(impls);
+}
+
+typedef struct PSI_Data {
+	decl_typedefs *defs;
+	decls *decls;
+	impls *impls;
+	char *lib;
+	char *fn;
+} PSI_Data;
+
+EXPORT static inline void PSI_DataExchange(PSI_Data *dest, PSI_Data *src) {
+	memcpy(dest, src, sizeof(*dest));
+	memset(src, 0, sizeof(*src));
+}
+
+EXPORT static inline void PSI_DataDtor(PSI_Data *data) {
+	if (data->defs) {
+		free_decl_typedefs(data->defs);
+	}
+	if (data->decls) {
+		free_decls(data->decls);
+	}
+	if (data->impls) {
+		free_impls(data->impls);
+	}
+	if (data->fn) {
+		free(data->fn);
+	}
 }

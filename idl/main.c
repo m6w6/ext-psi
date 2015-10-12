@@ -1,9 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "lexer.h"
-#include "parser.h"
-#include "validator.h"
+
+#include "main.h"
 
 static int TRACE;
 

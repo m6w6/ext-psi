@@ -5,3 +5,6 @@
 /idl/parser.c
 /idl/parser.out
 /idl/makeheaders*
+/idl/lemon.c
+/idl/lempar.c
+/idl/lemon

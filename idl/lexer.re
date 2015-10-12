@@ -5,13 +5,23 @@
 #include <assert.h>
 
 #include "lexer.h"
-#include "parser.h"
-#include "types.h"
 
-#ifndef BSIZE
+#if INTERFACE
 /*!max:re2c*/
 #define BSIZE 256
+
+typedef struct PSI_Lexer {
+	decl_typedefs *defs;
+	decls *decls;
+	impls *impls;
+	char *lib;
+	char *fn;
+	FILE *fp;
+	size_t line;
+	char *cur, *tok, *lim, *eof, *ctx, *mrk, buf[BSIZE];
+} PSI_Lexer;
 #endif
+
 #if BSIZE < YYMAXFILL
 # error BSIZE must be greater than YYMAXFILL
 #endif

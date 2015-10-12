@@ -1,58 +1,10 @@
 /* This file was automatically generated.  Do not edit! */
 #undef INTERFACE
-#define PSI_T_COMMENT                         1
-#define PSI_T_NULL                           27
-#define PSI_T_MIXED                          42
-#define PSI_T_VOID                           10
-#define PSI_T_BOOLVAL                        35
-#define PSI_T_BOOL                           43
-#define PSI_T_INTVAL                         33
-#define PSI_T_INT                            11
-#define PSI_T_FLOATVAL                       34
-#define PSI_T_FLOAT                          12
-#define PSI_T_FUNCTION                       24
-#define PSI_T_DOUBLE                         13
-#define PSI_T_SET                            36
-#define PSI_T_SINT16                         16
-#define PSI_T_SINT32                         18
-#define PSI_T_SINT64                         20
-#define PSI_T_SINT8                          14
-#define PSI_T_STRING                         44
-#define PSI_T_STRVAL                         32
-#define PSI_T_UINT16                         17
-#define PSI_T_UINT32                         19
-#define PSI_T_UINT64                         21
-#define PSI_T_UINT8                          15
-#define PSI_T_ARRAY                          45
-#define PSI_T_TO_BOOL                        40
-#define PSI_T_TO_FLOAT                       39
-#define PSI_T_TO_INT                         38
-#define PSI_T_TO_STRING                      37
-#define PSI_T_TYPEDEF                         5
-#define PSI_T_LET                            31
-#define PSI_T_LIB                             2
-#define PSI_T_RET                            41
-#define PSI_T_NSNAME                         25
-#define PSI_T_QUOTED_STRING                   3
-#define PSI_T_DIGIT                          46
-#define PSI_T_NAME                            6
-#define PSI_T_REFERENCE                      29
-#define PSI_T_POINTER                        50
-#define PSI_T_DOLLAR                         28
-#define PSI_T_EQUALS                         30
-#define PSI_T_DOT                            47
-#define PSI_T_RBRACE                         23
-#define PSI_T_LBRACE                         22
-#define PSI_T_COLON                          26
-#define PSI_T_COMMA                           9
-#define PSI_T_EOS                             4
-#define PSI_T_RPAREN                          8
-#define PSI_T_LPAREN                          7
-typedef int token_t;
-typedef struct PSI_Lexer PSI_Lexer;
+typedef struct PSI_Validator PSI_Validator;
 typedef struct decl_typedefs decl_typedefs;
 typedef struct decl_typedef decl_typedef;
 typedef struct decl_type decl_type;
+typedef int token_t;
 struct decl_type {
 	char *name;
 	token_t type;
@@ -199,6 +151,17 @@ struct impls {
 	size_t count;
 	impl **list;
 };
+struct PSI_Validator {
+	decl_typedefs *defs;
+	decls *decls;
+	impls *impls;
+	char *lib;
+	char *fn;
+	void *dlopened;
+};
+void PSI_ValidatorDtor(PSI_Validator *V);
+int PSI_ValidatorValidate(PSI_Validator *V);
+typedef struct PSI_Lexer PSI_Lexer;
 #define BSIZE 256
 struct PSI_Lexer {
 	decl_typedefs *defs;
@@ -210,11 +173,12 @@ struct PSI_Lexer {
 	size_t line;
 	char *cur, *tok, *lim, *eof, *ctx, *mrk, buf[BSIZE];
 };
-token_t PSI_LexerScan(PSI_Lexer *L);
-PSI_Lexer *PSI_LexerInit(PSI_Lexer *L,const char *filename);
-void PSI_LexerFree(PSI_Lexer **L);
 void PSI_LexerDtor(PSI_Lexer *L);
-size_t PSI_LexerFill(PSI_Lexer *L,size_t n);
+PSI_Validator *PSI_ValidatorInit(PSI_Validator *V,PSI_Lexer *L);
+void PSI_ParserFree(void *p,void(*freeProc)(void *));
+PSI_Lexer *PSI_LexerInit(PSI_Lexer *L,const char *filename);
+void *PSI_ParserAlloc(void *(*mallocProc)(size_t));
+int main(int argc,char *argv[]);
 typedef struct PSI_Token PSI_Token;
 struct PSI_Token {
 	token_t type;
@@ -222,6 +186,11 @@ struct PSI_Token {
 	size_t size;
 	char text[1];
 };
+#define PSI_ParserTOKENTYPE PSI_Token *
+#define PSI_ParserARG_PDECL ,PSI_Lexer *L
+void PSI_Parser(void *yyp,int yymajor,PSI_ParserTOKENTYPE yyminor PSI_ParserARG_PDECL);
 PSI_Token *PSI_TokenAlloc(PSI_Lexer *L,token_t t);
-#define YYMAXFILL 10
-#define INTERFACE 0
+token_t PSI_LexerScan(PSI_Lexer *L);
+#if !defined(NDEBUG)
+void PSI_ParserTrace(FILE *TraceFILE,char *zTracePrompt);
+#endif

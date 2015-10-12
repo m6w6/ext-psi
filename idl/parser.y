@@ -3,9 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-#include "lexer.h"
+
 #include "parser.h"
-#include "types.h"
 
 static void syntax_error(const char *fn, size_t ln, const char *msg, ...) {
 	fprintf(stderr, "WARNING: Syntax error on line %zu in '%s'%s", ln, fn, msg ? ": ": "\n");
