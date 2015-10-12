@@ -1,6 +1,6 @@
 *.dSYM
 /idl/lexer.c
-/idl/parser
+/idl/main
 /idl/parser.h
 /idl/parser.c
 /idl/parser.out

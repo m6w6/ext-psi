@@ -3,6 +3,7 @@
 #include <string.h>
 #include "lexer.h"
 #include "parser.h"
+#include "validator.h"
 
 static int TRACE;
 
@@ -32,6 +33,7 @@ static void loop(PSI_Lexer *L, void *P)
 int main(int argc, char *argv[])
 {
 	PSI_Lexer L;
+	PSI_Validator V;
 	void *P = PSI_ParserAlloc(malloc);
 
 	TRACE = !!getenv("TRACE");
@@ -44,7 +46,18 @@ int main(int argc, char *argv[])
 	loop(&L, P);
 
 	PSI_ParserFree(P, free);
+
+	if (!PSI_ValidatorInit(&V, &L)) {
+		perror("Failed to init validator");
+		return 2;
+	}
+
 	PSI_LexerDtor(&L);
+
+	if (PSI_ValidatorValidate(&V)) {
+		printf("Whoa! VALID.\n");
+	}
+	PSI_ValidatorDtor(&V);
 
 	return 0;
 }

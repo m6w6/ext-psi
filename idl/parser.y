@@ -63,9 +63,15 @@ decl_typedef(def) ::= TYPEDEF NAME(ALIAS) decl_type(type) EOS. {
 }
 
 %type decl {decl*}
-decl(decl) ::= decl_arg(func) LPAREN decl_args(args) RPAREN EOS. {
-	decl = init_decl(func, args);
+decl(decl) ::= decl_abi(abi) decl_arg(func) LPAREN decl_args(args) RPAREN EOS. {
+	decl = init_decl(abi, func, args);
 }
+
+%type decl_abi {decl_abi*}
+decl_abi(abi) ::= NAME(T). {
+	abi = init_decl_abi(T->text);
+}
+
 %type decl_var {decl_var*}
 decl_var(var) ::= NAME(T). {
 	var = init_decl_var(T->text, 0);

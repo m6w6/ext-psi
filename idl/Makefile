@@ -1,6 +1,6 @@
-CFLAGS = -g
+CFLAGS += -g -D$(shell uname | tr a-z A-Z)
 .PHONY: all
-all: parser makeheaders
+all: main
 
 makeheaders.c:
 	curl -sSO http://www.hwaci.com/sw/mkhdr/makeheaders.c
@@ -8,8 +8,8 @@ makeheaders.c:
 GENERATED_FILES += makeheaders
 makeheaders: makeheaders.c
 
-GENERATED_FILES += parser
-parser: main.c parser.c lexer.c
+GENERATED_FILES += main
+main: main.c parser.c lexer.c validator.c
 
 GENERATED_FILES += parser.h
 parser.h: parser.c makeheaders
