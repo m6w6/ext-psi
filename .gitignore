@@ -1,10 +1,8 @@
 *.dSYM
-/idl/lexer.c
 /idl/main
-/idl/parser.h
 /idl/parser.c
-/idl/parser.out
-/idl/makeheaders*
 /idl/lemon.c
 /idl/lempar.c
 /idl/lemon
+/idl/parser_proc.out
+/idl/parser_proc.c
