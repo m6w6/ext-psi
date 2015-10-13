@@ -4,6 +4,8 @@
 #include <string.h>
 #include <stdarg.h>
 
+#include "parser.h"
+
 	static void syntax_error(const char *fn, size_t ln, const char *msg, ...) {
 		fprintf(stderr, "WARNING: Syntax error on line %zu in '%s'%s", ln, fn, msg ? ": ": "\n");
 		if (msg) {
@@ -20,10 +22,10 @@
 %token_prefix PSI_T_
 %token_type {PSI_Token *}
 %token_destructor {free($$);}
-%extra_argument {PSI_Lexer *L}
+%extra_argument {PSI_Parser *P}
 /* TOKEN is defined inside syntax_error */
 %syntax_error {
-	syntax_error(L->fn, L->line, "Unexpected token '%s'.\n", TOKEN->text);
+	syntax_error(P->fn, P->line, "Unexpected token '%s'.\n", TOKEN->text);
 }
 file ::= blocks.
 
@@ -33,23 +35,23 @@ blocks ::= blocks block.
 block ::= COMMENT.
 
 block ::= LIB(T) QUOTED_STRING(libname) EOS. {
-	if (L->lib) {
-		syntax_error(L->fn, T->line, "Extra 'lib %s' statement has no effect.\n", libname->text);
+	if (P->lib) {
+		syntax_error(P->fn, T->line, "Extra 'lib %s' statement has no effect.\n", libname->text);
 	} else {
-		L->lib = strndup(libname->text + 1, libname->size - 2);
+		P->lib = strndup(libname->text + 1, libname->size - 2);
 	}
 	free(libname);
 	free(T);
 }
 
 block ::= decl(decl). {
-	L->decls = add_decl(L->decls, decl);
+	P->decls = add_decl(P->decls, decl);
 }
 block ::= impl(impl). {
-	L->impls = add_impl(L->impls, impl);
+	P->impls = add_impl(P->impls, impl);
 }
 block ::= decl_typedef(def). {
-	L->defs = add_decl_typedef(L->defs, def);
+	P->defs = add_decl_typedef(P->defs, def);
 }
 
 %type decl_typedef {decl_typedef*}

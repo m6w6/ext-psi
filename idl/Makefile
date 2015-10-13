@@ -1,12 +1,14 @@
 CFLAGS += -g -D$(shell uname | tr a-z A-Z)
-SOURCES := parser_proc.c parser.c lexer.c validator.c compiler.c main.c
-MAKEHEADERS := $(addsuffix .[ch], $(basename $(SOURCES)))
+SOURCES := parser_proc.c parser.c validator.c compiler.c main.c
 
 GENERATED_FILES := $(addsuffix .h, $(basename $(SOURCES)))
 
 .PHONY: all
-all: headers main
+all: main
 
+##
+# The lemon parser generator
+##
 GENERATED_FILES += lempar.c
 lempar.c:
 	curl -sSo $@ "http://www.sqlite.org/src/raw/tool/lempar.c?name=3617143ddb9b176c3605defe6a9c798793280120"
@@ -18,15 +20,24 @@ lemon.c:
 GENERATED_FILES += lemon
 lemon: lemon.c | lempar.c
 
+##
+# Main test program
+##
 GENERATED_FILES += main
 main: $(SOURCES)
 
+##
+# Parser proc
+##
 GENERATED_FILES += parser_proc.c
 parser_proc.c: parser_proc.y lemon
-	./lemon -c $@
+	./lemon -c $<
 
-GENERATED_FILES += lexer.c
-lexer.c: lexer.re
+##
+# Parser with lexer
+##
+GENERATED_FILES += parser.c
+parser.c: parser.re
 	re2c -o $@ $<
 
 .PHONY: clean

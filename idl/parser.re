@@ -2,8 +2,13 @@
 #include <assert.h>
 
 #include "parser.h"
+#include "parser_proc.h"
 
-PSI_Parser *PSI_ParserInit(PSI_Parser *P)
+void *PSI_ParserProcAlloc(void*(unsigned long));
+void PSI_ParserProcFree(void*, void(*)(void*));
+void PSI_ParserProc(void *, token_t, PSI_Token *, PSI_Parser *);
+
+PSI_Parser *PSI_ParserInit(PSI_Parser *P, const char *filename)
 {
 	FILE *fp;
 
@@ -31,6 +36,8 @@ PSI_Parser *PSI_ParserInit(PSI_Parser *P)
 	P->proc = PSI_ParserProcAlloc(malloc);
 
 	PSI_ParserFill(P, 0);
+
+	return P;
 }
 
 size_t PSI_ParserFill(PSI_Parser *P, size_t n)
@@ -68,43 +75,25 @@ size_t PSI_ParserFill(PSI_Parser *P, size_t n)
 	return P->lim - P->cur;
 }
 
-int PSI_ParserParse(PSI_Parser *P)
+void PSI_ParserParse(PSI_Parser *P, PSI_Token *T)
 {
-	PSI_Token *T = NULL;
-
-	if (-1 == PSI_ParserScan(P)) {
+	if (T) {
+		PSI_ParserProc(P->proc, T->type, T, P);
+	} else {
 		PSI_ParserProc(P->proc, 0, NULL, P);
-		return 0;
 	}
-	if (!(T = PSI_TokenAlloc(P, t))) {
-		return 0;
-	}
-
-	PSI_ParserProc(P->proc, P->num, T, P);
-	return 1;
 }
 
 void PSI_ParserDtor(PSI_Parser *P)
 {
 	PSI_ParserProcFree(P->proc, free);
+
 	if (P->fp) {
 		fclose(P->fp);
 	}
-	if (P->fn) {
-		free(P->fn);
-	}
-	if (P->lib) {
-		free(P->lib);
-	}
-	if (P->defs) {
-		free_decl_typedefs(P->defs);
-	}
-	if (P->decls) {
-		free_decls(P->decls);
-	}
-	if (P->impls) {
-		free_impls(P->impls);
-	}
+
+	PSI_DataDtor((PSI_Data *) P);
+
 	memset(P, 0, sizeof(*P));
 }
 
@@ -127,7 +116,8 @@ void PSI_ParserFree(PSI_Parser **P)
 #define RETURN(t) do { \
 	P->num = t; \
 	return t; \
-}
+} while(1)
+
 token_t PSI_ParserScan(PSI_Parser *P)
 {
 	for (;;) {
@@ -138,7 +128,7 @@ token_t PSI_ParserScan(PSI_Parser *P)
 		re2c:define:YYCURSOR = P->cur;
 		re2c:define:YYLIMIT = P->lim;
 		re2c:define:YYMARKER = P->mrk;
-		re2c:define:YYFILL = "{ if (!fill(P,@@)) RETURN(-1); }";
+		re2c:define:YYFILL = "{ if (!PSI_ParserFill(P,@@)) RETURN(-1); }";
 		re2c:yyfill:parameter = 0;
 
 		B = [^a-zA-Z0-9_];

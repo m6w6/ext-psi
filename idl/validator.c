@@ -6,32 +6,21 @@
 
 #include "validator.h"
 
-PSI_Validator *PSI_ValidatorInit(PSI_Validator *V, PSI_Lexer *L)
+PSI_Validator *PSI_ValidatorInit(PSI_Validator *V, PSI_Parser *P)
 {
 	if (!V) {
 		V = malloc(sizeof(*V));
 	}
 	memset(V, 0, sizeof(*V));
 
-	PSI_DataExchange((PSI_Data *) V, (PSI_Data *) L);
+	PSI_DataExchange((PSI_Data *) V, (PSI_Data *) P);
 
 	return V;
 }
 
 void PSI_ValidatorDtor(PSI_Validator *V)
 {
-	if (V->defs) {
-		free_decl_typedefs(V->defs);
-	}
-	if (V->decls) {
-		free_decls(V->decls);
-	}
-	if (V->impls) {
-		free_impls(V->impls);
-	}
-	if (V->fn) {
-		free(V->fn);
-	}
+	PSI_DataDtor((PSI_Data *) V);
 	memset(V, 0, sizeof(*V));
 }
 
@@ -210,6 +199,9 @@ static inline int validate_impl_func(PSI_Validator *V, impl *impl, impl_func *fu
 	if (func->args && !validate_impl_args(V, impl, func->args)) {
 		return 0;
 	}
+	return 1;
+}
+static inline int validate_impl_stmts(PSI_Validator *V, impl *impl, impl_stmts *stmts) {
 	return 1;
 }
 static inline int validate_impl(PSI_Validator *V, impl *impl) {

@@ -9,7 +9,8 @@ typedef struct PSI_Compiler {
 	impls *impls;
 	char *lib;
 	char *fn;
-};
+} PSI_Compiler;
+
 PSI_Compiler *PSI_CompilerInit(PSI_Compiler *C, PSI_Validator *V);
 
 #endif

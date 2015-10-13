@@ -2,17 +2,13 @@
 
 #include "compiler.h"
 
-#if INTERFACE
-typedef struct PSI_Compiler {
-	decl_typedefs *defs;
-	decls *decls;
-	impls *impls;
-	char *lib;
-	char *fn;
-} PSI_Compiler;
-#endif
-
 PSI_Compiler *PSI_CompilerInit(PSI_Compiler *C, PSI_Validator *V)
 {
+	if (!C) {
+		C = malloc(sizeof(*C));
+	}
+	memset(C, 0, sizeof(*C));
 
+	PSI_DataExchange((PSI_Data *) C, (PSI_Data *) V);
+	return C;
 }
