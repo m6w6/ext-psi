@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "main.h"
-
 static int TRACE;
 
 static void loop(PSI_Lexer *L, void *P)
@@ -32,8 +30,8 @@ static void loop(PSI_Lexer *L, void *P)
 int main(int argc, char *argv[])
 {
 	PSI_Lexer L;
+	PSI_Parser P;
 	PSI_Validator V;
-	void *P = PSI_ParserAlloc(malloc);
 
 	TRACE = !!getenv("TRACE");
 
@@ -41,8 +39,12 @@ int main(int argc, char *argv[])
 		perror("Failed to init lexer");
 		return 1;
 	}
+	if (!PSI_ParserInit(&P)) {
+		perror("Failer to init parser");
+		return 1;
+	}
 
-	loop(&L, P);
+	while (PSI_ParserParse(&p, &L));
 
 	PSI_ParserFree(P, free);
 
