@@ -3,7 +3,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
+
+#include <Zend/zend_types.h>
 
 #include "parser_proc.h"
 
@@ -269,21 +272,18 @@ static inline void free_impl_var(impl_var *var) {
 
 typedef struct impl_def_val {
 	token_t type;
-	union {
-		int64_t digits;
-		double decimals;
-	} v;
-	unsigned is_null:1;
+	char *text;
 } impl_def_val;
 
-static inline impl_def_val *init_impl_def_val() {
+static inline impl_def_val *init_impl_def_val(PSI_Token *T) {
 	impl_def_val *def = malloc(sizeof(*def));
-	def->type = 0;
-	def->is_null = 1;
+	def->type = T->type;
+	def->text = strdup(T->text);
 	return def;
 }
 
 static inline void free_impl_def_val(impl_def_val *def) {
+	free(def->text);
 	free(def);
 }
 
@@ -291,6 +291,15 @@ typedef struct impl_arg {
 	impl_type *type;
 	impl_var *var;
 	impl_def_val *def;
+	union {
+		unsigned char bval;
+		zend_long lval;
+		double dval;
+		struct {
+			char *val;
+			size_t len;
+		} str;
+	} val;
 } impl_arg;
 
 static inline impl_arg *init_impl_arg(impl_type *type, impl_var *var, impl_def_val *def) {
@@ -528,37 +537,68 @@ static inline void free_impl_stmt(impl_stmt *stmt) {
 }
 
 typedef struct impl_stmts {
-	impl_stmt **stmts;
-	size_t count;
+	struct {
+		ret_stmt **list;
+		size_t count;
+	} ret;
+	struct {
+		let_stmt **list;
+		size_t count;
+	} let;
+	struct {
+		set_stmt **list;
+		size_t count;
+	} set;
 } impl_stmts;
 
-static inline impl_stmts *init_impl_stmts(impl_stmt *stmt) {
-	impl_stmts *stmts = malloc(sizeof(*stmts));
-	stmts->count = 1;
-	stmts->stmts = malloc(sizeof(*stmts->stmts));
-	stmts->stmts[0] = stmt;
-	return stmts;
+static inline void *add_impl_stmt_ex(void *list, size_t count, void *stmt) {
+	list = realloc(list, count * sizeof(list));
+	((void **)list)[count-1] = stmt;
+	return list;
 }
 
 static inline impl_stmts *add_impl_stmt(impl_stmts *stmts, impl_stmt *stmt) {
-	stmts->stmts = realloc(stmts->stmts, ++stmts->count * sizeof(*stmts->stmts));
-	stmts->stmts[stmts->count-1] = stmt;
+	switch (stmt->type) {
+	case PSI_T_RET:
+		stmts->ret.list = add_impl_stmt_ex(stmts->ret.list, ++stmts->ret.count, stmt->s.ret);
+		break;
+	case PSI_T_LET:
+		stmts->let.list = add_impl_stmt_ex(stmts->let.list, ++stmts->let.count, stmt->s.let);
+		break;
+	case PSI_T_SET:
+		stmts->set.list = add_impl_stmt_ex(stmts->set.list, ++stmts->set.count, stmt->s.set);
+		break;
+	}
 	return stmts;
+}
+
+static inline impl_stmts *init_impl_stmts(impl_stmt *stmt) {
+	impl_stmts *stmts = calloc(1, sizeof(*stmts));
+	return add_impl_stmt(stmts, stmt);
 }
 
 static inline void free_impl_stmts(impl_stmts *stmts) {
 	size_t i;
 
-	for (i = 0; i < stmts->count; ++i) {
-		free_impl_stmt(stmts->stmts[i]);
+	for (i = 0; i < stmts->let.count; ++i) {
+		free_let_stmt(stmts->let.list[i]);
 	}
-	free(stmts->stmts);
+	free(stmts->let.list);
+	for (i = 0; i < stmts->ret.count; ++i) {
+		free_ret_stmt(stmts->ret.list[i]);
+	}
+	free(stmts->ret.list);
+	for (i = 0; i < stmts->set.count; ++i) {
+		free_set_stmt(stmts->set.list[i]);
+	}
+	free(stmts->set.list);
 	free(stmts);
 }
 
 typedef struct impl {
 	impl_func *func;
 	impl_stmts *stmts;
+	decl *decl;
 } impl;
 
 static inline impl *init_impl(impl_func *func, impl_stmts *stmts) {
@@ -636,6 +676,8 @@ typedef struct PSI_Parser {
 	char *lib;
 	char *fn;
 	FILE *fp;
+	unsigned flags;
+	unsigned errors;
 	void *proc;
 	size_t line;
 	token_t num;
@@ -662,7 +704,10 @@ static inline PSI_Token *PSI_TokenAlloc(PSI_Parser *P) {
 	return T;
 }
 
-PSI_Parser *PSI_ParserInit(PSI_Parser *P, const char *filename);
+#define PSI_PARSER_DEBUG 0x1
+
+PSI_Parser *PSI_ParserInit(PSI_Parser *P, const char *filename, unsigned flags);
+void PSI_ParserSyntaxError(PSI_Parser *P, const char *fn, size_t ln, const char *msg, ...);
 size_t PSI_ParserFill(PSI_Parser *P, size_t n);
 token_t PSI_ParserScan(PSI_Parser *P);
 void PSI_ParserParse(PSI_Parser *P, PSI_Token *T);

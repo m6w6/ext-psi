@@ -1,3 +1,4 @@
 * move numbers to the lexer
 * avoid allocs inside structures by reallocating the whole structure
 * let the various list types be hashtables where appropriate
+* check out jit-dynamic

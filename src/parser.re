@@ -7,8 +7,9 @@
 void *PSI_ParserProcAlloc(void*(unsigned long));
 void PSI_ParserProcFree(void*, void(*)(void*));
 void PSI_ParserProc(void *, token_t, PSI_Token *, PSI_Parser *);
+void PSI_ParserProcTrace(FILE *, const char*);
 
-PSI_Parser *PSI_ParserInit(PSI_Parser *P, const char *filename)
+PSI_Parser *PSI_ParserInit(PSI_Parser *P, const char *filename, unsigned flags)
 {
 	FILE *fp;
 
@@ -32,17 +33,35 @@ PSI_Parser *PSI_ParserInit(PSI_Parser *P, const char *filename)
 	P->fp = fp;
 	P->fn = strdup(filename);
 	P->line = 1;
+	P->flags = flags;
 
 	P->proc = PSI_ParserProcAlloc(malloc);
+	if (flags & PSI_PARSER_DEBUG) {
+		PSI_ParserProcTrace(stderr, "PSI> ");
+	}
 
 	PSI_ParserFill(P, 0);
 
 	return P;
 }
 
+void PSI_ParserSyntaxError(PSI_Parser *P, const char *fn, size_t ln, const char *msg, ...) {
+	fprintf(stderr, "WARNING: Syntax error on line %zu in '%s'%s", ln, fn, msg ? ": ": "\n");
+	if (msg) {
+		va_list argv;
+
+		va_start(argv, msg);
+		vfprintf(stderr, msg, argv);
+		va_end(argv);
+	}
+	++P->errors;
+}
+
 size_t PSI_ParserFill(PSI_Parser *P, size_t n)
 {
-	// printf("+ Fill: n=%zu\n", n);
+	if (P->flags & PSI_PARSER_DEBUG) {
+		fprintf(stderr, "PSI> Fill: n=%zu\n", n);
+	}
 	if (!n) {
 		P->cur = P->tok = P->lim = P->mrk = P->buf;
 		P->eof = NULL;
@@ -68,10 +87,14 @@ size_t PSI_ParserFill(PSI_Parser *P, size_t n)
 			P->eof = P->lim;
 		}
 
-		// printf("+ Fill: consumed=%zu reserved=%zu available=%zu didread=%zu\n",
-			// consumed, reserved, available, didread);
+		if (P->flags & PSI_PARSER_DEBUG) {
+			fprintf(stderr, "PSI> Fill: consumed=%zu reserved=%zu available=%zu didread=%zu\n",
+				consumed, reserved, available, didread);
+		}
 	}
-	// printf("+ Fill: avail=%zu\n", P->lim - P->cur);
+	if (P->flags & PSI_PARSER_DEBUG) {
+		fprintf(stderr, "PSI> Fill: avail=%zu\n", P->lim - P->cur);
+	}
 	return P->lim - P->cur;
 }
 
@@ -118,6 +141,21 @@ void PSI_ParserFree(PSI_Parser **P)
 	return t; \
 } while(1)
 
+/*		DIGIT = [0-9]
+		DIGITS = DIGIT+
+		DECIMALS = (+|-)? DIGIT* "."
+		digits ::= digits DIGIT.
+		decimals ::= digits DOT digits.
+		decimals ::= DOT digits.
+		decimals ::= digits DOT.
+		number ::= digits.
+		number ::= PLUS digits.
+		number ::= MINUS digits.
+		number ::= decimals.
+		number ::= MINUS decimals.
+		number ::= PLUS decimals.
+
+*/
 token_t PSI_ParserScan(PSI_Parser *P)
 {
 	for (;;) {
@@ -133,9 +171,11 @@ token_t PSI_ParserScan(PSI_Parser *P)
 
 		B = [^a-zA-Z0-9_];
 		W = [a-zA-Z0-9_];
-		NAME = W+;
+		NAME = [a-zA-Z_]W*;
 		NSNAME = (NAME)? ("\\" NAME)+;
 		QUOTED_STRING = "\"" ([^\"])+ "\"";
+		TRUE = 'TRUE';
+		FALSE = 'FALSE';
 		NULL = 'NULL';
 		MIXED = 'mixed';
 		VOID = 'void';
@@ -159,6 +199,7 @@ token_t PSI_ParserScan(PSI_Parser *P)
 		LET = 'let';
 		SET = 'set';
 		RET = 'ret';
+		STRLEN = 'strlen';
 		STRVAL = 'strval';
 		INTVAL = 'intval';
 		FLOATVAL = 'floatval';
@@ -167,6 +208,7 @@ token_t PSI_ParserScan(PSI_Parser *P)
 		TO_INT = 'to_int';
 		TO_FLOAT = 'to_float';
 		TO_BOOL = 'to_bool';
+		NUMBER = [+-]? [0-9]* "."? [0-9]+ ([eE] [+-]? [0-9]+)?;
 
 		"#" .* "\n" { ++P->line; RETURN(PSI_T_COMMENT);}
 		"(" {RETURN(PSI_T_LPAREN);}
@@ -176,13 +218,14 @@ token_t PSI_ParserScan(PSI_Parser *P)
 		":" {RETURN(PSI_T_COLON);}
 		"{" {RETURN(PSI_T_LBRACE);}
 		"}" {RETURN(PSI_T_RBRACE);}
-		"." {RETURN(PSI_T_DOT);}
 		"=" {RETURN(PSI_T_EQUALS);}
 		"$" {RETURN(PSI_T_DOLLAR);}
 		"*" {RETURN(PSI_T_POINTER);}
 		"&" {RETURN(PSI_T_REFERENCE);}
 		[\r\n] { ++P->line; continue; }
 		[\t ]+ { continue; }
+		TRUE {RETURN(PSI_T_TRUE);}
+		FALSE {RETURN(PSI_T_FALSE);}
 		NULL {RETURN(PSI_T_NULL);}
 		MIXED {RETURN(PSI_T_MIXED);}
 		VOID {RETURN(PSI_T_VOID);}
@@ -206,6 +249,7 @@ token_t PSI_ParserScan(PSI_Parser *P)
 		LET {RETURN(PSI_T_LET);}
 		SET {RETURN(PSI_T_SET);}
 		RET {RETURN(PSI_T_RET);}
+		STRLEN {RETURN(PSI_T_STRLEN);}
 		STRVAL {RETURN(PSI_T_STRVAL);}
 		INTVAL {RETURN(PSI_T_INTVAL);}
 		FLOATVAL {RETURN(PSI_T_FLOATVAL);}
@@ -214,7 +258,7 @@ token_t PSI_ParserScan(PSI_Parser *P)
 		TO_INT {RETURN(PSI_T_TO_INT);}
 		TO_FLOAT {RETURN(PSI_T_TO_FLOAT);}
 		TO_BOOL {RETURN(PSI_T_TO_BOOL);}
-		[0-9] {RETURN(PSI_T_DIGIT);}
+		NUMBER {RETURN(PSI_T_NUMBER);}
 		NAME {RETURN(PSI_T_NAME);}
 		NSNAME {RETURN(PSI_T_NSNAME);}
 		QUOTED_STRING {RETURN(PSI_T_QUOTED_STRING);}

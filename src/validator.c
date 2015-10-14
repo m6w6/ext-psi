@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <dlfcn.h>
 #include <sys/param.h>
+#include <dlfcn.h>
+
+#include <jit/jit.h>
 
 #include "validator.h"
 
@@ -33,7 +35,7 @@ void PSI_ValidatorFree(PSI_Validator **V)
 	}
 }
 
-static inline int validate_lib(PSI_Validator *V) {
+static int validate_lib(PSI_Validator *V) {
 	char lib[MAXPATHLEN];
 	const char *ptr = V->lib;
 	size_t len;
@@ -56,7 +58,7 @@ static inline int validate_lib(PSI_Validator *V) {
 		ptr = lib;
 	}
 	if (!(V->dlopened = dlopen(ptr, RTLD_LAZY|RTLD_LOCAL))) {
-		perror(ptr);
+		fprintf(stderr, "Could not open library '%s': %s.\n", V->lib, dlerror());
 		return 0;
 	}
 	return 1;
@@ -201,9 +203,75 @@ static inline int validate_impl_func(PSI_Validator *V, impl *impl, impl_func *fu
 	}
 	return 1;
 }
+static inline decl *locate_impl_decl(decls *decls, ret_stmt *ret) {
+	size_t i;
+
+	for (i = 0; i < decls->count; ++i) {
+		if (!strcmp(decls->list[i]->func->var->name, ret->decl->name)) {
+			return decls->list[i];
+		}
+	}
+	return NULL;
+}
 static inline int validate_impl_stmts(PSI_Validator *V, impl *impl, impl_stmts *stmts) {
+	/* okay,
+	 * - we must have exactly one ret stmt delcaring the native func to call and which type cast to apply
+	 * - we can have multiple let stmts; every arg of the ret stmts var (the function to call) must have one
+	 * - we can have any count of set stmts; processing out vars, etc.
+	 */
+	size_t i, j;
+	ret_stmt *ret;
+	decl *decl;
+	int *check;
+
+	 if (!stmts) {
+ 		fprintf(stderr, "Missing body for implementation %s!\n", impl->func->name);
+ 		return 0;
+ 	}
+	if (stmts->ret.count != 1) {
+		if (stmts->ret.count > 1) {
+			fprintf(stderr, "Too many `ret` statements for implmentation %s; found %zu, exactly one is needed.\n",
+				impl->func->name, stmts->ret.count);
+		} else {
+			fprintf(stderr, "Missing `ret` statement for implementation %s.\n", impl->func->name);
+		}
+		return 0;
+	}
+
+	ret = stmts->ret.list[0];
+	decl = locate_impl_decl(V->decls, ret);
+	if (!decl) {
+		fprintf(stderr, "Missing declaration for implementation %s.\n", impl->func->name);
+		return 0;
+	}
+
+	/* check that we have a let stmt for every decl arg */
+	check = calloc(decl->args->count, sizeof(int));
+	for (i = 0; i < stmts->let.count; ++i) {
+		let_stmt *let = stmts->let.list[i];
+
+		for (j = 0; j < decl->args->count; ++j) {
+			if (!strcmp(decl->args->args[j]->var->name, let->var->name)) {
+				check[j] = 1;
+				break;
+			}
+		}
+	}
+	for (i = 0; i < decl->args->count; ++i) {
+		if (!check[i]) {
+			fprintf(stderr, "Missing `let` statement for arg '%s %.*s%s' of declaration '%s' for implementation '%s'.\n",
+				decl->args->args[i]->type->name, (int) decl->args->args[i]->var->pointer_level, "*****", decl->args->args[i]->var->name, decl->func->var->name, impl->func->name);
+			free(check);
+			return 0;
+		}
+	}
+	free(check);
+
+	impl->decl = decl;
+
 	return 1;
 }
+
 static inline int validate_impl(PSI_Validator *V, impl *impl) {
 	if (!validate_impl_func(V, impl, impl->func)) {
 		return 0;
@@ -226,6 +294,9 @@ static inline int validate_impls(PSI_Validator *V) {
 
 int PSI_ValidatorValidate(PSI_Validator *V)
 {
+	if (!validate_lib(V)) {
+		return 0;
+	}
 	if (V->defs && !validate_typedefs(V)) {
 		return 0;
 	}

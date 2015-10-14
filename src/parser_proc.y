@@ -2,20 +2,9 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>
 
 #include "parser.h"
 
-	static void syntax_error(const char *fn, size_t ln, const char *msg, ...) {
-		fprintf(stderr, "WARNING: Syntax error on line %zu in '%s'%s", ln, fn, msg ? ": ": "\n");
-		if (msg) {
-			va_list argv;
-
-			va_start(argv, msg);
-			vfprintf(stderr, msg, argv);
-			va_end(argv);
-		}
-	}
 }
 
 %name PSI_ParserProc
@@ -25,7 +14,7 @@
 %extra_argument {PSI_Parser *P}
 /* TOKEN is defined inside syntax_error */
 %syntax_error {
-	syntax_error(P->fn, P->line, "Unexpected token '%s'.\n", TOKEN->text);
+	PSI_ParserSyntaxError(P, P->fn, P->line, "Unexpected token '%s'.\n", TOKEN->text);
 }
 file ::= blocks.
 
@@ -36,7 +25,7 @@ block ::= COMMENT.
 
 block ::= LIB(T) QUOTED_STRING(libname) EOS. {
 	if (P->lib) {
-		syntax_error(P->fn, T->line, "Extra 'lib %s' statement has no effect.\n", libname->text);
+		PSI_ParserSyntaxError(P, P->fn, T->line, "Extra 'lib %s' statement has no effect.\n", libname->text);
 	} else {
 		P->lib = strndup(libname->text + 1, libname->size - 2);
 	}
@@ -171,13 +160,20 @@ impl_func(func) ::= FUNCTION NSNAME(NAME) LPAREN RPAREN COLON impl_type(type). {
 }
 
 %type impl_def_val {impl_def_val*}
-impl_def_val(def) ::= NULL. {
-	/* FIXME */
-	def = init_impl_def_val();
+impl_def_val(def) ::= NULL(T). {
+	def = init_impl_def_val(T);
 }
-impl_def_val(def) ::= number. {
-	/* FIXME */
-	def = init_impl_def_val();
+impl_def_val(def) ::= NUMBER(T). {
+	def = init_impl_def_val(T);
+}
+impl_def_val(def) ::= TRUE(T). {
+	def = init_impl_def_val(T);
+}
+impl_def_val(def) ::= FALSE(T). {
+	def = init_impl_def_val(T);
+}
+impl_def_val(def) ::= QUOTED_STRING(T). {
+	def = init_impl_def_val(T);
 }
 
 %type impl_var {impl_var*}
@@ -242,6 +238,10 @@ let_value(val) ::= NULL. {
 }
 
 %type let_func {let_func*}
+let_func(func) ::= STRLEN(T). {
+	func = init_let_func(T->type, T->text);
+	free(T);
+}
 let_func(func) ::= STRVAL(T). {
 	func = init_let_func(T->type, T->text);
 	free(T);
@@ -321,18 +321,6 @@ impl_type(type_) ::= ARRAY(T). {
 	type_ = init_impl_type(T->type, T->text);
 	free(T);
 }
-
-digits ::= DIGIT.
-digits ::= digits DIGIT.
-decimals ::= digits DOT digits.
-decimals ::= DOT digits.
-decimals ::= digits DOT.
-number ::= digits.
-number ::= PLUS digits.
-number ::= MINUS digits.
-number ::= decimals.
-number ::= MINUS decimals.
-number ::= PLUS decimals.
 
 %type pointers {unsigned}
 pointers(p) ::= POINTER. {++p;}
