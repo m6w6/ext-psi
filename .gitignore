@@ -41,3 +41,7 @@ tests/*/*.php
 tests/*/*.exp
 tests/*/*.log
 tests/*/*.sh
+/compiler.h
+/parser.h
+/parser_proc.h
+/validator.h

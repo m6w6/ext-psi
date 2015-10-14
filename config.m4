@@ -29,6 +29,7 @@ if test "$PHP_PSI" != "no"; then
 
 	PHP_PSI_HEADERS=`(cd $PHP_PSI_SRCDIR/src && echo *.h)`
 	PHP_PSI_SOURCES=`(cd $PHP_PSI_SRCDIR && echo src/*.c)`
+	PHP_PSI_SOURCES="src/parser.c src/parser_proc.c"
 
 	PHP_NEW_EXTENSION(psi, $PHP_PSI_SOURCES, $ext_shared)
 	PHP_INSTALL_HEADERS(ext/psi, php_psi.h $PHP_PSI_HEADERS)

@@ -5,16 +5,17 @@
 #include "parser.h"
 #include "validator.h"
 
-static int TRACE;
-
 int main(int argc, char *argv[])
 {
 	PSI_Parser P;
 	PSI_Validator V;
+	unsigned flags = 0;
 
-	TRACE = !!getenv("TRACE");
+	if (getenv("TRACE")) {
+		flags |= PSI_PARSER_DEBUG;
+	}
 
-	if (!PSI_ParserInit(&P, argv[1])) {
+	if (!PSI_ParserInit(&P, argv[1], flags)) {
 		perror("Failer to init parser");
 		return 1;
 	}

@@ -1,4 +1,9 @@
-CFLAGS += -g -D$(shell uname | tr a-z A-Z)
+PHP_INCLUDES := -I/Users/Mike/Sources/php-src.git/{.,main,includes,Zend,TSRM,ext}
+JIT_INCLUDES := -I/usr/local/include
+UNAME := $(shell uname | tr a-z A-Z)
+INCLUDES += $(PHP_INCLUDES) $(JIT_INCLUDES)
+CFLAGS += -g -D$(UNAME) $(INCLUDES)
+LDFLAGS += -ljit -ljitdynamic /usr/local/php7/lib/libphp7.dylib -Xlinker -rpath -Xlinker /usr/local/php7/lib
 SOURCES := parser_proc.c parser.c validator.c compiler.c main.c
 
 GENERATED_FILES := $(addsuffix .h, $(basename $(SOURCES)))
@@ -23,6 +28,8 @@ lemon: lemon.c | lempar.c
 ##
 # Main test program
 ##
+$(SOURCES): Makefile
+
 GENERATED_FILES += main
 main: $(SOURCES)
 

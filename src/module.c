@@ -35,10 +35,10 @@ PHP_MINIT_FUNCTION(psi)
 }
 PHP_MSHUTDOWN_FUNCTION(psi)
 {
-	jit_context_t *ctx = PSI_G(context);
+	jit_context_t ctx = PSI_G(context);
 
 	jit_context_destroy(ctx);
-	
+
 	UNREGISTER_INI_ENTRIES();
 
 	return SUCCESS;

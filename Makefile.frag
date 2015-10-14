@@ -23,8 +23,8 @@ lemon.c:
 
 ./lemon: lemon.c | lempar.c
 
-$(PHP_PSI_BUILDDIR)/src/parser_proc.c: $(PHP_PSI_SRCDIR)/src/parser_proc.y $(LEMON)
+$(PHP_PSI_SRCDIR)/src/parser_proc.c: $(PHP_PSI_SRCDIR)/src/parser_proc.y $(LEMON)
 	$(LEMON) -c $<
 
-$(PHP_PSI_BUILDDIR)/src/parser.c: $(PHP_PSI_SRCDIR)/src/parser.re
+$(PHP_PSI_SRCDIR)/src/parser.c: $(PHP_PSI_SRCDIR)/src/parser.re
 	$(RE2C) -o $@ $<
