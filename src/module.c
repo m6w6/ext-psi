@@ -26,6 +26,9 @@ PHP_INI_END();
 
 static int psi_select_dirent(const struct dirent *entry)
 {
+#ifndef FNM_CASEFOLD
+#define FNM_CASEFOLD 0
+#endif
 	return 0 == fnmatch("*.psi", entry->d_name, FNM_CASEFOLD);
 }
 
@@ -83,9 +86,11 @@ PHP_MINIT_FUNCTION(psi)
 				zend_function_entry *closures = PSI_CompilerCompile(&C);
 
 				if (closures) {
-					zend_register_functions(NULL, closures, NULL, MODULE_PERSISTENT);
+					if (SUCCESS != zend_register_functions(NULL, closures, NULL, MODULE_PERSISTENT)) {
+						fprintf(stderr, "Failed to register functions!\n");
+					}
 				}
-				PSI_CompilerDtor(&C);
+				//PSI_CompilerDtor(&C);
 			}
 			jit_context_build_end(ctx);
 		}

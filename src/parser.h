@@ -31,6 +31,7 @@ static inline decl_type *init_decl_type(token_t type, char *name) {
 	decl_type *t = malloc(sizeof(*t));
 	t->type = type;
 	t->name = strdup(name);
+	t->real = NULL;
 	return t;
 }
 

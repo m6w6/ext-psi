@@ -8,7 +8,7 @@ if test "$PHP_PSI" != "no"; then
 	PHP_SUBST(LEMON)
 
 	AC_CACHE_CHECK(for libjit install root, PSI_cv_LIBJIT_DIR, [
-	for PSI_cv_LIBJIT_DIR in {/usr{,/local},/opt}{,libjit}
+	for PSI_cv_LIBJIT_DIR in $PHP_PSI {/usr{,/local},/opt}{,libjit}
 	do
 		if test -e $PSI_cv_LIBJIT_DIR/include/jit/jit.h
 		then

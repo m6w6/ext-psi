@@ -3,7 +3,7 @@
 #include <jit/jit.h>
 
 #include <php.h>
-#include <Zend/Zend_API.h>
+#include <Zend/zend_API.h>
 
 #include "compiler.h"
 
@@ -60,10 +60,10 @@ static inline size_t impl_num_min_args(impl *impl) {
 	return n;
 }
 
-void jit_closure_handler(jit_type_t signature, void *result, void **args, void *user_data)
+static void psi_jit_closure_handler(jit_type_t signature, void *result, void **args, void *user_data)
 {
-	zend_execute_data *execute_data = args[0];
-	zval *return_value = args[1];
+	zend_execute_data *execute_data = *(zend_execute_data **)args[0];
+	zval *return_value = *(zval **)args[1];
 	PSI_ClosureData *data = user_data;
 	impl_arg *iarg;
 
@@ -119,17 +119,19 @@ zend_function_entry *PSI_CompilerCompile(PSI_Compiler *C)
 
 	for (i = 0; i < C->impls->count; ++i) {
 		zend_function_entry *zf;
-		PSI_ClosureData *data;
+		volatile PSI_ClosureData *data;
 
 		if (!C->impls->list[i]->decl) {
 			continue;
 		}
-		signature = jit_type_create_signature(jit_abi_cdecl, jit_type_void, params, 2, 1);
+		signature = jit_type_create_signature(jit_abi_vararg, jit_type_void, params, 2, 1);
 
-		zf = &zfe[++j];
+		zf = &zfe[j++];
 		data = PSI_ClosureDataAlloc(C->context, C->impls->list[i]);
 		zf->fname = C->impls->list[i]->func->name;
-		zf->handler = jit_closure_create(C->context, signature, jit_closure_handler, data);
+		zf->handler = jit_closure_create(C->context, signature, &psi_jit_closure_handler, data);
+		fprintf(stderr, "Compiled closure for %s\n", zf->fname);
+		printf("Closuredata: %p of closure %p\n", data, zf->handler);
 	}
 
 	return zfe;
