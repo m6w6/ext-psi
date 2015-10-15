@@ -1,4 +1,4 @@
-PHP_ARG_ENABLE(psi, whether to enable psi support,
+PHP_ARG_WITH(psi, whether to enable psi support,
 [  --with-psi[[=path to libjit]]
                           Enable PHP System Interface support])
 
@@ -21,6 +21,10 @@ if test "$PHP_PSI" != "no"; then
 		AC_MSG_ERROR([Could not find libjit, please provide the base install path])
 	fi
 
+	PHP_ADD_INCLUDE($PSI_cv_LIBJIT_DIR/include)
+	PHP_ADD_LIBRARY_WITH_PATH(jit, $PSI_cv_LIBJIT_DIR/$PHP_LIBDIR, PSI_SHARED_LIBADD)
+	PHP_SUBST(PSI_SHARED_LIBADD)
+
 	PHP_PSI_SRCDIR=PHP_EXT_SRCDIR(psi)
 	PHP_PSI_BUILDDIR=PHP_EXT_BUILDDIR(psi)
 
@@ -29,7 +33,7 @@ if test "$PHP_PSI" != "no"; then
 
 	PHP_PSI_HEADERS=`(cd $PHP_PSI_SRCDIR/src && echo *.h)`
 	PHP_PSI_SOURCES=`(cd $PHP_PSI_SRCDIR && echo src/*.c)`
-	PHP_PSI_SOURCES="src/parser.c src/parser_proc.c"
+	PHP_PSI_SOURCES=`(echo $PHP_PSI_SOURCES src/parser.c src/parser_proc.c | xargs -n1 | sort | uniq)`
 
 	PHP_NEW_EXTENSION(psi, $PHP_PSI_SOURCES, $ext_shared)
 	PHP_INSTALL_HEADERS(ext/psi, php_psi.h $PHP_PSI_HEADERS)

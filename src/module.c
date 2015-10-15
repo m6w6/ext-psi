@@ -4,21 +4,36 @@
 #endif
 
 #include <jit/jit.h>
+#include <dirent.h>
+#include <fnmatch.h>
 
 #include "php.h"
 #include "php_ini.h"
 #include "ext/standard/info.h"
+#include "php_scandir.h"
+
 #include "php_psi.h"
+
+#include "parser.h"
+#include "validator.h"
+#include "compiler.h"
 
 ZEND_DECLARE_MODULE_GLOBALS(psi);
 
 PHP_INI_BEGIN()
-    STD_PHP_INI_ENTRY("psi.directory", "psis", PHP_INI_ALL, OnUpdateString, directory, zend_psi_globals, psi_globals)
+	STD_PHP_INI_ENTRY("psi.directory", "psis", PHP_INI_ALL, OnUpdateString, directory, zend_psi_globals, psi_globals)
 PHP_INI_END();
+
+static int psi_select_dirent(const struct dirent *entry)
+{
+	return 0 == fnmatch("*.psi", entry->d_name, FNM_CASEFOLD);
+}
 
 PHP_MINIT_FUNCTION(psi)
 {
 	jit_context_t ctx;
+	int i, n;
+	struct dirent **entries = NULL;
 
 	REGISTER_INI_ENTRIES();
 
@@ -31,12 +46,62 @@ PHP_MINIT_FUNCTION(psi)
 
 	PSI_G(context) = ctx;
 
+	n = php_scandir(PSI_G(directory), &entries, psi_select_dirent, alphasort);
+	if (n < 0) {
+		php_error(E_WARNING, "Failed to scan PSI directory '%s'", PSI_G(directory));
+	} else for (i = 0; i < n; ++i) {
+		char psi[MAXPATHLEN];
+		PSI_Parser P;
+		PSI_Validator V;
+
+		if (MAXPATHLEN <= slprintf(psi, MAXPATHLEN, "%s/%s", PSI_G(directory), entries[i]->d_name)) {
+			php_error(E_WARNING, "Path to PSI file too long: %s/%s",
+				PSI_G(directory), entries[i]->d_name);
+		}
+		if (!PSI_ParserInit(&P, psi, 0)) {
+			php_error(E_WARNING, "Failed to init PSI parser (%s): %s",
+				psi, strerror(errno));
+			continue;
+		}
+
+		while (-1 != PSI_ParserScan(&P)) {
+			PSI_ParserParse(&P, PSI_TokenAlloc(&P));
+		};
+		PSI_ParserParse(&P, NULL);
+
+		if (!PSI_ValidatorInit(&V, &P)) {
+			php_error(E_WARNING, "Failed to init PSI validator");
+			break;
+		}
+		PSI_ParserDtor(&P);
+
+		if (PSI_ValidatorValidate(&V)) {
+			PSI_Compiler C;
+
+			jit_context_build_start(ctx);
+			if (PSI_CompilerInit(&C, &V, ctx)) {
+				zend_function_entry *closures = PSI_CompilerCompile(&C);
+
+				if (closures) {
+					zend_register_functions(NULL, closures, NULL, MODULE_PERSISTENT);
+				}
+				PSI_CompilerDtor(&C);
+			}
+			jit_context_build_end(ctx);
+		}
+		PSI_ValidatorDtor(&V);
+	}
+	if (entries) {
+		for (i = 0; i < n; ++i) {
+			free(entries[i]);
+		}
+		free(entries);
+	}
 	return SUCCESS;
 }
 PHP_MSHUTDOWN_FUNCTION(psi)
 {
 	jit_context_t ctx = PSI_G(context);
-
 	jit_context_destroy(ctx);
 
 	UNREGISTER_INI_ENTRIES();

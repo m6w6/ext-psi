@@ -83,6 +83,7 @@ decl_arg(arg) ::= decl_type(type) decl_var(var). {
 }
 
 %type decl_args {decl_args*}
+decl_args ::= VOID.
 decl_args(args) ::= decl_arg(arg). {
 	args = init_decl_args(arg);
 }
@@ -283,6 +284,10 @@ set_func(func) ::= TO_FLOAT(T). {
 	free(T);
 }
 set_func(func) ::= TO_BOOL(T). {
+	func = init_set_func(T->type, T->text);
+	free(T);
+}
+set_func(func) ::= VOID(T). {
 	func = init_set_func(T->type, T->text);
 	free(T);
 }

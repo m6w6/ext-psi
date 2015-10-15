@@ -9,8 +9,12 @@ typedef struct PSI_Compiler {
 	impls *impls;
 	char *lib;
 	char *fn;
+	void *context;
 } PSI_Compiler;
 
-PSI_Compiler *PSI_CompilerInit(PSI_Compiler *C, PSI_Validator *V);
+PSI_Compiler *PSI_CompilerInit(PSI_Compiler *C, PSI_Validator *V, void *context);
+void PSI_CompilerDtor(PSI_Compiler *C);
+void PSI_CompilerFree(PSI_Compiler **C);
+zend_function_entry *PSI_CompilerCompile(PSI_Compiler *C);
 
 #endif

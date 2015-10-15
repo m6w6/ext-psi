@@ -262,6 +262,7 @@ token_t PSI_ParserScan(PSI_Parser *P)
 		NAME {RETURN(PSI_T_NAME);}
 		NSNAME {RETURN(PSI_T_NSNAME);}
 		QUOTED_STRING {RETURN(PSI_T_QUOTED_STRING);}
+		[^] {break;} 
 		*/
 	}
 	return -1;
