@@ -22,6 +22,7 @@ lemon.c:
 	curl -sSo $@ "http://www.sqlite.org/src/raw/tool/lemon.c?name=039f813b520b9395740c52f9cbf36c90b5d8df03"
 
 ./lemon: lemon.c | lempar.c
+	$(CC) -o $@ $<
 
 $(PHP_PSI_SRCDIR)/src/parser_proc.c: $(PHP_PSI_SRCDIR)/src/parser_proc.y $(LEMON)
 	$(LEMON) -c $<

@@ -21,6 +21,20 @@ PSI_Compiler *PSI_CompilerInit(PSI_Compiler *C, PSI_Validator *V, void *context)
 	return C;
 }
 
+void PSI_CompilerDtor(PSI_Compiler *C)
+{
+	PSI_DataDtor((PSI_Data *) C);
+}
+
+void PSI_Compiler_Free(PSI_Compiler **C)
+{
+	if (*C) {
+		PSI_CompilerDtor(*C);
+		free(*C);
+		*C = NULL;
+	}
+}
+
 typedef struct PSI_ClosureData {
 	void *context;
 	impl *impl;
