@@ -4,11 +4,7 @@
 #include "validator.h"
 
 typedef struct PSI_Compiler {
-	decl_typedefs *defs;
-	decls *decls;
-	impls *impls;
-	char *lib;
-	char *fn;
+	PSI_DATA_MEMBERS;
 	void *context;
 } PSI_Compiler;
 

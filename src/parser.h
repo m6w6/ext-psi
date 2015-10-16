@@ -35,6 +35,13 @@ static inline decl_type *init_decl_type(token_t type, char *name) {
 	return t;
 }
 
+static inline decl_type *real_decl_type(decl_type *type) {
+	while (type->real) {
+		type = type->real;
+	}
+	return type;
+}
+
 static inline void free_decl_type(decl_type *type) {
 	free(type->name);
 	free(type);
@@ -102,12 +109,14 @@ static inline void free_decl_var(decl_var *var) {
 typedef struct decl_arg {
 	decl_type *type;
 	decl_var *var;
+	struct let_stmt *let;
 } decl_arg;
 
 static inline decl_arg *init_decl_arg(decl_type *type, decl_var *var) {
 	decl_arg *arg = malloc(sizeof(*arg));
 	arg->type = type;
 	arg->var = var;
+	arg->let = NULL;
 	return arg;
 }
 
@@ -288,19 +297,22 @@ static inline void free_impl_def_val(impl_def_val *def) {
 	free(def);
 }
 
+typedef union impl_val {
+	unsigned char bval;
+	zend_long lval;
+	double dval;
+	struct {
+		char *val;
+		size_t len;
+	} str;
+} impl_val;
+
 typedef struct impl_arg {
 	impl_type *type;
 	impl_var *var;
 	impl_def_val *def;
-	union {
-		unsigned char bval;
-		zend_long lval;
-		double dval;
-		struct {
-			char *val;
-			size_t len;
-		} str;
-	} val;
+	impl_val val;
+	zval *_zv;
 } impl_arg;
 
 static inline impl_arg *init_impl_arg(impl_type *type, impl_var *var, impl_def_val *def) {
@@ -395,12 +407,12 @@ static inline void free_let_func(let_func *func) {
 typedef struct let_value {
 	let_func *func;
 	impl_var *var;
-	unsigned null_pointer_ref:1;
+	unsigned is_reference:1;
 } let_value;
 
-static inline let_value *init_let_value(let_func *func, impl_var *var, int null_pointer_ref) {
+static inline let_value *init_let_value(let_func *func, impl_var *var, int is_reference) {
 	let_value *val = malloc(sizeof(*val));
-	val->null_pointer_ref = null_pointer_ref;
+	val->is_reference = is_reference;
 	val->func = func;
 	val->var = var;
 	return val;
@@ -419,12 +431,14 @@ static inline void free_let_value(let_value *val) {
 typedef struct let_stmt {
 	decl_var *var;
 	let_value *val;
+	impl_arg *arg;
 } let_stmt;
 
 static inline let_stmt *init_let_stmt(decl_var *var, let_value *val) {
 	let_stmt *let = malloc(sizeof(*let));
 	let->var = var;
 	let->val = val;
+	let->arg = NULL;
 	return let;
 }
 
@@ -639,12 +653,19 @@ static void free_impls(impls *impls) {
 	free(impls);
 }
 
+#define PSI_ERROR 16
+#define PSI_WARNING 32
+typedef void (*psi_error_cb)(int type, const char *msg, ...);
+
 typedef struct PSI_Data {
-	decl_typedefs *defs;
-	decls *decls;
-	impls *impls;
-	char *lib;
-	char *fn;
+#define PSI_DATA_MEMBERS \
+	decl_typedefs *defs; \
+	decls *decls; \
+	impls *impls; \
+	char *lib; \
+	char *fn; \
+	psi_error_cb error
+	PSI_DATA_MEMBERS;
 } PSI_Data;
 
 static inline void PSI_DataExchange(PSI_Data *dest, PSI_Data *src) {
@@ -671,11 +692,7 @@ static inline void PSI_DataDtor(PSI_Data *data) {
 }
 
 typedef struct PSI_Parser {
-	decl_typedefs *defs;
-	decls *decls;
-	impls *impls;
-	char *lib;
-	char *fn;
+	PSI_DATA_MEMBERS;
 	FILE *fp;
 	unsigned flags;
 	unsigned errors;
@@ -707,7 +724,7 @@ static inline PSI_Token *PSI_TokenAlloc(PSI_Parser *P) {
 
 #define PSI_PARSER_DEBUG 0x1
 
-PSI_Parser *PSI_ParserInit(PSI_Parser *P, const char *filename, unsigned flags);
+PSI_Parser *PSI_ParserInit(PSI_Parser *P, const char *filename, psi_error_cb error, unsigned flags);
 void PSI_ParserSyntaxError(PSI_Parser *P, const char *fn, size_t ln, const char *msg, ...);
 size_t PSI_ParserFill(PSI_Parser *P, size_t n);
 token_t PSI_ParserScan(PSI_Parser *P);

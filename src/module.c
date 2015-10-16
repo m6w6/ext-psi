@@ -24,6 +24,18 @@ PHP_INI_BEGIN()
 	STD_PHP_INI_ENTRY("psi.directory", "psis", PHP_INI_ALL, OnUpdateString, directory, zend_psi_globals, psi_globals)
 PHP_INI_END();
 
+static void psi_error(int type, const char *msg, ...)
+{
+	char buf[0x1000];
+	va_list argv;
+
+	va_start(argv, msg);
+	vslprintf(buf, 0x1000, msg, argv);
+	va_end(argv);
+
+	php_error(type, buf);
+}
+
 static int psi_select_dirent(const struct dirent *entry)
 {
 #ifndef FNM_CASEFOLD
@@ -61,7 +73,7 @@ PHP_MINIT_FUNCTION(psi)
 			php_error(E_WARNING, "Path to PSI file too long: %s/%s",
 				PSI_G(directory), entries[i]->d_name);
 		}
-		if (!PSI_ParserInit(&P, psi, 0)) {
+		if (!PSI_ParserInit(&P, psi, psi_error, 0)) {
 			php_error(E_WARNING, "Failed to init PSI parser (%s): %s",
 				psi, strerror(errno));
 			continue;
@@ -85,10 +97,8 @@ PHP_MINIT_FUNCTION(psi)
 			if (PSI_CompilerInit(&C, &V, ctx)) {
 				zend_function_entry *closures = PSI_CompilerCompile(&C);
 
-				if (closures) {
-					if (SUCCESS != zend_register_functions(NULL, closures, NULL, MODULE_PERSISTENT)) {
-						fprintf(stderr, "Failed to register functions!\n");
-					}
+				if (closures && SUCCESS != zend_register_functions(NULL, closures, NULL, MODULE_PERSISTENT)) {
+					psi_error(E_WARNING, "Failed to register functions!");
 				}
 				//PSI_CompilerDtor(&C);
 			}

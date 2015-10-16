@@ -9,7 +9,7 @@ void PSI_ParserProcFree(void*, void(*)(void*));
 void PSI_ParserProc(void *, token_t, PSI_Token *, PSI_Parser *);
 void PSI_ParserProcTrace(FILE *, const char*);
 
-PSI_Parser *PSI_ParserInit(PSI_Parser *P, const char *filename, unsigned flags)
+PSI_Parser *PSI_ParserInit(PSI_Parser *P, const char *filename, psi_error_cb error, unsigned flags)
 {
 	FILE *fp;
 
@@ -33,6 +33,7 @@ PSI_Parser *PSI_ParserInit(PSI_Parser *P, const char *filename, unsigned flags)
 	P->fp = fp;
 	P->fn = strdup(filename);
 	P->line = 1;
+	P->error = error;
 	P->flags = flags;
 
 	P->proc = PSI_ParserProcAlloc(malloc);
@@ -46,14 +47,16 @@ PSI_Parser *PSI_ParserInit(PSI_Parser *P, const char *filename, unsigned flags)
 }
 
 void PSI_ParserSyntaxError(PSI_Parser *P, const char *fn, size_t ln, const char *msg, ...) {
-	fprintf(stderr, "WARNING: Syntax error on line %zu in '%s'%s", ln, fn, msg ? ": ": "\n");
-	if (msg) {
-		va_list argv;
+	char buf[0x1000] = {0};
+	va_list argv;
 
-		va_start(argv, msg);
-		vfprintf(stderr, msg, argv);
-		va_end(argv);
-	}
+	va_start(argv, msg);
+	vsnprintf(buf, 0x1000-1, msg, argv);
+	va_end(argv);
+
+	P->error(PSI_WARNING, "PSI syntax error on line %zu in '%s'%s%s",
+			ln, fn, msg ? ": ": "", buf);
+
 	++P->errors;
 }
 
@@ -180,7 +183,10 @@ token_t PSI_ParserScan(PSI_Parser *P)
 		MIXED = 'mixed';
 		VOID = 'void';
 		BOOL = 'bool';
+		CHAR = 'char';
+		SHORT = 'short';
 		INT = 'int';
+		LONG = 'long';
 		FLOAT = 'float';
 		DOUBLE = 'double';
 		SINT8 = 'sint8';
@@ -230,7 +236,10 @@ token_t PSI_ParserScan(PSI_Parser *P)
 		MIXED {RETURN(PSI_T_MIXED);}
 		VOID {RETURN(PSI_T_VOID);}
 		BOOL {RETURN(PSI_T_BOOL);}
+		CHAR {RETURN(PSI_T_CHAR);}
+		SHORT {RETURN(PSI_T_SHORT);}
 		INT {RETURN(PSI_T_INT);}
+		LONG {RETURN(PSI_T_LONG);}
 		FLOAT {RETURN(PSI_T_FLOAT);}
 		DOUBLE {RETURN(PSI_T_DOUBLE);}
 		SINT8 {RETURN(PSI_T_SINT8);}
@@ -262,7 +271,7 @@ token_t PSI_ParserScan(PSI_Parser *P)
 		NAME {RETURN(PSI_T_NAME);}
 		NSNAME {RETURN(PSI_T_NSNAME);}
 		QUOTED_STRING {RETURN(PSI_T_QUOTED_STRING);}
-		[^] {break;} 
+		[^] {break;}
 		*/
 	}
 	return -1;

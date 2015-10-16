@@ -4,11 +4,7 @@
 #include "parser.h"
 
 typedef struct PSI_Validator {
-	decl_typedefs *defs;
-	decls *decls;
-	impls *impls;
-	char *lib;
-	char *fn;
+	PSI_DATA_MEMBERS;
 	void *dlopened;
 } PSI_Validator;
 

@@ -14,7 +14,7 @@
 %extra_argument {PSI_Parser *P}
 /* TOKEN is defined inside syntax_error */
 %syntax_error {
-	PSI_ParserSyntaxError(P, P->fn, P->line, "Unexpected token '%s'.\n", TOKEN->text);
+	PSI_ParserSyntaxError(P, P->fn, P->line, "Unexpected token '%s'", TOKEN->text);
 }
 file ::= blocks.
 
@@ -25,7 +25,7 @@ block ::= COMMENT.
 
 block ::= LIB(T) QUOTED_STRING(libname) EOS. {
 	if (P->lib) {
-		PSI_ParserSyntaxError(P, P->fn, T->line, "Extra 'lib %s' statement has no effect.\n", libname->text);
+		PSI_ParserSyntaxError(P, P->fn, T->line, "Extra 'lib %s' statement has no effect", libname->text);
 	} else {
 		P->lib = strndup(libname->text + 1, libname->size - 2);
 	}
@@ -96,7 +96,19 @@ decl_type(type_) ::= VOID(T). {
 	type_ = init_decl_type(T->type, T->text);
 	free(T);
 }
+decl_type(type_) ::= CHAR(T). {
+	type_ = init_decl_type(T->type, T->text);
+	free(T);
+}
+decl_type(type_) ::= SHORT(T). {
+	type_ = init_decl_type(T->type, T->text);
+	free(T);
+}
 decl_type(type_) ::= INT(T). {
+	type_ = init_decl_type(T->type, T->text);
+	free(T);
+}
+decl_type(type_) ::= LONG(T). {
 	type_ = init_decl_type(T->type, T->text);
 	free(T);
 }
@@ -230,6 +242,9 @@ let_stmt(let) ::= LET decl_var(var) EQUALS let_value(val) EOS. {
 %type let_value {let_value*}
 let_value(val) ::= let_func(func) LPAREN impl_var(var) RPAREN. {
 	val = init_let_value(func, var, 0);
+}
+let_value(val) ::= REFERENCE let_func(func) LPAREN impl_var(var) RPAREN. {
+	val = init_let_value(func, var, 1);
 }
 let_value(val) ::= REFERENCE NULL. {
 	val = init_let_value(NULL, NULL, 1);

@@ -43,8 +43,6 @@ static int validate_lib(PSI_Validator *V) {
 	if (!ptr) {
 		/* FIXME: assume stdlib */
 		return 1;
-		fprintf(stderr, "No import library defined;"
-			" use 'lib \"<libname>\";' statement.\n");
 	} else if (!strchr(ptr, '/')) {
 #ifdef DARWIN
 		len = snprintf(lib, MAXPATHLEN, "lib%s.dylib", ptr);
@@ -52,13 +50,13 @@ static int validate_lib(PSI_Validator *V) {
 		len = snprintf(lib, MAXPATHLEN, "lib%s.so", ptr);
 #endif
 		if (MAXPATHLEN == len) {
-			fprintf(stderr, "Library name too long: '%s'\n", ptr);
+			V->error(PSI_WARNING, "Library name too long: '%s'", ptr);
 		}
 		lib[len] = 0;
 		ptr = lib;
 	}
 	if (!(V->dlopened = dlopen(ptr, RTLD_LAZY|RTLD_LOCAL))) {
-		fprintf(stderr, "Could not open library '%s': %s.\n", V->lib, dlerror());
+		V->error(PSI_WARNING, "Could not open library '%s': %s.", V->lib, dlerror());
 		return 0;
 	}
 	return 1;
@@ -79,12 +77,11 @@ static inline int locate_decl_type_alias(decl_typedefs *defs, decl_type *type) {
 }
 static inline int validate_decl_type(PSI_Validator *V, decl_arg *arg, decl_type *type) {
 	if (type->type == PSI_T_NAME) {
-		size_t i;
-
 		if (!V->defs || !locate_decl_type_alias(V->defs, type)) {
-			fprintf(stderr, "Cannot use '%s' as type for '%s';"
-				" Use 'typedef <type> <basic_type>;' statement.\n",
+			V->error(PSI_WARNING, "Cannot use '%s' as type for '%s';"
+				" Use 'typedef <type> <basic_type>;' statement",
 				type->name, arg->var->name);
+			return 0;
 		}
 	}
 	return 1;
@@ -92,7 +89,7 @@ static inline int validate_decl_type(PSI_Validator *V, decl_arg *arg, decl_type 
 static inline int validate_typedef(PSI_Validator *V, decl_typedef *def) {
 	/* FIXME: check def->alias */
 	if (def->type->type == PSI_T_NAME) {
-		fprintf(stderr, "Type '%s' cannot be aliased to '%s'\n",
+		V->error(PSI_WARNING, "Type '%s' cannot be aliased to '%s'",
 			def->type->name, def->alias);
 		return 0;
 	}
@@ -111,10 +108,8 @@ static inline int validate_typedefs(PSI_Validator *V) {
 }
 static inline int validate_decl_func(PSI_Validator *V, decl *decl, decl_arg *func)
 {
-	void *dlptr;
-
 	if (!strcmp(func->var->name, "dlsym")) {
-		fprintf(stderr, "Cannot dlsym dlsym (sic!)\n");
+		V->error(PSI_WARNING, "Cannot dlsym dlsym (sic!)");
 		return 0;
 	}
 
@@ -124,14 +119,14 @@ static inline int validate_decl_func(PSI_Validator *V, decl *decl, decl_arg *fun
 
 	decl->dlptr = dlsym(V->dlopened, func->var->name);
 	if (!decl->dlptr) {
-		fprintf(stderr, "Failed to located symbol '%s': %s\n",
+		V->error(PSI_WARNING, "Failed to located symbol '%s': %s",
 			func->var->name, dlerror());
 	}
 	return 1;
 }
 static inline int validate_decl_abi(PSI_Validator *V, decl_abi *abi) {
 	if (strcasecmp(abi->convention, "default")) {
-		fprintf(stderr, "Invalid calling convention: '%s'\n", abi->convention);
+		V->error(PSI_WARNING, "Invalid calling convention: '%s'", abi->convention);
 		return 0;
 	}
 	/* FIXME */
@@ -213,6 +208,7 @@ static inline decl *locate_impl_decl(decls *decls, ret_stmt *ret) {
 	}
 	return NULL;
 }
+
 static inline int validate_impl_stmts(PSI_Validator *V, impl *impl, impl_stmts *stmts) {
 	/* okay,
 	 * - we must have exactly one ret stmt delcaring the native func to call and which type cast to apply
@@ -222,18 +218,20 @@ static inline int validate_impl_stmts(PSI_Validator *V, impl *impl, impl_stmts *
 	size_t i, j;
 	ret_stmt *ret;
 	decl *decl;
-	int *check;
 
 	 if (!stmts) {
- 		fprintf(stderr, "Missing body for implementation %s!\n", impl->func->name);
+ 		V->error(PSI_WARNING, "Missing body for implementation %s!",
+ 				impl->func->name);
  		return 0;
  	}
 	if (stmts->ret.count != 1) {
 		if (stmts->ret.count > 1) {
-			fprintf(stderr, "Too many `ret` statements for implmentation %s; found %zu, exactly one is needed.\n",
-				impl->func->name, stmts->ret.count);
+			V->error(PSI_WARNING, "Too many `ret` statements for implmentation %s;"
+					"found %zu, exactly one is needed",
+					impl->func->name, stmts->ret.count);
 		} else {
-			fprintf(stderr, "Missing `ret` statement for implementation %s.\n", impl->func->name);
+			V->error(PSI_WARNING, "Missing `ret` statement for implementation %s",
+					impl->func->name);
 		}
 		return 0;
 	}
@@ -241,31 +239,56 @@ static inline int validate_impl_stmts(PSI_Validator *V, impl *impl, impl_stmts *
 	ret = stmts->ret.list[0];
 	decl = locate_impl_decl(V->decls, ret);
 	if (!decl) {
-		fprintf(stderr, "Missing declaration for implementation %s.\n", impl->func->name);
+		V->error(PSI_WARNING, "Missing declaration for implementation %s",
+				impl->func->name);
 		return 0;
 	}
 
 	/* check that we have a let stmt for every decl arg */
-	check = calloc(decl->args->count, sizeof(int));
-	for (i = 0; i < stmts->let.count; ++i) {
-		let_stmt *let = stmts->let.list[i];
+	for (i = 0; i < decl->args->count; ++i) {
+		decl_arg *darg = decl->args->args[i];
+		int check = 0;
 
-		for (j = 0; j < decl->args->count; ++j) {
-			if (!strcmp(decl->args->args[j]->var->name, let->var->name)) {
-				check[j] = 1;
+		for (j = 0; j < stmts->let.count; ++j) {
+			let_stmt *let = stmts->let.list[j];
+
+			if (!strcmp(let->var->name, darg->var->name)) {
+				darg->let = let;
+				check = 1;
 				break;
 			}
 		}
-	}
-	for (i = 0; i < decl->args->count; ++i) {
-		if (!check[i]) {
-			fprintf(stderr, "Missing `let` statement for arg '%s %.*s%s' of declaration '%s' for implementation '%s'.\n",
-				decl->args->args[i]->type->name, (int) decl->args->args[i]->var->pointer_level, "*****", decl->args->args[i]->var->name, decl->func->var->name, impl->func->name);
-			free(check);
+		if (!check) {
+			V->error(PSI_WARNING, "Missing `let` statement for arg '%s %.*s%s'"
+					"of declaration '%s' for implementation '%s'",
+					darg->type->name, (int) darg->var->pointer_level, "*****",
+					darg->var->name, decl->func->var->name, impl->func->name);
 			return 0;
 		}
 	}
-	free(check);
+	/* check that the let_value references a known variable or NULL */
+	for (i = 0; i < stmts->let.count; ++i) {
+		let_stmt *let = stmts->let.list[i];
+		int check = 0;
+
+		if (let->val->var) {
+			for (j = 0; j < impl->func->args->count; ++j) {
+				impl_arg *iarg = impl->func->args->args[j];
+
+				if (!strcmp(let->val->var->name, iarg->var->name)) {
+					let->arg = iarg;
+					check = 1;
+					break;
+				}
+			}
+			if (!check) {
+				V->error(PSI_WARNING, "Unknown value '$%s' of `let` statement"
+						" for variable '%s' of implementation '%s'",
+						let->val->var->name, let->var->name, impl->func->name);
+				return 0;
+			}
+		}
+	}
 
 	impl->decl = decl;
 
