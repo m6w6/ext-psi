@@ -21,7 +21,7 @@ extern zend_module_entry psi_module_entry;
 
 ZEND_BEGIN_MODULE_GLOBALS(psi)
 	char *directory;
-	void *context;
+	PSI_Context context;
 ZEND_END_MODULE_GLOBALS(psi);
 
 #define PSI_G(v) ZEND_MODULE_GLOBALS_ACCESSOR(psi, v)
