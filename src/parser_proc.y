@@ -163,12 +163,12 @@ impl(impl) ::= impl_func(func) LBRACE impl_stmts(stmts) RBRACE. {
 }
 
 %type impl_func {impl_func*}
-impl_func(func) ::= FUNCTION NSNAME(NAME) LPAREN impl_args(args) RPAREN COLON impl_type(type). {
-	func = init_impl_func(NAME->text, args, type);
+impl_func(func) ::= FUNCTION NSNAME(NAME) impl_args(args) COLON impl_type(type). {
+	func = init_impl_func(NAME->text, args, type, 0);
 	free(NAME);
 }
-impl_func(func) ::= FUNCTION NSNAME(NAME) LPAREN RPAREN COLON impl_type(type). {
-	func = init_impl_func(NAME->text, NULL, type);
+impl_func(func) ::= FUNCTION REFERENCE NSNAME(NAME) impl_args(args) COLON impl_type(type). {
+	func = init_impl_func(NAME->text, args, type, 1);
 	free(NAME);
 }
 
@@ -208,10 +208,17 @@ impl_arg(arg) ::= impl_type(type) impl_var(var) EQUALS impl_def_val(def). {
 }
 
 %type impl_args {impl_args*}
-impl_args(args) ::= impl_arg(arg). {
+impl_args(args) ::= LPAREN RPAREN. {
+	args = NULL;
+}
+impl_args(args) ::= LPAREN impl_arg_list(args_) RPAREN. {
+	args = args_;
+}
+%type impl_arg_list {impl_args*}
+impl_arg_list(args) ::= impl_arg(arg). {
 	args = init_impl_args(arg);
 }
-impl_args(args) ::= impl_args(args_) COMMA impl_arg(arg). {
+impl_arg_list(args) ::= impl_arg_list(args_) COMMA impl_arg(arg). {
 	args = add_impl_arg(args_, arg);
 }
 
@@ -230,8 +237,11 @@ impl_stmt(stmt) ::= let_stmt(let). {
 impl_stmt(stmt) ::= set_stmt(set). {
 	stmt = init_impl_stmt(PSI_T_SET, set);
 }
-impl_stmt(stmt) ::= ret_stmt(ret). {
-	stmt = init_impl_stmt(PSI_T_RET, ret);
+impl_stmt(stmt) ::= return_stmt(ret). {
+	stmt = init_impl_stmt(PSI_T_RETURN, ret);
+}
+impl_stmt(stmt) ::= free_stmt(free). {
+	stmt = init_impl_stmt(PSI_T_FREE, free);
 }
 
 %type let_stmt {let_stmt*}
@@ -307,9 +317,14 @@ set_func(func) ::= VOID(T). {
 	free(T);
 }
 
-%type ret_stmt {ret_stmt*}
-ret_stmt(ret) ::= RET set_func(func) LPAREN decl_var(var) RPAREN EOS. {
-	ret = init_ret_stmt(func, var);
+%type return_stmt {return_stmt*}
+return_stmt(ret) ::= RETURN set_func(func) LPAREN decl_var(var) RPAREN EOS. {
+	ret = init_return_stmt(func, var);
+}
+
+%type free_stmt {free_stmt*}
+free_stmt(free) ::= FREE decl_vars(vars) EOS. {
+	free = init_free_stmt(vars);
 }
 
 %type impl_type {impl_type*}
@@ -344,4 +359,4 @@ impl_type(type_) ::= ARRAY(T). {
 
 %type pointers {unsigned}
 pointers(p) ::= POINTER. {++p;}
-pointers(p) ::= pointers(P) POINTER. {p = ++P;}
+pointers(p) ::= pointers(P) POINTER. {p = P+1;}

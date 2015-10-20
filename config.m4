@@ -32,8 +32,8 @@ if test "$PHP_PSI" != "no"; then
 	PHP_ADD_BUILD_DIR($PHP_PSI_BUILDDIR/src)
 
 	PHP_PSI_HEADERS=`(cd $PHP_PSI_SRCDIR/src && echo *.h)`
-	PHP_PSI_SOURCES=`(cd $PHP_PSI_SRCDIR && echo src/*.c)`
-	PHP_PSI_SOURCES=`(echo $PHP_PSI_SOURCES src/parser.c src/parser_proc.c | xargs -n1 | sort | uniq)`
+	PHP_PSI_SOURCES="src/parser_proc.c src/parser.c src/validator.c src/module.c src/context.c"
+	PHP_PSI_SOURCES="$PHP_PSI_SOURCES src/libjit.c"
 
 	PHP_NEW_EXTENSION(psi, $PHP_PSI_SOURCES, $ext_shared)
 	PHP_INSTALL_HEADERS(ext/psi, php_psi.h $PHP_PSI_HEADERS)

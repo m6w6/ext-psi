@@ -204,7 +204,8 @@ token_t PSI_ParserScan(PSI_Parser *P)
 		LIB = 'lib';
 		LET = 'let';
 		SET = 'set';
-		RET = 'ret';
+		RETURN = 'return';
+		FREE = 'free';
 		STRLEN = 'strlen';
 		STRVAL = 'strval';
 		INTVAL = 'intval';
@@ -257,7 +258,8 @@ token_t PSI_ParserScan(PSI_Parser *P)
 		LIB {RETURN(PSI_T_LIB);}
 		LET {RETURN(PSI_T_LET);}
 		SET {RETURN(PSI_T_SET);}
-		RET {RETURN(PSI_T_RET);}
+		RETURN {RETURN(PSI_T_RETURN);}
+		FREE {RETURN(PSI_T_FREE);}
 		STRLEN {RETURN(PSI_T_STRLEN);}
 		STRVAL {RETURN(PSI_T_STRVAL);}
 		INTVAL {RETURN(PSI_T_INTVAL);}

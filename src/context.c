@@ -6,6 +6,7 @@
 #include "php.h"
 #include "php_scandir.h"
 #include "context.h"
+#include "validator.h"
 
 PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErrorFunc error)
 {
@@ -48,7 +49,7 @@ void PSI_ContextBuild(PSI_Context *C, const char *path)
 			C->error(PSI_WARNING, "Path to PSI file too long: %s/%s",
 				path, entries[i]->d_name);
 		}
-		if (!PSI_ParserInit(&P, psi, psi_error, 0)) {
+		if (!PSI_ParserInit(&P, psi, C->error, 0)) {
 			C->error(PSI_WARNING, "Failed to init PSI parser (%s): %s",
 				psi, strerror(errno));
 			continue;

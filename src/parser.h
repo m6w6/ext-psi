@@ -89,9 +89,20 @@ static void free_decl_typedefs(decl_typedefs *defs) {
 	free(defs);
 }
 
+typedef union impl_val {
+	char cval;
+	short sval;
+	int ival;
+	double dval;
+	zend_long lval;
+	zend_string *str;
+	void *ptr;
+} impl_val;
+
 typedef struct decl_var {
 	char *name;
 	unsigned pointer_level;
+	struct decl_arg *arg;
 } decl_var;
 
 static inline decl_var *init_decl_var(char *name, unsigned pl) {
@@ -297,16 +308,6 @@ static inline void free_impl_def_val(impl_def_val *def) {
 	free(def);
 }
 
-typedef union impl_val {
-	unsigned char bval;
-	zend_long lval;
-	double dval;
-	struct {
-		char *val;
-		size_t len;
-	} str;
-} impl_val;
-
 typedef struct impl_arg {
 	impl_type *type;
 	impl_var *var;
@@ -370,13 +371,15 @@ typedef struct impl_func {
 	char *name;
 	impl_args *args;
 	impl_type *return_type;
+	unsigned return_reference:1;
 } impl_func;
 
-static inline impl_func *init_impl_func(char *name, impl_args *args, impl_type *type) {
+static inline impl_func *init_impl_func(char *name, impl_args *args, impl_type *type, int ret_reference) {
 	impl_func *func = malloc(sizeof(*func));
 	func->name = strdup(name);
 	func->args = args ? args : init_impl_args(NULL);
 	func->return_type = type;
+	func->return_reference = ret_reference;
 	return func;
 }
 
@@ -432,13 +435,15 @@ typedef struct let_stmt {
 	decl_var *var;
 	let_value *val;
 	impl_arg *arg;
+	impl_val out;
+	void *ptr;
+	void *mem;
 } let_stmt;
 
 static inline let_stmt *init_let_stmt(decl_var *var, let_value *val) {
-	let_stmt *let = malloc(sizeof(*let));
+	let_stmt *let = calloc(1, sizeof(*let));
 	let->var = var;
 	let->val = val;
-	let->arg = NULL;
 	return let;
 }
 
@@ -486,6 +491,7 @@ static inline void free_set_value(set_value *val) {
 typedef struct set_stmt {
 	impl_var *var;
 	set_value *val;
+	impl_arg *arg;
 } set_stmt;
 
 static inline set_stmt *init_set_stmt(impl_var *var, set_value *val) {
@@ -501,22 +507,37 @@ static inline void free_set_stmt(set_stmt *set) {
 	free(set);
 }
 
-typedef struct ret_stmt {
+typedef struct return_stmt {
 	set_func *func;
 	decl_var *decl;
-} ret_stmt;
+} return_stmt;
 
-static inline ret_stmt *init_ret_stmt(set_func *func, decl_var *decl) {
-	ret_stmt *ret = malloc(sizeof(*ret));
+static inline return_stmt *init_return_stmt(set_func *func, decl_var *decl) {
+	return_stmt *ret = malloc(sizeof(*ret));
 	ret->func = func;
 	ret->decl = decl;
 	return ret;
 }
 
-static inline void free_ret_stmt(ret_stmt *ret) {
+static inline void free_return_stmt(return_stmt *ret) {
 	free_set_func(ret->func);
 	free_decl_var(ret->decl);
 	free(ret);
+}
+
+typedef struct free_stmt {
+	decl_vars *vars;
+} free_stmt;
+
+static inline free_stmt *init_free_stmt(decl_vars *vars) {
+	free_stmt *free_ = malloc(sizeof(*free_));
+	free_->vars = vars;
+	return free_;
+}
+
+static inline void free_free_stmt(free_stmt *free_) {
+	free_decl_vars(free_->vars);
+	free(free_);
 }
 
 typedef struct impl_stmt {
@@ -524,7 +545,8 @@ typedef struct impl_stmt {
 	union {
 		let_stmt *let;
 		set_stmt *set;
-		ret_stmt *ret;
+		return_stmt *ret;
+		free_stmt *fre;
 		void *ptr;
 	} s;
 } impl_stmt;
@@ -544,8 +566,11 @@ static inline void free_impl_stmt(impl_stmt *stmt) {
 	case PSI_T_SET:
 		free_set_stmt(stmt->s.set);
 		break;
-	case PSI_T_RET:
-		free_ret_stmt(stmt->s.ret);
+	case PSI_T_RETURN:
+		free_return_stmt(stmt->s.ret);
+		break;
+	case PSI_T_FREE:
+		free_free_stmt(stmt->s.fre);
 		break;
 	}
 	free(stmt);
@@ -553,7 +578,7 @@ static inline void free_impl_stmt(impl_stmt *stmt) {
 
 typedef struct impl_stmts {
 	struct {
-		ret_stmt **list;
+		return_stmt **list;
 		size_t count;
 	} ret;
 	struct {
@@ -564,6 +589,10 @@ typedef struct impl_stmts {
 		set_stmt **list;
 		size_t count;
 	} set;
+	struct {
+		free_stmt **list;
+		size_t count;
+	} fre;
 } impl_stmts;
 
 static inline void *add_impl_stmt_ex(void *list, size_t count, void *stmt) {
@@ -574,7 +603,7 @@ static inline void *add_impl_stmt_ex(void *list, size_t count, void *stmt) {
 
 static inline impl_stmts *add_impl_stmt(impl_stmts *stmts, impl_stmt *stmt) {
 	switch (stmt->type) {
-	case PSI_T_RET:
+	case PSI_T_RETURN:
 		stmts->ret.list = add_impl_stmt_ex(stmts->ret.list, ++stmts->ret.count, stmt->s.ret);
 		break;
 	case PSI_T_LET:
@@ -582,6 +611,9 @@ static inline impl_stmts *add_impl_stmt(impl_stmts *stmts, impl_stmt *stmt) {
 		break;
 	case PSI_T_SET:
 		stmts->set.list = add_impl_stmt_ex(stmts->set.list, ++stmts->set.count, stmt->s.set);
+		break;
+	case PSI_T_FREE:
+		stmts->fre.list = add_impl_stmt_ex(stmts->fre.list, ++stmts->fre.count, stmt->s.fre);
 		break;
 	}
 	return stmts;
@@ -600,13 +632,17 @@ static inline void free_impl_stmts(impl_stmts *stmts) {
 	}
 	free(stmts->let.list);
 	for (i = 0; i < stmts->ret.count; ++i) {
-		free_ret_stmt(stmts->ret.list[i]);
+		free_return_stmt(stmts->ret.list[i]);
 	}
 	free(stmts->ret.list);
 	for (i = 0; i < stmts->set.count; ++i) {
 		free_set_stmt(stmts->set.list[i]);
 	}
 	free(stmts->set.list);
+	for (i = 0; i < stmts->fre.count; ++i) {
+		free_free_stmt(stmts->fre.list[i]);
+	}
+	free(stmts->fre.list);
 	free(stmts);
 }
 

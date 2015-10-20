@@ -3,17 +3,13 @@
 #include "config.h"
 #endif
 
-#include <jit/jit.h>
-
 #include "php.h"
 #include "php_ini.h"
 #include "ext/standard/info.h"
 
 #include "php_psi.h"
 
-#include "parser.h"
-#include "validator.h"
-#include "compiler.h"
+#include "libjit.h"
 
 ZEND_DECLARE_MODULE_GLOBALS(psi);
 
@@ -44,8 +40,7 @@ PHP_MINIT_FUNCTION(psi)
 }
 PHP_MSHUTDOWN_FUNCTION(psi)
 {
-	jit_context_t ctx = PSI_G(context);
-	jit_context_destroy(ctx);
+	PSI_ContextDtor(&PSI_G(context));
 
 	UNREGISTER_INI_ENTRIES();
 

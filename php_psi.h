@@ -19,6 +19,8 @@ extern zend_module_entry psi_module_entry;
 #include "TSRM.h"
 #endif
 
+#include "context.h"
+
 ZEND_BEGIN_MODULE_GLOBALS(psi)
 	char *directory;
 	PSI_Context context;

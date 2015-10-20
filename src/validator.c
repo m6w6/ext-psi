@@ -124,13 +124,23 @@ static inline int validate_decl_func(PSI_Validator *V, decl *decl, decl_arg *fun
 	}
 	return 1;
 }
+static const char * const abi_ccs[] = {
+		"default", /* \                 */
+		"extern",  /*  > - all the same */
+		"cdecl",   /* /                 */
+		"stdcall",
+		"fastcall",
+};
 static inline int validate_decl_abi(PSI_Validator *V, decl_abi *abi) {
-	if (strcasecmp(abi->convention, "default")) {
-		V->error(PSI_WARNING, "Invalid calling convention: '%s'", abi->convention);
-		return 0;
+	size_t i;
+
+	for (i = 0; i < sizeof(abi_ccs)/sizeof(char*); ++ i) {
+		if (strcasecmp(abi->convention, abi_ccs[i])) {
+			return 1;
+		}
 	}
-	/* FIXME */
-	return 1;
+	V->error(PSI_WARNING, "Invalid calling convention: '%s'", abi->convention);
+	return 0;
 }
 static inline int validate_decl_arg(PSI_Validator *V, decl *decl, decl_arg *arg) {
 	if (!validate_decl_type(V, arg, arg->type)) {
@@ -198,7 +208,7 @@ static inline int validate_impl_func(PSI_Validator *V, impl *impl, impl_func *fu
 	}
 	return 1;
 }
-static inline decl *locate_impl_decl(decls *decls, ret_stmt *ret) {
+static inline decl *locate_impl_decl(decls *decls, return_stmt *ret) {
 	size_t i;
 
 	for (i = 0; i < decls->count; ++i) {
@@ -213,10 +223,11 @@ static inline int validate_impl_stmts(PSI_Validator *V, impl *impl, impl_stmts *
 	/* okay,
 	 * - we must have exactly one ret stmt delcaring the native func to call and which type cast to apply
 	 * - we can have multiple let stmts; every arg of the ret stmts var (the function to call) must have one
-	 * - we can have any count of set stmts; processing out vars, etc.
+	 * - we can have any count of set stmts; processing out vars
+	 * - we can have any count of free stmts; freeing any out vars
 	 */
-	size_t i, j;
-	ret_stmt *ret;
+	size_t i, j, k;
+	return_stmt *ret;
 	decl *decl;
 
 	 if (!stmts) {
@@ -285,6 +296,78 @@ static inline int validate_impl_stmts(PSI_Validator *V, impl *impl, impl_stmts *
 				V->error(PSI_WARNING, "Unknown value '$%s' of `let` statement"
 						" for variable '%s' of implementation '%s'",
 						let->val->var->name, let->var->name, impl->func->name);
+				return 0;
+			}
+		}
+	}
+	/* check that set stmts reference known variables */
+	for (i = 0; i < stmts->set.count; ++i) {
+		set_stmt *set = stmts->set.list[i];
+		int check = 0;
+
+		for (j = 0; j < impl->func->args->count; ++j) {
+			impl_arg *iarg = impl->func->args->args[j];
+
+			if (!strcmp(set->var->name, iarg->var->name)) {
+				set->arg = iarg;
+				check = 1;
+				break;
+			}
+		}
+		if (!check) {
+			V->error(PSI_WARNING, "Unknown variable '$%s' of `set` statement"
+					" of implementation '%s'",
+					set->var->name, impl->func->name);
+			return 0;
+		}
+
+		for (j = 0; j < set->val->vars->count; ++j) {
+			decl_var *set_var = set->val->vars->vars[j];
+
+			check = 0;
+			for (k = 0; k < decl->args->count; ++k) {
+				decl_arg *set_arg = decl->args->args[k];
+
+				if (!strcmp(set_var->name, set_arg->var->name)) {
+					check = 1;
+					set_var->arg = set_arg;
+					break;
+				}
+			}
+
+			if (!check) {
+				V->error(PSI_WARNING, "Unknown value '%s' of `set` statement"
+						" for variable '$%s' of implementation '%s'",
+						set_var->name, set->arg->var->name, impl->func->name);
+				return 0;
+			}
+		}
+	}
+	/* check free stmts */
+	for (i = 0; i < stmts->fre.count; ++i) {
+		free_stmt *fre = stmts->fre.list[i];
+
+		for (j = 0; j < fre->vars->count; ++j) {
+			decl_var *free_var = fre->vars->vars[j];
+			int check = 0;
+
+			if (!strcmp(free_var->name, decl->func->var->name)) {
+				continue;
+			}
+			for (k = 0; k < decl->args->count; ++k) {
+				decl_arg *free_arg = decl->args->args[k];
+
+				if (!strcmp(free_var->name, free_arg->var->name)) {
+					check = 1;
+					free_var->arg = free_arg;
+					break;
+				}
+			}
+
+			if (!check) {
+				V->error(PSI_WARNING, "Unknown variable '%s' of `free` statement"
+						" of implementation '%s'",
+						free_var->name, impl->func->name);
 				return 0;
 			}
 		}
