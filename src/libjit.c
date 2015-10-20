@@ -109,7 +109,7 @@ static inline PSI_ClosureData *PSI_ClosureDataAlloc(void *context, impl *impl) {
 static inline impl_val *deref(unsigned level, impl_val *ret_val, decl_arg *darg) {
 	unsigned i;
 
-	for (i = level; i < darg->var->pointer_level; ++i) {
+	for (i = level; i < darg->var->pointer_level; ++i && ret_val->ptr) {
 		ret_val = *(void **)ret_val;
 	}
 
@@ -135,7 +135,12 @@ static void to_string(impl_val *ret_val, decl_arg *func, zval *return_value) {
 			char chr = ret_val->lval;
 			RETVAL_STRINGL(&chr, 1);
 		} else {
-			RETVAL_STRING(deref(1, ret_val, func)->ptr);
+			ret_val = deref(1, ret_val, func);
+			if (ret_val->ptr) {
+				RETVAL_STRING(ret_val->ptr);
+			} else {
+				RETVAL_EMPTY_STRING();
+			}
 		}
 		break;
 	case PSI_T_FLOAT:
@@ -270,6 +275,7 @@ static void handle_rval(impl *impl, impl_val *ret_val, zval *return_value) {
 static void handle_set(zval *return_value, set_func *func, decl_vars *vars) {
 	impl_val *val = &vars->vars[0]->arg->let->ptr;
 
+	ZVAL_DEREF(return_value);
 	zval_dtor(return_value);
 
 	switch (func->type) {

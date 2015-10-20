@@ -42,6 +42,32 @@ block ::= impl(impl). {
 block ::= decl_typedef(def). {
 	P->defs = add_decl_typedef(P->defs, def);
 }
+block ::= constant(constant). {
+	P->consts = add_constant(P->consts, constant);
+}
+
+%type const_type {const_type*}
+const_type(type_) ::= BOOL(T). {
+	type_ = init_const_type(T->type, T->text);
+	free(T);
+}
+const_type(type_) ::= INT(T). {
+	type_ = init_const_type(T->type, T->text);
+	free(T);
+}
+const_type(type_) ::= FLOAT(T). {
+	type_ = init_const_type(T->type, T->text);
+	free(T);
+}
+const_type(type_) ::= STRING(T). {
+	type_ = init_const_type(T->type, T->text);
+	free(T);
+}
+%type constant {constant*}
+constant(constant) ::= CONST const_type(type) NSNAME(T) EQUALS impl_def_val(val) EOS. {
+	constant = init_constant(type, T->text, val);
+	free(T);
+}
 
 %type decl_typedef {decl_typedef*}
 decl_typedef(def) ::= TYPEDEF NAME(ALIAS) decl_type(type) EOS. {
@@ -158,6 +184,7 @@ decl_type(type_) ::= NAME(T). {
 }
 
 %type impl {impl*}
+%destructor impl {free_impl($$);}
 impl(impl) ::= impl_func(func) LBRACE impl_stmts(stmts) RBRACE. {
 	impl = init_impl(func, stmts);
 }
@@ -223,6 +250,7 @@ impl_arg_list(args) ::= impl_arg_list(args_) COMMA impl_arg(arg). {
 }
 
 %type impl_stmts {impl_stmts*}
+%destructor impl_stmts {free_impl_stmts($$);}
 impl_stmts(stmts) ::= impl_stmt(stmt). {
 	stmts = init_impl_stmts(stmt);
 }
@@ -231,6 +259,7 @@ impl_stmts(stmts) ::= impl_stmts(stmts_) impl_stmt(stmt). {
 }
 
 %type impl_stmt {impl_stmt*}
+%destructor impl_stmt {free_impl_stmt($$);}
 impl_stmt(stmt) ::= let_stmt(let). {
 	stmt = init_impl_stmt(PSI_T_LET, let);
 }

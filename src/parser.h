@@ -689,18 +689,81 @@ static void free_impls(impls *impls) {
 	free(impls);
 }
 
+typedef struct const_type {
+	token_t type;
+	char *name;
+} const_type;
+
+static inline const_type *init_const_type(token_t type, const char *name) {
+	const_type *ct = malloc(sizeof(*ct));
+	ct->type = type;
+	ct->name = strdup(name);
+	return ct;
+}
+
+static inline void free_const_type(const_type *type) {
+	free(type->name);
+	free(type);
+}
+
+typedef struct constant {
+	const_type *type;
+	char *name;
+	impl_def_val *val;
+} constant;
+
+static inline constant *init_constant(const_type *type, char *name, impl_def_val *val) {
+	constant *c = malloc(sizeof(*c));
+	c->type = type;
+	c->name = strdup(name);
+	c->val = val;
+	return c;
+}
+
+static inline void free_constant(constant *constant) {
+	free_const_type(constant->type);
+	free(constant->name);
+	free_impl_def_val(constant->val);
+	free(constant);
+}
+
+typedef struct constants {
+	size_t count;
+	constant **list;
+} constants;
+
+static inline constants *add_constant(constants *constants, constant *constant) {
+	if (!constants) {
+		constants = calloc(1, sizeof(*constants));
+	}
+	constants->list = realloc(constants->list, ++constants->count * sizeof(*constants->list));
+	constants->list[constants->count-1] = constant;
+	return constants;
+}
+
+static inline void free_constants(constants *c) {
+	size_t i;
+
+	for (i = 0; i < c->count; ++i) {
+		free_constant(c->list[i]);
+	}
+	free(c->list);
+	free(c);
+}
+
 #define PSI_ERROR 16
 #define PSI_WARNING 32
 typedef void (*psi_error_cb)(int type, const char *msg, ...);
 
-typedef struct PSI_Data {
 #define PSI_DATA_MEMBERS \
+	constants *consts; \
 	decl_typedefs *defs; \
 	decls *decls; \
 	impls *impls; \
 	char *lib; \
 	char *fn; \
 	psi_error_cb error
+typedef struct PSI_Data {
 	PSI_DATA_MEMBERS;
 } PSI_Data;
 
@@ -710,6 +773,9 @@ static inline void PSI_DataExchange(PSI_Data *dest, PSI_Data *src) {
 }
 
 static inline void PSI_DataDtor(PSI_Data *data) {
+	if (data->consts) {
+		free_constants(data->consts);
+	}
 	if (data->defs) {
 		free_decl_typedefs(data->defs);
 	}

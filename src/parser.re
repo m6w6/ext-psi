@@ -201,6 +201,7 @@ token_t PSI_ParserScan(PSI_Parser *P)
 		ARRAY = 'array';
 		FUNCTION = 'function';
 		TYPEDEF = 'typedef';
+		CONST = 'const';
 		LIB = 'lib';
 		LET = 'let';
 		SET = 'set';
@@ -255,6 +256,7 @@ token_t PSI_ParserScan(PSI_Parser *P)
 		ARRAY {RETURN(PSI_T_ARRAY);}
 		FUNCTION {RETURN(PSI_T_FUNCTION);}
 		TYPEDEF {RETURN(PSI_T_TYPEDEF);}
+		CONST {RETURN(PSI_T_CONST);}
 		LIB {RETURN(PSI_T_LIB);}
 		LET {RETURN(PSI_T_LET);}
 		SET {RETURN(PSI_T_SET);}
