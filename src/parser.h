@@ -70,7 +70,7 @@ typedef struct decl_typedefs {
 	decl_typedef **list;
 } decl_typedefs;
 
-static decl_typedefs *add_decl_typedef(decl_typedefs *defs, decl_typedef *def) {
+static inline decl_typedefs *add_decl_typedef(decl_typedefs *defs, decl_typedef *def) {
 	if (!defs) {
 		defs = calloc(1, sizeof(*defs));
 	}
@@ -681,7 +681,7 @@ typedef struct impls {
 	impl **list;
 } impls;
 
-static impls *add_impl(impls *impls, impl *impl) {
+static inline impls *add_impl(impls *impls, impl *impl) {
 	if (!impls) {
 		impls = calloc(1, sizeof(*impls));
 	}

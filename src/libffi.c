@@ -4,6 +4,11 @@
 
 #include <ffi.h>
 
+#ifndef PSI_HAVE_FFI_CLOSURE_ALLOC
+# include <unistd.h>
+# include <sys/mman.h>
+#endif
+
 static void handler(ffi_cif *signature, void *_result, void **_args, void *_data);
 
 static inline ffi_abi psi_ffi_abi(const char *convention) {
@@ -98,6 +103,8 @@ static inline PSI_LibffiData *PSI_LibffiDataAlloc(PSI_LibffiContext *context, im
 			psi_ffi_decl_arg_type(data->impl->decl->func),
 			data->params);
 	ZEND_ASSERT(FFI_OK == rc);
+
+#ifdef PSI_HAVE_FFI_CLOSURE_ALLOC
 	data->closure = ffi_closure_alloc(sizeof(ffi_closure), &data->code);
 	rc = ffi_prep_closure_loc(
 			data->closure,
@@ -106,6 +113,15 @@ static inline PSI_LibffiData *PSI_LibffiDataAlloc(PSI_LibffiContext *context, im
 			data,
 			data->code);
 	ZEND_ASSERT(FFI_OK == rc);
+#else
+	i = getpagesize();
+	data->closure = malloc(sizeof(ffi_closure) + i);
+	data->code = (void *) (((intptr_t) data->closure + i - 1) & ~((intptr_t) i - 1));
+	rc = mprotect(data->code, sizeof(ffi_closure), PROT_EXEC|PROT_WRITE);
+	ZEND_ASSERT(rc == 0);
+	rc = ffi_prep_closure(data->code, &context->signature, handler, data);
+	ZEND_ASSERT(FFI_OK == rc);
+#endif
 
 	context->data.list = realloc(context->data.list, ++context->data.count * sizeof(*context->data.list));
 	context->data.list[context->data.count-1] = data;
@@ -115,7 +131,11 @@ static inline PSI_LibffiData *PSI_LibffiDataAlloc(PSI_LibffiContext *context, im
 
 static inline void PSI_LibffiDataFree(PSI_LibffiData *data) {
 	free(data->arginfo);
+#ifdef PSI_HAVE_FFI_CLOSURE_FREE
 	ffi_closure_free(data->closure);
+#else
+	free(data->closure);
+#endif
 	free(data);
 }
 
