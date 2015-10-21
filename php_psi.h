@@ -20,6 +20,20 @@ extern zend_module_entry psi_module_entry;
 #endif
 
 #include "context.h"
+#include "parser.h"
+
+void psi_error(int type, const char *msg, ...);
+int psi_internal_type(impl_type *type);
+zend_internal_arg_info *psi_internal_arginfo(impl *impl);
+size_t psi_num_min_args(impl *impl);
+void psi_to_int(impl_val *ret_val, decl_arg *func, zval *return_value);
+void psi_to_string(impl_val *ret_val, decl_arg *func, zval *return_value);
+ZEND_RESULT_CODE psi_parse_args(zend_execute_data *execute_data, impl *impl);
+impl_val *psi_do_let(decl_arg *darg);
+void psi_do_set(zval *return_value, set_func *func, decl_vars *vars);
+void psi_do_return(impl *impl, impl_val *ret_val, zval *return_value);
+void psi_do_free(free_stmt *fre);
+void psi_do_clean(impl *impl);
 
 ZEND_BEGIN_MODULE_GLOBALS(psi)
 	char *directory;

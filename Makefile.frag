@@ -24,12 +24,12 @@ lemon.c:
 ./lemon: lemon.c | lempar.c
 	$(CC) -o $@ $<
 
-$(PHP_PSI_SRCDIR)/src/parser_proc.y: $(PHP_PSI_SRCDIR)/src/parser.h
+$(PHP_PSI_SRCDIR)/src/parser_proc.y: $(PHP_PSI_BUILDDIR)/parser.h
 	touch $@
 $(PHP_PSI_SRCDIR)/src/parser_proc.c: $(PHP_PSI_SRCDIR)/src/parser_proc.y $(LEMON)
 	$(LEMON) -c $<
 
-$(PHP_PSI_SRCDIR)/src/parser.re: $(PHP_PSI_SRCDIR)/src/parser.h $(PHP_PSI_SRCDIR)/src/parser_proc.h
+$(PHP_PSI_SRCDIR)/src/parser.re: $(PHP_PSI_BUILDDIR)/parser.h $(PHP_PSI_BUILDDIR)/parser_proc.h
 	touch $@
 $(PHP_PSI_SRCDIR)/src/parser.c: $(PHP_PSI_SRCDIR)/src/parser.re
 	$(RE2C) -o $@ $<

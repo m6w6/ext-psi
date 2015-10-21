@@ -11,6 +11,7 @@
 %token_prefix PSI_T_
 %token_type {PSI_Token *}
 %token_destructor {free($$);}
+%default_destructor {(void)P;}
 %extra_argument {PSI_Parser *P}
 /* TOKEN is defined inside syntax_error */
 %syntax_error {
@@ -83,6 +84,7 @@ decl(decl) ::= decl_abi(abi) decl_arg(func) LPAREN decl_args(args) RPAREN EOS. {
 %type decl_abi {decl_abi*}
 decl_abi(abi) ::= NAME(T). {
 	abi = init_decl_abi(T->text);
+	free(T);
 }
 
 %type decl_var {decl_var*}
@@ -202,18 +204,23 @@ impl_func(func) ::= FUNCTION REFERENCE NSNAME(NAME) impl_args(args) COLON impl_t
 %type impl_def_val {impl_def_val*}
 impl_def_val(def) ::= NULL(T). {
 	def = init_impl_def_val(T);
+	free(T);
 }
 impl_def_val(def) ::= NUMBER(T). {
 	def = init_impl_def_val(T);
+	free(T);
 }
 impl_def_val(def) ::= TRUE(T). {
 	def = init_impl_def_val(T);
+	free(T);
 }
 impl_def_val(def) ::= FALSE(T). {
 	def = init_impl_def_val(T);
+	free(T);
 }
 impl_def_val(def) ::= QUOTED_STRING(T). {
 	def = init_impl_def_val(T);
+	free(T);
 }
 
 %type impl_var {impl_var*}

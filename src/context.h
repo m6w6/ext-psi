@@ -28,7 +28,6 @@ struct PSI_Context {
 PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErrorFunc error);
 void PSI_ContextBuild(PSI_Context *C, const char *path);
 zend_function_entry *PSI_ContextCompile(PSI_Context *C, PSI_Data *D);
-zend_constant a;
 void PSI_ContextDtor(PSI_Context *C);
 void PSI_ContextFree(PSI_Context **C);
 

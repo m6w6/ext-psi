@@ -41,7 +41,6 @@ void PSI_ContextBuild(PSI_Context *C, const char *path)
 
 	if (n < 0) {
 		return;
-		C->error(PSI_WARNING, "Failed to scan PSI directory '%s'", path);
 	} else for (i = 0; i < n; ++i) {
 		char psi[MAXPATHLEN];
 		PSI_Parser P;
@@ -71,33 +70,6 @@ void PSI_ContextBuild(PSI_Context *C, const char *path)
 		if (PSI_ValidatorValidate(&V)) {
 			zend_function_entry *closures;
 
-			if (V.consts) {
-				zend_constant zc;
-
-				zc.flags = CONST_PERSISTENT|CONST_CS;
-				zc.module_number = EG(current_module)->module_number;
-
-				for (i = 0; i < V.consts->count; ++i) {
-					constant *c = V.consts->list[i];
-
-					zc.name = zend_string_init(c->name + (c->name[0] == '\\'), strlen(c->name) - (c->name[0] == '\\'), 1);
-					ZVAL_NEW_STR(&zc.value, zend_string_init(c->val->text, strlen(c->val->text), 1));
-
-					switch (c->type->type) {
-					case PSI_T_BOOL:
-						convert_to_boolean(&zc.value);
-						break;
-					case PSI_T_INT:
-						convert_to_long(&zc.value);
-						break;
-					case PSI_T_FLOAT:
-						convert_to_double(&zc.value);
-						break;
-					}
-					zend_register_constant(&zc);
-				}
-			}
-
 			closures = PSI_ContextCompile(C, (PSI_Data *) &V);
 			if (closures && SUCCESS != zend_register_functions(NULL, closures, NULL, MODULE_PERSISTENT)) {
 				C->error(PSI_WARNING, "Failed to register functions!");
@@ -116,8 +88,35 @@ void PSI_ContextBuild(PSI_Context *C, const char *path)
 
 zend_function_entry *PSI_ContextCompile(PSI_Context *C, PSI_Data *D)
 {
-	size_t count = C->count++;
+	size_t i, count = C->count++;
 	zend_function_entry *zfe;
+
+	if (D->consts) {
+		zend_constant zc;
+
+		zc.flags = CONST_PERSISTENT|CONST_CS;
+		zc.module_number = EG(current_module)->module_number;
+
+		for (i = 0; i < D->consts->count; ++i) {
+			constant *c = D->consts->list[i];
+
+			zc.name = zend_string_init(c->name + (c->name[0] == '\\'), strlen(c->name) - (c->name[0] == '\\'), 1);
+			ZVAL_NEW_STR(&zc.value, zend_string_init(c->val->text, strlen(c->val->text), 1));
+
+			switch (c->type->type) {
+			case PSI_T_BOOL:
+				convert_to_boolean(&zc.value);
+				break;
+			case PSI_T_INT:
+				convert_to_long(&zc.value);
+				break;
+			case PSI_T_FLOAT:
+				convert_to_double(&zc.value);
+				break;
+			}
+			zend_register_constant(&zc);
+		}
+	}
 
 	C->data = realloc(C->data, C->count * sizeof(*C->data));
 	PSI_DataExchange(&C->data[count], D);
@@ -139,7 +138,6 @@ void PSI_ContextDtor(PSI_Context *C)
 	for (i = 0; i < C->count; ++i) {
 		PSI_DataDtor(&C->data[i]);
 		if (C->closures[i]){
-			free(C->closures[i]->arg_info);
 			free(C->closures[i]);
 		}
 	}

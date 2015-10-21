@@ -89,16 +89,6 @@ static void free_decl_typedefs(decl_typedefs *defs) {
 	free(defs);
 }
 
-typedef union impl_val {
-	char cval;
-	short sval;
-	int ival;
-	double dval;
-	zend_long lval;
-	zend_string *str;
-	void *ptr;
-} impl_val;
-
 typedef struct decl_var {
 	char *name;
 	unsigned pointer_level;
@@ -254,6 +244,26 @@ static inline void free_decls(decls *decls) {
 	}
 	free(decls->list);
 	free(decls);
+}
+
+typedef union impl_val {
+	unsigned char bval;
+	char cval;
+	short sval;
+	int ival;
+	double dval;
+	zend_long lval;
+	zend_string *str;
+	void *ptr;
+} impl_val;
+
+static inline impl_val *deref_impl_val(unsigned level, impl_val *ret_val, decl_arg *darg) {
+	unsigned i;
+
+	for (i = level; i < darg->var->pointer_level && ret_val->ptr; ++i) {
+		ret_val = *(void **)ret_val;
+	}
+	return ret_val;
 }
 
 typedef struct impl_type {
@@ -616,6 +626,7 @@ static inline impl_stmts *add_impl_stmt(impl_stmts *stmts, impl_stmt *stmt) {
 		stmts->fre.list = add_impl_stmt_ex(stmts->fre.list, ++stmts->fre.count, stmt->s.fre);
 		break;
 	}
+	free(stmt);
 	return stmts;
 }
 

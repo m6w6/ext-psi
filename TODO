@@ -3,3 +3,4 @@
 * let the various list types be hashtables where appropriate
 * check out jit-dynamic
 * fix arginfo with nullable types
+* pemalloc
