@@ -289,6 +289,18 @@ void psi_do_clean(impl *impl)
 {
 	size_t i;
 
+	for (i = 0; i < impl->func->args->count; ++i ) {
+		impl_arg *iarg = impl->func->args->args[i];
+
+		switch (iarg->type->type) {
+		case PSI_T_STRING:
+			if (iarg->val.str) {
+				zend_string_release(iarg->val.str);
+			}
+			break;
+		}
+	}
+
 	for (i = 0; i < impl->decl->args->count; ++i) {
 		decl_arg *darg = impl->decl->args->args[i];
 
