@@ -36,6 +36,7 @@ void psi_do_free(free_stmt *fre);
 void psi_do_clean(impl *impl);
 
 ZEND_BEGIN_MODULE_GLOBALS(psi)
+	char *engine;
 	char *directory;
 	PSI_Context context;
 ZEND_END_MODULE_GLOBALS(psi);

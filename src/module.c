@@ -11,11 +11,13 @@
 #include "parser.h"
 
 #include "libjit.h"
+#include "libffi.h"
 
 ZEND_DECLARE_MODULE_GLOBALS(psi);
 
 PHP_INI_BEGIN()
-	STD_PHP_INI_ENTRY("psi.directory", "psis", PHP_INI_ALL, OnUpdateString, directory, zend_psi_globals, psi_globals)
+	STD_PHP_INI_ENTRY("psi.engine", "ffi", PHP_INI_SYSTEM, OnUpdateString, engine, zend_psi_globals, psi_globals)
+	STD_PHP_INI_ENTRY("psi.directory", "psis", PHP_INI_SYSTEM, OnUpdateString, directory, zend_psi_globals, psi_globals)
 PHP_INI_END();
 
 void psi_error(int type, const char *msg, ...)
@@ -313,9 +315,17 @@ void psi_do_clean(impl *impl)
 
 PHP_MINIT_FUNCTION(psi)
 {
+	PSI_ContextOps *ops;
+
 	REGISTER_INI_ENTRIES();
 
-	PSI_ContextInit(&PSI_G(context), PSI_Libjit(), psi_error);
+	if (!strcasecmp(PSI_G(engine), "jit")) {
+		ops = PSI_Libjit();
+	} else {
+		ops = PSI_Libffi();
+	}
+
+	PSI_ContextInit(&PSI_G(context), ops, psi_error);
 	PSI_ContextBuild(&PSI_G(context), PSI_G(directory));
 
 	return SUCCESS;
