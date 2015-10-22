@@ -25,6 +25,7 @@ typedef struct decl_type {
 	char *name;
 	token_t type;
 	struct decl_type *real;
+	struct decl_struct *strct;
 } decl_type;
 
 static inline decl_type *init_decl_type(token_t type, char *name) {
@@ -246,6 +247,54 @@ static inline void free_decls(decls *decls) {
 	}
 	free(decls->list);
 	free(decls);
+}
+
+typedef struct decl_struct_layout {
+	size_t pos;
+	size_t len;
+} decl_struct_layout;
+
+typedef struct decl_struct {
+	char *name;
+	decl_args *args;
+	decl_struct_layout *layout;
+} decl_struct;
+
+static inline decl_struct *init_decl_struct(char *name, decl_args *args) {
+	decl_struct *s = calloc(1, sizeof(*s));
+	s->name = strdup(name);
+	s->args = args;
+	return s;
+}
+
+static inline void free_decl_struct(decl_struct *s) {
+	free_decl_args(s->args);
+	free(s->name);
+	free(s);
+}
+
+typedef struct decl_structs {
+	size_t count;
+	decl_struct **list;
+} decl_structs;
+
+static inline decl_structs *add_decl_struct(decl_structs *ss, decl_struct *s) {
+	if (!ss) {
+		ss = calloc(1, sizeof(*ss));
+	}
+	ss->list = realloc(ss->list, ++ss->count * sizeof(*ss->list));
+	ss->list[ss->count-1] = s;
+	return ss;
+}
+
+static inline void free_decl_structs(decl_structs *ss) {
+	size_t i;
+
+	for (i = 0; i < ss->count; ++i) {
+		free_decl_struct(ss->list[i]);
+	}
+	free(ss->list);
+	free(ss);
 }
 
 typedef union impl_val {
@@ -775,6 +824,7 @@ typedef void (*psi_error_cb)(int type, const char *msg, ...);
 #define PSI_DATA_MEMBERS \
 	constants *consts; \
 	decl_typedefs *defs; \
+	decl_structs *structs; \
 	decls *decls; \
 	impls *impls; \
 	char *lib; \
@@ -795,6 +845,9 @@ static inline void PSI_DataDtor(PSI_Data *data) {
 	}
 	if (data->defs) {
 		free_decl_typedefs(data->defs);
+	}
+	if (data->structs) {
+		free_decl_structs(data->structs);
 	}
 	if (data->decls) {
 		free_decls(data->decls);

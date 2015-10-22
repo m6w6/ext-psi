@@ -10,6 +10,9 @@
 # endif
 # if HAVE_SYS_MMAN_H
 #  include <sys/mman.h>
+#  ifndef MAP_ANONYMOUS
+#   define MAP_ANONYMOUS MAP_ANON
+#  endif
 # endif
 #endif
 

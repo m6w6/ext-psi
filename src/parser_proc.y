@@ -46,6 +46,14 @@ block ::= decl_typedef(def). {
 block ::= constant(constant). {
 	P->consts = add_constant(P->consts, constant);
 }
+block ::= decl_struct(strct). {
+	P->structs = add_decl_struct(P->structs, strct);
+}
+
+%type decl_struct {decl_struct*}
+decl_struct(strct) ::= STRUCT NAME(N) LBRACE struct_args(args) RBRACE. {
+	strct = init_decl_struct(N->text, args);
+}
 
 %type const_type {const_type*}
 const_type(type_) ::= BOOL(T). {
@@ -71,9 +79,15 @@ constant(constant) ::= CONST const_type(type) NSNAME(T) EQUALS impl_def_val(val)
 }
 
 %type decl_typedef {decl_typedef*}
-decl_typedef(def) ::= TYPEDEF NAME(ALIAS) decl_type(type) EOS. {
+decl_typedef(def) ::= TYPEDEF decl_type(type) NAME(ALIAS) EOS. {
 	def = init_decl_typedef(ALIAS->text, type);
 	free(ALIAS);
+}
+decl_typedef(def) ::= TYPEDEF STRUCT(S) NAME(N) NAME(ALIAS) EOS. {
+	def = init_decl_typedef(ALIAS->text, init_decl_type(S->type, N->text));
+	free(ALIAS);
+	free(S);
+	free(N);
 }
 
 %type decl {decl*}
@@ -101,7 +115,7 @@ decl_var(var) ::= NAME(T) LBRACKET NUMBER(D) RBRACKET. {
 	free(T);
 	free(D);
 }
-decl_var(var) ::= pointers(p) NAME(T) LBRACKET DIGITS(D) RBRACKET. {
+decl_var(var) ::= pointers(p) NAME(T) LBRACKET NUMBER(D) RBRACKET. {
 	var = init_decl_var(T->text, p+1, atol(D->text));
 	free(T);
 	free(D);
@@ -126,6 +140,13 @@ decl_args(args) ::= decl_arg(arg). {
 	args = init_decl_args(arg);
 }
 decl_args(args) ::= decl_args(args_) COMMA decl_arg(arg). {
+	args = add_decl_arg(args_, arg);
+}
+%type struct_args {decl_args*}
+struct_args(args) ::= decl_arg(arg) EOS. {
+	args = init_decl_args(arg);
+}
+struct_args(args) ::= struct_args(args_) decl_arg(arg) EOS. {
 	args = add_decl_arg(args_, arg);
 }
 

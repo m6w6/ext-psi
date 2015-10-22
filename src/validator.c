@@ -117,7 +117,7 @@ static inline int validate_decl_func(PSI_Validator *V, decl *decl, decl_arg *fun
 		return 0;
 	}
 
-	decl->dlptr = dlsym(V->dlopened, func->var->name);
+	decl->dlptr = dlsym(V->dlopened ?: RTLD_NEXT, func->var->name);
 	if (!decl->dlptr) {
 		V->error(PSI_WARNING, "Failed to located symbol '%s': %s",
 			func->var->name, dlerror());
