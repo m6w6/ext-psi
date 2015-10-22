@@ -107,6 +107,11 @@ void psi_to_int(impl_val *ret_val, decl_arg *func, zval *return_value)
 	}
 }
 
+void psi_to_double(impl_val *ret_val, decl_arg *func, zval *return_value)
+{
+	RETVAL_DOUBLE(deref_impl_val(0, ret_val, func)->dval);
+}
+
 void psi_to_string(impl_val *ret_val, decl_arg *func, zval *return_value)
 {
 	switch (real_decl_type(func->type)->type) {

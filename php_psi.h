@@ -27,6 +27,7 @@ int psi_internal_type(impl_type *type);
 zend_internal_arg_info *psi_internal_arginfo(impl *impl);
 size_t psi_num_min_args(impl *impl);
 void psi_to_int(impl_val *ret_val, decl_arg *func, zval *return_value);
+void psi_to_double(impl_val *ret_val, decl_arg *func, zval *return_value);
 void psi_to_string(impl_val *ret_val, decl_arg *func, zval *return_value);
 ZEND_RESULT_CODE psi_parse_args(zend_execute_data *execute_data, impl *impl);
 impl_val *psi_do_let(decl_arg *darg);

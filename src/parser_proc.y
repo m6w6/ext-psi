@@ -89,12 +89,22 @@ decl_abi(abi) ::= NAME(T). {
 
 %type decl_var {decl_var*}
 decl_var(var) ::= NAME(T). {
-	var = init_decl_var(T->text, 0);
+	var = init_decl_var(T->text, 0, 0);
 	free(T);
 }
 decl_var(var) ::= pointers(p) NAME(T). {
-	var = init_decl_var(T->text, p);
+	var = init_decl_var(T->text, p, 0);
 	free(T);
+}
+decl_var(var) ::= NAME(T) LBRACKET DIGITS(D) RBRACKET. {
+	var = init_decl_var(T->text, 1, atol(D->text));
+	free(T);
+	free(D);
+}
+decl_var(var) ::= pointers(p) NAME(T) LBRACKET DIGITS(D) RBRACKET. {
+	var = init_decl_var(T->text, p+1, atol(D->text));
+	free(T);
+	free(D);
 }
 
 %type decl_vars {decl_vars*}

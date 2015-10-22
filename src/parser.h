@@ -92,13 +92,15 @@ static void free_decl_typedefs(decl_typedefs *defs) {
 typedef struct decl_var {
 	char *name;
 	unsigned pointer_level;
+	unsigned array_size;
 	struct decl_arg *arg;
 } decl_var;
 
-static inline decl_var *init_decl_var(char *name, unsigned pl) {
+static inline decl_var *init_decl_var(char *name, unsigned pl, unsigned as) {
 	decl_var *v = malloc(sizeof(*v));
 	v->name = (char *) strdup((const char *) name);
 	v->pointer_level = pl;
+	v->array_size = as;
 	return v;
 }
 
