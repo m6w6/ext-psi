@@ -291,11 +291,24 @@ impl_stmt(stmt) ::= free_stmt(free). {
 }
 
 %type let_stmt {let_stmt*}
+let_stmt(let) ::= LET decl_var(var) EOS. {
+	let = init_let_stmt(var, NULL);
+}
 let_stmt(let) ::= LET decl_var(var) EQUALS let_value(val) EOS. {
 	let = init_let_stmt(var, val);
 }
 
 %type let_value {let_value*}
+let_value(val) ::= CALLOC(F) LPAREN NUMBER(N) COMMA decl_type(t) RPAREN. {
+	val = init_let_value(
+		init_let_func(F->type, F->text,
+			atol(N->text) * psi_t_size(real_decl_type(t)->type)
+		), NULL, 0
+	);
+	free_decl_type(t);
+	free(F);
+	free(N);
+}
 let_value(val) ::= let_func(func) LPAREN impl_var(var) RPAREN. {
 	val = init_let_value(func, var, 0);
 }
@@ -311,23 +324,23 @@ let_value(val) ::= NULL. {
 
 %type let_func {let_func*}
 let_func(func) ::= STRLEN(T). {
-	func = init_let_func(T->type, T->text);
+	func = init_let_func(T->type, T->text, 0);
 	free(T);
 }
 let_func(func) ::= STRVAL(T). {
-	func = init_let_func(T->type, T->text);
+	func = init_let_func(T->type, T->text, 0);
 	free(T);
 }
 let_func(func) ::= INTVAL(T). {
-	func = init_let_func(T->type, T->text);
+	func = init_let_func(T->type, T->text, 0);
 	free(T);
 }
 let_func(func) ::= FLOATVAL(T). {
-	func = init_let_func(T->type, T->text);
+	func = init_let_func(T->type, T->text, 0);
 	free(T);
 }
 let_func(func) ::= BOOLVAL(T). {
-	func = init_let_func(T->type, T->text);
+	func = init_let_func(T->type, T->text, 0);
 	free(T);
 }
 
@@ -342,6 +355,10 @@ set_value(val) ::= set_func(func) LPAREN decl_vars(vars) RPAREN. {
 }
 
 %type set_func {set_func*}
+set_func(func) ::= TO_ARRAY(T). {
+	func = init_set_func(T->type, T->text);
+	free(T);
+}
 set_func(func) ::= TO_STRING(T). {
 	func = init_set_func(T->type, T->text);
 	free(T);

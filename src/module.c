@@ -142,6 +142,85 @@ void psi_to_string(impl_val *ret_val, decl_arg *func, zval *return_value)
 	}
 }
 
+size_t psi_t_size(token_t t)
+{
+	size_t size;
+
+	switch (t) {
+	case PSI_T_CHAR:
+		size = sizeof(char);
+		break;
+	case PSI_T_SINT8:
+	case PSI_T_UINT8:
+		size = 1;
+		break;
+	case PSI_T_SHORT:
+		size = sizeof(short);
+		break;
+	case PSI_T_SINT16:
+	case PSI_T_UINT16:
+		size = 2;
+		break;
+	case PSI_T_INT:
+		size = sizeof(int);
+		break;
+	case PSI_T_SINT32:
+	case PSI_T_UINT32:
+		size = 4;
+		break;
+	case PSI_T_LONG:
+		size = sizeof(long);
+		break;
+	case PSI_T_SINT64:
+	case PSI_T_UINT64:
+		size = 8;
+		break;
+	case PSI_T_FLOAT:
+		size = sizeof(float);
+		break;
+	case PSI_T_DOUBLE:
+		size = sizeof(double);
+		break;
+	EMPTY_SWITCH_DEFAULT_CASE();
+	}
+	return size;
+}
+
+static impl_val *iterate(impl_val *val, token_t t, unsigned i, impl_val *tmp)
+{
+	size_t size = psi_t_size(t);
+
+	memset(tmp, 0, sizeof(*tmp));
+	memcpy(tmp, val->ptr + size * i, size);
+	return tmp;
+}
+
+void psi_to_array(impl_val *ret_val, decl_arg *func, zval *return_value)
+{
+	zval ele;
+	unsigned i;
+	impl_val tmp;
+	token_t t = real_decl_type(func->type)->type;
+
+	array_init(return_value);
+	ret_val = deref_impl_val(0, ret_val, func);
+	for (i = 0; i < func->var->array_size; ++i) {
+		impl_val *ptr = iterate(ret_val, t, i, &tmp);
+
+		switch (t) {
+		case PSI_T_FLOAT:
+		case PSI_T_DOUBLE:
+			ZVAL_DOUBLE(&ele, ptr->dval);
+			break;
+		default:
+			ZVAL_LONG(&ele, ptr->lval);
+			break;
+		}
+
+		add_next_index_zval(return_value, &ele);
+	}
+}
+
 ZEND_RESULT_CODE psi_parse_args(zend_execute_data *execute_data, impl *impl)
 {
 	impl_arg *iarg;
@@ -184,6 +263,9 @@ ZEND_RESULT_CODE psi_parse_args(zend_execute_data *execute_data, impl *impl)
 			} else if (iarg->def) {
 				iarg->val.str = zend_string_init(str.val, str.len, 0);
 			}
+		} else if (PSI_T_ARRAY == iarg->type->type) {
+			/* handled as _zv in let or set */
+			Z_PARAM_PROLOGUE(0);
 		} else {
 			error_code = ZPP_ERROR_FAILURE;
 			break;
@@ -203,8 +285,16 @@ impl_val *psi_do_let(decl_arg *darg)
 	impl_arg *iarg = darg->let->arg;
 
 	if (!iarg) {
-		/* let foo = NULL */
-		memset(arg_val, 0, sizeof(*arg_val));
+		/*
+		 * let foo = NULL;
+		 * let foo;
+		 */
+		if (darg->var->array_size) {
+			arg_val->ptr = ecalloc(darg->var->array_size, sizeof(*arg_val));
+			darg->let->mem = arg_val->ptr;
+		} else {
+			memset(arg_val, 0, sizeof(*arg_val));
+		}
 		return arg_val;
 	}
 	switch (darg->let->val->func->type) {
@@ -244,6 +334,10 @@ impl_val *psi_do_let(decl_arg *darg)
 			zend_string_release(zs);
 		}
 		break;
+	case PSI_T_CALLOC:
+		arg_val->ptr = calloc(1, darg->let->val->func->size);
+		darg->let->mem = arg_val->ptr;
+		break;
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}
 
@@ -260,6 +354,9 @@ void psi_do_set(zval *return_value, set_func *func, decl_vars *vars)
 	switch (func->type) {
 	case PSI_T_TO_STRING:
 		psi_to_string(val, vars->vars[0]->arg, return_value);
+		break;
+	case PSI_T_TO_ARRAY:
+		psi_to_array(val, vars->vars[0]->arg, return_value);
 		break;
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}

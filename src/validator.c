@@ -282,7 +282,7 @@ static inline int validate_impl_stmts(PSI_Validator *V, impl *impl, impl_stmts *
 		let_stmt *let = stmts->let.list[i];
 		int check = 0;
 
-		if (let->val->var) {
+		if (let->val && let->val->var) {
 			for (j = 0; j < impl->func->args->count; ++j) {
 				impl_arg *iarg = impl->func->args->args[j];
 

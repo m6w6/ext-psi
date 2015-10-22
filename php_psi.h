@@ -23,6 +23,7 @@ extern zend_module_entry psi_module_entry;
 #include "parser.h"
 
 void psi_error(int type, const char *msg, ...);
+size_t psi_t_size(token_t t);
 int psi_internal_type(impl_type *type);
 zend_internal_arg_info *psi_internal_arginfo(impl *impl);
 size_t psi_num_min_args(impl *impl);

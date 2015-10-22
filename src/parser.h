@@ -405,12 +405,14 @@ static inline void free_impl_func(impl_func *f) {
 typedef struct let_func {
 	token_t type;
 	char *name;
+	size_t size;
 } let_func;
 
-static inline let_func *init_let_func(token_t type, char *name) {
+static inline let_func *init_let_func(token_t type, char *name, size_t size) {
 	let_func *func = malloc(sizeof(*func));
 	func->type = type;
-	func->name = (char *) strdup((const char *) name);
+	func->name = strdup(name);
+	func->size = size;
 	return func;
 }
 

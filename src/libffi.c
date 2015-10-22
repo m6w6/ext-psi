@@ -216,7 +216,8 @@ static void handler(ffi_cif *_sig, void *_result, void **_args, void *_data)
 			decl_arg *darg = data->impl->decl->args->args[i];
 
 			arg_ptr[i] = psi_do_let(darg);
-			arg_prm[i] = darg->let->val->is_reference ? &arg_ptr[i] : arg_ptr[i];
+			arg_prm[i] = (darg->let->val && darg->let->val->is_reference)
+					? &arg_ptr[i] : arg_ptr[i];
 
 			darg->let->ptr = arg_ptr[i];
 		}
