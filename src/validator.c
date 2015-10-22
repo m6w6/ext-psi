@@ -409,7 +409,7 @@ int PSI_ValidatorValidate(PSI_Validator *V)
 	if (V->decls && !validate_decls(V)) {
 		return 0;
 	}
-	if (V->impls && !validate_impls(V)) {
+	if (!V->impls || !validate_impls(V)) {
 		return 0;
 	}
 	return 1;

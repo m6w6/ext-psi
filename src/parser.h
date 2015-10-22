@@ -461,7 +461,9 @@ static inline let_stmt *init_let_stmt(decl_var *var, let_value *val) {
 
 static inline void free_let_stmt(let_stmt *stmt) {
 	free_decl_var(stmt->var);
-	free_let_value(stmt->val);
+	if (stmt->val) {
+		free_let_value(stmt->val);
+	}
 	free(stmt);
 }
 

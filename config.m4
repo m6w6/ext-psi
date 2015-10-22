@@ -1,9 +1,9 @@
-PHP_ARG_ENABLE(psi, whether to enable psi support,
+PHP_ARG_ENABLE(psi, whether to enable PHP System Interface support,
 [  --enable-psi            Enable PHP System Interface support])
 PHP_ARG_WITH(psi-libjit, where to find libjit,
-[  --with-psi-libjit=DIR   PSI: path to libjit])
+[  --with-psi-libjit=DIR   PSI: path to libjit], [], no)
 PHP_ARG_WITH(psi-libffi, where to find libjit,
-[  --with-psi-libffi=DIR   PSI: path to libffi])
+[  --with-psi-libffi=DIR   PSI: path to libffi], [], no)
 
 if test "$PHP_PSI" != "no"; then
 	AC_ARG_VAR(LEMON, The lemon parser generator of the SQLite project)
@@ -26,6 +26,9 @@ if test "$PHP_PSI" != "no"; then
 	fi])
 	if $PSI_cv_LIBFFI
 	then
+		AC_MSG_CHECKING(for libffi)
+		PSI_cv_LIBFFI_DIR=`$PKG_CONFIG --variable=prefix libffi`
+		AC_MSG_RESULT($PSI_cv_LIBFFI_DIR)
 		PHP_EVAL_INCLINE(`$PKG_CONFIG --cflags libffi`)
 		PHP_EVAL_LIBLINE(`$PKG_CONFIG --libs libffi`, PSI_SHARED_LIBADD)
 	else
@@ -40,24 +43,25 @@ if test "$PHP_PSI" != "no"; then
 		done])
 		if test -n "$PSI_cv_LIBFFI_DIR"
 		then
-			PHP_CHECK_LIBRARY(ffi, ffi_closure_alloc, [
-				AC_DEFINE(PSI_HAVE_FFI_CLOSURE_ALLOC, 1, [ ])
-			], [
-			], -L$PSI_cv_LIBFFI_DIR/$PHP_LIBDIR)
-			PHP_CHECK_LIBRARY(ffi, ffi_closure_free, [
-				AC_DEFINE(PSI_HAVE_FFI_CLOSURE_FREE, 1, [ ])
-			], [
-			], -L$PSI_cv_LIBFFI_DIR/$PHP_LIBDIR)
-			PHP_CHECK_LIBRARY(ffi, ffi_prep_closure, [
-				AC_DEFINE(PSI_HAVE_FFI_PREP_CLOSURE, 1, [ ])
-			], [
-			], -L$PSI_cv_LIBFFI_DIR/$PHP_LIBDIR)
 			PHP_ADD_INCLUDE($PSI_cv_LIBFFI_DIR/include/ffi)
 			PHP_ADD_LIBRARY_WITH_PATH(ffi, $PSI_cv_LIBFFI_DIR/$PHP_LIBDIR, PSI_SHARED_LIBADD)
 		else
 			AC_MSG_WARN([Could not find libffi, please provide the base install path])
 		fi
 	fi
+	PHP_CHECK_LIBRARY(ffi, ffi_closure_alloc, [
+		PHP_CHECK_LIBRARY(ffi, ffi_prep_closure_loc, [
+			AC_DEFINE(PSI_HAVE_FFI_PREP_CLOSURE_LOC, 1, [ ])
+		], [], -L$PSI_cv_LIBFFI_DIR/$PHP_LIBDIR)
+		AC_DEFINE(PSI_HAVE_FFI_CLOSURE_ALLOC, 1, [ ])
+	], [
+		PHP_CHECK_LIBRARY(ffi, ffi_prep_closure, [
+			AC_CHECK_HEADERS(sys/mman.h)
+			PHP_CHECK_FUNC(mmap)
+			AC_DEFINE(PSI_HAVE_FFI_PREP_CLOSURE, 1, [ ])
+		], [
+		], -L$PSI_cv_LIBFFI_DIR/$PHP_LIBDIR)
+	], -L$PSI_cv_LIBFFI_DIR/$PHP_LIBDIR)
 
 	AC_CACHE_CHECK(for libjit, PSI_cv_LIBJIT_DIR, [
 	for PSI_cv_LIBJIT_DIR in $PHP_PSI_LIBJIT {/usr{,/local},/opt}{,/libjit}
@@ -75,7 +79,7 @@ if test "$PHP_PSI" != "no"; then
 	else
 		AC_MSG_WARN([Could not find libjit, please provide the base install path])
 	fi
-
+	
 	PHP_SUBST(PSI_SHARED_LIBADD)
 
 	PHP_PSI_SRCDIR=PHP_EXT_SRCDIR(psi)

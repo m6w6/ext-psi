@@ -217,7 +217,6 @@ token_t PSI_ParserScan(PSI_Parser *P)
 		TO_FLOAT = 'to_float';
 		TO_BOOL = 'to_bool';
 		NUMBER = [+-]? [0-9]* "."? [0-9]+ ([eE] [+-]? [0-9]+)?;
-		DIGITS = [0-9]+;
 
 		"#" .* "\n" { ++P->line; RETURN(PSI_T_COMMENT);}
 		"(" {RETURN(PSI_T_LPAREN);}
@@ -275,7 +274,6 @@ token_t PSI_ParserScan(PSI_Parser *P)
 		TO_FLOAT {RETURN(PSI_T_TO_FLOAT);}
 		TO_BOOL {RETURN(PSI_T_TO_BOOL);}
 		NUMBER {RETURN(PSI_T_NUMBER);}
-		DIGITS {RETURN(PSI_T_DIGITS);}
 		NAME {RETURN(PSI_T_NAME);}
 		NSNAME {RETURN(PSI_T_NSNAME);}
 		QUOTED_STRING {RETURN(PSI_T_QUOTED_STRING);}

@@ -96,7 +96,7 @@ decl_var(var) ::= pointers(p) NAME(T). {
 	var = init_decl_var(T->text, p, 0);
 	free(T);
 }
-decl_var(var) ::= NAME(T) LBRACKET DIGITS(D) RBRACKET. {
+decl_var(var) ::= NAME(T) LBRACKET NUMBER(D) RBRACKET. {
 	var = init_decl_var(T->text, 1, atol(D->text));
 	free(T);
 	free(D);
