@@ -61,6 +61,7 @@ static int validate_lib(PSI_Validator *V) {
 	}
 	return 1;
 }
+
 static inline int locate_decl_type_alias(decl_typedefs *defs, decl_type *type) {
 	size_t i;
 
@@ -75,14 +76,38 @@ static inline int locate_decl_type_alias(decl_typedefs *defs, decl_type *type) {
 	}
 	return 0;
 }
+static inline int locate_decl_type_struct(decl_structs *structs, decl_type *type) {
+	size_t i;
+
+	if (type->strct) {
+		return 1;
+	}
+	for (i = 0; i < structs->count; ++i) {
+		if (!strcmp(structs->list[i]->name, type->name)) {
+			type->strct = structs->list[i];
+			return 1;
+		}
+	}
+	return 0;
+}
 static inline int validate_decl_type(PSI_Validator *V, decl_arg *arg, decl_type *type) {
-	if (type->type == PSI_T_NAME) {
+	switch (type->type) {
+	case PSI_T_NAME:
 		if (!V->defs || !locate_decl_type_alias(V->defs, type)) {
 			V->error(PSI_WARNING, "Cannot use '%s' as type for '%s';"
-				" Use 'typedef <type> <basic_type>;' statement",
+				" Use 'typedef <type> <alias>;' statement",
 				type->name, arg->var->name);
 			return 0;
 		}
+		return validate_decl_type(V, arg, type->real);
+	case PSI_T_STRUCT:
+		if (!V->structs || !locate_decl_type_struct(V->structs, type)) {
+			V->error(PSI_WARNING, "Cannot use '%s' as type for '%s';"
+				" Use 'typedef struct <name> <alias>;' statement",
+				type->name, arg->var->name);
+			return 0;
+		}
+		break;
 	}
 	return 1;
 }
@@ -142,17 +167,17 @@ static inline int validate_decl_abi(PSI_Validator *V, decl_abi *abi) {
 	V->error(PSI_WARNING, "Invalid calling convention: '%s'", abi->convention);
 	return 0;
 }
-static inline int validate_decl_arg(PSI_Validator *V, decl *decl, decl_arg *arg) {
+static inline int validate_decl_arg(PSI_Validator *V, decl_arg *arg) {
 	if (!validate_decl_type(V, arg, arg->type)) {
 		return 0;
 	}
 	return 1;
 }
-static inline int validate_decl_args(PSI_Validator *V, decl *decl, decl_args *args) {
+static inline int validate_decl_args(PSI_Validator *V, decl_args *args) {
 	size_t i;
 
 	for (i = 0; i < args->count; ++i) {
-		if (!validate_decl_arg(V, decl, args->args[i])) {
+		if (!validate_decl_arg(V, args->args[i])) {
 			return 0;
 		}
 	}
@@ -165,7 +190,7 @@ static inline int validate_decl(PSI_Validator *V, decl *decl) {
 	if (!validate_decl_func(V, decl, decl->func)) {
 		return 0;
 	}
-	if (decl->args && !validate_decl_args(V, decl, decl->args)) {
+	if (decl->args && !validate_decl_args(V, decl->args)) {
 		return 0;
 	}
 	return 1;
@@ -175,6 +200,37 @@ static inline int validate_decls(PSI_Validator *V) {
 
 	for (i = 0; i < V->decls->count; ++i) {
 		if (!validate_decl(V, V->decls->list[i])) {
+			return 0;
+		}
+	}
+	return 1;
+}
+static inline int validate_struct(PSI_Validator *V, decl_struct *s) {
+	size_t i;
+
+	if (!validate_decl_args(V, s->args)) {
+		return 0;
+	}
+
+	s->layout = calloc(s->args->count, sizeof(*s->layout));
+	for (i = 0; i < s->args->count; ++i) {
+		decl_type *t = real_decl_type(s->args->args[i]->type);
+
+		if (i) {
+			decl_struct_layout *l = &s->layout[i-1];
+			s->layout[i].pos = psi_t_align(t->type, l->pos + l->size);
+		} else {
+			s->layout[i].pos = 0;
+		}
+		s->layout[i].len = psi_t_size(t->type);
+	}
+	return 1;
+}
+static inline int validate_structs(PSI_Validator *V) {
+	size_t i;
+
+	for (i = 0; i < V->structs->count; ++i) {
+		if (!validate_struct(V->structs->list[i])) {
 			return 0;
 		}
 	}
@@ -404,6 +460,9 @@ int PSI_ValidatorValidate(PSI_Validator *V)
 		return 0;
 	}
 	if (V->defs && !validate_typedefs(V)) {
+		return 0;
+	}
+	if (V->structs && !validate_structs(V)) {
 		return 0;
 	}
 	if (V->decls && !validate_decls(V)) {

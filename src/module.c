@@ -142,6 +142,65 @@ void psi_to_string(impl_val *ret_val, decl_arg *func, zval *return_value)
 	}
 }
 
+size_t psi_t_alignment(token_t t)
+{
+	size_t align;
+# define PSI_TAS_D(T) struct TAS_ ##T { \
+	char c; \
+	##T x; \
+}
+# define PSI_TAS_C(T) align = offsetof(struct TAS_ ##T, x)
+# define PSI_TAS_CASE(T) { \
+	PSI_TAS_D(T); \
+	PSI_TAS_C(T); \
+}
+	switch (t) {
+	case PSI_T_CHAR:
+		PSI_TAS_CASE(char);
+		break;
+	case PSI_T_SINT8:
+		PSI_TAS_CASE(int8_t);
+		break;
+	case PSI_T_UINT8:
+		PSI_TAS_CASE(uint8_t);
+		break;
+	case PSI_T_SHORT:
+		PSI_TAS_CASE(short);
+		break;
+	case PSI_T_SINT16:
+		PSI_TAS_CASE(int16_t);
+		break;
+	case PSI_T_UINT16:
+		PSI_TAS_CASE(uint16_t);
+		break;
+	case PSI_T_INT:
+		PSI_TAS_CASE(int);
+		break;
+	case PSI_T_SINT32:
+		PSI_TAS_CASE(int32_t);
+		break;
+	case PSI_T_UINT32:
+		PSI_TAS_CASE(uint32_t);
+		break;
+	case PSI_T_LONG:
+		PSI_TAS_CASE(long);
+		break;
+	case PSI_T_SINT64:
+		PSI_TAS_CASE(int64_t);
+		break;
+	case PSI_T_UINT64:
+		PSI_TAS_CASE(uint64_t);
+		break;
+	case PSI_T_FLOAT:
+		PSI_TAS_CASE(float);
+		break;
+	case PSI_T_DOUBLE:
+		PSI_TAS_CASE(double);
+		break;
+	EMPTY_SWITCH_DEFAULT_CASE();
+	}
+}
+
 size_t psi_t_size(token_t t)
 {
 	size_t size;
@@ -184,6 +243,12 @@ size_t psi_t_size(token_t t)
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}
 	return size;
+}
+
+size_t psi_t_align(token_t t, size_t s)
+{
+	size_t a = psi_t_alignment(t);
+	return ((s - 1) | (a - 1)) + 1;
 }
 
 static impl_val *iterate(impl_val *val, token_t t, unsigned i, impl_val *tmp)
