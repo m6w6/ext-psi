@@ -45,3 +45,7 @@ tests/*/*.sh
 /parser.h
 /parser_proc.h
 /validator.h
+/src/*.o
+/context.h
+/libffi.h
+/libjit.j
