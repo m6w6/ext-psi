@@ -221,7 +221,9 @@ static inline decl* init_decl(decl_abi *abi, decl_arg *func, decl_args *args) {
 static inline void free_decl(decl *d) {
 	free_decl_abi(d->abi);
 	free_decl_arg(d->func);
-	free_decl_args(d->args);
+	if (d->args) {
+		free_decl_args(d->args);
+	}
 	free(d);
 }
 
@@ -268,7 +270,9 @@ static inline decl_struct *init_decl_struct(char *name, decl_args *args) {
 }
 
 static inline void free_decl_struct(decl_struct *s) {
-	free_decl_args(s->args);
+	if (s->args) {
+		free_decl_args(s->args);
+	}
 	free(s->name);
 	free(s);
 }

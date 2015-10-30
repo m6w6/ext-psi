@@ -6,6 +6,8 @@
 
 #include <jit/jit.h>
 
+#include "php.h"
+#include "php_psi.h"
 #include "validator.h"
 
 PSI_Validator *PSI_ValidatorInit(PSI_Validator *V, PSI_Parser *P)
@@ -141,7 +143,9 @@ static inline int validate_decl_func(PSI_Validator *V, decl *decl, decl_arg *fun
 	if (!validate_decl_type(V, func, func->type)) {
 		return 0;
 	}
-
+#ifndef RTLD_NEXT
+# define RTLD_NEXT ((void *) -1l)
+#endif
 	decl->dlptr = dlsym(V->dlopened ?: RTLD_NEXT, func->var->name);
 	if (!decl->dlptr) {
 		V->error(PSI_WARNING, "Failed to located symbol '%s': %s",
@@ -214,15 +218,17 @@ static inline int validate_struct(PSI_Validator *V, decl_struct *s) {
 
 	s->layout = calloc(s->args->count, sizeof(*s->layout));
 	for (i = 0; i < s->args->count; ++i) {
-		decl_type *t = real_decl_type(s->args->args[i]->type);
+		decl_arg *darg = s->args->args[i];
+		decl_type *type = real_decl_type(darg->type);
+		token_t t = darg->var->pointer_level ? PSI_T_POINTER : type->type;
 
 		if (i) {
 			decl_struct_layout *l = &s->layout[i-1];
-			s->layout[i].pos = psi_t_align(t->type, l->pos + l->size);
+			s->layout[i].pos = psi_t_align(t, l->pos + l->len);
 		} else {
 			s->layout[i].pos = 0;
 		}
-		s->layout[i].len = psi_t_size(t->type);
+		s->layout[i].len = psi_t_size(t);
 	}
 	return 1;
 }
@@ -230,7 +236,7 @@ static inline int validate_structs(PSI_Validator *V) {
 	size_t i;
 
 	for (i = 0; i < V->structs->count; ++i) {
-		if (!validate_struct(V->structs->list[i])) {
+		if (!validate_struct(V, V->structs->list[i])) {
 			return 0;
 		}
 	}
@@ -294,7 +300,7 @@ static inline int validate_impl_stmts(PSI_Validator *V, impl *impl, impl_stmts *
 	if (stmts->ret.count != 1) {
 		if (stmts->ret.count > 1) {
 			V->error(PSI_WARNING, "Too many `ret` statements for implmentation %s;"
-					"found %zu, exactly one is needed",
+					" found %zu, exactly one is needed",
 					impl->func->name, stmts->ret.count);
 		} else {
 			V->error(PSI_WARNING, "Missing `ret` statement for implementation %s",
@@ -312,7 +318,7 @@ static inline int validate_impl_stmts(PSI_Validator *V, impl *impl, impl_stmts *
 	}
 
 	/* check that we have a let stmt for every decl arg */
-	for (i = 0; i < decl->args->count; ++i) {
+	if (decl->args) for (i = 0; i < decl->args->count; ++i) {
 		decl_arg *darg = decl->args->args[i];
 		int check = 0;
 
@@ -327,7 +333,7 @@ static inline int validate_impl_stmts(PSI_Validator *V, impl *impl, impl_stmts *
 		}
 		if (!check) {
 			V->error(PSI_WARNING, "Missing `let` statement for arg '%s %.*s%s'"
-					"of declaration '%s' for implementation '%s'",
+					" of declaration '%s' for implementation '%s'",
 					darg->type->name, (int) darg->var->pointer_level, "*****",
 					darg->var->name, decl->func->var->name, impl->func->name);
 			return 0;
@@ -339,7 +345,7 @@ static inline int validate_impl_stmts(PSI_Validator *V, impl *impl, impl_stmts *
 		int check = 0;
 
 		if (let->val && let->val->var) {
-			for (j = 0; j < impl->func->args->count; ++j) {
+			if (impl->func->args) for (j = 0; j < impl->func->args->count; ++j) {
 				impl_arg *iarg = impl->func->args->args[j];
 
 				if (!strcmp(let->val->var->name, iarg->var->name)) {
@@ -361,7 +367,7 @@ static inline int validate_impl_stmts(PSI_Validator *V, impl *impl, impl_stmts *
 		set_stmt *set = stmts->set.list[i];
 		int check = 0;
 
-		for (j = 0; j < impl->func->args->count; ++j) {
+		if (impl->func->args) for (j = 0; j < impl->func->args->count; ++j) {
 			impl_arg *iarg = impl->func->args->args[j];
 
 			if (!strcmp(set->var->name, iarg->var->name)) {
@@ -381,7 +387,7 @@ static inline int validate_impl_stmts(PSI_Validator *V, impl *impl, impl_stmts *
 			decl_var *set_var = set->val->vars->vars[j];
 
 			check = 0;
-			for (k = 0; k < decl->args->count; ++k) {
+			if (decl->args) for (k = 0; k < decl->args->count; ++k) {
 				decl_arg *set_arg = decl->args->args[k];
 
 				if (!strcmp(set_var->name, set_arg->var->name)) {
@@ -410,7 +416,7 @@ static inline int validate_impl_stmts(PSI_Validator *V, impl *impl, impl_stmts *
 			if (!strcmp(free_var->name, decl->func->var->name)) {
 				continue;
 			}
-			for (k = 0; k < decl->args->count; ++k) {
+			if (decl->args) for (k = 0; k < decl->args->count; ++k) {
 				decl_arg *free_arg = decl->args->args[k];
 
 				if (!strcmp(free_var->name, free_arg->var->name)) {

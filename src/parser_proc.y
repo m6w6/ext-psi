@@ -42,6 +42,9 @@ block ::= impl(impl). {
 }
 block ::= decl_typedef(def). {
 	P->defs = add_decl_typedef(P->defs, def);
+	if (def->type->strct) {
+		P->structs = add_decl_struct(P->structs, def->type->strct);
+	}
 }
 block ::= constant(constant). {
 	P->consts = add_constant(P->consts, constant);
@@ -88,6 +91,11 @@ decl_typedef(def) ::= TYPEDEF STRUCT(S) NAME(N) NAME(ALIAS) EOS. {
 	free(ALIAS);
 	free(S);
 	free(N);
+}
+decl_typedef(def) ::= TYPEDEF decl_struct(s) NAME(ALIAS) EOS. {
+	def = init_decl_typedef(ALIAS->text, init_decl_type(PSI_T_STRUCT, s->name));
+	def->type->strct = s;
+	free(ALIAS);
 }
 
 %type decl {decl*}
@@ -176,6 +184,10 @@ decl_type(type_) ::= FLOAT(T). {
 	free(T);
 }
 decl_type(type_) ::= DOUBLE(T). {
+	type_ = init_decl_type(T->type, T->text);
+	free(T);
+}
+decl_type(type_) ::= SIZE_T(T). {
 	type_ = init_decl_type(T->type, T->text);
 	free(T);
 }

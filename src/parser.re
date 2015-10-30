@@ -189,6 +189,7 @@ token_t PSI_ParserScan(PSI_Parser *P)
 		LONG = 'long';
 		FLOAT = 'float';
 		DOUBLE = 'double';
+		SIZE_T = 'size_t';
 		SINT8 = 'sint8';
 		UINT8 = 'uint8';
 		SINT16 = 'sint16';
@@ -249,6 +250,7 @@ token_t PSI_ParserScan(PSI_Parser *P)
 		LONG {RETURN(PSI_T_LONG);}
 		FLOAT {RETURN(PSI_T_FLOAT);}
 		DOUBLE {RETURN(PSI_T_DOUBLE);}
+		SIZE_T {RETURN(PSI_T_SIZE_T);}
 		SINT8 {RETURN(PSI_T_SINT8);}
 		UINT8 {RETURN(PSI_T_UINT8);}
 		SINT16 {RETURN(PSI_T_SINT16);}

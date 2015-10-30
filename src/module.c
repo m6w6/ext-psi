@@ -145,12 +145,16 @@ void psi_to_string(impl_val *ret_val, decl_arg *func, zval *return_value)
 size_t psi_t_alignment(token_t t)
 {
 	size_t align;
-# define PSI_TAS_D(T) struct TAS_ ##T { \
+#define PSI_TAS_D(T) struct PSI_TAS_ ##T { \
 	char c; \
-	##T x; \
+	T x; \
 }
-# define PSI_TAS_C(T) align = offsetof(struct TAS_ ##T, x)
-# define PSI_TAS_CASE(T) { \
+#define PSI_TAS_P(T) struct PSI_TAS_ ## T ## _pointer { \
+	char c; \
+	T *x; \
+}
+#define PSI_TAS_C(T) align = offsetof(struct PSI_TAS_ ##T, x)
+#define PSI_TAS_CASE(T) { \
 	PSI_TAS_D(T); \
 	PSI_TAS_C(T); \
 }
@@ -197,8 +201,19 @@ size_t psi_t_alignment(token_t t)
 	case PSI_T_DOUBLE:
 		PSI_TAS_CASE(double);
 		break;
+	case PSI_T_SIZE_T:
+		PSI_TAS_CASE(size_t);
+		break;
+	case PSI_T_POINTER:
+		{
+			PSI_TAS_P(char);
+			PSI_TAS_C(char_pointer);
+		}
+		break;
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}
+
+	return align;
 }
 
 size_t psi_t_size(token_t t)
@@ -239,6 +254,12 @@ size_t psi_t_size(token_t t)
 		break;
 	case PSI_T_DOUBLE:
 		size = sizeof(double);
+		break;
+	case PSI_T_SIZE_T:
+		size = sizeof(size_t);
+		break;
+	case PSI_T_POINTER:
+		size = sizeof(char *);
 		break;
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}
