@@ -286,9 +286,39 @@ void psi_to_array(impl_val *ret_val, decl_arg *func, zval *return_value)
 	zval ele;
 	unsigned i;
 	impl_val tmp;
-	token_t t = real_decl_type(func->type)->type;
+	decl_type *type = real_decl_type(func->type);
+	token_t t = type->type;
+	printf("%d:%s real=%p,strct=%p\n", t, type->name, type->real, type->strct);
 
 	array_init(return_value);
+
+	if (t == PSI_T_STRUCT) {
+		decl_struct *s = type->strct;
+		ret_val = deref_impl_val(func->var->pointer_level, ret_val, func);
+
+		for (i = 0; i < s->args->count; ++i) {
+			decl_arg *darg = s->args->args[i];
+			decl_struct_layout layout = s->layout[i];
+			impl_val tmp;
+			zval ztmp;
+			char *ptr = (char *) ret_val->ptr + layout.pos;
+
+			memset(&tmp, 0, sizeof(tmp));
+			memcpy(&tmp, ptr, layout.len);
+			switch (real_decl_type(darg->type)->type) {
+			case PSI_T_INT:
+			case PSI_T_LONG:
+				psi_to_int(&tmp, darg, &ztmp);
+				break;
+			case PSI_T_CHAR:
+				psi_to_string(&tmp, darg, &ztmp);
+				break;
+			EMPTY_SWITCH_DEFAULT_CASE();
+			}
+			add_assoc_zval(return_value, darg->var->name, &ztmp);
+		}
+		return;
+	}
 	ret_val = deref_impl_val(0, ret_val, func);
 	for (i = 0; i < func->var->array_size; ++i) {
 		impl_val *ptr = iterate(ret_val, t, i, &tmp);
@@ -456,6 +486,9 @@ void psi_do_return(impl *impl, impl_val *ret_val, zval *return_value)
 		break;
 	case PSI_T_TO_INT:
 		psi_to_int(ret_val, impl->decl->func, return_value);
+		break;
+	case PSI_T_TO_ARRAY:
+		psi_to_array(ret_val, impl->decl->func, return_value);
 		break;
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}
