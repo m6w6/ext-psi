@@ -29,10 +29,9 @@ typedef struct decl_type {
 } decl_type;
 
 static inline decl_type *init_decl_type(token_t type, char *name) {
-	decl_type *t = malloc(sizeof(*t));
+	decl_type *t = calloc(1, sizeof(*t));
 	t->type = type;
 	t->name = strdup(name);
-	t->real = NULL;
 	return t;
 }
 
