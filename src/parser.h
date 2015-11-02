@@ -14,6 +14,10 @@
 
 typedef int token_t;
 
+/* in php_psi.h */
+size_t psi_t_alignment(token_t);
+size_t psi_t_size(token_t);
+
 typedef struct PSI_Token {
 	token_t type;
 	unsigned line;
@@ -276,6 +280,12 @@ static inline void free_decl_struct(decl_struct *s) {
 	free(s);
 }
 
+static inline size_t decl_struct_size(decl_struct *s) {
+	size_t c = s->args->count - 1;
+	decl_type *type = real_decl_type(s->args->args[c]->type);
+	return s->layout[c].pos + psi_t_alignment(type->type);
+}
+
 typedef struct decl_structs {
 	size_t count;
 	decl_struct **list;
@@ -305,6 +315,7 @@ typedef union impl_val {
 	char cval;
 	short sval;
 	int ival;
+	float fval;
 	double dval;
 	zend_long lval;
 	zend_string *str;

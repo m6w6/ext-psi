@@ -214,6 +214,7 @@ token_t PSI_ParserScan(PSI_Parser *P)
 		INTVAL = 'intval';
 		FLOATVAL = 'floatval';
 		BOOLVAL = 'boolval';
+		ARRVAL = 'arrval';
 		CALLOC = 'calloc';
 		TO_ARRAY = 'to_array';
 		TO_STRING = 'to_string';
@@ -275,6 +276,7 @@ token_t PSI_ParserScan(PSI_Parser *P)
 		INTVAL {RETURN(PSI_T_INTVAL);}
 		FLOATVAL {RETURN(PSI_T_FLOATVAL);}
 		BOOLVAL {RETURN(PSI_T_BOOLVAL);}
+		ARRVAL {RETURN(PSI_T_ARRVAL);}
 		CALLOC {RETURN(PSI_T_CALLOC);}
 		TO_ARRAY {RETURN(PSI_T_TO_ARRAY);}
 		TO_STRING {RETURN(PSI_T_TO_STRING);}

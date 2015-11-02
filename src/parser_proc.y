@@ -376,6 +376,10 @@ let_func(func) ::= BOOLVAL(T). {
 	func = init_let_func(T->type, T->text, 0);
 	free(T);
 }
+let_func(func) ::= ARRVAL(T). {
+	func = init_let_func(T->type, T->text, 0);
+	free(T);
+}
 
 %type set_stmt {set_stmt*}
 set_stmt(set) ::= SET impl_var(var) EQUALS set_value(val) EOS. {

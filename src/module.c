@@ -281,6 +281,58 @@ static impl_val *iterate(impl_val *val, token_t t, unsigned i, impl_val *tmp)
 	return tmp;
 }
 
+void psi_from_zval(impl_val *mem, decl_arg *spec, zval *zv, void **tmp)
+{
+	decl_type *type = real_decl_type(spec->type);
+
+	switch (type->type) {
+	case PSI_T_FLOAT:
+		mem->fval = (float) zval_get_double(zv);
+		break;
+	case PSI_T_DOUBLE:
+		mem->dval = zval_get_double(zv);
+		break;
+	case PSI_T_CHAR:
+	case PSI_T_SINT8:
+	case PSI_T_UINT8:
+		if (spec->var->pointer_level) {
+			zend_string *zs = zval_get_string(zv);
+			*tmp = mem->ptr = estrndup(zs->val, zs->len);
+			zend_string_release(zs);
+			break;
+		}
+	default:
+		mem->lval = zval_get_long(zv);
+		break;
+	}
+}
+
+void *psi_array_to_struct(decl_struct *s, HashTable *arr)
+{
+	size_t i, j = 0, size = decl_struct_size(s);
+	char *mem = ecalloc(1, size + s->args->count * sizeof(void *));
+
+	for (i = 0; i < s->args->count; ++i) {
+		decl_struct_layout *layout = &s->layout[i];
+		decl_arg *darg = s->args->args[i];
+		decl_type *type = real_decl_type(darg->type);
+		zval *entry = zend_hash_str_find_ind(arr, darg->var->name, strlen(darg->var->name));
+
+		if (entry) {
+			impl_val val;
+			void *tmp = NULL;
+
+			memset(&tmp, 0, sizeof(tmp));
+			psi_from_zval(&val, darg, entry, &tmp);
+			memcpy(mem + layout->pos, &val, layout->len);
+			if (tmp) {
+				((void **)(mem + size))[j++] = tmp;
+			}
+		}
+	}
+	return mem;
+}
+
 void psi_to_array(impl_val *ret_val, decl_arg *func, zval *return_value)
 {
 	zval ele;
@@ -288,7 +340,6 @@ void psi_to_array(impl_val *ret_val, decl_arg *func, zval *return_value)
 	impl_val tmp;
 	decl_type *type = real_decl_type(func->type);
 	token_t t = type->type;
-	printf("%d:%s real=%p,strct=%p\n", t, type->name, type->real, type->strct);
 
 	array_init(return_value);
 
@@ -296,6 +347,7 @@ void psi_to_array(impl_val *ret_val, decl_arg *func, zval *return_value)
 		decl_struct *s = type->strct;
 		ret_val = deref_impl_val(func->var->pointer_level, ret_val, func);
 
+		ZEND_ASSERT(s);
 		for (i = 0; i < s->args->count; ++i) {
 			decl_arg *darg = s->args->args[i];
 			decl_struct_layout layout = s->layout[i];
@@ -454,6 +506,18 @@ impl_val *psi_do_let(decl_arg *darg)
 		arg_val->ptr = calloc(1, darg->let->val->func->size);
 		darg->let->mem = arg_val->ptr;
 		break;
+	case PSI_T_ARRVAL:
+		if (iarg->type->type == PSI_T_ARRAY) {
+			decl_type *type = real_decl_type(darg->type);
+
+			switch (type->type) {
+			case PSI_T_STRUCT:
+				arg_val->ptr = psi_array_to_struct(type->strct, HASH_OF(iarg->_zv));
+				darg->let->mem = arg_val->ptr;
+				break;
+			}
+		}
+		break;
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}
 
@@ -528,6 +592,16 @@ void psi_do_clean(impl *impl)
 		decl_arg *darg = impl->decl->args->args[i];
 
 		if (darg->let && darg->let->mem) {
+			decl_type *type = real_decl_type(darg->type);
+
+			if (type->type == PSI_T_STRUCT) {
+				size_t eos = decl_struct_size(type->strct);
+				void **ptr = (void **) ((char *) darg->let->mem + eos);
+
+				while (*ptr) {
+					efree(*ptr++);
+				}
+			}
 			efree(darg->let->mem);
 			darg->let->mem = NULL;
 		}
