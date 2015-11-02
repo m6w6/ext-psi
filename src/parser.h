@@ -276,6 +276,9 @@ static inline void free_decl_struct(decl_struct *s) {
 	if (s->args) {
 		free_decl_args(s->args);
 	}
+	if (s->layout) {
+		free(s->layout);
+	}
 	free(s->name);
 	free(s);
 }
