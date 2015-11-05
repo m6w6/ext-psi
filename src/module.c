@@ -135,7 +135,7 @@ void psi_to_string(zval *return_value, token_t t, impl_val *ret_val, decl_var *v
 			RETVAL_STRINGL(&ret_val->cval, 1);
 		} else {
 			ret_val = deref_impl_val(ret_val, var);
-			if (ret_val) {
+			if (ret_val && ret_val->ptr) {
 				RETVAL_STRING(ret_val->ptr);
 			} else {
 				RETVAL_EMPTY_STRING();
@@ -491,7 +491,7 @@ impl_val *psi_do_let(decl_arg *darg)
 		 * let foo = NULL;
 		 * let foo;
 		 */
-		if (darg->let->val->func->type == PSI_T_CALLOC) {
+		if (darg->let->val->func && darg->let->val->func->type == PSI_T_CALLOC) {
 			arg_val->ptr = psi_do_calloc(darg->let->val->func->alloc);
 			darg->let->mem = arg_val->ptr;
 		} else if (darg->var->array_size) {
