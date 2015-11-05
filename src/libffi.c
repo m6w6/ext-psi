@@ -2,6 +2,13 @@
 #include "php_psi.h"
 #include "libffi.h"
 
+#undef PACKAGE
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_NAME
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+
 #include <ffi.h>
 
 #ifndef PSI_HAVE_FFI_CLOSURE_ALLOC
@@ -117,7 +124,7 @@ typedef struct PSI_LibffiData {
 
 static inline PSI_LibffiData *PSI_LibffiDataAlloc(PSI_LibffiContext *context, impl *impl) {
 	ffi_status rc;
-	size_t i, c = impl->decl->args->count;
+	size_t i, c = impl->decl->args ? impl->decl->args->count : 0;
 	PSI_LibffiData *data = malloc(sizeof(*data) + c * sizeof(ffi_type *));
 
 	data->context = context;
@@ -211,7 +218,7 @@ static void handler(ffi_cif *_sig, void *_result, void **_args, void *_data)
 		return;
 	}
 
-	if (data->impl->decl->args->count) {
+	if (data->impl->decl->args) {
 		arg_ptr = malloc(data->impl->decl->args->count * sizeof(*arg_ptr));
 		arg_prm = malloc(data->impl->decl->args->count * sizeof(*arg_prm));
 
@@ -233,7 +240,9 @@ static void handler(ffi_cif *_sig, void *_result, void **_args, void *_data)
 	for (i = 0; i < data->impl->stmts->set.count; ++i) {
 		set_stmt *set = data->impl->stmts->set.list[i];
 
-		psi_do_set(set->arg->_zv, set->val->func, set->val->vars);
+		if (set->arg->_zv) {
+			psi_do_set(set->arg->_zv, set->val->func, set->val->vars);
+		}
 	}
 
 	for (i = 0; i < data->impl->stmts->fre.count; ++i) {

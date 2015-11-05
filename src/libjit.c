@@ -178,7 +178,9 @@ static void handler(jit_type_t _sig, void *result, void **_args, void *_data)
 	for (i = 0; i < data->impl->stmts->set.count; ++i) {
 		set_stmt *set = data->impl->stmts->set.list[i];
 
-		psi_do_set(set->arg->_zv, set->val->func, set->val->vars);
+		if (set->arg->_zv) {
+			psi_do_set(set->arg->_zv, set->val->func, set->val->vars);
+		}
 	}
 
 	for (i = 0; i < data->impl->stmts->fre.count; ++i) {

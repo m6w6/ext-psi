@@ -92,21 +92,15 @@ static inline int locate_decl_type_struct(decl_structs *structs, decl_type *type
 	}
 	return 0;
 }
-static inline int validate_decl_type(PSI_Validator *V, decl_arg *arg, decl_type *type) {
+static inline int validate_decl_type(PSI_Validator *V, decl_type *type) {
 	switch (type->type) {
 	case PSI_T_NAME:
 		if (!V->defs || !locate_decl_type_alias(V->defs, type)) {
-			V->error(PSI_WARNING, "Cannot use '%s' as type for '%s';"
-				" Use 'typedef <type> <alias>;' statement",
-				type->name, arg->var->name);
 			return 0;
 		}
-		return validate_decl_type(V, arg, type->real);
+		return validate_decl_type(V, type->real);
 	case PSI_T_STRUCT:
 		if (!V->structs || !locate_decl_type_struct(V->structs, type)) {
-			V->error(PSI_WARNING, "Cannot use '%s' as type for '%s';"
-				" Use 'typedef struct <name> <alias>;' statement",
-				type->name, arg->var->name);
 			return 0;
 		}
 		break;
@@ -133,26 +127,6 @@ static inline int validate_typedefs(PSI_Validator *V) {
 
 	return 1;
 }
-static inline int validate_decl_func(PSI_Validator *V, decl *decl, decl_arg *func)
-{
-	if (!strcmp(func->var->name, "dlsym")) {
-		V->error(PSI_WARNING, "Cannot dlsym dlsym (sic!)");
-		return 0;
-	}
-
-	if (!validate_decl_type(V, func, func->type)) {
-		return 0;
-	}
-#ifndef RTLD_NEXT
-# define RTLD_NEXT ((void *) -1l)
-#endif
-	decl->dlptr = dlsym(V->dlopened ?: RTLD_NEXT, func->var->name);
-	if (!decl->dlptr) {
-		V->error(PSI_WARNING, "Failed to located symbol '%s': %s",
-			func->var->name, dlerror());
-	}
-	return 1;
-}
 static const char * const abi_ccs[] = {
 		"default", /* \                 */
 		"extern",  /*  > - all the same */
@@ -163,7 +137,7 @@ static const char * const abi_ccs[] = {
 static inline int validate_decl_abi(PSI_Validator *V, decl_abi *abi) {
 	size_t i;
 
-	for (i = 0; i < sizeof(abi_ccs)/sizeof(char*); ++ i) {
+	for (i = 0; i < sizeof(abi_ccs)/sizeof(char*); ++i) {
 		if (strcasecmp(abi->convention, abi_ccs[i])) {
 			return 1;
 		}
@@ -172,7 +146,9 @@ static inline int validate_decl_abi(PSI_Validator *V, decl_abi *abi) {
 	return 0;
 }
 static inline int validate_decl_arg(PSI_Validator *V, decl_arg *arg) {
-	if (!validate_decl_type(V, arg, arg->type)) {
+	if (!validate_decl_type(V, arg->type)) {
+		V->error(PSI_WARNING, "Cannot use '%s' as type for '%s'",
+			arg->type->name, arg->var->name);
 		return 0;
 	}
 	return 1;
@@ -184,6 +160,26 @@ static inline int validate_decl_args(PSI_Validator *V, decl_args *args) {
 		if (!validate_decl_arg(V, args->args[i])) {
 			return 0;
 		}
+	}
+	return 1;
+}
+static inline int validate_decl_func(PSI_Validator *V, decl *decl, decl_arg *func)
+{
+	if (!strcmp(func->var->name, "dlsym")) {
+		V->error(PSI_WARNING, "Cannot dlsym dlsym (sic!)");
+		return 0;
+	}
+
+	if (!validate_decl_arg(V, func)) {
+		return 0;
+	}
+#ifndef RTLD_NEXT
+# define RTLD_NEXT ((void *) -1l)
+#endif
+	decl->dlptr = dlsym(V->dlopened ?: RTLD_NEXT, func->var->name);
+	if (!decl->dlptr) {
+		V->error(PSI_WARNING, "Failed to located symbol '%s': %s",
+			func->var->name, dlerror());
 	}
 	return 1;
 }
@@ -344,6 +340,13 @@ static inline int validate_impl_stmts(PSI_Validator *V, impl *impl, impl_stmts *
 		let_stmt *let = stmts->let.list[i];
 		int check = 0;
 
+		if (let->val && let->val->func && let->val->func->alloc) {
+			if (!validate_decl_type(V, let->val->func->alloc->type)) {
+				V->error(PSI_WARNING, "Cannot use '%s' as type for calloc in `let` statement",
+					let->val->func->alloc->type->name);
+				return 0;
+			}
+		}
 		if (let->val && let->val->var) {
 			if (impl->func->args) for (j = 0; j < impl->func->args->count; ++j) {
 				impl_arg *iarg = impl->func->args->args[j];

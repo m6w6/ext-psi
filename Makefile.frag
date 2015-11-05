@@ -1,6 +1,7 @@
 # provide headers in builddir, so they do not end up in /usr/include/ext/psi/src
 
 PHP_PSI_HEADERS := $(addprefix $(PHP_PSI_BUILDDIR)/,$(PHP_PSI_HEADERS))
+PHP_PSI_SOURCES := $(addprefix $(PHP_PSI_SRCDIR)/,$(PHP_PSI_SOURCES))
 
 $(PHP_PSI_BUILDDIR)/%.h: $(PHP_PSI_SRCDIR)/src/%.h
 	@cat >$@ <$<
@@ -24,6 +25,8 @@ lemon.c:
 ./lemon: lemon.c | lempar.c
 	$(CC) -o $@ $<
 
+$(PHP_PSI_SRCDIR)/src/%.c: $(PHP_PSI_BUILDDIR)/parser.h
+	touch $@
 $(PHP_PSI_SRCDIR)/src/parser_proc.y: $(PHP_PSI_BUILDDIR)/parser.h
 	touch $@
 $(PHP_PSI_SRCDIR)/src/parser_proc.c: $(PHP_PSI_SRCDIR)/src/parser_proc.y $(LEMON)

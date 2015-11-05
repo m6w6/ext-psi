@@ -23,15 +23,19 @@ extern zend_module_entry psi_module_entry;
 #include "parser.h"
 
 void psi_error(int type, const char *msg, ...);
+
 size_t psi_t_alignment(token_t t);
 size_t psi_t_size(token_t t);
 size_t psi_t_align(token_t t, size_t s);
+
 int psi_internal_type(impl_type *type);
 zend_internal_arg_info *psi_internal_arginfo(impl *impl);
 size_t psi_num_min_args(impl *impl);
-void psi_to_int(impl_val *ret_val, decl_arg *func, zval *return_value);
-void psi_to_double(impl_val *ret_val, decl_arg *func, zval *return_value);
-void psi_to_string(impl_val *ret_val, decl_arg *func, zval *return_value);
+
+void psi_to_int(zval *return_value, token_t t, impl_val *ret_val, decl_var *var);
+void psi_to_double(zval *return_value, token_t t, impl_val *ret_val, decl_var *var);
+void psi_to_string(zval *return_value, token_t t, impl_val *ret_val, decl_var *var);
+
 ZEND_RESULT_CODE psi_parse_args(zend_execute_data *execute_data, impl *impl);
 impl_val *psi_do_let(decl_arg *darg);
 void psi_do_set(zval *return_value, set_func *func, decl_vars *vars);

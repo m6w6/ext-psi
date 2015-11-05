@@ -54,11 +54,14 @@ block ::= decl_struct(strct). {
 }
 
 %type decl_struct {decl_struct*}
+%destructor decl_struct {free_decl_struct($$);}
 decl_struct(strct) ::= STRUCT NAME(N) LBRACE struct_args(args) RBRACE. {
 	strct = init_decl_struct(N->text, args);
+	free(N);
 }
 
 %type const_type {const_type*}
+%destructor const_type {free_const_type($$);}
 const_type(type_) ::= BOOL(T). {
 	type_ = init_const_type(T->type, T->text);
 	free(T);
@@ -76,12 +79,14 @@ const_type(type_) ::= STRING(T). {
 	free(T);
 }
 %type constant {constant*}
+%destructor constant {free_constant($$);}
 constant(constant) ::= CONST const_type(type) NSNAME(T) EQUALS impl_def_val(val) EOS. {
 	constant = init_constant(type, T->text, val);
 	free(T);
 }
 
 %type decl_typedef {decl_typedef*}
+%destructor decl_typedef {free_decl_typedef($$);}
 decl_typedef(def) ::= TYPEDEF decl_type(type) NAME(ALIAS) EOS. {
 	def = init_decl_typedef(ALIAS->text, type);
 	free(ALIAS);
@@ -99,17 +104,20 @@ decl_typedef(def) ::= TYPEDEF decl_struct(s) NAME(ALIAS) EOS. {
 }
 
 %type decl {decl*}
+%destructor decl {free_decl($$);}
 decl(decl) ::= decl_abi(abi) decl_arg(func) LPAREN decl_args(args) RPAREN EOS. {
 	decl = init_decl(abi, func, args);
 }
 
 %type decl_abi {decl_abi*}
+%destructor decl_abi {free_decl_abi($$);}
 decl_abi(abi) ::= NAME(T). {
 	abi = init_decl_abi(T->text);
 	free(T);
 }
 
 %type decl_var {decl_var*}
+%destructor decl_var {free_decl_var($$);}
 decl_var(var) ::= NAME(T). {
 	var = init_decl_var(T->text, 0, 0);
 	free(T);
@@ -130,6 +138,7 @@ decl_var(var) ::= pointers(p) NAME(T) LBRACKET NUMBER(D) RBRACKET. {
 }
 
 %type decl_vars {decl_vars*}
+%destructor decl_vars {free_decl_vars($$);}
 decl_vars(vars) ::= decl_var(var). {
 	vars = init_decl_vars(var);
 }
@@ -138,11 +147,13 @@ decl_vars(vars) ::= decl_vars(vars_) COMMA decl_var(var). {
 }
 
 %type decl_arg {decl_arg*}
-decl_arg(arg) ::= decl_type(type) decl_var(var). {
-	arg = init_decl_arg(type, var);
+%destructor decl_arg {free_decl_arg($$);}
+decl_arg(arg_) ::= decl_type(type) decl_var(var). {
+	arg_ = var->arg = init_decl_arg(type, var);
 }
 
 %type decl_args {decl_args*}
+%destructor decl_args {free_decl_args($$);}
 decl_args ::= VOID.
 decl_args(args) ::= decl_arg(arg). {
 	args = init_decl_args(arg);
@@ -151,6 +162,7 @@ decl_args(args) ::= decl_args(args_) COMMA decl_arg(arg). {
 	args = add_decl_arg(args_, arg);
 }
 %type struct_args {decl_args*}
+%destructor struct_args {free_decl_args($$);}
 struct_args(args) ::= decl_arg(arg) EOS. {
 	args = init_decl_args(arg);
 }
@@ -159,6 +171,7 @@ struct_args(args) ::= struct_args(args_) decl_arg(arg) EOS. {
 }
 
 %type decl_type {decl_type*}
+%destructor decl_type {free_decl_type($$);}
 decl_type(type_) ::= VOID(T). {
 	type_ = init_decl_type(T->type, T->text);
 	free(T);
@@ -235,6 +248,7 @@ impl(impl) ::= impl_func(func) LBRACE impl_stmts(stmts) RBRACE. {
 }
 
 %type impl_func {impl_func*}
+%destructor impl_func {free_impl_func($$);}
 impl_func(func) ::= FUNCTION NSNAME(NAME) impl_args(args) COLON impl_type(type). {
 	func = init_impl_func(NAME->text, args, type, 0);
 	free(NAME);
@@ -245,6 +259,7 @@ impl_func(func) ::= FUNCTION REFERENCE NSNAME(NAME) impl_args(args) COLON impl_t
 }
 
 %type impl_def_val {impl_def_val*}
+%destructor impl_def_val {free_impl_def_val($$);}
 impl_def_val(def) ::= NULL(T). {
 	def = init_impl_def_val(T);
 	free(T);
@@ -267,6 +282,7 @@ impl_def_val(def) ::= QUOTED_STRING(T). {
 }
 
 %type impl_var {impl_var*}
+%destructor impl_var {free_impl_var($$);}
 impl_var(var) ::= DOLLAR NAME(T). {
 	var = init_impl_var(T->text, 0);
 	free(T);
@@ -277,6 +293,7 @@ impl_var(var) ::= REFERENCE DOLLAR NAME(T). {
 }
 
 %type impl_arg {impl_arg*}
+%destructor impl_arg {free_impl_arg($$);}
 impl_arg(arg) ::= impl_type(type) impl_var(var). {
 	arg = init_impl_arg(type, var, NULL);
 }
@@ -285,6 +302,7 @@ impl_arg(arg) ::= impl_type(type) impl_var(var) EQUALS impl_def_val(def). {
 }
 
 %type impl_args {impl_args*}
+%destructor impl_args {free_impl_args($$);}
 impl_args(args) ::= LPAREN RPAREN. {
 	args = NULL;
 }
@@ -292,6 +310,7 @@ impl_args(args) ::= LPAREN impl_arg_list(args_) RPAREN. {
 	args = args_;
 }
 %type impl_arg_list {impl_args*}
+%destructor impl_arg_list {free_impl_args($$);}
 impl_arg_list(args) ::= impl_arg(arg). {
 	args = init_impl_args(arg);
 }
@@ -324,6 +343,7 @@ impl_stmt(stmt) ::= free_stmt(free). {
 }
 
 %type let_stmt {let_stmt*}
+%destructor let_stmt {free_let_stmt($$);}
 let_stmt(let) ::= LET decl_var(var) EOS. {
 	let = init_let_stmt(var, NULL);
 }
@@ -332,13 +352,15 @@ let_stmt(let) ::= LET decl_var(var) EQUALS let_value(val) EOS. {
 }
 
 %type let_value {let_value*}
+%destructor let_value {free_let_value($$);}
 let_value(val) ::= CALLOC(F) LPAREN NUMBER(N) COMMA decl_type(t) RPAREN. {
 	val = init_let_value(
 		init_let_func(F->type, F->text,
-			atol(N->text) * psi_t_size(real_decl_type(t)->type)
+			init_let_calloc(
+				atol(N->text), t
+			)
 		), NULL, 0
 	);
-	free_decl_type(t);
 	free(F);
 	free(N);
 }
@@ -356,42 +378,46 @@ let_value(val) ::= NULL. {
 }
 
 %type let_func {let_func*}
+%destructor let_func {free_let_func($$);}
 let_func(func) ::= STRLEN(T). {
-	func = init_let_func(T->type, T->text, 0);
+	func = init_let_func(T->type, T->text, NULL);
 	free(T);
 }
 let_func(func) ::= STRVAL(T). {
-	func = init_let_func(T->type, T->text, 0);
+	func = init_let_func(T->type, T->text, NULL);
 	free(T);
 }
 let_func(func) ::= INTVAL(T). {
-	func = init_let_func(T->type, T->text, 0);
+	func = init_let_func(T->type, T->text, NULL);
 	free(T);
 }
 let_func(func) ::= FLOATVAL(T). {
-	func = init_let_func(T->type, T->text, 0);
+	func = init_let_func(T->type, T->text, NULL);
 	free(T);
 }
 let_func(func) ::= BOOLVAL(T). {
-	func = init_let_func(T->type, T->text, 0);
+	func = init_let_func(T->type, T->text, NULL);
 	free(T);
 }
 let_func(func) ::= ARRVAL(T). {
-	func = init_let_func(T->type, T->text, 0);
+	func = init_let_func(T->type, T->text, NULL);
 	free(T);
 }
 
 %type set_stmt {set_stmt*}
+%destructor set_stmt {free_set_stmt($$);}
 set_stmt(set) ::= SET impl_var(var) EQUALS set_value(val) EOS. {
 	set = init_set_stmt(var, val);
 }
 
 %type set_value {set_value*}
+%destructor set_value {free_set_value($$);}
 set_value(val) ::= set_func(func) LPAREN decl_vars(vars) RPAREN. {
 	val = init_set_value(func, vars);
 }
 
 %type set_func {set_func*}
+%destructor set_func {free_set_func($$);}
 set_func(func) ::= TO_ARRAY(T). {
 	func = init_set_func(T->type, T->text);
 	free(T);
@@ -418,16 +444,19 @@ set_func(func) ::= VOID(T). {
 }
 
 %type return_stmt {return_stmt*}
+%destructor return_stmt {free_return_stmt($$);}
 return_stmt(ret) ::= RETURN set_func(func) LPAREN decl_var(var) RPAREN EOS. {
 	ret = init_return_stmt(func, var);
 }
 
 %type free_stmt {free_stmt*}
+%destructor free_stmt {free_free_stmt($$);}
 free_stmt(free) ::= FREE decl_vars(vars) EOS. {
 	free = init_free_stmt(vars);
 }
 
 %type impl_type {impl_type*}
+%destructor impl_type {free_impl_type($$);}
 impl_type(type_) ::= VOID(T). {
 	type_ = init_impl_type(T->type, T->text);
 	free(T);

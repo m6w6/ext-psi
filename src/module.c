@@ -94,35 +94,47 @@ size_t psi_num_min_args(impl *impl)
 	return n;
 }
 
-void psi_to_int(impl_val *ret_val, decl_arg *func, zval *return_value)
+void psi_to_int(zval *return_value, token_t t, impl_val *ret_val, decl_var *var)
 {
-	switch (real_decl_type(func->type)->type) {
+	switch (t) {
 	case PSI_T_FLOAT:
+		RETVAL_DOUBLE((double) deref_impl_val(ret_val, var)->fval);
+		convert_to_long(return_value);
+		break;
 	case PSI_T_DOUBLE:
-		RETVAL_DOUBLE(deref_impl_val(0, ret_val, func)->dval);
+		RETVAL_DOUBLE(deref_impl_val(ret_val, var)->dval);
 		convert_to_long(return_value);
 		break;
 	default:
-		RETVAL_LONG(deref_impl_val(0, ret_val, func)->lval);
+		RETVAL_LONG(deref_impl_val(ret_val, var)->lval);
 	}
 }
 
-void psi_to_double(impl_val *ret_val, decl_arg *func, zval *return_value)
+void psi_to_double(zval *return_value, token_t t, impl_val *ret_val, decl_var *var)
 {
-	RETVAL_DOUBLE(deref_impl_val(0, ret_val, func)->dval);
+	switch (t) {
+	case PSI_T_FLOAT:
+		RETVAL_DOUBLE((double) deref_impl_val(ret_val, var)->fval);
+		break;
+	case PSI_T_DOUBLE:
+		RETVAL_DOUBLE(deref_impl_val(ret_val, var)->dval);
+		break;
+	default:
+		RETVAL_DOUBLE((double) deref_impl_val(ret_val, var)->lval);
+		break;
+	}
 }
 
-void psi_to_string(impl_val *ret_val, decl_arg *func, zval *return_value)
+void psi_to_string(zval *return_value, token_t t, impl_val *ret_val, decl_var *var)
 {
-	switch (real_decl_type(func->type)->type) {
+	switch (t) {
 	case PSI_T_CHAR:
 	case PSI_T_SINT8:
 	case PSI_T_UINT8:
-		if (!func->var->pointer_level) {
-			char chr = ret_val->lval;
-			RETVAL_STRINGL(&chr, 1);
+		if (var->pointer_level == var->arg->var->pointer_level) {
+			RETVAL_STRINGL(&ret_val->cval, 1);
 		} else {
-			ret_val = deref_impl_val(1, ret_val, func);
+			ret_val = deref_impl_val(ret_val, var);
 			if (ret_val->ptr) {
 				RETVAL_STRING(ret_val->ptr);
 			} else {
@@ -131,12 +143,15 @@ void psi_to_string(impl_val *ret_val, decl_arg *func, zval *return_value)
 		}
 		break;
 	case PSI_T_FLOAT:
+		RETVAL_DOUBLE((double) deref_impl_val(ret_val, var)->fval);
+		convert_to_string(return_value);
+		break;
 	case PSI_T_DOUBLE:
-		RETVAL_DOUBLE(deref_impl_val(0, ret_val, func)->dval);
+		RETVAL_DOUBLE(deref_impl_val(ret_val, var)->dval);
 		convert_to_string(return_value);
 		break;
 	default:
-		RETVAL_LONG(deref_impl_val(0, ret_val, func)->lval);
+		RETVAL_LONG(deref_impl_val(ret_val, var)->lval);
 		convert_to_string(return_value);
 		break;
 	}
@@ -302,7 +317,7 @@ void psi_from_zval(impl_val *mem, decl_arg *spec, zval *zv, void **tmp)
 			break;
 		}
 	default:
-		mem->lval = zval_get_long(zv);
+		mem->zend.lval = zval_get_long(zv);
 		break;
 	}
 }
@@ -315,7 +330,6 @@ void *psi_array_to_struct(decl_struct *s, HashTable *arr)
 	for (i = 0; i < s->args->count; ++i) {
 		decl_struct_layout *layout = &s->layout[i];
 		decl_arg *darg = s->args->args[i];
-		decl_type *type = real_decl_type(darg->type);
 		zval *entry = zend_hash_str_find_ind(arr, darg->var->name, strlen(darg->var->name));
 
 		if (entry) {
@@ -333,19 +347,17 @@ void *psi_array_to_struct(decl_struct *s, HashTable *arr)
 	return mem;
 }
 
-void psi_to_array(impl_val *ret_val, decl_arg *func, zval *return_value)
+void psi_to_array(zval *return_value, token_t t, impl_val *ret_val, decl_var *var)
 {
 	zval ele;
 	unsigned i;
 	impl_val tmp;
-	decl_type *type = real_decl_type(func->type);
-	token_t t = type->type;
 
 	array_init(return_value);
 
 	if (t == PSI_T_STRUCT) {
-		decl_struct *s = type->strct;
-		ret_val = deref_impl_val(func->var->pointer_level, ret_val, func);
+		decl_struct *s = real_decl_type(var->arg->type)->strct;
+		ret_val = deref_impl_val(ret_val, var);
 
 		ZEND_ASSERT(s);
 		for (i = 0; i < s->args->count; ++i) {
@@ -358,25 +370,32 @@ void psi_to_array(impl_val *ret_val, decl_arg *func, zval *return_value)
 			memset(&tmp, 0, sizeof(tmp));
 			memcpy(&tmp, ptr, layout.len);
 			switch (real_decl_type(darg->type)->type) {
+			case PSI_T_CHAR:
+				if (darg->var->pointer_level) {
+					psi_to_string(&ztmp, real_decl_type(darg->type)->type, &tmp, darg->var);
+					break;
+				}
+				/* nobreak */
 			case PSI_T_INT:
 			case PSI_T_LONG:
-				psi_to_int(&tmp, darg, &ztmp);
+				psi_to_int(&ztmp, real_decl_type(darg->type)->type, &tmp, darg->var);
 				break;
-			case PSI_T_CHAR:
-				psi_to_string(&tmp, darg, &ztmp);
-				break;
-			EMPTY_SWITCH_DEFAULT_CASE();
+			default:
+				printf("t=%d\n", real_decl_type(darg->type)->type);
+				abort();
 			}
 			add_assoc_zval(return_value, darg->var->name, &ztmp);
 		}
 		return;
 	}
-	ret_val = deref_impl_val(0, ret_val, func);
-	for (i = 0; i < func->var->array_size; ++i) {
+	ret_val = deref_impl_val(ret_val, var);
+	for (i = 0; i < var->arg->var->array_size; ++i) {
 		impl_val *ptr = iterate(ret_val, t, i, &tmp);
 
 		switch (t) {
 		case PSI_T_FLOAT:
+			ZVAL_DOUBLE(&ele, (double) ptr->fval);
+			break;
 		case PSI_T_DOUBLE:
 			ZVAL_DOUBLE(&ele, ptr->dval);
 			break;
@@ -405,15 +424,15 @@ ZEND_RESULT_CODE psi_parse_args(zend_execute_data *execute_data, impl *impl)
 		}
 		if (PSI_T_BOOL == iarg->type->type) {
 			if (iarg->def) {
-				iarg->val.bval = iarg->def->type == PSI_T_TRUE ? 1 : 0;
+				iarg->val.zend.bval = iarg->def->type == PSI_T_TRUE ? 1 : 0;
 			}
-			Z_PARAM_BOOL(iarg->val.bval);
-		} else if (PSI_T_INT == iarg->type->type) {
+			Z_PARAM_BOOL(iarg->val.zend.bval);
+		} else if (PSI_T_INT == iarg->type->type || PSI_T_LONG == iarg->type->type) {
 			if (iarg->def) {
-				iarg->val.lval = zend_atol(iarg->def->text, strlen(iarg->def->text));
+				iarg->val.zend.lval = zend_atol(iarg->def->text, strlen(iarg->def->text));
 			}
-			Z_PARAM_LONG(iarg->val.lval);
-		} else if (PSI_T_FLOAT == iarg->type->type) {
+			Z_PARAM_LONG(iarg->val.zend.lval);
+		} else if (PSI_T_FLOAT == iarg->type->type || PSI_T_DOUBLE == iarg->type->type) {
 			if (iarg->def) {
 				iarg->val.dval = zend_strtod(iarg->def->text, NULL);
 			}
@@ -425,11 +444,11 @@ ZEND_RESULT_CODE psi_parse_args(zend_execute_data *execute_data, impl *impl)
 				str.len = strlen(iarg->def->text) - 2;
 				str.val = &iarg->def->text[1];
 			}
-			Z_PARAM_STR_EX(iarg->val.str, 1, 0);
-			if (iarg->val.str) {
-				zend_string_addref(iarg->val.str);
+			Z_PARAM_STR_EX(iarg->val.zend.str, 1, 0);
+			if (iarg->val.zend.str) {
+				zend_string_addref(iarg->val.zend.str);
 			} else if (iarg->def) {
-				iarg->val.str = zend_string_init(str.val, str.len, 0);
+				iarg->val.zend.str = zend_string_init(str.val, str.len, 0);
 			}
 		} else if (PSI_T_ARRAY == iarg->type->type) {
 			/* handled as _zv in let or set */
@@ -447,17 +466,35 @@ ZEND_RESULT_CODE psi_parse_args(zend_execute_data *execute_data, impl *impl)
 	return SUCCESS;
 }
 
+void *psi_do_calloc(let_calloc *alloc)
+{
+	decl_type *type = real_decl_type(alloc->type);
+	size_t size;
+
+	if (type->type == PSI_T_STRUCT) {
+		/* psi_do_clean expects a NULL pointer after the struct */
+		size = decl_struct_size(type->strct) + sizeof(void *);
+	} else {
+		size = psi_t_size(type->type);
+	}
+
+	return ecalloc(alloc->n, size);
+}
+
 impl_val *psi_do_let(decl_arg *darg)
 {
 	impl_val *arg_val = &darg->let->out;
 	impl_arg *iarg = darg->let->arg;
 
 	if (!iarg) {
-		/*
+		/* let foo = calloc(1, long);
 		 * let foo = NULL;
 		 * let foo;
 		 */
-		if (darg->var->array_size) {
+		if (darg->let->val->func->type == PSI_T_CALLOC) {
+			arg_val->ptr = psi_do_calloc(darg->let->val->func->alloc);
+			darg->let->mem = arg_val->ptr;
+		} else if (darg->var->array_size) {
 			arg_val->ptr = ecalloc(darg->var->array_size, sizeof(*arg_val));
 			darg->let->mem = arg_val->ptr;
 		} else {
@@ -465,26 +502,27 @@ impl_val *psi_do_let(decl_arg *darg)
 		}
 		return arg_val;
 	}
+
 	switch (darg->let->val->func->type) {
 	case PSI_T_BOOLVAL:
 		if (iarg->type->type == PSI_T_BOOL) {
-			arg_val->cval = iarg->val.cval;
+			arg_val->cval = iarg->val.zend.bval;
 		} else {
 			arg_val->cval = zend_is_true(iarg->_zv);
 		}
 		break;
 	case PSI_T_INTVAL:
-		if (iarg->type->type == PSI_T_INT) {
-			arg_val->lval = iarg->val.lval;
+		if (iarg->type->type == PSI_T_INT || iarg->type->type == PSI_T_LONG) {
+			arg_val->lval = iarg->val.zend.lval;
 		} else {
 			arg_val->lval = zval_get_long(iarg->_zv);
 		}
 		break;
 	case PSI_T_STRVAL:
 		if (iarg->type->type == PSI_T_STRING) {
-			arg_val->ptr = estrdup(iarg->val.str->val);
+			arg_val->ptr = estrdup(iarg->val.zend.str->val);
 			darg->let->mem = arg_val->ptr;
-			zend_string_release(iarg->val.str);
+			zend_string_release(iarg->val.zend.str);
 		} else {
 			zend_string *zs = zval_get_string(iarg->_zv);
 			arg_val->ptr = estrdup(zs->val);
@@ -494,17 +532,13 @@ impl_val *psi_do_let(decl_arg *darg)
 		break;
 	case PSI_T_STRLEN:
 		if (iarg->type->type == PSI_T_STRING) {
-			arg_val->lval = iarg->val.str->len;
-			zend_string_release(iarg->val.str);
+			arg_val->lval = iarg->val.zend.str->len;
+			zend_string_release(iarg->val.zend.str);
 		} else {
 			zend_string *zs = zval_get_string(iarg->_zv);
 			arg_val->lval = zs->len;
 			zend_string_release(zs);
 		}
-		break;
-	case PSI_T_CALLOC:
-		arg_val->ptr = calloc(1, darg->let->val->func->size);
-		darg->let->mem = arg_val->ptr;
 		break;
 	case PSI_T_ARRVAL:
 		if (iarg->type->type == PSI_T_ARRAY) {
@@ -533,10 +567,10 @@ void psi_do_set(zval *return_value, set_func *func, decl_vars *vars)
 
 	switch (func->type) {
 	case PSI_T_TO_STRING:
-		psi_to_string(val, vars->vars[0]->arg, return_value);
+		psi_to_string(return_value, real_decl_type(vars->vars[0]->arg->type)->type, val, vars->vars[0]);
 		break;
 	case PSI_T_TO_ARRAY:
-		psi_to_array(val, vars->vars[0]->arg, return_value);
+		psi_to_array(return_value, real_decl_type(vars->vars[0]->arg->type)->type, val, vars->vars[0]);
 		break;
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}
@@ -546,13 +580,13 @@ void psi_do_return(impl *impl, impl_val *ret_val, zval *return_value)
 {
 	switch (impl->stmts->ret.list[0]->func->type) {
 	case PSI_T_TO_STRING:
-		psi_to_string(ret_val, impl->decl->func, return_value);
+		psi_to_string(return_value, real_decl_type(impl->decl->func->type)->type, ret_val, impl->decl->func->var);
 		break;
 	case PSI_T_TO_INT:
-		psi_to_int(ret_val, impl->decl->func, return_value);
+		psi_to_int(return_value, real_decl_type(impl->decl->func->type)->type, ret_val, impl->decl->func->var);
 		break;
 	case PSI_T_TO_ARRAY:
-		psi_to_array(ret_val, impl->decl->func, return_value);
+		psi_to_array(return_value, real_decl_type(impl->decl->func->type)->type, ret_val, impl->decl->func->var);
 		break;
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}
@@ -581,14 +615,14 @@ void psi_do_clean(impl *impl)
 
 		switch (iarg->type->type) {
 		case PSI_T_STRING:
-			if (iarg->val.str) {
-				zend_string_release(iarg->val.str);
+			if (iarg->val.zend.str) {
+				zend_string_release(iarg->val.zend.str);
 			}
 			break;
 		}
 	}
 
-	for (i = 0; i < impl->decl->args->count; ++i) {
+	if (impl->decl->args) for (i = 0; i < impl->decl->args->count; ++i) {
 		decl_arg *darg = impl->decl->args->args[i];
 
 		if (darg->let && darg->let->mem) {
