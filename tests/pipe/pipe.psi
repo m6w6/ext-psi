@@ -4,5 +4,5 @@ extern int pipe(int fds[2]);
 function \pipe(array &$fds = null) : int {
 	return to_int(pipe);
 	let fds = calloc(2, int);
-	set $fds = to_array(fds);
+	set $fds = to_array(fds[2]);
 }

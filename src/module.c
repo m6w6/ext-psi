@@ -131,11 +131,11 @@ void psi_to_string(zval *return_value, token_t t, impl_val *ret_val, decl_var *v
 	case PSI_T_CHAR:
 	case PSI_T_SINT8:
 	case PSI_T_UINT8:
-		if (var->pointer_level == var->arg->var->pointer_level) {
+		if (!var->arg->var->pointer_level) {
 			RETVAL_STRINGL(&ret_val->cval, 1);
 		} else {
 			ret_val = deref_impl_val(ret_val, var);
-			if (ret_val->ptr) {
+			if (ret_val) {
 				RETVAL_STRING(ret_val->ptr);
 			} else {
 				RETVAL_EMPTY_STRING();
@@ -365,7 +365,7 @@ void psi_to_array(zval *return_value, token_t t, impl_val *ret_val, decl_var *va
 			decl_struct_layout layout = s->layout[i];
 			impl_val tmp;
 			zval ztmp;
-			char *ptr = (char *) ret_val->ptr + layout.pos;
+			char *ptr = (char *) ret_val + layout.pos;
 
 			memset(&tmp, 0, sizeof(tmp));
 			memcpy(&tmp, ptr, layout.len);
@@ -578,15 +578,17 @@ void psi_do_set(zval *return_value, set_func *func, decl_vars *vars)
 
 void psi_do_return(impl *impl, impl_val *ret_val, zval *return_value)
 {
-	switch (impl->stmts->ret.list[0]->func->type) {
+	return_stmt *ret = impl->stmts->ret.list[0];
+
+	switch (ret->func->type) {
 	case PSI_T_TO_STRING:
-		psi_to_string(return_value, real_decl_type(impl->decl->func->type)->type, ret_val, impl->decl->func->var);
+		psi_to_string(return_value, real_decl_type(impl->decl->func->type)->type, ret_val, ret->decl);
 		break;
 	case PSI_T_TO_INT:
-		psi_to_int(return_value, real_decl_type(impl->decl->func->type)->type, ret_val, impl->decl->func->var);
+		psi_to_int(return_value, real_decl_type(impl->decl->func->type)->type, ret_val, ret->decl);
 		break;
 	case PSI_T_TO_ARRAY:
-		psi_to_array(return_value, real_decl_type(impl->decl->func->type)->type, ret_val, impl->decl->func->var);
+		psi_to_array(return_value, real_decl_type(impl->decl->func->type)->type, ret_val, ret->decl);
 		break;
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}

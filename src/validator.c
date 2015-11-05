@@ -266,11 +266,13 @@ static inline int validate_impl_func(PSI_Validator *V, impl *impl, impl_func *fu
 	}
 	return 1;
 }
+
 static inline decl *locate_impl_decl(decls *decls, return_stmt *ret) {
 	size_t i;
 
 	for (i = 0; i < decls->count; ++i) {
 		if (!strcmp(decls->list[i]->func->var->name, ret->decl->name)) {
+			ret->decl->arg = decls->list[i]->func;
 			return decls->list[i];
 		}
 	}

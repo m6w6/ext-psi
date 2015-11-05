@@ -336,7 +336,7 @@ typedef union impl_val {
 static inline impl_val *deref_impl_val(impl_val *ret_val, decl_var *var) {
 	unsigned i;
 
-	for (i = 0; i < var->arg->var->pointer_level; ++i) {
+	if (var->arg->var != var) for (i = 0; i < var->pointer_level; ++i) {
 		ret_val = *(void **) ret_val;
 	}
 	return ret_val;
