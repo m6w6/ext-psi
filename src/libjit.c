@@ -4,7 +4,7 @@
 
 #include <jit/jit.h>
 
-static void handler(jit_type_t _sig, void *result, void **_args, void *_data);
+static void psi_jit_handler(jit_type_t _sig, void *result, void **_args, void *_data);
 
 static inline jit_abi_t psi_jit_abi(const char *convention) {
 	return jit_abi_cdecl;
@@ -94,7 +94,7 @@ static inline PSI_LibjitData *PSI_LibjitDataAlloc(PSI_LibjitContext *context, im
 		data->params,
 		data->impl->decl->args->count,
 		1);
-	data->closure = jit_closure_create(context->jit, context->signature, &handler, data);
+	data->closure = jit_closure_create(context->jit, context->signature, &psi_jit_handler, data);
 
 	context->data.list = realloc(context->data.list, ++context->data.count * sizeof(*context->data.list));
 	context->data.list[context->data.count-1] = data;
@@ -146,11 +146,11 @@ static inline void PSI_LibjitContextFree(PSI_LibjitContext **L) {
 	}
 }
 
-static void handler(jit_type_t _sig, void *result, void **_args, void *_data)
+static void psi_jit_handler(jit_type_t _sig, void *result, void **_args, void *_data)
 {
 	PSI_LibjitData *data = _data;
 	size_t i;
-	void **arg_ptr = NULL, **arg_prm = NULL;
+	void **arg_prm = NULL;
 	impl_val ret_val;
 
 	if (SUCCESS != psi_parse_args(*(zend_execute_data **)_args[0], data->impl)) {
@@ -158,16 +158,12 @@ static void handler(jit_type_t _sig, void *result, void **_args, void *_data)
 	}
 
 	if (data->impl->decl->args->count) {
-		arg_ptr = malloc(data->impl->decl->args->count * sizeof(*arg_ptr));
 		arg_prm = malloc(data->impl->decl->args->count * sizeof(*arg_prm));
 
 		for (i = 0; i < data->impl->decl->args->count; ++i) {
 			decl_arg *darg = data->impl->decl->args->args[i];
 
-			arg_ptr[i] = psi_do_let(darg);
-			arg_prm[i] = darg->let->val->is_reference ? &arg_ptr[i] : arg_ptr[i];
-
-			darg->let->ptr = arg_ptr[i];
+			arg_prm[i] = psi_do_let(darg);
 		}
 	}
 
@@ -191,25 +187,22 @@ static void handler(jit_type_t _sig, void *result, void **_args, void *_data)
 
 	psi_do_clean(data->impl);
 
-	if (arg_ptr) {
-		free(arg_ptr);
-	}
 	if (arg_prm) {
 		free(arg_prm);
 	}
 }
 
-static void init(PSI_Context *C)
+static void psi_jit_init(PSI_Context *C)
 {
 	C->context = PSI_LibjitContextInit(NULL);
 }
 
-static void dtor(PSI_Context *C)
+static void psi_jit_dtor(PSI_Context *C)
 {
 	PSI_LibjitContextFree((void *) &C->context);
 }
 
-static zend_function_entry *compile(PSI_Context *C, PSI_Data *D)
+static zend_function_entry *psi_jit_compile(PSI_Context *C, PSI_Data *D)
 {
 	size_t i, j = 0;
 	zend_function_entry *zfe = calloc(D->impls->count + 1, sizeof(*zfe));
@@ -239,9 +232,9 @@ static zend_function_entry *compile(PSI_Context *C, PSI_Data *D)
 }
 
 static PSI_ContextOps ops = {
-	init,
-	dtor,
-	compile,
+	psi_jit_init,
+	psi_jit_dtor,
+	psi_jit_compile,
 };
 
 PSI_ContextOps *PSI_Libjit(void)

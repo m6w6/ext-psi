@@ -1,0 +1,61 @@
+typedef long time_t;
+typedef int suseconds_t;
+
+struct timespec {
+	time_t tv_sec;
+	long tv_nsec;
+}
+
+struct timeval {
+	time_t tv_sec;
+	suseconds_t tv_usec;
+}
+
+struct timezone {
+	int tz_minuteswest;
+	int tz_dsttime;
+}
+
+struct tm {
+	int tm_sec;
+	int tm_min;
+	int tm_hour;
+	int tm_mday;
+	int tm_mon;
+	int tm_year;
+	int tm_wday;
+	int tm_yday;
+	int tm_isdst;
+	long tm_gmtoff;
+	char *tm_zone;
+}
+
+extern int gettimeofday(struct timeval *tv, struct timezone *tz);
+function psi\gettimeofday(array &$tv = NULL, array &$tz = NULL) : int {
+	let tv = calloc(1, struct timeval);
+	let tz = calloc(1, struct timezone);
+	return to_int(gettimeofday);
+	set $tv = to_array(*tv);
+	set $tz = to_array(*tz);
+}
+
+extern char *asctime(struct tm *tm);
+function psi\asctime(array $tm = NULL) : string {
+	let tm = arrval($tm);
+	return to_string(asctime);
+}
+
+
+extern struct tm *gmtime(time_t tp);
+function psi\gmtime(int $ts) : array {
+	let tp = &intval($ts);
+	return to_array(gmtime);
+}
+
+extern int nanosleep(struct timespec *rqtp, struct timespec *rmtp);
+function psi\nanosleep(array $rq = NULL, array &$rm = NULL) : int {
+	let rqtp = arrval($rq);
+	let rmtp = calloc(1, struct timespec);
+	return to_int(nanosleep);
+	set $rm = to_array(*rmtp);
+}

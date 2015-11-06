@@ -48,7 +48,7 @@ static void psi_ffi_closure_free(void *c)
 #endif
 }
 
-static void handler(ffi_cif *signature, void *_result, void **_args, void *_data);
+static void psi_ffi_handler(ffi_cif *signature, void *_result, void **_args, void *_data);
 
 static inline ffi_abi psi_ffi_abi(const char *convention) {
 	return FFI_DEFAULT_ABI;
@@ -149,12 +149,12 @@ static inline PSI_LibffiData *PSI_LibffiDataAlloc(PSI_LibffiContext *context, im
 	rc = ffi_prep_closure_loc(
 			data->closure,
 			&context->signature,
-			handler,
+			psi_ffi_handler,
 			data,
 			data->code);
 	ZEND_ASSERT(FFI_OK == rc);
 #elif PSI_HAVE_FFI_PREP_CLOSURE
-	rc = ffi_prep_closure(data->code, &context->signature, handler, data);
+	rc = ffi_prep_closure(data->code, &context->signature, psi_ffi_handler, data);
 	ZEND_ASSERT(FFI_OK == rc);
 #else
 # error "Neither ffi_prep_closure() nor ffi_prep_closure_loc() available"
@@ -207,11 +207,11 @@ static inline void PSI_LibffiContextFree(PSI_LibffiContext **L) {
 	}
 }
 
-static void handler(ffi_cif *_sig, void *_result, void **_args, void *_data)
+static void psi_ffi_handler(ffi_cif *_sig, void *_result, void **_args, void *_data)
 {
 	PSI_LibffiData *data = _data;
 	size_t i;
-	void **arg_ptr = NULL, **arg_prm = NULL;
+	void **arg_prm = NULL;
 	impl_val ret_val;
 
 	if (SUCCESS != psi_parse_args(*(zend_execute_data **)_args[0], data->impl)) {
@@ -219,17 +219,12 @@ static void handler(ffi_cif *_sig, void *_result, void **_args, void *_data)
 	}
 
 	if (data->impl->decl->args) {
-		arg_ptr = malloc(data->impl->decl->args->count * sizeof(*arg_ptr));
 		arg_prm = malloc(data->impl->decl->args->count * sizeof(*arg_prm));
 
 		for (i = 0; i < data->impl->decl->args->count; ++i) {
 			decl_arg *darg = data->impl->decl->args->args[i];
 
-			arg_ptr[i] = psi_do_let(darg);
-			arg_prm[i] = (darg->let->val && darg->let->val->is_reference)
-					? &arg_ptr[i] : arg_ptr[i];
-
-			darg->let->ptr = arg_ptr[i];
+			arg_prm[i] = psi_do_let(darg);
 		}
 	}
 
@@ -253,25 +248,22 @@ static void handler(ffi_cif *_sig, void *_result, void **_args, void *_data)
 
 	psi_do_clean(data->impl);
 
-	if (arg_ptr) {
-		free(arg_ptr);
-	}
 	if (arg_prm) {
 		free(arg_prm);
 	}
 }
 
-static void init(PSI_Context *C)
+static void psi_ffi_init(PSI_Context *C)
 {
 	C->context = PSI_LibffiContextInit(NULL);
 }
 
-static void dtor(PSI_Context *C)
+static void psi_ffi_dtor(PSI_Context *C)
 {
 	PSI_LibffiContextFree((void *) &C->context);
 }
 
-static zend_function_entry *compile(PSI_Context *C, PSI_Data *D)
+static zend_function_entry *psi_ffi_compile(PSI_Context *C, PSI_Data *D)
 {
 	size_t i, j = 0;
 	zend_function_entry *zfe = calloc(D->impls->count + 1, sizeof(*zfe));
@@ -297,9 +289,9 @@ static zend_function_entry *compile(PSI_Context *C, PSI_Data *D)
 }
 
 static PSI_ContextOps ops = {
-	init,
-	dtor,
-	compile,
+	psi_ffi_init,
+	psi_ffi_dtor,
+	psi_ffi_compile,
 };
 
 PSI_ContextOps *PSI_Libffi(void)

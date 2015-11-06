@@ -1,9 +1,9 @@
-#define PSI_T_COMMENT                          1
-#define PSI_T_LIB                              2
-#define PSI_T_QUOTED_STRING                    3
-#define PSI_T_EOS                              4
-#define PSI_T_STRUCT                           5
-#define PSI_T_NAME                             6
+#define PSI_T_NAME                             1
+#define PSI_T_COMMENT                          2
+#define PSI_T_LIB                              3
+#define PSI_T_QUOTED_STRING                    4
+#define PSI_T_EOS                              5
+#define PSI_T_STRUCT                           6
 #define PSI_T_LBRACE                           7
 #define PSI_T_RBRACE                           8
 #define PSI_T_BOOL                             9

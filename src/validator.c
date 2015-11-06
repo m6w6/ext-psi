@@ -215,8 +215,15 @@ static inline int validate_struct(PSI_Validator *V, decl_struct *s) {
 	s->layout = calloc(s->args->count, sizeof(*s->layout));
 	for (i = 0; i < s->args->count; ++i) {
 		decl_arg *darg = s->args->args[i];
-		decl_type *type = real_decl_type(darg->type);
-		token_t t = darg->var->pointer_level ? PSI_T_POINTER : type->type;
+		token_t t;
+
+		if (!validate_decl_arg(V, darg)) {
+			return 0;
+		}
+
+		t = darg->var->pointer_level
+				? PSI_T_POINTER
+				: real_decl_type(darg->type)->type;
 
 		if (i) {
 			decl_struct_layout *l = &s->layout[i-1];
@@ -278,50 +285,38 @@ static inline decl *locate_impl_decl(decls *decls, return_stmt *ret) {
 	}
 	return NULL;
 }
-
-static inline int validate_impl_stmts(PSI_Validator *V, impl *impl, impl_stmts *stmts) {
-	/* okay,
-	 * - we must have exactly one ret stmt delcaring the native func to call and which type cast to apply
-	 * - we can have multiple let stmts; every arg of the ret stmts var (the function to call) must have one
-	 * - we can have any count of set stmts; processing out vars
-	 * - we can have any count of free stmts; freeing any out vars
-	 */
-	size_t i, j, k;
-	return_stmt *ret;
-	decl *decl;
-
-	 if (!stmts) {
- 		V->error(PSI_WARNING, "Missing body for implementation %s!",
- 				impl->func->name);
- 		return 0;
- 	}
-	if (stmts->ret.count != 1) {
-		if (stmts->ret.count > 1) {
-			V->error(PSI_WARNING, "Too many `ret` statements for implmentation %s;"
+static inline int validate_impl_ret_stmt(PSI_Validator *V, impl *impl) {
+	/* we must have exactly one ret stmt delcaring the native func to call */
+	/* and which type cast to apply */
+	if (impl->stmts->ret.count != 1) {
+		if (impl->stmts->ret.count > 1) {
+			V->error(PSI_WARNING, "Too many `return` statements for implmentation %s;"
 					" found %zu, exactly one is needed",
-					impl->func->name, stmts->ret.count);
+					impl->func->name, impl->stmts->ret.count);
 		} else {
-			V->error(PSI_WARNING, "Missing `ret` statement for implementation %s",
+			V->error(PSI_WARNING, "Missing `return` statement for implementation %s",
 					impl->func->name);
 		}
 		return 0;
 	}
-
-	ret = stmts->ret.list[0];
-	decl = locate_impl_decl(V->decls, ret);
-	if (!decl) {
+	if (!(impl->decl = locate_impl_decl(V->decls, impl->stmts->ret.list[0]))) {
 		V->error(PSI_WARNING, "Missing declaration for implementation %s",
 				impl->func->name);
 		return 0;
 	}
 
+	return 1;
+}
+static inline int validate_impl_let_stmts(PSI_Validator *V, impl *impl) {
+	size_t i, j;
+	/* we can have multiple let stmts */
 	/* check that we have a let stmt for every decl arg */
-	if (decl->args) for (i = 0; i < decl->args->count; ++i) {
-		decl_arg *darg = decl->args->args[i];
+	if (impl->decl->args) for (i = 0; i < impl->decl->args->count; ++i) {
+		decl_arg *darg = impl->decl->args->args[i];
 		int check = 0;
 
-		for (j = 0; j < stmts->let.count; ++j) {
-			let_stmt *let = stmts->let.list[j];
+		for (j = 0; j < impl->stmts->let.count; ++j) {
+			let_stmt *let = impl->stmts->let.list[j];
 
 			if (!strcmp(let->var->name, darg->var->name)) {
 				darg->let = let;
@@ -333,13 +328,13 @@ static inline int validate_impl_stmts(PSI_Validator *V, impl *impl, impl_stmts *
 			V->error(PSI_WARNING, "Missing `let` statement for arg '%s %.*s%s'"
 					" of declaration '%s' for implementation '%s'",
 					darg->type->name, (int) darg->var->pointer_level, "*****",
-					darg->var->name, decl->func->var->name, impl->func->name);
+					darg->var->name, impl->decl->func->var->name, impl->func->name);
 			return 0;
 		}
 	}
 	/* check that the let_value references a known variable or NULL */
-	for (i = 0; i < stmts->let.count; ++i) {
-		let_stmt *let = stmts->let.list[i];
+	for (i = 0; i < impl->stmts->let.count; ++i) {
+		let_stmt *let = impl->stmts->let.list[i];
 		int check = 0;
 
 		if (let->val && let->val->func && let->val->func->alloc) {
@@ -367,9 +362,14 @@ static inline int validate_impl_stmts(PSI_Validator *V, impl *impl, impl_stmts *
 			}
 		}
 	}
+	return 1;
+}
+static inline int validate_impl_set_stmts(PSI_Validator *V, impl *impl) {
+	size_t i, j, k;
+	/* we can have any count of set stmts; processing out vars */
 	/* check that set stmts reference known variables */
-	for (i = 0; i < stmts->set.count; ++i) {
-		set_stmt *set = stmts->set.list[i];
+	for (i = 0; i < impl->stmts->set.count; ++i) {
+		set_stmt *set = impl->stmts->set.list[i];
 		int check = 0;
 
 		if (impl->func->args) for (j = 0; j < impl->func->args->count; ++j) {
@@ -392,8 +392,8 @@ static inline int validate_impl_stmts(PSI_Validator *V, impl *impl, impl_stmts *
 			decl_var *set_var = set->val->vars->vars[j];
 
 			check = 0;
-			if (decl->args) for (k = 0; k < decl->args->count; ++k) {
-				decl_arg *set_arg = decl->args->args[k];
+			if (impl->decl->args) for (k = 0; k < impl->decl->args->count; ++k) {
+				decl_arg *set_arg = impl->decl->args->args[k];
 
 				if (!strcmp(set_var->name, set_arg->var->name)) {
 					check = 1;
@@ -410,19 +410,23 @@ static inline int validate_impl_stmts(PSI_Validator *V, impl *impl, impl_stmts *
 			}
 		}
 	}
-	/* check free stmts */
-	for (i = 0; i < stmts->fre.count; ++i) {
-		free_stmt *fre = stmts->fre.list[i];
+	return 1;
+}
+static inline int validate_impl_free_stmts(PSI_Validator *V, impl *impl) {
+	size_t i, j, k;
+	/* we can have any count of free stmts; freeing any out vars */
+	for (i = 0; i < impl->stmts->fre.count; ++i) {
+		free_stmt *fre = impl->stmts->fre.list[i];
 
 		for (j = 0; j < fre->vars->count; ++j) {
 			decl_var *free_var = fre->vars->vars[j];
 			int check = 0;
 
-			if (!strcmp(free_var->name, decl->func->var->name)) {
+			if (!strcmp(free_var->name, impl->decl->func->var->name)) {
 				continue;
 			}
-			if (decl->args) for (k = 0; k < decl->args->count; ++k) {
-				decl_arg *free_arg = decl->args->args[k];
+			if (impl->decl->args) for (k = 0; k < impl->decl->args->count; ++k) {
+				decl_arg *free_arg = impl->decl->args->args[k];
 
 				if (!strcmp(free_var->name, free_arg->var->name)) {
 					check = 1;
@@ -439,8 +443,28 @@ static inline int validate_impl_stmts(PSI_Validator *V, impl *impl, impl_stmts *
 			}
 		}
 	}
+	return 1;
+}
+static inline int validate_impl_stmts(PSI_Validator *V, impl *impl) {
+	if (!impl->stmts) {
+ 		V->error(PSI_WARNING, "Missing body for implementation %s!",
+ 				impl->func->name);
+ 		return 0;
+ 	}
 
-	impl->decl = decl;
+	if (!validate_impl_ret_stmt(V, impl)) {
+		return 0;
+	}
+
+	if (!validate_impl_let_stmts(V, impl)) {
+		return 0;
+	}
+	if (!validate_impl_set_stmts(V, impl)) {
+		return 0;
+	}
+	if (!validate_impl_free_stmts(V, impl)) {
+		return 0;
+	}
 
 	return 1;
 }
@@ -449,7 +473,7 @@ static inline int validate_impl(PSI_Validator *V, impl *impl) {
 	if (!validate_impl_func(V, impl, impl->func)) {
 		return 0;
 	}
-	if (!validate_impl_stmts(V, impl, impl->stmts)) {
+	if (!validate_impl_stmts(V, impl)) {
 		return 0;
 	}
 	return 1;

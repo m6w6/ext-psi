@@ -17,6 +17,9 @@
 %syntax_error {
 	PSI_ParserSyntaxError(P, P->fn, P->line, "Unexpected token '%s'", TOKEN->text);
 }
+
+%nonassoc NAME.
+
 file ::= blocks.
 
 blocks ::= block.
@@ -238,6 +241,11 @@ decl_type(type_) ::= UINT64(T). {
 }
 decl_type(type_) ::= NAME(T). {
 	type_ = init_decl_type(T->type, T->text);
+	free(T);
+}
+decl_type(type_) ::= STRUCT(S) NAME(T). {
+	type_ = init_decl_type(S->type, T->text);
+	free(S);
 	free(T);
 }
 

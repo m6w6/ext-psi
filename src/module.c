@@ -316,6 +316,7 @@ void psi_from_zval(impl_val *mem, decl_arg *spec, zval *zv, void **tmp)
 			zend_string_release(zs);
 			break;
 		}
+		/* no break */
 	default:
 		mem->zend.lval = zval_get_long(zv);
 		break;
@@ -327,7 +328,7 @@ void *psi_array_to_struct(decl_struct *s, HashTable *arr)
 	size_t i, j = 0, size = decl_struct_size(s);
 	char *mem = ecalloc(1, size + s->args->count * sizeof(void *));
 
-	for (i = 0; i < s->args->count; ++i) {
+	if (arr) for (i = 0; i < s->args->count; ++i) {
 		decl_struct_layout *layout = &s->layout[i];
 		decl_arg *darg = s->args->args[i];
 		zval *entry = zend_hash_str_find_ind(arr, darg->var->name, strlen(darg->var->name));
@@ -365,7 +366,7 @@ void psi_to_array(zval *return_value, token_t t, impl_val *ret_val, decl_var *va
 			decl_struct_layout layout = s->layout[i];
 			impl_val tmp;
 			zval ztmp;
-			char *ptr = (char *) ret_val + layout.pos;
+			char *ptr = (char *) ret_val->ptr + layout.pos;
 
 			memset(&tmp, 0, sizeof(tmp));
 			memcpy(&tmp, ptr, layout.len);
@@ -375,7 +376,7 @@ void psi_to_array(zval *return_value, token_t t, impl_val *ret_val, decl_var *va
 					psi_to_string(&ztmp, real_decl_type(darg->type)->type, &tmp, darg->var);
 					break;
 				}
-				/* nobreak */
+				/* no break */
 			case PSI_T_INT:
 			case PSI_T_LONG:
 				psi_to_int(&ztmp, real_decl_type(darg->type)->type, &tmp, darg->var);
@@ -481,10 +482,13 @@ void *psi_do_calloc(let_calloc *alloc)
 	return ecalloc(alloc->n, size);
 }
 
-impl_val *psi_do_let(decl_arg *darg)
+void *psi_do_let(decl_arg *darg)
 {
-	impl_val *arg_val = &darg->let->out;
 	impl_arg *iarg = darg->let->arg;
+	impl_val *arg_val;
+
+	darg->let->ptr = &darg->let->out;
+	arg_val = darg->let->ptr;
 
 	if (!iarg) {
 		/* let foo = calloc(1, long);
@@ -500,62 +504,66 @@ impl_val *psi_do_let(decl_arg *darg)
 		} else {
 			memset(arg_val, 0, sizeof(*arg_val));
 		}
-		return arg_val;
-	}
+	} else {
 
-	switch (darg->let->val->func->type) {
-	case PSI_T_BOOLVAL:
-		if (iarg->type->type == PSI_T_BOOL) {
-			arg_val->cval = iarg->val.zend.bval;
-		} else {
-			arg_val->cval = zend_is_true(iarg->_zv);
-		}
-		break;
-	case PSI_T_INTVAL:
-		if (iarg->type->type == PSI_T_INT || iarg->type->type == PSI_T_LONG) {
-			arg_val->lval = iarg->val.zend.lval;
-		} else {
-			arg_val->lval = zval_get_long(iarg->_zv);
-		}
-		break;
-	case PSI_T_STRVAL:
-		if (iarg->type->type == PSI_T_STRING) {
-			arg_val->ptr = estrdup(iarg->val.zend.str->val);
-			darg->let->mem = arg_val->ptr;
-			zend_string_release(iarg->val.zend.str);
-		} else {
-			zend_string *zs = zval_get_string(iarg->_zv);
-			arg_val->ptr = estrdup(zs->val);
-			darg->let->mem = arg_val->ptr;
-			zend_string_release(zs);
-		}
-		break;
-	case PSI_T_STRLEN:
-		if (iarg->type->type == PSI_T_STRING) {
-			arg_val->lval = iarg->val.zend.str->len;
-			zend_string_release(iarg->val.zend.str);
-		} else {
-			zend_string *zs = zval_get_string(iarg->_zv);
-			arg_val->lval = zs->len;
-			zend_string_release(zs);
-		}
-		break;
-	case PSI_T_ARRVAL:
-		if (iarg->type->type == PSI_T_ARRAY) {
-			decl_type *type = real_decl_type(darg->type);
-
-			switch (type->type) {
-			case PSI_T_STRUCT:
-				arg_val->ptr = psi_array_to_struct(type->strct, HASH_OF(iarg->_zv));
-				darg->let->mem = arg_val->ptr;
-				break;
+		switch (darg->let->val->func->type) {
+		case PSI_T_BOOLVAL:
+			if (iarg->type->type == PSI_T_BOOL) {
+				arg_val->cval = iarg->val.zend.bval;
+			} else {
+				arg_val->cval = zend_is_true(iarg->_zv);
 			}
+			break;
+		case PSI_T_INTVAL:
+			if (iarg->type->type == PSI_T_INT || iarg->type->type == PSI_T_LONG) {
+				arg_val->lval = iarg->val.zend.lval;
+			} else {
+				arg_val->lval = zval_get_long(iarg->_zv);
+			}
+			break;
+		case PSI_T_STRVAL:
+			if (iarg->type->type == PSI_T_STRING) {
+				arg_val->ptr = estrdup(iarg->val.zend.str->val);
+				darg->let->mem = arg_val->ptr;
+				zend_string_release(iarg->val.zend.str);
+			} else {
+				zend_string *zs = zval_get_string(iarg->_zv);
+				arg_val->ptr = estrdup(zs->val);
+				darg->let->mem = arg_val->ptr;
+				zend_string_release(zs);
+			}
+			break;
+		case PSI_T_STRLEN:
+			if (iarg->type->type == PSI_T_STRING) {
+				arg_val->lval = iarg->val.zend.str->len;
+				zend_string_release(iarg->val.zend.str);
+			} else {
+				zend_string *zs = zval_get_string(iarg->_zv);
+				arg_val->lval = zs->len;
+				zend_string_release(zs);
+			}
+			break;
+		case PSI_T_ARRVAL:
+			if (iarg->type->type == PSI_T_ARRAY) {
+				decl_type *type = real_decl_type(darg->type);
+
+				switch (type->type) {
+				case PSI_T_STRUCT:
+					arg_val->ptr = psi_array_to_struct(type->strct, HASH_OF(iarg->_zv));
+					darg->let->mem = arg_val->ptr;
+					break;
+				}
+			}
+			break;
+		EMPTY_SWITCH_DEFAULT_CASE();
 		}
-		break;
-	EMPTY_SWITCH_DEFAULT_CASE();
 	}
 
-	return arg_val;
+	if (darg->let->val && darg->let->val->is_reference) {
+		return &darg->let->ptr;
+	} else {
+		return darg->let->ptr;
+	}
 }
 
 void psi_do_set(zval *return_value, set_func *func, decl_vars *vars)

@@ -37,7 +37,7 @@ void psi_to_double(zval *return_value, token_t t, impl_val *ret_val, decl_var *v
 void psi_to_string(zval *return_value, token_t t, impl_val *ret_val, decl_var *var);
 
 ZEND_RESULT_CODE psi_parse_args(zend_execute_data *execute_data, impl *impl);
-impl_val *psi_do_let(decl_arg *darg);
+void *psi_do_let(decl_arg *darg);
 void psi_do_set(zval *return_value, set_func *func, decl_vars *vars);
 void psi_do_return(impl *impl, impl_val *ret_val, zval *return_value);
 void psi_do_free(free_stmt *fre);
