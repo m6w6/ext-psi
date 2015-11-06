@@ -81,7 +81,129 @@ if test "$PHP_PSI" != "no"; then
 	fi
 	
 	PHP_SUBST(PSI_SHARED_LIBADD)
+	
+	PSI_TYPES=""
+	AC_DEFUN(PSI_TYPE, [
+		AC_CHECK_SIZEOF($1)
+		AC_CHECK_ALIGNOF($1)
+		if test "$2" && test "$ac_cv_sizeof_[]$1" -gt 0; then
+			psi_type_bits=`expr ${AS_TR_SH(ac_cv_sizeof_[]$1)} \* 8`
+			PSI_TYPES="{\""$2[]${psi_type_bits}[]_t"\", \""$1"\"}, $PSI_TYPES"
+		fi 
+	])
+	
+	PSI_CONSTS=""
+	AC_DEFUN(PSI_COMPUTE_STR, [
+		var=$1
+		exp=$2
+		inc=$3
+		AC_TRY_RUN([
+			$inc
+			int main() {
+				return EOF == fputs($exp, fopen("conftest.out", "w"));
+			}
+		], [
+			eval $var=\\\"`cat conftest.out`\\\"
+		])
+	])
+	AC_DEFUN(PSI_CONST, [
+		AC_MSG_CHECKING(value of $1)
+		case $2 in
+		str*)
+			PSI_COMPUTE_STR(psi_const_val, $1, AC_INCLUDES_DEFAULT($3))
+			if test "$psi_const_val"; then
+				PSI_CONSTS="{\"$1\", IS_STRING, $psi_const_val, 0}, $PSI_CONSTS"
+			fi
+			;;
+		*)
+			AC_COMPUTE_INT(psi_const_val, $1, AC_INCLUDES_DEFAULT($3))
+			if test "$psi_const_val"; then
+				PSI_CONSTS="{\"$1\", IS_LONG, NULL, $psi_const_val}, $PSI_CONSTS"
+			fi
+			;;
+		esac
+		AC_MSG_RESULT($psi_const_val)
+	])
+	
+	AC_DEFUN([AX_CHECK_SIGN], [
+		typename=`echo $1 | sed "s/@<:@^a-zA-Z0-9_@:>@/_/g"`
+		AC_CACHE_CHECK([whether $1 is signed], ax_cv_decl_${typename}_signed, [
+				AC_TRY_COMPILE([$4],
+						[ int foo @<:@ 1 - 2 * !((($1) -1) < 0) @:>@ ],
+						[ eval "ax_cv_decl_${typename}_signed=\"yes\"" ],
+						[ eval "ax_cv_decl_${typename}_signed=\"no\"" ])])
+		symbolname=`echo $1 | sed "s/@<:@^a-zA-Z0-9_@:>@/_/g" | tr "a-z" "A-Z"`
+		if eval "test \"\${ax_cv_decl_${typename}_signed}\" = \"yes\""; then
+				$2
+		elif eval "test \"\${ax_cv_decl_${typename}_signed}\" = \"no\""; then
+				$3
+		fi
+	])
+	
+	PSI_TYPE(char, int)
+	PSI_TYPE(short, int)
+	PSI_TYPE(int, int)
+	PSI_TYPE(long, int)
+	PSI_TYPE(float)
+	PSI_TYPE(double)
+	PSI_TYPE(void *)
+	
+	dnl stddef.h
+	PSI_TYPE(ptrdiff_t, int)
+	PSI_TYPE(size_t, uint)
+	AC_CHECK_TYPE(wchar_t, [
+		AX_CHECK_SIGN(wchar_t, psi_wchar_t=int, psi_wchar_t=uint)
+		PSI_TYPE(wchar_t, $psi_wchar_t)
+	])
+	
+	dnl stdio.h
+	PSI_TYPE(fpos_t, int)
+	PSI_CONST(BUFSIZ, int)
+	PSI_CONST(_IOFBF, int)
+	PSI_CONST(_IOLBF, int)
+	PSI_CONST(_IONBF, int)
+	PSI_CONST(SEEK_CUR, int)
+	PSI_CONST(SEEK_END, int)
+	PSI_CONST(SEEK_SET, int)
+	PSI_CONST(FILENAME_MAX, int)
+	PSI_CONST(FOPEN_MAX, int)
+	PSI_CONST(TMP_MAX, int)
+	PSI_CONST(EOF, int)
+	PSI_CONST(P_tmpdir, string)
+	dnl stdlib.h
+	PSI_CONST(EXIT_FAILURE, int)
+	PSI_CONST(EXIT_SUCCESS, int)
+	PSI_CONST(RAND_MAX, int)
+	PSI_CONST(MB_CUR_MAX, int)
+	dnl sys/time.h
+	PSI_CONST(ITIMER_REAL, int)
+	PSI_CONST(ITIMER_VIRTUAL, int)
+	PSI_CONST(ITIMER_PROF, int)
+	dnl sys/types.h
+	PSI_TYPE(blkcnt_t, int)
+	PSI_TYPE(blksize_t, int)
+	PSI_TYPE(clock_t, int)
+	PSI_TYPE(clockid_t, int)
+	PSI_TYPE(dev_t, int)
+	PSI_TYPE(fsblkcnt_t, uint)
+	PSI_TYPE(fsfilcnt_t, uint)
+	PSI_TYPE(gid_t, int)
+	PSI_TYPE(id_t, int)
+	PSI_TYPE(ino_t, uint)
+	PSI_TYPE(key_t, int)
+	PSI_TYPE(mode_t, int)
+	PSI_TYPE(nlink_t, int)
+	PSI_TYPE(off_t, int)
+	PSI_TYPE(pid_t, int)
+	PSI_TYPE(ssize_t, int)
+	PSI_TYPE(suseconds_t, int)
+	PSI_TYPE(time_t, int)
+	PSI_TYPE(timer_t, int)
+	PSI_TYPE(uid_t)
 
+	AC_DEFINE_UNQUOTED(PHP_PSI_TYPES, $PSI_TYPES, Predefined types)
+	AC_DEFINE_UNQUOTED(PHP_PSI_CONSTS, $PSI_CONSTS, Predefined constants)
+	
 	PHP_PSI_SRCDIR=PHP_EXT_SRCDIR(psi)
 	PHP_PSI_BUILDDIR=PHP_EXT_BUILDDIR(psi)
 
