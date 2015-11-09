@@ -207,7 +207,7 @@ decl_type(type_) ::= SIZE_T(T). {
 	type_ = init_decl_type(T->type, T->text);
 	free(T);
 }
-decl_type(type_) ::= SINT8(T). {
+decl_type(type_) ::= INT8(T). {
 	type_ = init_decl_type(T->type, T->text);
 	free(T);
 }
@@ -215,7 +215,7 @@ decl_type(type_) ::= UINT8(T). {
 	type_ = init_decl_type(T->type, T->text);
 	free(T);
 }
-decl_type(type_) ::= SINT16(T). {
+decl_type(type_) ::= INT16(T). {
 	type_ = init_decl_type(T->type, T->text);
 	free(T);
 }
@@ -223,7 +223,7 @@ decl_type(type_) ::= UINT16(T). {
 	type_ = init_decl_type(T->type, T->text);
 	free(T);
 }
-decl_type(type_) ::= SINT32(T). {
+decl_type(type_) ::= INT32(T). {
 	type_ = init_decl_type(T->type, T->text);
 	free(T);
 }
@@ -231,7 +231,7 @@ decl_type(type_) ::= UINT32(T). {
 	type_ = init_decl_type(T->type, T->text);
 	free(T);
 }
-decl_type(type_) ::= SINT64(T). {
+decl_type(type_) ::= INT64(T). {
 	type_ = init_decl_type(T->type, T->text);
 	free(T);
 }
@@ -269,23 +269,23 @@ impl_func(func) ::= FUNCTION REFERENCE NSNAME(NAME) impl_args(args) COLON impl_t
 %type impl_def_val {impl_def_val*}
 %destructor impl_def_val {free_impl_def_val($$);}
 impl_def_val(def) ::= NULL(T). {
-	def = init_impl_def_val(T);
+	def = init_impl_def_val(T->type, T->text);
 	free(T);
 }
 impl_def_val(def) ::= NUMBER(T). {
-	def = init_impl_def_val(T);
+	def = init_impl_def_val(T->type, T->text);
 	free(T);
 }
 impl_def_val(def) ::= TRUE(T). {
-	def = init_impl_def_val(T);
+	def = init_impl_def_val(T->type, T->text);
 	free(T);
 }
 impl_def_val(def) ::= FALSE(T). {
-	def = init_impl_def_val(T);
+	def = init_impl_def_val(T->type, T->text);
 	free(T);
 }
 impl_def_val(def) ::= QUOTED_STRING(T). {
-	def = init_impl_def_val(T);
+	def = init_impl_def_val(T->type, T->text);
 	free(T);
 }
 

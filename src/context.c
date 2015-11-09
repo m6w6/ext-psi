@@ -9,8 +9,34 @@
 #include "parser.h"
 #include "validator.h"
 
+#define psi_predef_count(s) (sizeof(psi_predef_ ##s## s)/sizeof(psi_predef ##s))
+typedef struct psi_predef_type {
+	token_t type_tag;
+	const char *type_name;
+	const char *alias;
+} psi_predef_type;
+#define psi_predef_type_count() psi_predef_count(type)
+static const psi_predef_types[] = {
+	PHP_PSI_TYPES
+};
+
+typedef struct psi_predef_const {
+	token_t type_tag;
+	const char *type_name;
+	const char *name;
+	const char *val_text;
+	token_t val_type_tag;
+} psi_predef_const;
+#define psi_predef_const_count() psi_predef_count(const)
+static const psi_predef_consts[] = {
+	PHP_PSI_CONSTS
+};
+
 PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErrorFunc error)
 {
+	size_t i;
+	PSI_Data data;
+
 	if (!C) {
 		C = malloc(sizeof(*C));
 	}
@@ -20,6 +46,22 @@ PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErr
 	C->ops = ops;
 	ops->init(C);
 
+	memset(&data, 0, sizeof(data));
+	for (i = 0; i < psi_predef_type_count(); ++i) {
+		psi_predef_type *pre = &psi_predef_types[i];
+		decl_type *type = init_decl_type(pre->type_tag, pre->type_name);
+		decl_typedef *def = init_decl_typedef(pre->alias, type);
+
+		data.defs = add_decl_typedef(data.defs, def);
+	}
+	for (i = 0; i < psi_predef_const_count(); ++i) {
+		psi_predef_const *pre = psi_predef_const[i];
+		impl_def_val *val = init_impl_def_val(pre->val_type_tag, pre->val_text);
+		const_type *type = init_const_type(pre->type_tag, pre->type_name);
+		constant *constant = init_constant(type, pre->name, val);
+
+		data.consts = add_constant(data.consts, constant);
+	}
 	return C;
 }
 
@@ -155,4 +197,3 @@ void PSI_ContextFree(PSI_Context **C)
 		*C = NULL;
 	}
 }
-

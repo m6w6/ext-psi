@@ -79,19 +79,19 @@ if test "$PHP_PSI" != "no"; then
 	else
 		AC_MSG_WARN([Could not find libjit, please provide the base install path])
 	fi
-	
+
 	PHP_SUBST(PSI_SHARED_LIBADD)
-	
+
 	PSI_TYPES=""
 	AC_DEFUN(PSI_TYPE, [
 		AC_CHECK_SIZEOF($1)
 		AC_CHECK_ALIGNOF($1)
 		if test "$2" && test "$ac_cv_sizeof_[]$1" -gt 0; then
 			psi_type_bits=`expr ${AS_TR_SH(ac_cv_sizeof_[]$1)} \* 8`
-			PSI_TYPES="{\""$2[]${psi_type_bits}[]_t"\", \""$1"\"}, $PSI_TYPES"
-		fi 
+			PSI_TYPES="{PSI_T_[]translit($2,a-z,A-Z)[]${psi_type_bits}, \""$2[]${psi_type_bits}[]_t"\", \""$1"\"}, $PSI_TYPES"
+		fi
 	])
-	
+
 	PSI_CONSTS=""
 	AC_DEFUN(PSI_COMPUTE_STR, [
 		var=$1
@@ -109,22 +109,23 @@ if test "$PHP_PSI" != "no"; then
 	AC_DEFUN(PSI_CONST, [
 		AC_MSG_CHECKING(value of $1)
 		case $2 in
-		str*)
+		str*|quoted_str*)
 			PSI_COMPUTE_STR(psi_const_val, $1, AC_INCLUDES_DEFAULT($3))
 			if test "$psi_const_val"; then
-				PSI_CONSTS="{\"$1\", IS_STRING, $psi_const_val, 0}, $PSI_CONSTS"
+				PSI_CONSTS="{PSI_T_STRING, \"string\", \"$1\", $psi_const_val, PSI_T_QUOTED_STRING}, $PSI_CONSTS"
 			fi
 			;;
 		*)
 			AC_COMPUTE_INT(psi_const_val, $1, AC_INCLUDES_DEFAULT($3))
 			if test "$psi_const_val"; then
-				PSI_CONSTS="{\"$1\", IS_LONG, NULL, $psi_const_val}, $PSI_CONSTS"
+				PSI_CONSTS="{PSI_T_INT, \"int\", \"$1\", \"$psi_const_val\", PSI_T_NUMBER}, $PSI_CONSTS"
 			fi
 			;;
 		esac
+
 		AC_MSG_RESULT($psi_const_val)
 	])
-	
+
 	AC_DEFUN([AX_CHECK_SIGN], [
 		typename=`echo $1 | sed "s/@<:@^a-zA-Z0-9_@:>@/_/g"`
 		AC_CACHE_CHECK([whether $1 is signed], ax_cv_decl_${typename}_signed, [
@@ -139,7 +140,7 @@ if test "$PHP_PSI" != "no"; then
 				$3
 		fi
 	])
-	
+
 	PSI_TYPE(char, int)
 	PSI_TYPE(short, int)
 	PSI_TYPE(int, int)
@@ -147,7 +148,7 @@ if test "$PHP_PSI" != "no"; then
 	PSI_TYPE(float)
 	PSI_TYPE(double)
 	PSI_TYPE(void *)
-	
+
 	dnl stddef.h
 	PSI_TYPE(ptrdiff_t, int)
 	PSI_TYPE(size_t, uint)
@@ -155,7 +156,7 @@ if test "$PHP_PSI" != "no"; then
 		AX_CHECK_SIGN(wchar_t, psi_wchar_t=int, psi_wchar_t=uint)
 		PSI_TYPE(wchar_t, $psi_wchar_t)
 	])
-	
+
 	dnl stdio.h
 	PSI_TYPE(fpos_t, int)
 	PSI_CONST(BUFSIZ, int)
@@ -203,7 +204,7 @@ if test "$PHP_PSI" != "no"; then
 
 	AC_DEFINE_UNQUOTED(PHP_PSI_TYPES, $PSI_TYPES, Predefined types)
 	AC_DEFINE_UNQUOTED(PHP_PSI_CONSTS, $PSI_CONSTS, Predefined constants)
-	
+
 	PHP_PSI_SRCDIR=PHP_EXT_SRCDIR(psi)
 	PHP_PSI_BUILDDIR=PHP_EXT_BUILDDIR(psi)
 

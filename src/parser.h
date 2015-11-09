@@ -367,7 +367,7 @@ typedef struct impl_var {
 
 static inline impl_var *init_impl_var(char *name, int is_reference) {
 	impl_var *var = calloc(1, sizeof(*var));
-	var->name = (char *) strdup((const char *) name);
+	var->name = strdup(name);
 	var->reference = is_reference;
 	return var;
 }
@@ -382,10 +382,10 @@ typedef struct impl_def_val {
 	char *text;
 } impl_def_val;
 
-static inline impl_def_val *init_impl_def_val(PSI_Token *T) {
+static inline impl_def_val *init_impl_def_val(token_t t, char *text) {
 	impl_def_val *def = calloc(1, sizeof(*def));
-	def->type = T->type;
-	def->text = strdup(T->text);
+	def->type = t;
+	def->text = strdup(text);
 	return def;
 }
 
@@ -950,4 +950,3 @@ void PSI_ParserDtor(PSI_Parser *P);
 void PSI_ParserFree(PSI_Parser **P);
 
 #endif
-
