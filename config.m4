@@ -83,40 +83,54 @@ if test "$PHP_PSI" != "no"; then
 	PHP_SUBST(PSI_SHARED_LIBADD)
 
 	PSI_TYPES=""
+	dnl PSI_TYPE(type name, basic type, whether to check alignmnet)
 	AC_DEFUN(PSI_TYPE, [
 		AC_CHECK_SIZEOF($1)
-		AC_CHECK_ALIGNOF($1)
+		if test "$3" && test "$3" != "no"
+		then
+			AC_CHECK_ALIGNOF($1)
+		fi
 		if test "$2" && test "$ac_cv_sizeof_[]$1" -gt 0; then
 			psi_type_bits=`expr ${AS_TR_SH(ac_cv_sizeof_[]$1)} \* 8`
 			PSI_TYPES="{PSI_T_[]translit($2,a-z,A-Z)[]${psi_type_bits}, \""$2[]${psi_type_bits}[]_t"\", \""$1"\"}, $PSI_TYPES"
 		fi
 	])
+	
 
 	PSI_CONSTS=""
+	dnl PSI_COMPUTE_STR(variable, string or expression, includes)
 	AC_DEFUN(PSI_COMPUTE_STR, [
-		var=$1
-		exp=$2
-		inc=$3
 		AC_TRY_RUN([
-			$inc
+			$3
 			int main() {
-				return EOF == fputs($exp, fopen("conftest.out", "w"));
+				return EOF == fputs($2, fopen("conftest.out", "w"));
 			}
 		], [
-			eval $var=\\\"`cat conftest.out`\\\"
+			eval $1=\\\"`cat conftest.out`\\\"
 		])
 	])
+	
+	dnl PSI_CONST(const name, type, headers to include)
 	AC_DEFUN(PSI_CONST, [
 		AC_MSG_CHECKING(value of $1)
+		PSI_INCLUDES=
+		if test "$3"
+		then
+			for i in $3
+			do
+				PSI_INCLUDES="$PSI_INCLUDES
+#include <$i>"
+			done
+		fi
 		case $2 in
 		str*|quoted_str*)
-			PSI_COMPUTE_STR(psi_const_val, $1, AC_INCLUDES_DEFAULT($3))
+			PSI_COMPUTE_STR(psi_const_val, $1, AC_INCLUDES_DEFAULT()$PSI_INCLUDES)
 			if test "$psi_const_val"; then
 				PSI_CONSTS="{PSI_T_STRING, \"string\", \"$1\", $psi_const_val, PSI_T_QUOTED_STRING}, $PSI_CONSTS"
 			fi
 			;;
 		*)
-			AC_COMPUTE_INT(psi_const_val, $1, AC_INCLUDES_DEFAULT($3))
+			AC_COMPUTE_INT(psi_const_val, $1, AC_INCLUDES_DEFAULT()$PSI_INCLUDES)
 			if test "$psi_const_val"; then
 				PSI_CONSTS="{PSI_T_INT, \"int\", \"$1\", \"$psi_const_val\", PSI_T_NUMBER}, $PSI_CONSTS"
 			fi
@@ -158,7 +172,6 @@ if test "$PHP_PSI" != "no"; then
 	])
 
 	dnl stdio.h
-	PSI_TYPE(fpos_t, int)
 	PSI_CONST(BUFSIZ, int)
 	PSI_CONST(_IOFBF, int)
 	PSI_CONST(_IOLBF, int)
@@ -171,15 +184,17 @@ if test "$PHP_PSI" != "no"; then
 	PSI_CONST(TMP_MAX, int)
 	PSI_CONST(EOF, int)
 	PSI_CONST(P_tmpdir, string)
+	PSI_CONST(L_ctermid, int)
+	PSI_CONST(L_tmpnam, int)
 	dnl stdlib.h
 	PSI_CONST(EXIT_FAILURE, int)
 	PSI_CONST(EXIT_SUCCESS, int)
 	PSI_CONST(RAND_MAX, int)
 	PSI_CONST(MB_CUR_MAX, int)
 	dnl sys/time.h
-	PSI_CONST(ITIMER_REAL, int)
-	PSI_CONST(ITIMER_VIRTUAL, int)
-	PSI_CONST(ITIMER_PROF, int)
+	PSI_CONST(ITIMER_REAL, int, sys/time.h)
+	PSI_CONST(ITIMER_VIRTUAL, int, sys/time.h)
+	PSI_CONST(ITIMER_PROF, int, sys/time.h)
 	dnl sys/types.h
 	PSI_TYPE(blkcnt_t, int)
 	PSI_TYPE(blksize_t, int)
