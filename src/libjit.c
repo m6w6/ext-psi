@@ -16,32 +16,26 @@ static inline jit_type_t psi_jit_type(token_t t) {
 		/* no break */
 	case PSI_T_VOID:
 		return jit_type_void;
-	case PSI_T_SINT8:
+	case PSI_T_INT8:
 		return jit_type_sbyte;
 	case PSI_T_UINT8:
 		return jit_type_ubyte;
-	case PSI_T_SINT16:
+	case PSI_T_INT16:
 		return jit_type_short;
 	case PSI_T_UINT16:
 		return jit_type_ushort;
-	case PSI_T_SINT32:
+	case PSI_T_INT32:
 		return jit_type_int;
 	case PSI_T_UINT32:
 		return jit_type_uint;
-	case PSI_T_SINT64:
+	case PSI_T_INT64:
 		return jit_type_long;
 	case PSI_T_UINT64:
 		return jit_type_ulong;
 	case PSI_T_BOOL:
 		return jit_type_sys_bool;
-	case PSI_T_CHAR:
-		return jit_type_sys_char;
-	case PSI_T_SHORT:
-		return jit_type_sys_short;
 	case PSI_T_INT:
 		return jit_type_sys_int;
-	case PSI_T_LONG:
-		return jit_type_sys_long;
 	case PSI_T_FLOAT:
 		return jit_type_sys_float;
 	case PSI_T_DOUBLE:

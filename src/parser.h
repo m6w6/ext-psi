@@ -32,7 +32,7 @@ typedef struct decl_type {
 	struct decl_struct *strct;
 } decl_type;
 
-static inline decl_type *init_decl_type(token_t type, char *name) {
+static inline decl_type *init_decl_type(token_t type, const char *name) {
 	decl_type *t = calloc(1, sizeof(*t));
 	t->type = type;
 	t->name = strdup(name);
@@ -56,7 +56,7 @@ typedef struct decl_typedef {
 	decl_type *type;
 } decl_typedef;
 
-static inline decl_typedef *init_decl_typedef(char *name, decl_type *type) {
+static inline decl_typedef *init_decl_typedef(const char *name, decl_type *type) {
 	decl_typedef *t = calloc(1, sizeof(*t));
 	t->alias = strdup(name);
 	t->type = type;
@@ -100,7 +100,7 @@ typedef struct decl_var {
 	struct decl_arg *arg;
 } decl_var;
 
-static inline decl_var *init_decl_var(char *name, unsigned pl, unsigned as) {
+static inline decl_var *init_decl_var(const char *name, unsigned pl, unsigned as) {
 	decl_var *v = calloc(1, sizeof(*v));
 	v->name = (char *) strdup((const char *) name);
 	v->pointer_level = pl;
@@ -195,7 +195,7 @@ typedef struct decl_abi {
 	char *convention;
 } decl_abi;
 
-static inline decl_abi *init_decl_abi(char *convention) {
+static inline decl_abi *init_decl_abi(const char *convention) {
 	decl_abi *abi = calloc(1, sizeof(*abi));
 	abi->convention = strdup(convention);
 	return abi;
@@ -265,7 +265,7 @@ typedef struct decl_struct {
 	decl_struct_layout *layout;
 } decl_struct;
 
-static inline decl_struct *init_decl_struct(char *name, decl_args *args) {
+static inline decl_struct *init_decl_struct(const char *name, decl_args *args) {
 	decl_struct *s = calloc(1, sizeof(*s));
 	s->name = strdup(name);
 	s->args = args;
@@ -347,11 +347,11 @@ typedef struct impl_type {
 	token_t type;
 } impl_type;
 
-static inline impl_type *init_impl_type(token_t type, char *name) {
+static inline impl_type *init_impl_type(token_t type, const char *name) {
 	impl_type *t = calloc(1, sizeof(*t));
 
 	t->type = type;
-	t->name = (char *) strdup((const char *) name);
+	t->name = strdup(name);
 	return t;
 }
 
@@ -365,7 +365,7 @@ typedef struct impl_var {
 	unsigned reference:1;
 } impl_var;
 
-static inline impl_var *init_impl_var(char *name, int is_reference) {
+static inline impl_var *init_impl_var(const char *name, int is_reference) {
 	impl_var *var = calloc(1, sizeof(*var));
 	var->name = strdup(name);
 	var->reference = is_reference;
@@ -382,7 +382,7 @@ typedef struct impl_def_val {
 	char *text;
 } impl_def_val;
 
-static inline impl_def_val *init_impl_def_val(token_t t, char *text) {
+static inline impl_def_val *init_impl_def_val(token_t t, const char *text) {
 	impl_def_val *def = calloc(1, sizeof(*def));
 	def->type = t;
 	def->text = strdup(text);
@@ -499,7 +499,7 @@ typedef struct let_func {
 	let_calloc *alloc;
 } let_func;
 
-static inline let_func *init_let_func(token_t type, char *name, let_calloc *alloc) {
+static inline let_func *init_let_func(token_t type, const char *name, let_calloc *alloc) {
 	let_func *func = calloc(1, sizeof(*func));
 	func->type = type;
 	func->name = strdup(name);
@@ -568,10 +568,10 @@ typedef struct set_func {
 	char *name;
 } set_func;
 
-static inline set_func *init_set_func(token_t type, char *name) {
+static inline set_func *init_set_func(token_t type, const char *name) {
 	set_func *func = calloc(1, sizeof(*func));
 	func->type = type;
-	func->name = (char *) strdup((const char *) name);
+	func->name = strdup(name);
 	return func;
 }
 
@@ -823,7 +823,7 @@ typedef struct constant {
 	impl_def_val *val;
 } constant;
 
-static inline constant *init_constant(const_type *type, char *name, impl_def_val *val) {
+static inline constant *init_constant(const_type *type, const char *name, impl_def_val *val) {
 	constant *c = calloc(1, sizeof(*c));
 	c->type = type;
 	c->name = strdup(name);

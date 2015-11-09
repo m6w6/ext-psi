@@ -179,22 +179,6 @@ decl_type(type_) ::= VOID(T). {
 	type_ = init_decl_type(T->type, T->text);
 	free(T);
 }
-decl_type(type_) ::= CHAR(T). {
-	type_ = init_decl_type(T->type, T->text);
-	free(T);
-}
-decl_type(type_) ::= SHORT(T). {
-	type_ = init_decl_type(T->type, T->text);
-	free(T);
-}
-decl_type(type_) ::= INT(T). {
-	type_ = init_decl_type(T->type, T->text);
-	free(T);
-}
-decl_type(type_) ::= LONG(T). {
-	type_ = init_decl_type(T->type, T->text);
-	free(T);
-}
 decl_type(type_) ::= FLOAT(T). {
 	type_ = init_decl_type(T->type, T->text);
 	free(T);
@@ -203,8 +187,9 @@ decl_type(type_) ::= DOUBLE(T). {
 	type_ = init_decl_type(T->type, T->text);
 	free(T);
 }
-decl_type(type_) ::= SIZE_T(T). {
-	type_ = init_decl_type(T->type, T->text);
+/* we have to support plain int here because we have it in our lexer rules */
+decl_type(type_) ::= INT(T). {
+	type_ = init_decl_type(PSI_T_NAME, T->text);
 	free(T);
 }
 decl_type(type_) ::= INT8(T). {

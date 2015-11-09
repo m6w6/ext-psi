@@ -13,16 +13,16 @@
 #include "parser.h"
 #include "validator.h"
 
-#define psi_predef_count(s) (sizeof(psi_predef_ ##s## s)/sizeof(psi_predef ##s))
+#define psi_predef_count(of) ((sizeof(psi_predef ##of## s)/sizeof(psi_predef ##of))-1)
 typedef struct psi_predef_type {
 	token_t type_tag;
 	const char *type_name;
 	const char *alias;
 } psi_predef_type;
-#define psi_predef_type_count() psi_predef_count(type)
-static const psi_predef_types[] = {
-	PHP_PSI_TYPES
+static const psi_predef_type psi_predef_types[] = {
+	PHP_PSI_TYPES{0}
 };
+#define psi_predef_type_count() psi_predef_count(_type)
 
 typedef struct psi_predef_const {
 	token_t type_tag;
@@ -31,14 +31,33 @@ typedef struct psi_predef_const {
 	const char *val_text;
 	token_t val_type_tag;
 } psi_predef_const;
-#define psi_predef_const_count() psi_predef_count(const)
-static const psi_predef_consts[] = {
-	PHP_PSI_CONSTS
+static const psi_predef_const psi_predef_consts[] = {
+	PHP_PSI_CONSTS{0}
 };
+#define psi_predef_const_count() psi_predef_count(_const)
+
+typedef struct psi_predef_struct_member {
+	token_t type_tag;
+	const char *type_name;
+	const char *name;
+	size_t off;
+	size_t len;
+	size_t pointer_level;
+	size_t array_size;
+} psi_predef_struct_member;
+#define PSI_PREDEF_STRUCT_MEMBERS 32
+typedef struct psi_predef_struct {
+	const char *name;
+	psi_predef_struct_member members[PSI_PREDEF_STRUCT_MEMBERS];
+} psi_predef_struct;
+static const psi_predef_struct psi_predef_structs[] = {
+	PHP_PSI_STRUCTS{0}
+};
+#define psi_predef_struct_count() psi_predef_count(_struct)
 
 PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErrorFunc error)
 {
-	size_t i;
+	size_t i, j;
 	PSI_Data data;
 
 	if (!C) {
@@ -52,19 +71,40 @@ PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErr
 
 	memset(&data, 0, sizeof(data));
 	for (i = 0; i < psi_predef_type_count(); ++i) {
-		psi_predef_type *pre = &psi_predef_types[i];
+		const psi_predef_type *pre = &psi_predef_types[i];
 		decl_type *type = init_decl_type(pre->type_tag, pre->type_name);
 		decl_typedef *def = init_decl_typedef(pre->alias, type);
 
 		data.defs = add_decl_typedef(data.defs, def);
 	}
 	for (i = 0; i < psi_predef_const_count(); ++i) {
-		psi_predef_const *pre = psi_predef_const[i];
+		const psi_predef_const *pre = &psi_predef_consts[i];
 		impl_def_val *val = init_impl_def_val(pre->val_type_tag, pre->val_text);
 		const_type *type = init_const_type(pre->type_tag, pre->type_name);
 		constant *constant = init_constant(type, pre->name, val);
 
 		data.consts = add_constant(data.consts, constant);
+	}
+	for (i = 0; i < psi_predef_struct_count(); ++i) {
+		const psi_predef_struct *pre = &psi_predef_structs[i];
+		decl_args *dargs = init_decl_args(NULL);
+
+		for (j = 0; j < PSI_PREDEF_STRUCT_MEMBERS; ++j) {
+			const psi_predef_struct_member *member = &pre->members[j];
+			decl_type *type;
+			decl_var *dvar;
+
+			if (!member->name) {
+				break;
+			}
+
+			type = init_decl_type(member->type_tag, member->type_name);
+			dvar = init_decl_var(member->name, member->pointer_level, member->array_size);
+			dargs = add_decl_arg(dargs, init_decl_arg(type, dvar));
+		}
+
+		data.structs = add_decl_struct(data.structs,
+				init_decl_struct(pre->name, dargs));
 	}
 	return C;
 }

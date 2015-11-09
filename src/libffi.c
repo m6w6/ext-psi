@@ -60,32 +60,26 @@ static inline ffi_type *psi_ffi_type(token_t t) {
 		/* no break */
 	case PSI_T_VOID:
 		return &ffi_type_void;
-	case PSI_T_SINT8:
+	case PSI_T_INT8:
 		return &ffi_type_sint8;
 	case PSI_T_UINT8:
 		return &ffi_type_uint8;
-	case PSI_T_SINT16:
+	case PSI_T_INT16:
 		return &ffi_type_sint16;
 	case PSI_T_UINT16:
 		return &ffi_type_uint16;
-	case PSI_T_SINT32:
+	case PSI_T_INT32:
 		return &ffi_type_sint32;
 	case PSI_T_UINT32:
 		return &ffi_type_uint32;
-	case PSI_T_SINT64:
+	case PSI_T_INT64:
 		return &ffi_type_sint64;
 	case PSI_T_UINT64:
 		return &ffi_type_uint64;
 	case PSI_T_BOOL:
 		return &ffi_type_uchar;
-	case PSI_T_CHAR:
-		return &ffi_type_schar;
-	case PSI_T_SHORT:
-		return &ffi_type_sshort;
 	case PSI_T_INT:
 		return &ffi_type_sint;
-	case PSI_T_LONG:
-		return &ffi_type_slong;
 	case PSI_T_FLOAT:
 		return &ffi_type_float;
 	case PSI_T_DOUBLE:

@@ -38,7 +38,6 @@ int psi_internal_type(impl_type *type)
 	case PSI_T_BOOL:
 		return _IS_BOOL;
 	case PSI_T_INT:
-	case PSI_T_LONG:
 		return IS_LONG;
 	case PSI_T_FLOAT:
 	case PSI_T_DOUBLE:
@@ -128,8 +127,7 @@ void psi_to_double(zval *return_value, token_t t, impl_val *ret_val, decl_var *v
 void psi_to_string(zval *return_value, token_t t, impl_val *ret_val, decl_var *var)
 {
 	switch (t) {
-	case PSI_T_CHAR:
-	case PSI_T_SINT8:
+	case PSI_T_INT8:
 	case PSI_T_UINT8:
 		if (!var->arg->var->pointer_level) {
 			RETVAL_STRINGL(&ret_val->cval, 1);
@@ -174,37 +172,25 @@ size_t psi_t_alignment(token_t t)
 	PSI_TAS_C(T); \
 }
 	switch (t) {
-	case PSI_T_CHAR:
-		PSI_TAS_CASE(char);
-		break;
-	case PSI_T_SINT8:
+	case PSI_T_INT8:
 		PSI_TAS_CASE(int8_t);
 		break;
 	case PSI_T_UINT8:
 		PSI_TAS_CASE(uint8_t);
 		break;
-	case PSI_T_SHORT:
-		PSI_TAS_CASE(short);
-		break;
-	case PSI_T_SINT16:
+	case PSI_T_INT16:
 		PSI_TAS_CASE(int16_t);
 		break;
 	case PSI_T_UINT16:
 		PSI_TAS_CASE(uint16_t);
 		break;
-	case PSI_T_INT:
-		PSI_TAS_CASE(int);
-		break;
-	case PSI_T_SINT32:
+	case PSI_T_INT32:
 		PSI_TAS_CASE(int32_t);
 		break;
 	case PSI_T_UINT32:
 		PSI_TAS_CASE(uint32_t);
 		break;
-	case PSI_T_LONG:
-		PSI_TAS_CASE(long);
-		break;
-	case PSI_T_SINT64:
+	case PSI_T_INT64:
 		PSI_TAS_CASE(int64_t);
 		break;
 	case PSI_T_UINT64:
@@ -215,9 +201,6 @@ size_t psi_t_alignment(token_t t)
 		break;
 	case PSI_T_DOUBLE:
 		PSI_TAS_CASE(double);
-		break;
-	case PSI_T_SIZE_T:
-		PSI_TAS_CASE(size_t);
 		break;
 	case PSI_T_POINTER:
 		{
@@ -236,31 +219,22 @@ size_t psi_t_size(token_t t)
 	size_t size;
 
 	switch (t) {
-	case PSI_T_CHAR:
-		size = sizeof(char);
-		break;
-	case PSI_T_SINT8:
+	case PSI_T_INT8:
 	case PSI_T_UINT8:
 		size = 1;
 		break;
-	case PSI_T_SHORT:
-		size = sizeof(short);
-		break;
-	case PSI_T_SINT16:
+	case PSI_T_INT16:
 	case PSI_T_UINT16:
 		size = 2;
 		break;
 	case PSI_T_INT:
 		size = sizeof(int);
 		break;
-	case PSI_T_SINT32:
+	case PSI_T_INT32:
 	case PSI_T_UINT32:
 		size = 4;
 		break;
-	case PSI_T_LONG:
-		size = sizeof(long);
-		break;
-	case PSI_T_SINT64:
+	case PSI_T_INT64:
 	case PSI_T_UINT64:
 		size = 8;
 		break;
@@ -269,9 +243,6 @@ size_t psi_t_size(token_t t)
 		break;
 	case PSI_T_DOUBLE:
 		size = sizeof(double);
-		break;
-	case PSI_T_SIZE_T:
-		size = sizeof(size_t);
 		break;
 	case PSI_T_POINTER:
 		size = sizeof(char *);
@@ -307,8 +278,7 @@ void psi_from_zval(impl_val *mem, decl_arg *spec, zval *zv, void **tmp)
 	case PSI_T_DOUBLE:
 		mem->dval = zval_get_double(zv);
 		break;
-	case PSI_T_CHAR:
-	case PSI_T_SINT8:
+	case PSI_T_INT8:
 	case PSI_T_UINT8:
 		if (spec->var->pointer_level) {
 			zend_string *zs = zval_get_string(zv);
@@ -371,14 +341,23 @@ void psi_to_array(zval *return_value, token_t t, impl_val *ret_val, decl_var *va
 			memset(&tmp, 0, sizeof(tmp));
 			memcpy(&tmp, ptr, layout.len);
 			switch (real_decl_type(darg->type)->type) {
-			case PSI_T_CHAR:
+			case PSI_T_FLOAT:
+			case PSI_T_DOUBLE:
+				psi_to_double(&ztmp, real_decl_type(darg->type)->type, &tmp, darg->var);
+				break;
+			case PSI_T_INT8:
+			case PSI_T_UINT8:
 				if (darg->var->pointer_level) {
 					psi_to_string(&ztmp, real_decl_type(darg->type)->type, &tmp, darg->var);
 					break;
 				}
 				/* no break */
-			case PSI_T_INT:
-			case PSI_T_LONG:
+			case PSI_T_INT16:
+			case PSI_T_UINT16:
+			case PSI_T_INT32:
+			case PSI_T_UINT32:
+			case PSI_T_INT64:
+			case PSI_T_UINT64:
 				psi_to_int(&ztmp, real_decl_type(darg->type)->type, &tmp, darg->var);
 				break;
 			default:
@@ -428,7 +407,7 @@ ZEND_RESULT_CODE psi_parse_args(zend_execute_data *execute_data, impl *impl)
 				iarg->val.zend.bval = iarg->def->type == PSI_T_TRUE ? 1 : 0;
 			}
 			Z_PARAM_BOOL(iarg->val.zend.bval);
-		} else if (PSI_T_INT == iarg->type->type || PSI_T_LONG == iarg->type->type) {
+		} else if (PSI_T_INT == iarg->type->type) {
 			if (iarg->def) {
 				iarg->val.zend.lval = zend_atol(iarg->def->text, strlen(iarg->def->text));
 			}
@@ -515,7 +494,7 @@ void *psi_do_let(decl_arg *darg)
 			}
 			break;
 		case PSI_T_INTVAL:
-			if (iarg->type->type == PSI_T_INT || iarg->type->type == PSI_T_LONG) {
+			if (iarg->type->type == PSI_T_INT) {
 				arg_val->lval = iarg->val.zend.lval;
 			} else {
 				arg_val->lval = zval_get_long(iarg->_zv);
