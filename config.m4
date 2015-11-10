@@ -199,6 +199,7 @@ if test "$PHP_PSI" != "no"; then
 	dnl PSI_STRUCT(name, members, member type cases, includes)
 	PSI_STRUCTS=
 	AC_DEFUN(PSI_STRUCT, [
+		AC_CHECK_SIZEOF(struct $1, [], PSI_INCLUDES_DEFAULT($4))
 		psi_struct_members=
 		m4_foreach(member, [$2], [
 			AC_CHECK_MEMBER(struct $1.member, [
@@ -227,7 +228,7 @@ if test "$PHP_PSI" != "no"; then
 				fi
 			], [], PSI_INCLUDES_DEFAULT($4))
 		])
-		PSI_STRUCTS="{\"$1\", {$psi_struct_members}}, $PSI_STRUCTS"
+		PSI_STRUCTS="{\"$1\", $ac_cv_sizeof_struct_$1, {$psi_struct_members}}, $PSI_STRUCTS"
 	])
 
 	AC_TYPE_INT8_T
@@ -417,6 +418,13 @@ if test "$PHP_PSI" != "no"; then
 	PSI_CONST(ITIMER_REAL, int, sys/time.h)
 	PSI_CONST(ITIMER_VIRTUAL, int, sys/time.h)
 	PSI_CONST(ITIMER_PROF, int, sys/time.h)
+	dnl sys/times.h
+	PSI_STRUCT(tms, [
+		[tms_utime],
+		[tms_stime],
+		[tms_cutime],
+		[tms_cstime]], [
+	], sys/times.h)
 	dnl sys/types.h
 	PSI_TYPE(blkcnt_t, int)
 	PSI_TYPE(blksize_t, int)

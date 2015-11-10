@@ -12,12 +12,18 @@ psi.directory = {PWD}
 ===TEST===
 <?php
 var_dump(psi\asctime(NULL));
+var_dump(psi\asctime_r(NULL));
 var_dump(psi\asctime(psi\gmtime(1234567890)));
+var_dump(psi\asctime_r(psi\gmtime_r(1234567890)));
 ?>
 ===DONE===
 --EXPECT--
 ===TEST===
 string(25) "Sun Jan  0 00:00:00 1900
+"
+string(25) "Sun Jan  0 00:00:00 1900
+"
+string(25) "Fri Feb 13 23:31:30 2009
 "
 string(25) "Fri Feb 13 23:31:30 2009
 "

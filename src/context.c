@@ -49,6 +49,7 @@ typedef struct psi_predef_struct_member {
 #define PSI_PREDEF_STRUCT_MEMBERS 32
 typedef struct psi_predef_struct {
 	const char *name;
+	size_t size;
 	psi_predef_struct_member members[PSI_PREDEF_STRUCT_MEMBERS];
 } psi_predef_struct;
 static const psi_predef_struct psi_predef_structs[] = {
@@ -78,7 +79,7 @@ static int validate_lib(PSI_Data *data, void **dlopened) {
 	}
 	if (!(*dlopened = dlopen(ptr, RTLD_LAZY|RTLD_LOCAL))) {
 		data->error(PSI_WARNING, "Could not open library '%s': %s.",
-				data->psi.file.fn, dlerror());
+				data->psi.file.ln, dlerror());
 		return 0;
 	}
 	return 1;
@@ -229,7 +230,7 @@ static inline int validate_decl_func(PSI_Data *data, void *dl, decl *decl, decl_
 #endif
 	decl->dlptr = dlsym(dl ?: RTLD_NEXT, func->var->name);
 	if (!decl->dlptr) {
-		data->error(PSI_WARNING, "Failed to located symbol '%s': %s",
+		data->error(PSI_WARNING, "Failed to locate symbol '%s': %s",
 			func->var->name, dlerror());
 	}
 	return 1;
@@ -505,6 +506,7 @@ PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErr
 		}
 
 		dstruct = init_decl_struct(pre->name, dargs);
+		dstruct->size = pre->size;
 		T.structs = add_decl_struct(T.structs, dstruct);
 	}
 

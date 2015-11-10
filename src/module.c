@@ -332,10 +332,11 @@ void psi_to_array(zval *return_value, token_t t, impl_val *ret_val, decl_var *va
 		ZEND_ASSERT(s);
 		for (i = 0; i < s->args->count; ++i) {
 			decl_arg *darg = s->args->args[i];
-			impl_val tmp;
+			impl_val tmp, tmp_ptr;
 			zval ztmp;
 			char *ptr = (char *) ret_val->ptr + darg->layout->pos;
 
+			tmp_ptr.ptr = &tmp;
 			memset(&tmp, 0, sizeof(tmp));
 			memcpy(&tmp, ptr, darg->layout->len);
 			switch (real_decl_type(darg->type)->type) {
@@ -357,6 +358,9 @@ void psi_to_array(zval *return_value, token_t t, impl_val *ret_val, decl_var *va
 			case PSI_T_INT64:
 			case PSI_T_UINT64:
 				psi_to_int(&ztmp, real_decl_type(darg->type)->type, &tmp, darg->var);
+				break;
+			case PSI_T_STRUCT:
+				psi_to_array(&ztmp, real_decl_type(darg->type)->type, &tmp_ptr, darg->var);
 				break;
 			default:
 				printf("t=%d\n", real_decl_type(darg->type)->type);

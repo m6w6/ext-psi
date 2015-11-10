@@ -25,6 +25,8 @@ lemon.c:
 ./lemon: lemon.c | lempar.c
 	$(CC) -o $@ $<
 
+$(PHP_PSI_SRCDIR)/src/context.c: $(PHP_PSI_SRCDIR)/config.m4
+	touch $@
 $(PHP_PSI_SRCDIR)/src/%.c: $(PHP_PSI_BUILDDIR)/parser.h
 	touch $@
 $(PHP_PSI_SRCDIR)/src/parser_proc.y: $(PHP_PSI_BUILDDIR)/parser.h

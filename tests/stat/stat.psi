@@ -1,0 +1,8 @@
+extern int __xstat64(int ver, char *path, struct stat *buf);
+function psi\stat(string $path, array &$buf = NULL) : int {
+	let ver = NULL;
+	let path = strval($path);
+	let buf = calloc(1, struct stat);
+	return to_int(__xstat64);
+	set $buf = to_array(*buf);
+}

@@ -40,5 +40,5 @@ array(2) {
   ["tv_usec"]=>
   int(%d)
 }
-int(10%r\d\d\d%r)
+int(%r\d\d\d\d\d%r)
 ===DONE===
