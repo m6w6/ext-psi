@@ -90,7 +90,7 @@ if test "$PHP_PSI" != "no"; then
 			m4_expand([#include <]$1[>])
 		)
 	])
-	
+
 	psi_type_pair() { # (type, size)
 		local psi_type_lower=`tr A-Z a-z <<<$1`
 		case $psi_type_lower in
@@ -107,7 +107,7 @@ if test "$PHP_PSI" != "no"; then
 			;;
 		esac
 	}
-	
+
 	PSI_TYPES=""
 	dnl PSI_TYPE(type name, basic type, includes)
 	AC_DEFUN(PSI_TYPE, [
@@ -117,7 +117,7 @@ if test "$PHP_PSI" != "no"; then
 			PSI_TYPES="{`psi_type_pair $2 $ac_cv_sizeof_[]$1`, \""$1"\"}, $PSI_TYPES"
 		fi
 	])
-	
+
 
 	PSI_CONSTS=""
 	dnl PSI_COMPUTE_STR(variable, string or expression, includes)
@@ -131,10 +131,11 @@ if test "$PHP_PSI" != "no"; then
 			eval $1=\\\"`cat conftest.out`\\\"
 		])
 	])
-	
+
 	dnl PSI_CONST(const name, type, headers to include)
 	AC_DEFUN(PSI_CONST, [
 		AC_CACHE_CHECK(value of $1, psi_cv_const_$1, [
+			psi_const_val=
 			case $2 in
 			str*|quoted_str*)
 				if test "$cross_compiling" = "yes"
@@ -222,7 +223,7 @@ if test "$PHP_PSI" != "no"; then
 		])
 		PSI_STRUCTS="{\"$1\", {$psi_struct_members}}, $PSI_STRUCTS"
 	])
-	
+
 	AC_TYPE_INT8_T
 	AC_CHECK_ALIGNOF(int8_t)
 	AC_TYPE_UINT8_T
@@ -247,7 +248,7 @@ if test "$PHP_PSI" != "no"; then
 	PSI_TYPE(float)
 	PSI_TYPE(double)
 	PSI_TYPE(void *)
-	
+
 	dnl stdint.h
 	PSI_TYPE(int_least8_t, int)
 	PSI_TYPE(int_least16_t, int)
@@ -269,7 +270,7 @@ if test "$PHP_PSI" != "no"; then
 	PSI_TYPE(uintptr_t, uint)
 	PSI_TYPE(intmax_t, int)
 	PSI_TYPE(uintmax_t, uint)
-	
+
 	PSI_CONST(INT8_MIN, int)
 	PSI_CONST(INT8_MAX, int)
 	PSI_CONST(UINT8_MAX, int)
@@ -308,7 +309,7 @@ if test "$PHP_PSI" != "no"; then
 	PSI_CONST(INT_FAST64_MIN, int)
 	PSI_CONST(INT_FAST64_MAX, int)
 	PSI_CONST(UINT_FAST64_MAX, int)
-	
+
 	PSI_CONST(INTPTR_MIN, int)
 	PSI_CONST(INTPTR_MAX, int)
 	PSI_CONST(UINTPTR_MAX, int)
@@ -351,21 +352,48 @@ if test "$PHP_PSI" != "no"; then
 	PSI_CONST(MB_CUR_MAX, int)
 	dnl sys/stat.h
 	PSI_STRUCT(stat, [
-		[st_dev], 
-		[st_ino], 
-		[st_mode], 
-		[st_nlink], 
-		[st_uid], 
-		[st_gid], 
-		[st_rdev], 
-		[st_size], 
-		[st_atim], 
-		[st_mtim], 
-		[st_ctim], 
-		[st_blksize], 
-		[st_blocks]], [
-		st_?tim) psi_member_type="struct timespec" ;;
+		[st_dev],
+		[st_ino],
+		[st_mode],
+		[st_nlink],
+		[st_uid],
+		[st_gid],
+		[st_rdev],
+		[st_size],
+		[st_atim], [st_atimespec],
+		[st_mtim], [st_mtimespec],
+		[st_ctim], [st_ctimespec],
+		[st_birthtimespec],
+		[st_blksize],
+		[st_blocks],
+		[st_flags],
+		[st_gen]], [
+		st_?tim*) psi_member_type="struct timespec" ;;
 	], sys/stat.h)
+	PSI_CONST(S_IFMT, int, sys/stat.h)
+	PSI_CONST(S_IFBLK, int, sys/stat.h)
+	PSI_CONST(S_IFCHR, int, sys/stat.h)
+	PSI_CONST(S_IFIFO, int, sys/stat.h)
+	PSI_CONST(S_IFREG, int, sys/stat.h)
+	PSI_CONST(S_IFDIR, int, sys/stat.h)
+	PSI_CONST(S_IFLNK, int, sys/stat.h)
+	PSI_CONST(S_IFSOCK, int, sys/stat.h)
+	PSI_CONST(S_IRWXU, int, sys/stat.h)
+	PSI_CONST(S_IRUSR, int, sys/stat.h)
+	PSI_CONST(S_IWUSR, int, sys/stat.h)
+	PSI_CONST(S_IXUSR, int, sys/stat.h)
+	PSI_CONST(S_IRWXG, int, sys/stat.h)
+	PSI_CONST(S_IRGRP, int, sys/stat.h)
+	PSI_CONST(S_IWGRP, int, sys/stat.h)
+	PSI_CONST(S_IXGRP, int, sys/stat.h)
+	PSI_CONST(S_IRWXO, int, sys/stat.h)
+	PSI_CONST(S_IROTH, int, sys/stat.h)
+	PSI_CONST(S_IWOTH, int, sys/stat.h)
+	PSI_CONST(S_IXOTH, int, sys/stat.h)
+	PSI_CONST(S_ISUID, int, sys/stat.h)
+	PSI_CONST(S_ISGID, int, sys/stat.h)
+	PSI_CONST(UTIME_NOW, int, sys/stat.h)
+	PSI_CONST(UTIME_OMIT, int, sys/stat.h)
 	dnl sys/time.h
 	PSI_CONST(ITIMER_REAL, int, sys/time.h)
 	PSI_CONST(ITIMER_VIRTUAL, int, sys/time.h)
@@ -391,7 +419,7 @@ if test "$PHP_PSI" != "no"; then
 	PSI_TYPE(time_t, int)
 	PSI_TYPE(timer_t, int)
 	PSI_TYPE(uid_t)
-	
+
 	dnl wchar.h
 	AC_CHECK_TYPE(wint_t, [
 		AX_CHECK_SIGN(wint_t, psi_wint_t=int, psi_wint_t=uint)
@@ -403,7 +431,7 @@ if test "$PHP_PSI" != "no"; then
 		AC_INCLUDES_DEFAULT()
 		#include <wchar.h>
 	])
-	
+
 
 	AC_DEFINE_UNQUOTED(PHP_PSI_TYPES, $PSI_TYPES, Predefined types)
 	AC_DEFINE_UNQUOTED(PHP_PSI_CONSTS, $PSI_CONSTS, Predefined constants)
