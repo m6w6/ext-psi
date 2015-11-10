@@ -20,7 +20,7 @@ const int \IDNA_ALLOW_UNASSIGNED = 1;
 const int \IDNA_USE_STD3_ASCII_RULES = 2;
 
 
-default int idna_to_ascii_8z(sint8 *host, sint8 **buffer, int flags);
+default int idna_to_ascii_8z(char *host, char **buffer, int flags);
 function idn\utf8_to_ascii(string $host, string &$result, int $flags = 0) : int {
 	let buffer = &NULL;
 	let host = strval($host);
@@ -29,7 +29,7 @@ function idn\utf8_to_ascii(string $host, string &$result, int $flags = 0) : int 
 	return to_int(idna_to_ascii_8z);
 	free *buffer;
 }
-default sint8 *idna_strerror(int rc);
+default char *idna_strerror(int rc);
 function idn\strerror(int $rc) : string {
 	return to_string(idna_strerror);
 	let rc = intval($rc);

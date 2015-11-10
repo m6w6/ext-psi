@@ -15,7 +15,7 @@
 %extra_argument {PSI_Parser *P}
 /* TOKEN is defined inside syntax_error */
 %syntax_error {
-	PSI_ParserSyntaxError(P, P->fn, P->line, "Unexpected token '%s'", TOKEN->text);
+	PSI_ParserSyntaxError(P, P->psi.file.fn, P->line, "Unexpected token '%s'", TOKEN->text);
 }
 
 %nonassoc NAME.
@@ -28,10 +28,10 @@ blocks ::= blocks block.
 block ::= COMMENT.
 
 block ::= LIB(T) QUOTED_STRING(libname) EOS. {
-	if (P->lib) {
-		PSI_ParserSyntaxError(P, P->fn, T->line, "Extra 'lib %s' statement has no effect", libname->text);
+	if (P->psi.file.ln) {
+		PSI_ParserSyntaxError(P, P->psi.file.ln, T->line, "Extra 'lib %s' statement has no effect", libname->text);
 	} else {
-		P->lib = strndup(libname->text + 1, libname->size - 2);
+		P->psi.file.ln = strndup(libname->text + 1, libname->size - 2);
 	}
 	free(libname);
 	free(T);

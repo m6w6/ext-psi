@@ -295,11 +295,10 @@ void psi_from_zval(impl_val *mem, decl_arg *spec, zval *zv, void **tmp)
 
 void *psi_array_to_struct(decl_struct *s, HashTable *arr)
 {
-	size_t i, j = 0, size = decl_struct_size(s);
-	char *mem = ecalloc(1, size + s->args->count * sizeof(void *));
+	size_t i, j = 0;
+	char *mem = ecalloc(1, s->size + s->args->count * sizeof(void *));
 
 	if (arr) for (i = 0; i < s->args->count; ++i) {
-		decl_struct_layout *layout = &s->layout[i];
 		decl_arg *darg = s->args->args[i];
 		zval *entry = zend_hash_str_find_ind(arr, darg->var->name, strlen(darg->var->name));
 
@@ -309,9 +308,9 @@ void *psi_array_to_struct(decl_struct *s, HashTable *arr)
 
 			memset(&tmp, 0, sizeof(tmp));
 			psi_from_zval(&val, darg, entry, &tmp);
-			memcpy(mem + layout->pos, &val, layout->len);
+			memcpy(mem + darg->layout->pos, &val, darg->layout->len);
 			if (tmp) {
-				((void **)(mem + size))[j++] = tmp;
+				((void **)(mem + s->size))[j++] = tmp;
 			}
 		}
 	}
@@ -333,13 +332,12 @@ void psi_to_array(zval *return_value, token_t t, impl_val *ret_val, decl_var *va
 		ZEND_ASSERT(s);
 		for (i = 0; i < s->args->count; ++i) {
 			decl_arg *darg = s->args->args[i];
-			decl_struct_layout layout = s->layout[i];
 			impl_val tmp;
 			zval ztmp;
-			char *ptr = (char *) ret_val->ptr + layout.pos;
+			char *ptr = (char *) ret_val->ptr + darg->layout->pos;
 
 			memset(&tmp, 0, sizeof(tmp));
-			memcpy(&tmp, ptr, layout.len);
+			memcpy(&tmp, ptr, darg->layout->len);
 			switch (real_decl_type(darg->type)->type) {
 			case PSI_T_FLOAT:
 			case PSI_T_DOUBLE:
@@ -452,8 +450,8 @@ void *psi_do_calloc(let_calloc *alloc)
 	size_t size;
 
 	if (type->type == PSI_T_STRUCT) {
-		/* psi_do_clean expects a NULL pointer after the struct */
-		size = decl_struct_size(type->strct) + sizeof(void *);
+		/* psi_do_clean expects at least one NULL pointer after the struct */
+		size = type->strct->size + sizeof(void *);
 	} else {
 		size = psi_t_size(type->type);
 	}
@@ -618,8 +616,7 @@ void psi_do_clean(impl *impl)
 			decl_type *type = real_decl_type(darg->type);
 
 			if (type->type == PSI_T_STRUCT) {
-				size_t eos = decl_struct_size(type->strct);
-				void **ptr = (void **) ((char *) darg->let->mem + eos);
+				void **ptr = (void **) ((char *) darg->let->mem + type->strct->size);
 
 				while (*ptr) {
 					efree(*ptr++);

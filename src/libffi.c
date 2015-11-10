@@ -257,23 +257,28 @@ static void psi_ffi_dtor(PSI_Context *C)
 	PSI_LibffiContextFree((void *) &C->context);
 }
 
-static zend_function_entry *psi_ffi_compile(PSI_Context *C, PSI_Data *D)
+static zend_function_entry *psi_ffi_compile(PSI_Context *C)
 {
 	size_t i, j = 0;
-	zend_function_entry *zfe = calloc(D->impls->count + 1, sizeof(*zfe));
+	zend_function_entry *zfe;
 	PSI_LibffiContext *ctx = C->context;
 
-	for (i = 0; i < D->impls->count; ++i) {
+	if (!C->impls) {
+		return NULL;
+	}
+
+	zfe = calloc(C->impls->count + 1, sizeof(*zfe));
+	for (i = 0; i < C->impls->count; ++i) {
 		zend_function_entry *zf = &zfe[j];
 		PSI_LibffiData *data;
 
-		if (!D->impls->list[i]->decl) {
+		if (!C->impls->list[i]->decl) {
 			continue;
 		}
 
-		data = PSI_LibffiDataAlloc(ctx, D->impls->list[i]);
-		zf->fname = D->impls->list[i]->func->name + (D->impls->list[i]->func->name[0] == '\\');
-		zf->num_args = D->impls->list[i]->func->args->count;
+		data = PSI_LibffiDataAlloc(ctx, C->impls->list[i]);
+		zf->fname = C->impls->list[i]->func->name + (C->impls->list[i]->func->name[0] == '\\');
+		zf->num_args = C->impls->list[i]->func->args->count;
 		zf->handler = data->code;
 		zf->arg_info = data->arginfo;
 		++j;

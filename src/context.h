@@ -13,21 +13,22 @@ typedef struct PSI_ContextOps PSI_ContextOps;
 struct PSI_ContextOps {
 	void (*init)(PSI_Context *C);
 	void (*dtor)(PSI_Context *C);
-	zend_function_entry *(*compile)(PSI_Context *C, PSI_Data *D);
+	zend_function_entry *(*compile)(PSI_Context *C);
 };
 
 struct PSI_Context {
+	PSI_DATA_MEMBERS;
 	void *context;
-	PSI_ContextErrorFunc error;
 	struct PSI_ContextOps *ops;
-	struct PSI_Data *data;
-	zend_function_entry **closures;
+	zend_function_entry *closures;
+	PSI_Data *data;
 	size_t count;
 };
 
 PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErrorFunc error);
 void PSI_ContextBuild(PSI_Context *C, const char *path);
-zend_function_entry *PSI_ContextCompile(PSI_Context *C, PSI_Data *D);
+int PSI_ContextValidate(PSI_Context *C, PSI_Parser *P);
+zend_function_entry *PSI_ContextCompile(PSI_Context *C);
 void PSI_ContextDtor(PSI_Context *C);
 void PSI_ContextFree(PSI_Context **C);
 

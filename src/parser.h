@@ -113,9 +113,27 @@ static inline void free_decl_var(decl_var *var) {
 	free(var);
 }
 
+typedef struct decl_struct_layout {
+	size_t pos;
+	size_t len;
+} decl_struct_layout;
+
+static inline decl_struct_layout *init_decl_struct_layout(size_t pos, size_t len) {
+	decl_struct_layout *l = calloc(1, sizeof(*l));
+
+	l->pos = pos;
+	l->len = len;
+	return l;
+}
+
+static inline void free_decl_struct_layout(decl_struct_layout *l) {
+	free(l);
+}
+
 typedef struct decl_arg {
 	decl_type *type;
 	decl_var *var;
+	decl_struct_layout *layout;
 	struct let_stmt *let;
 } decl_arg;
 
@@ -123,13 +141,15 @@ static inline decl_arg *init_decl_arg(decl_type *type, decl_var *var) {
 	decl_arg *arg = calloc(1, sizeof(*arg));
 	arg->type = type;
 	arg->var = var;
-	arg->let = NULL;
 	return arg;
 }
 
 static inline void free_decl_arg(decl_arg *arg) {
 	free_decl_type(arg->type);
 	free_decl_var(arg->var);
+	if (arg->layout) {
+		free_decl_struct_layout(arg->layout);
+	}
 	free(arg);
 }
 
@@ -140,9 +160,11 @@ typedef struct decl_vars {
 
 static inline decl_vars *init_decl_vars(decl_var *var) {
 	decl_vars *vars = calloc(1, sizeof(*vars));
-	vars->count = 1;
-	vars->vars = calloc(1, sizeof(*vars->vars));
-	vars->vars[0] = var;
+	if (var) {
+		vars->count = 1;
+		vars->vars = calloc(1, sizeof(*vars->vars));
+		vars->vars[0] = var;
+	}
 	return vars;
 }
 
@@ -169,9 +191,11 @@ typedef struct decl_args {
 
 static inline decl_args *init_decl_args(decl_arg *arg) {
 	decl_args *args = calloc(1, sizeof(*args));
-	args->count = 1;
-	args->args = calloc(1, sizeof(*args->args));
-	args->args[0] = arg;
+	if (arg) {
+		args->count = 1;
+		args->args = calloc(1, sizeof(*args->args));
+		args->args[0] = arg;
+	}
 	return args;
 }
 
@@ -254,15 +278,10 @@ static inline void free_decls(decls *decls) {
 	free(decls);
 }
 
-typedef struct decl_struct_layout {
-	size_t pos;
-	size_t len;
-} decl_struct_layout;
-
 typedef struct decl_struct {
 	char *name;
 	decl_args *args;
-	decl_struct_layout *layout;
+	size_t size;
 } decl_struct;
 
 static inline decl_struct *init_decl_struct(const char *name, decl_args *args) {
@@ -276,17 +295,8 @@ static inline void free_decl_struct(decl_struct *s) {
 	if (s->args) {
 		free_decl_args(s->args);
 	}
-	if (s->layout) {
-		free(s->layout);
-	}
 	free(s->name);
 	free(s);
-}
-
-static inline size_t decl_struct_size(decl_struct *s) {
-	size_t c = s->args->count - 1;
-	decl_type *type = real_decl_type(s->args->args[c]->type);
-	return s->layout[c].pos + psi_t_alignment(type->type);
 }
 
 typedef struct decl_structs {
@@ -426,13 +436,10 @@ typedef struct impl_args {
 
 static inline impl_args *init_impl_args(impl_arg *arg) {
 	impl_args *args = calloc(1, sizeof(*args));
-	args->args = calloc(1, sizeof(*args->args));
 	if (arg) {
 		args->count = 1;
+		args->args = calloc(1, sizeof(*args->args));
 		args->args[0] = arg;
-	} else {
-		args->count = 0;
-		args->args = NULL;
 	}
 	return args;
 }
@@ -866,22 +873,67 @@ static inline void free_constants(constants *c) {
 #define PSI_WARNING 32
 typedef void (*psi_error_cb)(int type, const char *msg, ...);
 
+typedef struct decl_file {
+	char *ln;
+	char *fn;
+} decl_file;
+
+static inline void free_decl_file(decl_file *file) {
+	if (file->ln) {
+		free(file->ln);
+	}
+	if (file->fn) {
+		free(file->fn);
+	}
+	memset(file, 0, sizeof(*file));
+}
+
+typedef struct decl_libs {
+	void **dl;
+	size_t count;
+} decl_libs;
+
+static inline void free_decl_libs(decl_libs *libs) {
+	if (libs->dl) {
+		size_t i;
+		for (i = 0; i < libs->count; ++i) {
+			if (libs->dl[i]) {
+				dlclose(libs->dl[i]);
+			}
+		}
+		free(libs->dl);
+	}
+	memset(libs, 0, sizeof(*libs));
+}
+
+static inline void add_decl_lib(decl_libs *libs, void *dlopened) {
+	libs->dl = realloc(libs->dl, ++libs->count * sizeof(*libs->dl));
+	libs->dl[libs->count-1] = dlopened;
+}
+
+#define PSI_DATA(D) ((PSI_Data *) (D))
 #define PSI_DATA_MEMBERS \
 	constants *consts; \
 	decl_typedefs *defs; \
 	decl_structs *structs; \
 	decls *decls; \
 	impls *impls; \
-	char *lib; \
-	char *fn; \
+	union { \
+		decl_file file; \
+		decl_libs libs; \
+	} psi; \
 	psi_error_cb error
 typedef struct PSI_Data {
 	PSI_DATA_MEMBERS;
 } PSI_Data;
 
-static inline void PSI_DataExchange(PSI_Data *dest, PSI_Data *src) {
+static inline PSI_Data *PSI_DataExchange(PSI_Data *dest, PSI_Data *src) {
+	if (!dest) {
+		dest = malloc(sizeof(*dest));
+	}
 	memcpy(dest, src, sizeof(*dest));
 	memset(src, 0, sizeof(*src));
+	return dest;
 }
 
 static inline void PSI_DataDtor(PSI_Data *data) {
@@ -900,12 +952,7 @@ static inline void PSI_DataDtor(PSI_Data *data) {
 	if (data->impls) {
 		free_impls(data->impls);
 	}
-	if (data->lib) {
-		free(data->lib);
-	}
-	if (data->fn) {
-		free(data->fn);
-	}
+	free_decl_file(&data->psi.file);
 }
 
 typedef struct PSI_Parser {

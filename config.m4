@@ -119,7 +119,6 @@ if test "$PHP_PSI" != "no"; then
 	])
 
 
-	PSI_CONSTS=""
 	dnl PSI_COMPUTE_STR(variable, string or expression, includes)
 	AC_DEFUN(PSI_COMPUTE_STR, [
 		AC_TRY_RUN([
@@ -132,6 +131,7 @@ if test "$PHP_PSI" != "no"; then
 		])
 	])
 
+	PSI_CONSTS=""
 	dnl PSI_CONST(const name, type, headers to include)
 	AC_DEFUN(PSI_CONST, [
 		AC_CACHE_CHECK(value of $1, psi_cv_const_$1, [
@@ -155,10 +155,10 @@ if test "$PHP_PSI" != "no"; then
 		then
 			case $2 in
 			str*|quoted_str*)
-				PSI_CONSTS="{PSI_T_STRING, \"string\", \"$1\", $psi_cv_const_$1, PSI_T_QUOTED_STRING}, $PSI_CONSTS"
+				PSI_CONSTS="{PSI_T_STRING, \"string\", \"psi\\\\$1\", $psi_cv_const_$1, PSI_T_QUOTED_STRING}, $PSI_CONSTS"
 				;;
 			*)
-				PSI_CONSTS="{PSI_T_INT, \"int\", \"$1\", \"$psi_cv_const_$1\", PSI_T_NUMBER}, $PSI_CONSTS"
+				PSI_CONSTS="{PSI_T_INT, \"int\", \"psi\\\\$1\", \"$psi_cv_const_$1\", PSI_T_NUMBER}, $PSI_CONSTS"
 				;;
 			esac
 		fi
@@ -218,7 +218,13 @@ if test "$PHP_PSI" != "no"; then
 				then
 					psi_struct_member_pl=`expr $psi_struct_member_pl + 1`
 				fi
-				psi_struct_members="{`psi_type_pair $psi_member_type $ac_cv_sizeof_struct_$1[]_[]member`, \"[]member[]\", $ac_cv_offsetof_struct_$1[]_[]member, $ac_cv_sizeof_struct_$1[]_[]member, $psi_struct_member_pl, $psi_struct_member_as}, $psi_struct_members"
+				psi_struct_member="{`psi_type_pair $psi_member_type $ac_cv_sizeof_struct_$1[]_[]member`, \"[]member[]\", $ac_cv_offsetof_struct_$1[]_[]member, $ac_cv_sizeof_struct_$1[]_[]member, $psi_struct_member_pl, $psi_struct_member_as}"
+				if test "$psi_struct_members"
+				then
+					psi_struct_members="$psi_struct_members, $psi_struct_member"
+				else
+					psi_struct_members="$psi_struct_member"
+				fi
 			], [], PSI_INCLUDES_DEFAULT($4))
 		])
 		PSI_STRUCTS="{\"$1\", {$psi_struct_members}}, $PSI_STRUCTS"
@@ -395,6 +401,19 @@ if test "$PHP_PSI" != "no"; then
 	PSI_CONST(UTIME_NOW, int, sys/stat.h)
 	PSI_CONST(UTIME_OMIT, int, sys/stat.h)
 	dnl sys/time.h
+	PSI_STRUCT(timeval, [
+		[tv_sec],
+		[tv_usec]], [
+	], sys/time.h)
+	PSI_STRUCT(itimerval, [
+		[it_interval],
+		[it_value]], [
+		it_*) psi_member_type="struct timeval" ;;
+	], sys/time.h)
+	PSI_STRUCT(timezone, [
+		[tz_minuteswest],
+		[tz_dsttime]], [
+	], sys/time.h)
 	PSI_CONST(ITIMER_REAL, int, sys/time.h)
 	PSI_CONST(ITIMER_VIRTUAL, int, sys/time.h)
 	PSI_CONST(ITIMER_PROF, int, sys/time.h)
@@ -419,7 +438,28 @@ if test "$PHP_PSI" != "no"; then
 	PSI_TYPE(time_t, int)
 	PSI_TYPE(timer_t, int)
 	PSI_TYPE(uid_t)
-
+	dnl time.h
+	PSI_STRUCT(tm, [
+		[tm_sec],
+		[tm_min],
+		[tm_hour],
+		[tm_mday],
+		[tm_mon],
+		[tm_year],
+		[tm_wday],
+		[tm_yday],
+		[tm_isdst]], [
+	], time.h)
+	PSI_STRUCT(timespec, [
+		[tv_sec],
+		[tv_nsec]], [
+	], time.h)
+	PSI_CONST(CLOCKS_PER_SEC, int, time.h)
+	PSI_CONST(CLOCK_MONOTONIC, int, time.h)
+	PSI_CONST(CLOCK_PROCESS_CPUTIME_ID, int, time.h)
+	PSI_CONST(CLOCK_REALTIME, int, time.h)
+	PSI_CONST(CLOCK_THREAD_CPUTIME_ID, int, time.h)
+	PSI_CONST(TIMER_ABSTIME, int, time.h)
 	dnl wchar.h
 	AC_CHECK_TYPE(wint_t, [
 		AX_CHECK_SIGN(wint_t, psi_wint_t=int, psi_wint_t=uint)
@@ -444,7 +484,7 @@ if test "$PHP_PSI" != "no"; then
 	PHP_ADD_BUILD_DIR($PHP_PSI_BUILDDIR/src)
 
 	PHP_PSI_HEADERS=`(cd $PHP_PSI_SRCDIR/src && echo *.h)`
-	PHP_PSI_SOURCES="src/parser_proc.c src/parser.c src/validator.c src/module.c src/context.c"
+	PHP_PSI_SOURCES="src/parser_proc.c src/parser.c src/module.c src/context.c"
 	PHP_PSI_SOURCES="$PHP_PSI_SOURCES src/libjit.c src/libffi.c"
 
 	PHP_NEW_EXTENSION(psi, $PHP_PSI_SOURCES, $ext_shared)

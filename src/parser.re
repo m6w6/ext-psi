@@ -30,8 +30,8 @@ PSI_Parser *PSI_ParserInit(PSI_Parser *P, const char *filename, psi_error_cb err
 	}
 	memset(P, 0, sizeof(*P));
 
+	P->psi.file.fn = strdup(filename);
 	P->fp = fp;
-	P->fn = strdup(filename);
 	P->line = 1;
 	P->error = error;
 	P->flags = flags;
