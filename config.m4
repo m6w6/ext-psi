@@ -375,7 +375,8 @@ if test "$PHP_PSI" != "no"; then
 		[st_blocks],
 		[st_flags],
 		[st_gen]], [
-		st_?tim*) psi_member_type="struct timespec" ;;
+		st_?tim) psi_member_type="struct timespec" ;;
+		st_*timespec) psi_member_type="struct timespec" ;;
 	], sys/stat.h)
 	PSI_CONST(S_IFMT, int, sys/stat.h)
 	PSI_CONST(S_IFBLK, int, sys/stat.h)
