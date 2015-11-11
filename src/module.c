@@ -347,7 +347,7 @@ void psi_to_array(zval *return_value, token_t t, impl_val *ret_val, decl_var *va
 			case PSI_T_INT8:
 			case PSI_T_UINT8:
 				if (darg->var->pointer_level) {
-					psi_to_string(&ztmp, real_decl_type(darg->type)->type, &tmp, darg->var);
+					psi_to_string(&ztmp, real_decl_type(darg->type)->type, &tmp_ptr, darg->var);
 					break;
 				}
 				/* no break */
@@ -547,9 +547,9 @@ void *psi_do_let(decl_arg *darg)
 	}
 }
 
-void psi_do_set(zval *return_value, set_func *func, decl_vars *vars)
+void psi_do_set(zval *return_value, set_value *set)
 {
-	impl_val *val = (impl_val *) &vars->vars[0]->arg->let->ptr;
+	impl_val *val = (impl_val *) &set->vars->vars[0]->arg->let->ptr;
 
 	ZVAL_DEREF(return_value);
 	zval_dtor(return_value);
@@ -565,10 +565,8 @@ void psi_do_set(zval *return_value, set_func *func, decl_vars *vars)
 	}
 }
 
-void psi_do_return(impl *impl, impl_val *ret_val, zval *return_value)
+void psi_do_return(return_stmt *ret, impl_val *ret_val, zval *return_value)
 {
-	return_stmt *ret = impl->stmts->ret.list[0];
-
 	switch (ret->func->type) {
 	case PSI_T_TO_STRING:
 		psi_to_string(return_value, real_decl_type(impl->decl->func->type)->type, ret_val, ret->decl);

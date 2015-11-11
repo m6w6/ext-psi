@@ -590,6 +590,8 @@ static inline void free_set_func(set_func *func) {
 typedef struct set_value {
 	set_func *func;
 	decl_vars *vars;
+	struct set_value **inner;
+	size_t count;
 } set_value;
 
 static inline set_value *init_set_value(set_func *func, decl_vars *vars) {
@@ -598,10 +600,21 @@ static inline set_value *init_set_value(set_func *func, decl_vars *vars) {
 	val->vars = vars;
 	return val;
 }
+static inline set_value *add_inner_set_value(set_value *val, set_value *inner) {
+	val->inner = realloc(val->inner, ++val->count * sizeof(*val->inner));
+	val->inner[val->count-1] = inner;
+	return val;
+}
 
 static inline void free_set_value(set_value *val) {
 	free_set_func(val->func);
 	free_decl_vars(val->vars);
+	if (val->inner) {
+		size_t i;
+		for (i = 0; i < val->count; ++i) {
+			free_set_value(val->inner[i]);
+		}
+	}
 	free(val);
 }
 
@@ -625,20 +638,21 @@ static inline void free_set_stmt(set_stmt *set) {
 }
 
 typedef struct return_stmt {
-	set_func *func;
+	set_value *set;
 	decl_var *decl;
 } return_stmt;
 
-static inline return_stmt *init_return_stmt(set_func *func, decl_var *decl) {
+static inline return_stmt *init_return_stmt(set_value *val) {
 	return_stmt *ret = calloc(1, sizeof(*ret));
-	ret->func = func;
-	ret->decl = decl;
+	ret->set = val;
+	ret->decl = val->vars->vars[0];
 	return ret;
 }
 
 static inline void free_return_stmt(return_stmt *ret) {
-	free_set_func(ret->func);
-	free_decl_var(ret->decl);
+	//free_set_func(ret->func);
+	//free_decl_var(ret->decl);
+	free_set_value(ret->set);
 	free(ret);
 }
 

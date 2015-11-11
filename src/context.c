@@ -169,7 +169,7 @@ static inline int validate_decl_struct(PSI_Data *data, decl_struct *s) {
 			return 0;
 		}
 
-		ZEND_ASSERT(!darg->var->arg);
+		ZEND_ASSERT(!darg->var->arg || darg->var->arg == darg);
 		darg->var->arg = darg;
 
 		if (!darg->layout) {
@@ -254,7 +254,9 @@ static inline int validate_decl(PSI_Data *data, void *dl, decl *decl) {
 	}
 	return 1;
 }
-
+static inline int validate_set_value(PSI_Data *data, set_value *set) {
+	set->
+}
 static inline decl *locate_impl_decl(decls *decls, return_stmt *ret) {
 	size_t i;
 
@@ -278,6 +280,9 @@ static inline int validate_impl_ret_stmt(PSI_Data *data, impl *impl) {
 			data->error(PSI_WARNING, "Missing `return` statement for implementation %s",
 					impl->func->name);
 		}
+		return 0;
+	}
+	if (!validate_impl_set_value(data, impl->stmts->ret.list[0]->set)) {
 		return 0;
 	}
 	if (!(impl->decl = locate_impl_decl(data->decls, impl->stmts->ret.list[0]))) {

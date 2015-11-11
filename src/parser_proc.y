@@ -408,6 +408,19 @@ set_stmt(set) ::= SET impl_var(var) EQUALS set_value(val) EOS. {
 set_value(val) ::= set_func(func) LPAREN decl_vars(vars) RPAREN. {
 	val = init_set_value(func, vars);
 }
+set_value(val) ::= set_func(func_) LPAREN decl_vars(vars_) COMMA set_vals(vals) RPAREN. {
+	val = vals;
+	val->func = func_;
+	val->vars = vars_;
+}
+%type set_vals {set_value*}
+%destructor set_vals {free_set_value($$);}
+set_vals(vals) ::= set_value(val). {
+	vals = add_inner_set_value(init_set_value(NULL, NULL), val);
+}
+set_vals(vals) ::= set_vals(vals_) COMMA set_value(val). {
+	vals = add_inner_set_value(vals_, val);
+}
 
 %type set_func {set_func*}
 %destructor set_func {free_set_func($$);}
@@ -438,8 +451,8 @@ set_func(func) ::= VOID(T). {
 
 %type return_stmt {return_stmt*}
 %destructor return_stmt {free_return_stmt($$);}
-return_stmt(ret) ::= RETURN set_func(func) LPAREN decl_var(var) RPAREN EOS. {
-	ret = init_return_stmt(func, var);
+return_stmt(ret) ::= RETURN set_value(val) EOS. {
+	ret = init_return_stmt(val);
 }
 
 %type free_stmt {free_stmt*}
