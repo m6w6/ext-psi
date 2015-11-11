@@ -573,6 +573,7 @@ static inline void free_let_stmt(let_stmt *stmt) {
 typedef struct set_func {
 	token_t type;
 	char *name;
+	void (*handler)(zval *, token_t, impl_val *, decl_var *);
 } set_func;
 
 static inline set_func *init_set_func(token_t type, const char *name) {
@@ -639,13 +640,12 @@ static inline void free_set_stmt(set_stmt *set) {
 
 typedef struct return_stmt {
 	set_value *set;
-	decl_var *decl;
+	decl_arg *decl;
 } return_stmt;
 
 static inline return_stmt *init_return_stmt(set_value *val) {
 	return_stmt *ret = calloc(1, sizeof(*ret));
 	ret->set = val;
-	ret->decl = val->vars->vars[0];
 	return ret;
 }
 

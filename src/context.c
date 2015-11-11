@@ -254,21 +254,78 @@ static inline int validate_decl(PSI_Data *data, void *dl, decl *decl) {
 	}
 	return 1;
 }
-static inline int validate_set_value(PSI_Data *data, set_value *set) {
-	set->
+
+static inline decl_arg *locate_struct_member(decl_struct *s, decl_var *var) {
+	size_t i;
+
+	ZEND_ASSERT(s);
+	for (i = 0; i < s->args->count; ++i) {
+		decl_arg *darg = s->args->args[i];
+
+		if (!strcmp(var->name, darg->var->name)) {
+			return darg;
+		}
+	}
+
+	return NULL;
+}
+static inline int validate_set_value(PSI_Data *data, set_value *set, decl_arg *ref) {
+	size_t i;
+
+	switch (set->func->type) {
+	case PSI_T_TO_BOOL:
+		set->func->handler = psi_to_bool;
+		break;
+	case PSI_T_TO_INT:
+		set->func->handler = psi_to_int;
+		break;
+	case PSI_T_TO_FLOAT:
+		set->func->handler = psi_to_double;
+		break;
+	case PSI_T_TO_STRING:
+		set->func->handler = psi_to_string;
+		break;
+	case PSI_T_TO_ARRAY:
+		set->func->handler = psi_to_array;
+		break;
+	EMPTY_SWITCH_DEFAULT_CASE();
+	}
+
+	if (strcmp(set->vars->vars[0]->name, ref->var->name)) {
+		return 0;
+	}
+
+	if (set->count && (set->func->type != PSI_T_TO_ARRAY || real_decl_type(ref->type)->type != PSI_T_STRUCT)) {
+		data->error(E_WARNING, "Inner `set` statement casts only work with to_array() casts on structs");
+		return 0;
+	}
+	for (i = 0; i < set->count; ++i) {
+		decl_arg *sub_ref = locate_struct_member(real_decl_type(ref->type)->strct, set->inner[i]->vars->vars[0]);
+
+		if (!sub_ref) {
+			return 0;
+		}
+		if (!validate_set_value(data, set->inner[i], sub_ref)) {
+			return 0;
+		}
+	}
+
+	return 1;
 }
 static inline decl *locate_impl_decl(decls *decls, return_stmt *ret) {
 	size_t i;
 
 	for (i = 0; i < decls->count; ++i) {
-		if (!strcmp(decls->list[i]->func->var->name, ret->decl->name)) {
-			ret->decl->arg = decls->list[i]->func;
+		if (!strcmp(decls->list[i]->func->var->name, ret->set->vars->vars[0]->name)) {
+			ret->decl = decls->list[i]->func;
 			return decls->list[i];
 		}
 	}
 	return NULL;
 }
 static inline int validate_impl_ret_stmt(PSI_Data *data, impl *impl) {
+	return_stmt *ret;
+
 	/* we must have exactly one ret stmt delcaring the native func to call */
 	/* and which type cast to apply */
 	if (impl->stmts->ret.count != 1) {
@@ -282,12 +339,15 @@ static inline int validate_impl_ret_stmt(PSI_Data *data, impl *impl) {
 		}
 		return 0;
 	}
-	if (!validate_impl_set_value(data, impl->stmts->ret.list[0]->set)) {
-		return 0;
-	}
-	if (!(impl->decl = locate_impl_decl(data->decls, impl->stmts->ret.list[0]))) {
+
+	ret = impl->stmts->ret.list[0];
+
+	if (!(impl->decl = locate_impl_decl(data->decls, ret))) {
 		data->error(PSI_WARNING, "Missing declaration for implementation %s",
 				impl->func->name);
+		return 0;
+	}
+	if (!validate_set_value(data, ret->set, ret->decl)) {
 		return 0;
 	}
 
@@ -383,6 +443,9 @@ static inline int validate_impl_set_stmts(PSI_Data *data, impl *impl) {
 
 				if (!strcmp(set_var->name, set_arg->var->name)) {
 					check = 1;
+					if (!validate_set_value(data, set->val, set_arg)) {
+						return 0;
+					}
 					set_var->arg = set_arg;
 					break;
 				}

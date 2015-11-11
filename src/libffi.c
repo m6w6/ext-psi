@@ -224,7 +224,7 @@ static void psi_ffi_handler(ffi_cif *_sig, void *_result, void **_args, void *_d
 
 	ffi_call(&data->signature, FFI_FN(data->impl->decl->dlptr), &ret_val, arg_prm);
 
-	psi_do_return(data->impl->stmts->ret.list[0], &ret_val, *(zval **)_args[1]);
+	psi_do_return(*(zval **)_args[1], data->impl->stmts->ret.list[0], &ret_val);
 
 	for (i = 0; i < data->impl->stmts->set.count; ++i) {
 		set_stmt *set = data->impl->stmts->set.list[i];

@@ -163,7 +163,7 @@ static void psi_jit_handler(jit_type_t _sig, void *result, void **_args, void *_
 
 	jit_apply(data->signature, data->impl->decl->dlptr, arg_prm, data->impl->decl->args->count, &ret_val);
 
-	psi_do_return(data->impl->stmts->ret.list[0], &ret_val, *(zval **)_args[1]);
+	psi_do_return(*(zval **)_args[1], data->impl->stmts->ret.list[0], &ret_val);
 
 	for (i = 0; i < data->impl->stmts->set.count; ++i) {
 		set_stmt *set = data->impl->stmts->set.list[i];

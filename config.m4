@@ -92,7 +92,8 @@ if test "$PHP_PSI" != "no"; then
 	])
 
 	psi_type_pair() { # (type, size)
-		local psi_type_lower=`tr A-Z a-z <<<$1`
+		local psi_type_name=`tr -cd A-Za-z <<<$1` 
+		local psi_type_lower=`tr A-Z a-z <<<$psi_type_name`
 		case $psi_type_lower in
 		int*|uint*)
 			local psi_type_upper=`tr a-z A-Z <<<$1`
@@ -103,7 +104,7 @@ if test "$PHP_PSI" != "no"; then
 			echo "PSI_T_STRUCT, \"$2\""
 			;;
 		*)
-			echo "PSI_T_NAME, \"$1\""
+			echo "PSI_T_NAME, \"$psi_type_name\""
 			;;
 		esac
 	}
@@ -192,7 +193,7 @@ if test "$PHP_PSI" != "no"; then
 		AC_DEFINE_UNQUOTED(
 			AS_TR_CPP(offsetof_$1_$2),
 			$AS_TR_SH([ac_cv_offsetof_$1_$2]),
-			[The offset of `$1' in `$2', as computed by offsetof.]
+			[The offset of `$2' in `$1', as computed by offsetof.]
 		)
 	])
 
@@ -200,26 +201,31 @@ if test "$PHP_PSI" != "no"; then
 	PSI_STRUCTS=
 	AC_DEFUN(PSI_STRUCT, [
 		AC_CHECK_SIZEOF(struct $1, [], PSI_INCLUDES_DEFAULT($4))
+		psi_struct_size=$ac_cv_sizeof_struct_$1
 		psi_struct_members=
 		m4_foreach(member, [$2], [
 			AC_CHECK_MEMBER(struct $1.member, [
+				psi_member_name=member
+				AC_CHECK_SIZEOF(struct_$1[_]member, [], PSI_INCLUDES_DEFAULT($4,
+					[#define struct_$1_]member ((struct $1 *)0)->member
+				))
+				psi_member_size=$ac_cv_sizeof_struct_$1[]_[]member
+				PSI_CHECK_OFFSETOF(struct $1, member, PSI_INCLUDES_DEFAULT($4))
+				psi_member_offset=$ac_cv_offsetof_struct_$1[]_[]member
+				# type
 				case member in
 				$3
 				*) psi_member_type=int ;;
 				esac
-				AC_CHECK_SIZEOF(struct_$1[_]member, [], PSI_INCLUDES_DEFAULT($4,
-					[#define struct_$1_]member ((struct $1 *)0)->member
-				))
-				PSI_CHECK_OFFSETOF(struct $1, member, PSI_INCLUDES_DEFAULT($4))
 				# pointer level
 				psi_struct_member_pl=`echo $psi_member_type | tr -cd '*' | wc -c`
 				# array size
-				psi_struct_member_as=`echo $psi_member_type | $AWK -F'\x5b\x5d\x5b\x5d' 'END {print 0} /\\x5b\x5b\x5b:digit:\x5d\x5d+\\x5d/ {print$[]2; exit}'`
+				psi_struct_member_as=`echo $psi_member_type | $AWK -F'\x5b\x5d\x5b\x5d' 'END {if(!found)print 0} /\\x5b\x5b\x5b:digit:\x5d\x5d+\\x5d/ {found=1; print$[]2}'`
 				if test $psi_struct_member_as -gt 0
 				then
 					psi_struct_member_pl=`expr $psi_struct_member_pl + 1`
 				fi
-				psi_struct_member="{`psi_type_pair $psi_member_type $ac_cv_sizeof_struct_$1[]_[]member`, \"[]member[]\", $ac_cv_offsetof_struct_$1[]_[]member, $ac_cv_sizeof_struct_$1[]_[]member, $psi_struct_member_pl, $psi_struct_member_as}"
+				psi_struct_member="{`psi_type_pair $psi_member_type $psi_member_size`, \"$psi_member_name\", $psi_member_offset, $psi_member_size, $psi_struct_member_pl, $psi_struct_member_as}"
 				if test "$psi_struct_members"
 				then
 					psi_struct_members="$psi_struct_members, $psi_struct_member"
@@ -228,7 +234,7 @@ if test "$PHP_PSI" != "no"; then
 				fi
 			], [], PSI_INCLUDES_DEFAULT($4))
 		])
-		PSI_STRUCTS="{\"$1\", $ac_cv_sizeof_struct_$1, {$psi_struct_members}}, $PSI_STRUCTS"
+		PSI_STRUCTS="{\"$1\", $psi_struct_size, {$psi_struct_members}}, $PSI_STRUCTS"
 	])
 
 	AC_TYPE_INT8_T
@@ -447,6 +453,16 @@ if test "$PHP_PSI" != "no"; then
 	PSI_TYPE(time_t, int)
 	PSI_TYPE(timer_t, int)
 	PSI_TYPE(uid_t)
+	dnl sys/utsname.h
+	PSI_STRUCT(utsname, [
+		[sysname],
+		[nodename],
+		[release],
+		[version],
+		[machine],
+		[domainname]], [
+		*) psi_member_type="char@<:@$psi_member_size@:>@" ;;
+	], sys/utsname.h)
 	dnl time.h
 	PSI_STRUCT(tm, [
 		[tm_sec],

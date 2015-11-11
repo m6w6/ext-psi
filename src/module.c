@@ -93,6 +93,24 @@ size_t psi_num_min_args(impl *impl)
 	return n;
 }
 
+void psi_to_bool(zval *return_value, token_t t, impl_val *ret_val, decl_var *var)
+{
+	switch (t) {
+	case PSI_T_FLOAT:
+		RETVAL_DOUBLE((double) deref_impl_val(ret_val, var)->fval);
+		convert_to_boolean(return_value);
+		break;
+	case PSI_T_DOUBLE:
+		RETVAL_DOUBLE(deref_impl_val(ret_val, var)->dval);
+		convert_to_boolean(return_value);
+		break;
+	default:
+		RETVAL_LONG(deref_impl_val(ret_val, var)->lval);
+		convert_to_boolean(return_value);
+		break;
+	}
+}
+
 void psi_to_int(zval *return_value, token_t t, impl_val *ret_val, decl_var *var)
 {
 	switch (t) {
@@ -550,35 +568,19 @@ void *psi_do_let(decl_arg *darg)
 void psi_do_set(zval *return_value, set_value *set)
 {
 	impl_val *val = (impl_val *) &set->vars->vars[0]->arg->let->ptr;
+	token_t t = real_decl_type(set->vars->vars[0]->arg->type)->type;
 
 	ZVAL_DEREF(return_value);
 	zval_dtor(return_value);
 
-	switch (func->type) {
-	case PSI_T_TO_STRING:
-		psi_to_string(return_value, real_decl_type(vars->vars[0]->arg->type)->type, val, vars->vars[0]);
-		break;
-	case PSI_T_TO_ARRAY:
-		psi_to_array(return_value, real_decl_type(vars->vars[0]->arg->type)->type, val, vars->vars[0]);
-		break;
-	EMPTY_SWITCH_DEFAULT_CASE();
-	}
+	set->func->handler(return_value, t, val, set->vars->vars[0]);
 }
 
-void psi_do_return(return_stmt *ret, impl_val *ret_val, zval *return_value)
+void psi_do_return(zval *return_value, return_stmt *ret, impl_val *ret_val)
 {
-	switch (ret->func->type) {
-	case PSI_T_TO_STRING:
-		psi_to_string(return_value, real_decl_type(impl->decl->func->type)->type, ret_val, ret->decl);
-		break;
-	case PSI_T_TO_INT:
-		psi_to_int(return_value, real_decl_type(impl->decl->func->type)->type, ret_val, ret->decl);
-		break;
-	case PSI_T_TO_ARRAY:
-		psi_to_array(return_value, real_decl_type(impl->decl->func->type)->type, ret_val, ret->decl);
-		break;
-	EMPTY_SWITCH_DEFAULT_CASE();
-	}
+	token_t t = real_decl_type(ret->decl->type)->type;
+
+	ret->set->func->handler(return_value, t, ret_val, ret->decl->var);
 }
 
 void psi_do_free(free_stmt *fre)
