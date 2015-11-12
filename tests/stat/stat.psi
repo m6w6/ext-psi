@@ -1,8 +1,48 @@
-extern int __xstat64(int ver, char *path, struct stat *buf);
+extern int stat(char *path, struct stat *buf);
 function psi\stat(string $path, array &$buf = NULL) : int {
-	let ver = NULL;
 	let path = strval($path);
 	let buf = calloc(1, struct stat);
-	return to_int(__xstat64);
-	set $buf = to_array(*buf);
+	return to_int(stat);
+	set $buf = to_array(*buf,
+		to_int(st_dev),
+		to_int(st_ino),
+		to_int(st_mode),
+		to_int(st_nlink),
+		to_int(st_uid),
+		to_int(st_gid),
+		to_int(st_rdev),
+		to_int(st_size),
+		to_array(st_atim,
+			to_int(tv_sec),
+			to_int(tv_nsec)
+		), 
+		to_array(st_atimespec,
+			to_int(tv_sec),
+			to_int(tv_nsec)
+		),
+		to_array(st_mtim,
+			to_int(tv_sec),
+			to_int(tv_nsec)
+		), 
+		to_array(st_mtimespec,
+			to_int(tv_sec),
+			to_int(tv_nsec)
+		),
+		to_array(st_ctim,
+			to_int(tv_sec),
+			to_int(tv_nsec)
+		), 
+		to_array(st_ctimespec,
+			to_int(tv_sec),
+			to_int(tv_nsec)
+		),
+		to_array(st_birthtimespec,
+			to_int(tv_sec),
+			to_int(tv_nsec)
+		),
+		to_int(st_blksize),
+		to_int(st_blocks),
+		to_int(st_flags),
+		to_int(st_gen)
+	);
 }

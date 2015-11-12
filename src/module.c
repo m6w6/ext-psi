@@ -360,17 +360,20 @@ void psi_to_array(zval *return_value, token_t t, impl_val *ret_val, set_value *s
 				set_value *sub_set = set->inner[i];
 				decl_var *sub_var = sub_set->vars->vars[0];
 				decl_arg *sub_arg = sub_var->arg;
-				token_t t = real_decl_type(sub_arg->type)->type;
-				void *ptr = malloc(sub_arg->layout->len);
 
-				memcpy(ptr, (char *) ret_val->ptr + sub_arg->layout->pos,
-						sub_arg->layout->len);
-				tmp_ptr = enref_impl_val(ptr, sub_arg->var);
-				sub_set->func->handler(&ztmp, t, tmp_ptr, sub_set, sub_var);
-				add_assoc_zval(return_value, sub_var->name, &ztmp);
-				free(tmp_ptr);
-				if (tmp_ptr != ptr) {
-					free(ptr);
+				if (sub_arg) {
+					token_t t = real_decl_type(sub_arg->type)->type;
+					void *ptr = malloc(sub_arg->layout->len);
+
+					memcpy(ptr, (char *) ret_val->ptr + sub_arg->layout->pos,
+							sub_arg->layout->len);
+					tmp_ptr = enref_impl_val(ptr, sub_arg->var);
+					sub_set->func->handler(&ztmp, t, tmp_ptr, sub_set, sub_var);
+					add_assoc_zval(return_value, sub_var->name, &ztmp);
+					free(tmp_ptr);
+					if (tmp_ptr != ptr) {
+						free(ptr);
+					}
 				}
 			}
 		}

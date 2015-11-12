@@ -236,6 +236,26 @@ if test "$PHP_PSI" != "no"; then
 		])
 		PSI_STRUCTS="{\"$1\", $psi_struct_size, {$psi_struct_members}}, $PSI_STRUCTS"
 	])
+	
+	AC_PROG_NM
+	AC_PROG_AWK
+	PSI_FUNCS=
+	dnl PSI_FUNC(fn, decl)
+	AC_DEFUN(PSI_FUNC, [
+		AC_CHECK_FUNC($1, [
+			AC_MSG_CHECKING(for redirection of function $1)
+			psi_symbol=$1
+			psi_symbol_redirect=
+			AC_TRY_LINK_FUNC($1, [
+				psi_symbol_redirect=`$NM -g conftest$ac_exeext | $AWK -F" *|@" '/_main/ {next} / U / {print$[]3}'`
+			])
+			AC_MSG_RESULT($psi_symbol_redirect)
+			if test "$psi_symbol_redirect" && test "$psi_symbol_redirect" != "$psi_symbol"
+			then
+				PSI_FUNCS="{\"$psi_symbol\", (void *) $psi_symbol}, $PSI_FUNCS"
+			fi
+		])
+	])
 
 	AC_TYPE_INT8_T
 	AC_CHECK_ALIGNOF(int8_t)
@@ -364,6 +384,22 @@ if test "$PHP_PSI" != "no"; then
 	PSI_CONST(RAND_MAX, int)
 	PSI_CONST(MB_CUR_MAX, int)
 	dnl sys/stat.h
+	PSI_FUNC(chmod)
+	PSI_FUNC(fchmod)
+	PSI_FUNC(fchmodat)
+	PSI_FUNC(fstat)
+	PSI_FUNC(fstatat)
+	PSI_FUNC(futimens)
+	PSI_FUNC(lstat)
+	PSI_FUNC(mkdir)
+	PSI_FUNC(mkdirat)
+	PSI_FUNC(mkfifo)
+	PSI_FUNC(mkfifoat)
+	PSI_FUNC(mknod)
+	PSI_FUNC(mknodat)
+	PSI_FUNC(stat)
+	PSI_FUNC(umask)
+	PSI_FUNC(utimensat)
 	PSI_STRUCT(stat, [
 		[st_dev],
 		[st_ino],
@@ -426,6 +462,7 @@ if test "$PHP_PSI" != "no"; then
 	PSI_CONST(ITIMER_VIRTUAL, int, sys/time.h)
 	PSI_CONST(ITIMER_PROF, int, sys/time.h)
 	dnl sys/times.h
+	PSI_FUNC(times)
 	PSI_STRUCT(tms, [
 		[tms_utime],
 		[tms_stime],
@@ -454,6 +491,7 @@ if test "$PHP_PSI" != "no"; then
 	PSI_TYPE(timer_t, int)
 	PSI_TYPE(uid_t)
 	dnl sys/utsname.h
+	PSI_FUNC(uname)
 	PSI_STRUCT(utsname, [
 		[sysname],
 		[nodename],
@@ -498,6 +536,7 @@ if test "$PHP_PSI" != "no"; then
 	])
 
 
+	AC_DEFINE_UNQUOTED(PHP_PSI_FUNCS, $PSI_FUNCS, Redirected functions)
 	AC_DEFINE_UNQUOTED(PHP_PSI_TYPES, $PSI_TYPES, Predefined types)
 	AC_DEFINE_UNQUOTED(PHP_PSI_CONSTS, $PSI_CONSTS, Predefined constants)
 	AC_DEFINE_UNQUOTED(PHP_PSI_STRUCTS, $PSI_STRUCTS, Predefined structs)

@@ -57,6 +57,15 @@ static const psi_predef_struct psi_predef_structs[] = {
 };
 #define psi_predef_struct_count() psi_predef_count(_struct)
 
+typedef struct psi_predef_func {
+	const char *name;
+	void (*func)(void);
+} psi_predef_func;
+static psi_predef_func psi_predef_funcs[] = {
+	PHP_PSI_FUNCS{0}
+};
+#define psi_predef_func_count() psi_predef_count(_func)
+
 static int validate_lib(PSI_Data *data, void **dlopened) {
 	char lib[MAXPATHLEN];
 	const char *ptr = data->psi.file.ln;
@@ -230,8 +239,20 @@ static inline int validate_decl_func(PSI_Data *data, void *dl, decl *decl, decl_
 #endif
 	decl->dlptr = dlsym(dl ?: RTLD_NEXT, func->var->name);
 	if (!decl->dlptr) {
-		data->error(PSI_WARNING, "Failed to locate symbol '%s': %s",
-			func->var->name, dlerror());
+		size_t i;
+
+		for (i = 0; i < psi_predef_func_count(); ++i) {
+			psi_predef_func *pre = &psi_predef_funcs[i];
+
+			if (!strcmp(func->var->name, pre->name)) {
+				decl->dlptr = pre->func;
+				break;
+			}
+		}
+		if (!decl->dlptr) {
+			data->error(PSI_WARNING, "Failed to locate symbol '%s': %s",
+				func->var->name, dlerror());
+		}
 	}
 	return 1;
 }
@@ -271,6 +292,8 @@ static inline decl_arg *locate_struct_member(decl_struct *s, decl_var *var) {
 }
 static inline int validate_set_value(PSI_Data *data, set_value *set, decl_arg *ref) {
 	size_t i;
+	decl_type *ref_type = real_decl_type(ref->type);
+	decl_var *set_var = set->vars->vars[0];
 
 	switch (set->func->type) {
 	case PSI_T_TO_BOOL:
@@ -291,22 +314,22 @@ static inline int validate_set_value(PSI_Data *data, set_value *set, decl_arg *r
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}
 
-	if (strcmp(set->vars->vars[0]->name, ref->var->name)) {
+	if (strcmp(set_var->name, ref->var->name)) {
 		return 0;
 	}
 
-	if (set->count && (set->func->type != PSI_T_TO_ARRAY || real_decl_type(ref->type)->type != PSI_T_STRUCT)) {
+	if (set->count && (set->func->type != PSI_T_TO_ARRAY || ref_type->type != PSI_T_STRUCT)) {
 		data->error(E_WARNING, "Inner `set` statement casts only work with to_array() casts on structs");
 		return 0;
 	}
 	for (i = 0; i < set->count; ++i) {
-		decl_arg *sub_ref = locate_struct_member(real_decl_type(ref->type)->strct, set->inner[i]->vars->vars[0]);
+		decl_var *sub_var = set->inner[i]->vars->vars[0];
+		decl_arg *sub_ref = locate_struct_member(ref_type->strct, sub_var);
 
-		if (!sub_ref) {
-			return 0;
-		}
-		if (!validate_set_value(data, set->inner[i], sub_ref)) {
-			return 0;
+		if (sub_ref) {
+			if (!validate_set_value(data, set->inner[i], sub_ref)) {
+				return 0;
+			}
 		}
 	}
 

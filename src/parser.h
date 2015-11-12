@@ -356,7 +356,7 @@ static inline impl_val *enref_impl_val(void *ptr, decl_var *var) {
 	impl_val *val, *val_ptr;
 	unsigned i;
 
-	if (!var->pointer_level) {
+	if (!var->pointer_level && real_decl_type(var->arg->type)->type != PSI_T_STRUCT) {
 		return ptr;
 	}
 	val = val_ptr = calloc(var->pointer_level, sizeof(void *));
