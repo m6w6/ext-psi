@@ -352,6 +352,21 @@ static inline impl_val *deref_impl_val(impl_val *ret_val, decl_var *var) {
 	return ret_val;
 }
 
+static inline impl_val *enref_impl_val(void *ptr, decl_var *var) {
+	impl_val *val, *val_ptr;
+	unsigned i;
+
+	if (!var->pointer_level) {
+		return ptr;
+	}
+	val = val_ptr = calloc(var->pointer_level, sizeof(void *));
+	for (i = 1; i < var->pointer_level; ++i) {
+		val_ptr->ptr = (void **) val_ptr + 1;
+		val_ptr = val_ptr->ptr;
+	}
+	val_ptr->ptr = ptr;
+	return val;
+}
 typedef struct impl_type {
 	char *name;
 	token_t type;
@@ -570,10 +585,12 @@ static inline void free_let_stmt(let_stmt *stmt) {
 	free(stmt);
 }
 
+struct set_value;
+
 typedef struct set_func {
 	token_t type;
 	char *name;
-	void (*handler)(zval *, token_t, impl_val *, decl_var *);
+	void (*handler)(zval *, token_t, impl_val *, struct set_value *set, decl_var *);
 } set_func;
 
 static inline set_func *init_set_func(token_t type, const char *name) {
@@ -615,6 +632,7 @@ static inline void free_set_value(set_value *val) {
 		for (i = 0; i < val->count; ++i) {
 			free_set_value(val->inner[i]);
 		}
+		free(val->inner);
 	}
 	free(val);
 }

@@ -49,3 +49,4 @@ tests/*/*.sh
 /context.h
 /libffi.h
 /libjit.j
+/tests/*/*.mem

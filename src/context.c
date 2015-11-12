@@ -263,7 +263,7 @@ static inline decl_arg *locate_struct_member(decl_struct *s, decl_var *var) {
 		decl_arg *darg = s->args->args[i];
 
 		if (!strcmp(var->name, darg->var->name)) {
-			return darg;
+			return var->arg = darg;
 		}
 	}
 

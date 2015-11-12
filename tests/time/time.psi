@@ -3,8 +3,12 @@ function psi\gettimeofday(array &$tv = NULL, array &$tz = NULL) : int {
 	let tv = calloc(1, struct timeval);
 	let tz = calloc(1, struct timezone);
 	return to_int(gettimeofday);
-	set $tv = to_array(*tv);
-	set $tz = to_array(*tz);
+	set $tv = to_array(*tv, 
+		to_int(tv_sec), 
+		to_int(tv_usec));
+	set $tz = to_array(*tz, 
+		to_int(tz_minuteswest), 
+		to_int(tz_dsttime));
 }
 
 extern char *asctime(struct tm *tm);
@@ -23,14 +27,34 @@ function psi\asctime_r(array $tm = NULL) : string {
 extern struct tm *gmtime(time_t *tp);
 function psi\gmtime(int $ts) : array {
 	let tp = &intval($ts);
-	return to_array(gmtime);
+	return to_array(*gmtime,
+		to_int(tm_sec),
+		to_int(tm_min),
+		to_int(tm_hour),
+		to_int(tm_mday),
+		to_int(tm_mon),
+		to_int(tm_year),
+		to_int(tm_wday),
+		to_int(tm_yday),
+		to_int(tm_isdst)
+	);
 }
 
 extern struct tm *gmtime_r(time_t *tp, struct tm *buf);
 function psi\gmtime_r(int $ts) : array {
 	let tp = &intval($ts);
 	let buf = calloc(1, struct tm);
-	return to_array(gmtime_r);
+	return to_array(*gmtime_r,
+		to_int(tm_sec),
+		to_int(tm_min),
+		to_int(tm_hour),
+		to_int(tm_mday),
+		to_int(tm_mon),
+		to_int(tm_year),
+		to_int(tm_wday),
+		to_int(tm_yday),
+		to_int(tm_isdst)
+	);
 }
 
 extern int nanosleep(struct timespec *rqtp, struct timespec *rmtp);
@@ -38,12 +62,20 @@ function psi\nanosleep(array $rq = NULL, array &$rm = NULL) : int {
 	let rqtp = arrval($rq);
 	let rmtp = calloc(1, struct timespec);
 	return to_int(nanosleep);
-	set $rm = to_array(*rmtp);
+	set $rm = to_array(*rmtp,
+		to_int(tv_sec),
+		to_int(tv_nsec)
+	);
 }
 
 extern clock_t times(struct tms *buf);
 function psi\times(array &$tms = NULL) : int {
 	let buf = calloc(1, struct tms);
 	return to_int(times);
-	set $tms = to_array(*buf);
+	set $tms = to_array(*buf,
+		to_int(tms_utime),
+		to_int(tms_stime),
+		to_int(tms_cutime),
+		to_int(tms_cstime)
+	);
 }

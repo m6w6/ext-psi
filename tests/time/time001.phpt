@@ -17,6 +17,7 @@ var_dump(psi\gettimeofday($tv), $tv);
 var_dump(psi\gettimeofday($tv, $tz), $tv, $tz);
 
 var_dump(abs($ar["sec"] - $tv["tv_sec"]) <= 1);
+
 ?>
 ===DONE===
 --EXPECTF--
