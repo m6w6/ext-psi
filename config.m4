@@ -92,7 +92,7 @@ if test "$PHP_PSI" != "no"; then
 	])
 
 	psi_type_pair() { # (type, size)
-		local psi_type_name=`tr -cd A-Za-z <<<$1` 
+		local psi_type_name=`tr -cd A-Za-z <<<$1`
 		local psi_type_lower=`tr A-Z a-z <<<$psi_type_name`
 		case $psi_type_lower in
 		int*|uint*)
@@ -220,7 +220,7 @@ if test "$PHP_PSI" != "no"; then
 				# pointer level
 				psi_struct_member_pl=`echo $psi_member_type | tr -cd '*' | wc -c`
 				# array size
-				psi_struct_member_as=`echo $psi_member_type | $AWK -F'\x5b\x5d\x5b\x5d' 'END {if(!found)print 0} /\\x5b\x5b\x5b:digit:\x5d\x5d+\\x5d/ {found=1; print$[]2}'`
+				psi_struct_member_as=`echo $psi_member_type | $AWK -F'@<:@@:>@@<:@@:>@' 'END {if(!found)print 0} /\@<:@@<:@@<:@:digit:@:>@@:>@+\@:>@/ {found=1; print$[]2}'`
 				if test $psi_struct_member_as -gt 0
 				then
 					psi_struct_member_pl=`expr $psi_struct_member_pl + 1`
@@ -236,25 +236,41 @@ if test "$PHP_PSI" != "no"; then
 		])
 		PSI_STRUCTS="{\"$1\", $psi_struct_size, {$psi_struct_members}}, $PSI_STRUCTS"
 	])
-	
+
+	PSI_INCLUDES=
 	AC_PROG_NM
 	AC_PROG_AWK
 	PSI_FUNCS=
-	dnl PSI_FUNC(fn, decl)
+	dnl PSI_FUNC(fn)
 	AC_DEFUN(PSI_FUNC, [
-		AC_CHECK_FUNC($1, [
-			AC_MSG_CHECKING(for redirection of function $1)
-			psi_symbol=$1
+		psi_symbol=$1
+		AC_CACHE_CHECK(for $1, psi_cv_fn_$1, [
 			psi_symbol_redirect=
 			AC_TRY_LINK_FUNC($1, [
-				psi_symbol_redirect=`$NM -g conftest$ac_exeext | $AWK -F" *|@" '/_main/ {next} / U / {print$[]3}'`
+				psi_symbol_redirect=`$NM -g conftest$ac_exeext | $AWK -F" *|@" '/ U .*$1.*/ {print$[]3}'`
 			])
-			AC_MSG_RESULT($psi_symbol_redirect)
-			if test "$psi_symbol_redirect" && test "$psi_symbol_redirect" != "$psi_symbol"
-			then
-				PSI_FUNCS="{\"$psi_symbol\", (void *) $psi_symbol}, $PSI_FUNCS"
-			fi
+			case "$psi_symbol_redirect" in
+			"_$psi_symbol"|"$psi_symbol"|"")
+				psi_cv_fn_$1=$psi_symbol
+				;;
+			*)
+				psi_cv_fn_$1=$psi_symbol_redirect
+				;;
+			esac
 		])
+		if test "$psi_cv_fn_$1" != "$psi_symbol"
+		then
+			PSI_FUNCS="{\"$psi_symbol\", (void *) $psi_symbol}, $PSI_FUNCS"
+		fi
+	])
+
+	PSI_MACROS=
+	dnl PSI_MACRO(macro, return type, decl args, call args, include)
+	AC_DEFUN(PSI_MACRO, [
+		AC_CHECK_DECL($1$3, [
+			PSI_MACROS="static $2 psi_macro_$1$3 {return $1$4;} $PSI_MACROS"
+			PSI_FUNCS="{\"$1\", (void *) psi_macro_$1}, $PSI_FUNCS"
+		], [], PSI_INCLUDES_DEFAULT($5))
 	])
 
 	AC_TYPE_INT8_T
@@ -282,6 +298,89 @@ if test "$PHP_PSI" != "no"; then
 	PSI_TYPE(double)
 	PSI_TYPE(void *)
 
+	dnl errno.h
+	PSI_MACRO(errno, int, [()], [], errno.h)
+	PSI_CONST(E2BIG, int, errno.h)
+	PSI_CONST(EACCES, int, errno.h)
+	PSI_CONST(EADDRINUSE, int, errno.h)
+	PSI_CONST(EADDRNOTAVAIL, int, errno.h)
+	PSI_CONST(EAFNOSUPPORT, int, errno.h)
+	PSI_CONST(EAGAIN, int, errno.h)
+	PSI_CONST(EALREADY, int, errno.h)
+	PSI_CONST(EBADF, int, errno.h)
+	PSI_CONST(EBADMSG, int, errno.h)
+	PSI_CONST(EBUSY, int, errno.h)
+	PSI_CONST(ECANCELED, int, errno.h)
+	PSI_CONST(ECHILD, int, errno.h)
+	PSI_CONST(ECONNABORTED, int, errno.h)
+	PSI_CONST(ECONNREFUSED, int, errno.h)
+	PSI_CONST(ECONNRESET, int, errno.h)
+	PSI_CONST(EDEADLK, int, errno.h)
+	PSI_CONST(EDESTADDRREQ, int, errno.h)
+	PSI_CONST(EDOM, int, errno.h)
+	PSI_CONST(EDQUOT, int, errno.h)
+	PSI_CONST(EEXIST, int, errno.h)
+	PSI_CONST(EFAULT, int, errno.h)
+	PSI_CONST(EFBIG, int, errno.h)
+	PSI_CONST(EHOSTUNREACH, int, errno.h)
+	PSI_CONST(EIDRM, int, errno.h)
+	PSI_CONST(EILSEQ, int, errno.h)
+	PSI_CONST(EINPROGRESS, int, errno.h)
+	PSI_CONST(EINTR, int, errno.h)
+	PSI_CONST(EINVAL, int, errno.h)
+	PSI_CONST(EIO, int, errno.h)
+	PSI_CONST(EISCONN, int, errno.h)
+	PSI_CONST(EISDIR, int, errno.h)
+	PSI_CONST(ELOOP, int, errno.h)
+	PSI_CONST(EMFILE, int, errno.h)
+	PSI_CONST(EMLINK, int, errno.h)
+	PSI_CONST(EMSGSIZE, int, errno.h)
+	PSI_CONST(EMULTIHOP, int, errno.h)
+	PSI_CONST(ENAMETOOLONG, int, errno.h)
+	PSI_CONST(ENETDOWN, int, errno.h)
+	PSI_CONST(ENETRESET, int, errno.h)
+	PSI_CONST(ENETUNREACH, int, errno.h)
+	PSI_CONST(ENFILE, int, errno.h)
+	PSI_CONST(ENOBUFS, int, errno.h)
+	PSI_CONST(ENODATA, int, errno.h)
+	PSI_CONST(ENODEV, int, errno.h)
+	PSI_CONST(ENOENT, int, errno.h)
+	PSI_CONST(ENOEXEC, int, errno.h)
+	PSI_CONST(ENOLCK, int, errno.h)
+	PSI_CONST(ENOLINK, int, errno.h)
+	PSI_CONST(ENOMEM, int, errno.h)
+	PSI_CONST(ENOMSG, int, errno.h)
+	PSI_CONST(ENOPROTOOPT, int, errno.h)
+	PSI_CONST(ENOSPC, int, errno.h)
+	PSI_CONST(ENOSR, int, errno.h)
+	PSI_CONST(ENOSTR, int, errno.h)
+	PSI_CONST(ENOSYS, int, errno.h)
+	PSI_CONST(ENOTCONN, int, errno.h)
+	PSI_CONST(ENOTDIR, int, errno.h)
+	PSI_CONST(ENOTEMPTY, int, errno.h)
+	PSI_CONST(ENOTRECOVERABLE, int, errno.h)
+	PSI_CONST(ENOTSOCK, int, errno.h)
+	PSI_CONST(ENOTSUP, int, errno.h)
+	PSI_CONST(ENOTTY, int, errno.h)
+	PSI_CONST(ENXIO, int, errno.h)
+	PSI_CONST(EOPNOTSUPP, int, errno.h)
+	PSI_CONST(EOVERFLOW, int, errno.h)
+	PSI_CONST(EOWNERDEAD, int, errno.h)
+	PSI_CONST(EPERM, int, errno.h)
+	PSI_CONST(EPIPE, int, errno.h)
+	PSI_CONST(EPROTO, int, errno.h)
+	PSI_CONST(EPROTONOSUPPORT, int, errno.h)
+	PSI_CONST(EPROTOTYPE, int, errno.h)
+	PSI_CONST(ERANGE, int, errno.h)
+	PSI_CONST(EROFS, int, errno.h)
+	PSI_CONST(ESPIPE, int, errno.h)
+	PSI_CONST(ESRCH, int, errno.h)
+	PSI_CONST(ESTALE, int, errno.h)
+	PSI_CONST(ETIME, int, errno.h)
+	PSI_CONST(ETIMEDOUT, int, errno.h)
+	PSI_CONST(ETXTBSY, int, errno.h)
+	PSI_CONST(EWOULDBLOCK, int, errno.h)
+	PSI_CONST(EXDEV, int, errno.h)
 	dnl stdint.h
 	PSI_TYPE(int_least8_t, int)
 	PSI_TYPE(int_least16_t, int)
@@ -378,6 +477,75 @@ if test "$PHP_PSI" != "no"; then
 	PSI_CONST(P_tmpdir, string)
 	PSI_CONST(L_ctermid, int)
 	PSI_CONST(L_tmpnam, int)
+	PSI_FUNC(clearerr)
+	PSI_FUNC(ctermid)
+	PSI_FUNC(dprintf)
+	PSI_FUNC(fclose)
+	PSI_FUNC(fdopen)
+	PSI_FUNC(feof)
+	PSI_FUNC(ferror)
+	PSI_FUNC(fflush)
+	PSI_FUNC(fgetc)
+	PSI_FUNC(fgetpos)
+	PSI_FUNC(fgets)
+	PSI_FUNC(fileno)
+	PSI_FUNC(flockfile)
+	PSI_FUNC(fmemopen)
+	PSI_FUNC(fopen)
+	PSI_FUNC(fprintf)
+	PSI_FUNC(fputc)
+	PSI_FUNC(fputs)
+	PSI_FUNC(fread)
+	PSI_FUNC(freopen)
+	PSI_FUNC(fscanf)
+	PSI_FUNC(fseek)
+	PSI_FUNC(fseeko)
+	PSI_FUNC(fsetpos)
+	PSI_FUNC(ftell)
+	PSI_FUNC(ftello)
+	PSI_FUNC(ftrylockfile)
+	PSI_FUNC(funlockfile)
+	PSI_FUNC(fwrite)
+	PSI_FUNC(getc)
+	PSI_FUNC(getchar)
+	PSI_FUNC(getc_unlocked)
+	PSI_FUNC(getchar_unlocked)
+	PSI_FUNC(getdelim)
+	PSI_FUNC(getline)
+	PSI_FUNC(gets)
+	PSI_FUNC(open_memstream)
+	PSI_FUNC(pclose)
+	PSI_FUNC(perror)
+	PSI_FUNC(popen)
+	PSI_FUNC(printf)
+	PSI_FUNC(putc)
+	PSI_FUNC(putchar)
+	PSI_FUNC(putc_unlocked)
+	PSI_FUNC(putchar_unlocked)
+	PSI_FUNC(puts)
+	PSI_FUNC(remove)
+	PSI_FUNC(rename)
+	PSI_FUNC(renameat)
+	PSI_FUNC(rewind)
+	PSI_FUNC(scanf)
+	PSI_FUNC(setbuf)
+	PSI_FUNC(setvbuf)
+	PSI_FUNC(snprintf)
+	PSI_FUNC(sprintf)
+	PSI_FUNC(sscanf)
+	PSI_FUNC(tempnam)
+	PSI_FUNC(tmpfile)
+	PSI_FUNC(tmpnam)
+	PSI_FUNC(ungetc)
+	PSI_FUNC(vdprintf)
+	PSI_FUNC(vfprintf)
+	PSI_FUNC(vfscanf)
+	PSI_FUNC(vprintf)
+	PSI_FUNC(vscanf)
+	PSI_FUNC(vsnprintf)
+	PSI_FUNC(vsprintf)
+	PSI_FUNC(vsscanf)
+
 	dnl stdlib.h
 	PSI_CONST(EXIT_FAILURE, int)
 	PSI_CONST(EXIT_SUCCESS, int)
@@ -444,6 +612,17 @@ if test "$PHP_PSI" != "no"; then
 	PSI_CONST(S_ISGID, int, sys/stat.h)
 	PSI_CONST(UTIME_NOW, int, sys/stat.h)
 	PSI_CONST(UTIME_OMIT, int, sys/stat.h)
+	PSI_MACRO(S_ISBLK, int, [(mode_t m)], [(m)], sys/stat.h)
+	PSI_MACRO(S_ISCHR, int, [(mode_t m)], [(m)], sys/stat.h)
+	PSI_MACRO(S_ISDIR, int, [(mode_t m)], [(m)], sys/stat.h)
+	PSI_MACRO(S_ISFIFO, int, [(mode_t m)], [(m)], sys/stat.h)
+	PSI_MACRO(S_ISREG, int, [(mode_t m)], [(m)], sys/stat.h)
+	PSI_MACRO(S_ISLNK, int, [(mode_t m)], [(m)], sys/stat.h)
+	PSI_MACRO(S_ISSOCK, int, [(mode_t m)], [(m)], sys/stat.h)
+	PSI_MACRO(S_TYPEISMQ, int, [(mode_t m)], [(m)], sys/stat.h)
+	PSI_MACRO(S_TYPEISSEM, int, [(mode_t m)], [(m)], sys/stat.h)
+	PSI_MACRO(S_TYPEISSHM, int, [(mode_t m)], [(m)], sys/stat.h)
+	PSI_MACRO(S_TYPEISTMO, int, [(mode_t m)], [(m)], sys/stat.h)
 	dnl sys/time.h
 	PSI_STRUCT(timeval, [
 		[tv_sec],
@@ -537,9 +716,12 @@ if test "$PHP_PSI" != "no"; then
 
 
 	AC_DEFINE_UNQUOTED(PHP_PSI_FUNCS, $PSI_FUNCS, Redirected functions)
+	AC_DEFINE_UNQUOTED(PHP_PSI_MACROS, $PSI_MACROS, Exported macros)
 	AC_DEFINE_UNQUOTED(PHP_PSI_TYPES, $PSI_TYPES, Predefined types)
 	AC_DEFINE_UNQUOTED(PHP_PSI_CONSTS, $PSI_CONSTS, Predefined constants)
 	AC_DEFINE_UNQUOTED(PHP_PSI_STRUCTS, $PSI_STRUCTS, Predefined structs)
+
+	AC_DEFINE_UNQUOTED(PHP_PSI_SHLIB_SUFFIX, $SHLIB_SUFFIX_NAME, DL suffix)
 
 	PHP_PSI_SRCDIR=PHP_EXT_SRCDIR(psi)
 	PHP_PSI_BUILDDIR=PHP_EXT_BUILDDIR(psi)

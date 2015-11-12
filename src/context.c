@@ -57,6 +57,8 @@ static const psi_predef_struct psi_predef_structs[] = {
 };
 #define psi_predef_struct_count() psi_predef_count(_struct)
 
+PHP_PSI_MACROS
+
 typedef struct psi_predef_func {
 	const char *name;
 	void (*func)(void);
@@ -75,11 +77,7 @@ static int validate_lib(PSI_Data *data, void **dlopened) {
 		/* FIXME: assume stdlib */
 		return 1;
 	} else if (!strchr(ptr, '/')) {
-#ifdef DARWIN
-		len = snprintf(lib, MAXPATHLEN, "lib%s.dylib", ptr);
-#else
-		len = snprintf(lib, MAXPATHLEN, "lib%s.so", ptr);
-#endif
+		len = snprintf(lib, MAXPATHLEN, "lib%s.%s", ptr, PHP_PSI_SHLIB_SUFFIX);
 		if (MAXPATHLEN == len) {
 			data->error(PSI_WARNING, "Library name too long: '%s'", ptr);
 		}
