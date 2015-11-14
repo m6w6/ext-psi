@@ -197,21 +197,22 @@ if test "$PHP_PSI" != "no"; then
 		)
 	])
 
-	dnl PSI_STRUCT(name, members, member type cases, includes)
+	dnl PSI_STRUCT(struct name, members, member type cases, includes)
 	PSI_STRUCTS=
 	AC_DEFUN(PSI_STRUCT, [
-		AC_CHECK_SIZEOF(struct $1, [], PSI_INCLUDES_DEFAULT($4))
-		psi_struct_size=$ac_cv_sizeof_struct_$1
+		AC_CHECK_SIZEOF($1, [], PSI_INCLUDES_DEFAULT($4))
+		psi_struct_name=`echo $1 | cut -d" " -f2`
+		psi_struct_size=$AS_TR_SH(ac_cv_sizeof_struct_$1)
 		psi_struct_members=
 		m4_foreach(member, [$2], [
-			AC_CHECK_MEMBER(struct $1.member, [
+			AC_CHECK_MEMBER($1.member, [
 				psi_member_name=member
-				AC_CHECK_SIZEOF(struct_$1[_]member, [], PSI_INCLUDES_DEFAULT($4,
-					[#define struct_$1_]member ((struct $1 *)0)->member
+				AC_CHECK_SIZEOF(AS_TR_SH($1)[_]member, [], PSI_INCLUDES_DEFAULT($4,
+					[#define ]AS_TR_SH($1)[_]member (($1 *)0)->member
 				))
-				psi_member_size=$ac_cv_sizeof_struct_$1[]_[]member
-				PSI_CHECK_OFFSETOF(struct $1, member, PSI_INCLUDES_DEFAULT($4))
-				psi_member_offset=$ac_cv_offsetof_struct_$1[]_[]member
+				psi_member_size=$AS_TR_SH(ac_cv_sizeof_$1[]_[]member)
+				PSI_CHECK_OFFSETOF($1, member, PSI_INCLUDES_DEFAULT($4))
+				psi_member_offset=$AS_TR_SH(ac_cv_offsetof_$1[]_[]member)
 				# type
 				case member in
 				$3
@@ -234,7 +235,11 @@ if test "$PHP_PSI" != "no"; then
 				fi
 			], [], PSI_INCLUDES_DEFAULT($4))
 		])
-		PSI_STRUCTS="{\"$1\", $psi_struct_size, {$psi_struct_members}}, $PSI_STRUCTS"
+		if test "$1" != "$psi_struct_name"
+		then
+			PSI_TYPES="{PSI_T_STRUCT, \"$psi_struct_name\", \"$psi_struct_name\"}, $PSI_TYPES"
+		fi
+		PSI_STRUCTS="{\"$psi_struct_name\", $psi_struct_size, {$psi_struct_members}}, $PSI_STRUCTS"
 	])
 
 	PSI_INCLUDES=
@@ -381,6 +386,29 @@ if test "$PHP_PSI" != "no"; then
 	PSI_CONST(ETXTBSY, int, errno.h)
 	PSI_CONST(EWOULDBLOCK, int, errno.h)
 	PSI_CONST(EXDEV, int, errno.h)
+
+	dnl glob.h
+	PSI_FUNC(glob)
+	PSI_FUNC(globfree)
+	PSI_STRUCT(glob_t, [
+		[gl_pathc], [gl_matchc],
+		[gl_pathv],
+		[gl_offs],
+		[gl_flags]], [
+		gl_pathc|gloffs) psi_member_type=uint ;;
+		gl_pathv)  psi_member_type="char**" ;;
+	], glob.h)
+	PSI_CONST(GLOB_APPEND, int, glob.h)
+	PSI_CONST(GLOB_DOOFFS, int, glob.h)
+	PSI_CONST(GLOB_ERR, int, glob.h)
+	PSI_CONST(GLOB_MARK, int, glob.h)
+	PSI_CONST(GLOB_NOCHECK, int, glob.h)
+	PSI_CONST(GLOB_NOESCAPE, int, glob.h)
+	PSI_CONST(GLOB_NOSORT, int, glob.h)
+	PSI_CONST(GLOB_ABORTED, int, glob.h)
+	PSI_CONST(GLOB_NOMATCH, int, glob.h)
+	PSI_CONST(GLOB_NOSPACE, int, glob.h)
+
 	dnl stdint.h
 	PSI_TYPE(int_least8_t, int)
 	PSI_TYPE(int_least16_t, int)
@@ -547,10 +575,12 @@ if test "$PHP_PSI" != "no"; then
 	PSI_FUNC(vsscanf)
 
 	dnl stdlib.h
+	PSI_FUNC(free)
 	PSI_CONST(EXIT_FAILURE, int)
 	PSI_CONST(EXIT_SUCCESS, int)
 	PSI_CONST(RAND_MAX, int)
 	PSI_CONST(MB_CUR_MAX, int)
+
 	dnl sys/stat.h
 	PSI_FUNC(chmod)
 	PSI_FUNC(fchmod)
@@ -568,7 +598,7 @@ if test "$PHP_PSI" != "no"; then
 	PSI_FUNC(stat)
 	PSI_FUNC(umask)
 	PSI_FUNC(utimensat)
-	PSI_STRUCT(stat, [
+	PSI_STRUCT(struct stat, [
 		[st_dev],
 		[st_ino],
 		[st_mode],
@@ -624,16 +654,16 @@ if test "$PHP_PSI" != "no"; then
 	PSI_MACRO(S_TYPEISSHM, int, [(mode_t m)], [(m)], sys/stat.h)
 	PSI_MACRO(S_TYPEISTMO, int, [(mode_t m)], [(m)], sys/stat.h)
 	dnl sys/time.h
-	PSI_STRUCT(timeval, [
+	PSI_STRUCT(struct timeval, [
 		[tv_sec],
 		[tv_usec]], [
 	], sys/time.h)
-	PSI_STRUCT(itimerval, [
+	PSI_STRUCT(struct itimerval, [
 		[it_interval],
 		[it_value]], [
 		it_*) psi_member_type="struct timeval" ;;
 	], sys/time.h)
-	PSI_STRUCT(timezone, [
+	PSI_STRUCT(struct timezone, [
 		[tz_minuteswest],
 		[tz_dsttime]], [
 	], sys/time.h)
@@ -642,7 +672,7 @@ if test "$PHP_PSI" != "no"; then
 	PSI_CONST(ITIMER_PROF, int, sys/time.h)
 	dnl sys/times.h
 	PSI_FUNC(times)
-	PSI_STRUCT(tms, [
+	PSI_STRUCT(struct tms, [
 		[tms_utime],
 		[tms_stime],
 		[tms_cutime],
@@ -671,7 +701,7 @@ if test "$PHP_PSI" != "no"; then
 	PSI_TYPE(uid_t)
 	dnl sys/utsname.h
 	PSI_FUNC(uname)
-	PSI_STRUCT(utsname, [
+	PSI_STRUCT(struct utsname, [
 		[sysname],
 		[nodename],
 		[release],
@@ -681,7 +711,7 @@ if test "$PHP_PSI" != "no"; then
 		*) psi_member_type="char@<:@$psi_member_size@:>@" ;;
 	], sys/utsname.h)
 	dnl time.h
-	PSI_STRUCT(tm, [
+	PSI_STRUCT(struct tm, [
 		[tm_sec],
 		[tm_min],
 		[tm_hour],
@@ -692,7 +722,7 @@ if test "$PHP_PSI" != "no"; then
 		[tm_yday],
 		[tm_isdst]], [
 	], time.h)
-	PSI_STRUCT(timespec, [
+	PSI_STRUCT(struct timespec, [
 		[tv_sec],
 		[tv_nsec]], [
 	], time.h)
