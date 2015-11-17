@@ -482,34 +482,59 @@ static inline int validate_impl_set_stmts(PSI_Data *data, impl *impl) {
 	}
 	return 1;
 }
+static inline decl *locate_free_decl(decls *decls, free_call *f) {
+	size_t i;
+
+	for (i = 0; i < decls->count; ++i) {
+		if (!strcmp(decls->list[i]->func->var->name, f->func)) {
+			f->decl = decls->list[i];
+			return decls->list[i];
+		}
+	}
+	return NULL;
+}
 static inline int validate_impl_free_stmts(PSI_Data *data, impl *impl) {
-	size_t i, j, k;
+	size_t i, j, k, l;
 	/* we can have any count of free stmts; freeing any out vars */
 	for (i = 0; i < impl->stmts->fre.count; ++i) {
 		free_stmt *fre = impl->stmts->fre.list[i];
 
-		for (j = 0; j < fre->vars->count; ++j) {
-			decl_var *free_var = fre->vars->vars[j];
-			int check = 0;
+		for (j = 0; j < fre->calls->count; ++j) {
+			free_call *free_call = fre->calls->list[j];
 
-			if (!strcmp(free_var->name, impl->decl->func->var->name)) {
-				continue;
-			}
-			if (impl->decl->args) for (k = 0; k < impl->decl->args->count; ++k) {
-				decl_arg *free_arg = impl->decl->args->args[k];
-
-				if (!strcmp(free_var->name, free_arg->var->name)) {
-					check = 1;
-					free_var->arg = free_arg;
-					break;
-				}
-			}
-
-			if (!check) {
-				data->error(PSI_WARNING, "Unknown variable '%s' of `free` statement"
-						" of implementation '%s'",
-						free_var->name, impl->func->name);
+			/* first find the decl of the free func */
+			if (!locate_free_decl(data->decls, free_call)) {
+				data->error(PSI_WARNING, "Unknown function '%s' in `free` statement"
+						" of implementation '%s'", free_call->func, impl->func->name);
 				return 0;
+			}
+			if (!impl->decl->args) {
+				data->error(PSI_WARNING, "Declaration '%s' of implementation '%s'"
+						" does not have any arguments to free",
+						impl->decl->func->var->name, impl->func->name);
+			}
+
+			/* now check for known vars */
+			for (l = 0; l < free_call->vars->count; ++l) {
+				int check = 0;
+				decl_var *free_var = free_call->vars->vars[l];
+
+				for (k = 0; k < impl->decl->args->count; ++k) {
+					decl_arg *free_arg = impl->decl->args->args[k];
+
+					if (!strcmp(free_var->name, free_arg->var->name)) {
+						check = 1;
+						free_var->arg = free_arg;
+						break;
+					}
+				}
+
+				if (!check) {
+					data->error(PSI_WARNING, "Unknown variable '%s' of `free` statement"
+							" of implementation '%s'",
+							free_var->name, impl->func->name);
+					return 0;
+				}
 			}
 		}
 	}
@@ -780,6 +805,12 @@ zend_function_entry *PSI_ContextCompile(PSI_Context *C)
 
 
 	return C->closures = C->ops->compile(C);
+}
+
+
+void PSI_ContextCall(PSI_Context *C, impl_val *ret_val, decl *decl, impl_val **args)
+{
+	C->ops->call(C, ret_val, decl, args);
 }
 
 void PSI_ContextDtor(PSI_Context *C)

@@ -14,6 +14,7 @@ struct PSI_ContextOps {
 	void (*init)(PSI_Context *C);
 	void (*dtor)(PSI_Context *C);
 	zend_function_entry *(*compile)(PSI_Context *C);
+	void (*call)(PSI_Context *C, impl_val *ret_val, decl *decl, impl_val **args);
 };
 
 struct PSI_Context {
@@ -29,6 +30,7 @@ PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErr
 void PSI_ContextBuild(PSI_Context *C, const char *path);
 int PSI_ContextValidate(PSI_Context *C, PSI_Parser *P);
 zend_function_entry *PSI_ContextCompile(PSI_Context *C);
+void PSI_ContextCall(PSI_Context *C, impl_val *ret_val, decl *decl, impl_val **args);
 void PSI_ContextDtor(PSI_Context *C);
 void PSI_ContextFree(PSI_Context **C);
 

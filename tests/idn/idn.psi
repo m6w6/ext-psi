@@ -27,7 +27,7 @@ function idn\utf8_to_ascii(string $host, string &$result, int $flags = 0) : int 
 	let flags = intval($flags);
 	set $result = to_string(*buffer);
 	return to_int(idna_to_ascii_8z);
-	free *buffer;
+	free free(buffer);
 }
 default char *idna_strerror(int rc);
 function idn\strerror(int $rc) : string {

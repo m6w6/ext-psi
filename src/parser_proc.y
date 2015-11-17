@@ -16,6 +16,7 @@
 /* TOKEN is defined inside syntax_error */
 %syntax_error {
 	PSI_ParserSyntaxError(P, P->psi.file.fn, P->line, "Unexpected token '%s'", TOKEN->text);
+	TOKEN->type = PSI_T_NAME;
 }
 
 %nonassoc NAME.
@@ -457,8 +458,23 @@ return_stmt(ret) ::= RETURN set_value(val) EOS. {
 
 %type free_stmt {free_stmt*}
 %destructor free_stmt {free_free_stmt($$);}
-free_stmt(free) ::= FREE decl_vars(vars) EOS. {
-	free = init_free_stmt(vars);
+free_stmt(free) ::= FREE free_calls(calls) EOS. {
+	free = init_free_stmt(calls);
+}
+
+%type free_calls {free_calls*}
+%destructor free_calls {free_free_calls($$);}
+free_calls(calls) ::= free_call(call). {
+	calls = init_free_calls(call);
+}
+free_calls(calls) ::= free_calls(calls_) COMMA free_call(call). {
+	calls = add_free_call(calls_, call);
+}
+
+%type free_call {free_call*}
+%destructor free_call {free_free_call($$);}
+free_call(call) ::= NAME(F) LPAREN decl_vars(vars) RPAREN. {
+	call = init_free_call(F->text, vars);
 }
 
 %type impl_type {impl_type*}

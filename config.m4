@@ -202,7 +202,7 @@ if test "$PHP_PSI" != "no"; then
 	AC_DEFUN(PSI_STRUCT, [
 		AC_CHECK_SIZEOF($1, [], PSI_INCLUDES_DEFAULT($4))
 		psi_struct_name=`echo $1 | cut -d" " -f2`
-		psi_struct_size=$AS_TR_SH(ac_cv_sizeof_struct_$1)
+		psi_struct_size=$AS_TR_SH(ac_cv_sizeof_$1)
 		psi_struct_members=
 		m4_foreach(member, [$2], [
 			AC_CHECK_MEMBER($1.member, [
@@ -649,10 +649,10 @@ if test "$PHP_PSI" != "no"; then
 	PSI_MACRO(S_ISREG, int, [(mode_t m)], [(m)], sys/stat.h)
 	PSI_MACRO(S_ISLNK, int, [(mode_t m)], [(m)], sys/stat.h)
 	PSI_MACRO(S_ISSOCK, int, [(mode_t m)], [(m)], sys/stat.h)
-	PSI_MACRO(S_TYPEISMQ, int, [(mode_t m)], [(m)], sys/stat.h)
-	PSI_MACRO(S_TYPEISSEM, int, [(mode_t m)], [(m)], sys/stat.h)
-	PSI_MACRO(S_TYPEISSHM, int, [(mode_t m)], [(m)], sys/stat.h)
-	PSI_MACRO(S_TYPEISTMO, int, [(mode_t m)], [(m)], sys/stat.h)
+	PSI_MACRO(S_TYPEISMQ, int, [(struct stat *s)], [(s)], sys/stat.h)
+	PSI_MACRO(S_TYPEISSEM, int, [(struct stat *s)], [(s)], sys/stat.h)
+	PSI_MACRO(S_TYPEISSHM, int, [(struct stat *s)], [(s)], sys/stat.h)
+	PSI_MACRO(S_TYPEISTMO, int, [(struct stat *s)], [(s)], sys/stat.h)
 	dnl sys/time.h
 	PSI_STRUCT(struct timeval, [
 		[tv_sec],
@@ -751,7 +751,7 @@ if test "$PHP_PSI" != "no"; then
 	AC_DEFINE_UNQUOTED(PHP_PSI_CONSTS, $PSI_CONSTS, Predefined constants)
 	AC_DEFINE_UNQUOTED(PHP_PSI_STRUCTS, $PSI_STRUCTS, Predefined structs)
 
-	AC_DEFINE_UNQUOTED(PHP_PSI_SHLIB_SUFFIX, $SHLIB_SUFFIX_NAME, DL suffix)
+	AC_DEFINE_UNQUOTED(PHP_PSI_SHLIB_SUFFIX, ["]$SHLIB_SUFFIX_NAME["], DL suffix)
 
 	PHP_PSI_SRCDIR=PHP_EXT_SRCDIR(psi)
 	PHP_PSI_BUILDDIR=PHP_EXT_BUILDDIR(psi)

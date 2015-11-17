@@ -616,15 +616,20 @@ void psi_do_return(zval *return_value, return_stmt *ret, impl_val *ret_val)
 
 void psi_do_free(free_stmt *fre)
 {
-	size_t i;
+	size_t i, j;
+	impl_val dummy, *argps[0x20];
 
-	for (i = 0; i < fre->vars->count; ++i) {
-		decl_var *dvar = fre->vars->vars[i];
+	for (i = 0; i < fre->calls->count; ++i) {
+		free_call *f = fre->calls->list[i];
 
-		if (dvar->arg && dvar->arg->let->out.ptr) {
-			free(dvar->arg->let->out.ptr);
-			dvar->arg->let->out.ptr = NULL;
+		for (j = 0; j < f->vars->count; ++j) {
+			decl_var *dvar = f->vars->vars[j];
+			decl_arg *darg = dvar->arg;
+
+			argps[j] = &darg->let->out;
 		}
+
+		PSI_ContextCall(&PSI_G(context), &dummy, f->decl, argps);
 	}
 }
 

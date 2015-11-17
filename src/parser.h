@@ -674,19 +674,68 @@ static inline void free_return_stmt(return_stmt *ret) {
 	free(ret);
 }
 
-typedef struct free_stmt {
+typedef struct free_call {
+	char *func;
 	decl_vars *vars;
-} free_stmt;
+	decl *decl;
+} free_call;
 
-static inline free_stmt *init_free_stmt(decl_vars *vars) {
-	free_stmt *free_ = calloc(1, sizeof(*free_));
-	free_->vars = vars;
-	return free_;
+static inline free_call *init_free_call(const char *func, decl_vars *vars) {
+	free_call *f = calloc(1, sizeof(*f));
+	f->func = strdup(func);
+	f->vars = vars;
+	return f;
 }
 
-static inline void free_free_stmt(free_stmt *free_) {
-	free_decl_vars(free_->vars);
-	free(free_);
+static inline void free_free_call(free_call *f) {
+	free(f->func);
+	free(f);
+}
+
+typedef struct free_calls {
+	free_call **list;
+	size_t count;
+} free_calls;
+
+static inline free_calls *init_free_calls(free_call *f) {
+	free_calls *fcs = calloc(1, sizeof(*fcs));
+	if (f) {
+		fcs->count = 1;
+		fcs->list = calloc(1, sizeof(*fcs->list));
+		fcs->list[0] = f;
+	}
+	return fcs;
+}
+
+static inline void free_free_calls(free_calls *fcs) {
+	size_t i;
+
+	for (i = 0; i < fcs->count; ++i) {
+		free_free_call(fcs->list[i]);
+	}
+	free(fcs->list);
+	free(fcs);
+}
+
+static inline free_calls *add_free_call(free_calls *fcs, free_call *f) {
+	fcs->list = realloc(fcs->list, ++fcs->count * sizeof(*fcs->list));
+	fcs->list[fcs->count-1] = f;
+	return fcs;
+}
+
+typedef struct free_stmt {
+	free_calls *calls;
+} free_stmt;
+
+static inline free_stmt *init_free_stmt(free_calls *calls) {
+	free_stmt *f = calloc(1, sizeof(*f));
+	f->calls = calls;
+	return f;
+}
+
+static inline void free_free_stmt(free_stmt *f) {
+	free_free_calls(f->calls);
+	free(f);
 }
 
 typedef struct impl_stmt {

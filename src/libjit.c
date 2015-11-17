@@ -230,10 +230,39 @@ static zend_function_entry *psi_jit_compile(PSI_Context *C)
 	return zfe;
 }
 
+static void psi_jit_call(PSI_Context *C, impl_val *ret_val, decl *decl, impl_val **args) {
+	jit_type_t signature, *types;
+	void **argps;
+	size_t i;
+
+	/* FIXME: cache in decl */
+
+	types = calloc(decl->args->count + 1, sizeof(*types));
+	argps = calloc(decl->args->count + 1, sizeof(*argps));
+	for (i = 0; i < decl->args->count; ++i) {
+		decl_arg *darg = decl->args->args[i];
+
+		types[i] = psi_jit_decl_arg_type(darg);
+		argps[i] = args[i];
+	}
+
+	signature = jit_type_create_signature(
+			psi_jit_abi(decl->abi->convention),
+			psi_jit_decl_arg_type(decl->func),
+			types, decl->args->count, 1);
+	jit_apply(signature, decl->dlptr, argps, decl->args->count, ret_val);
+
+	jit_type_free(signature);
+	free(types);
+	free(argps);
+
+}
+
 static PSI_ContextOps ops = {
 	psi_jit_init,
 	psi_jit_dtor,
 	psi_jit_compile,
+	psi_jit_call,
 };
 
 PSI_ContextOps *PSI_Libjit(void)

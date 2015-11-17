@@ -287,10 +287,36 @@ static zend_function_entry *psi_ffi_compile(PSI_Context *C)
 	return zfe;
 }
 
+static void psi_ffi_call(PSI_Context *C, impl_val *ret_val, decl *decl, impl_val **args) {
+	ffi_cif signature;
+	ffi_type **types;
+	void **argps;
+	size_t i;
+
+	/* FIXME: cache in decl */
+
+	types = calloc(decl->args->count + 1, sizeof(*types));
+	argps = calloc(decl->args->count + 1, sizeof(*argps));
+	for (i = 0; i < decl->args->count; ++i) {
+		decl_arg *darg = decl->args->args[i];
+
+		types[i] = psi_ffi_decl_arg_type(darg);
+		argps[i] = args[i];
+	}
+
+	ffi_prep_cif(&signature, psi_ffi_abi(decl->abi->convention), decl->args->count,
+			psi_ffi_decl_arg_type(decl->func), types);
+	ffi_call(&signature, FFI_FN(decl->dlptr), ret_val, argps);
+
+	free(types);
+	free(argps);
+}
+
 static PSI_ContextOps ops = {
 	psi_ffi_init,
 	psi_ffi_dtor,
 	psi_ffi_compile,
+	psi_ffi_call,
 };
 
 PSI_ContextOps *PSI_Libffi(void)
