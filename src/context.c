@@ -728,47 +728,62 @@ static int psi_select_dirent(const struct dirent *entry)
 	return 0 == fnmatch("*.psi", entry->d_name, FNM_CASEFOLD);
 }
 
-void PSI_ContextBuild(PSI_Context *C, const char *path)
+void PSI_ContextBuild(PSI_Context *C, const char *paths)
 {
 	int i, n;
+	char *sep = NULL, *cpy = strdup(paths), *ptr = cpy;
 	struct dirent **entries = NULL;
 
-	n = php_scandir(path, &entries, psi_select_dirent, alphasort);
 
-	if (n < 0) {
-		return;
-	} else for (i = 0; i < n; ++i) {
-		char psi[MAXPATHLEN];
-		PSI_Parser P;
+	do {
+		sep = strchr(ptr, ':');
 
-		if (MAXPATHLEN <= slprintf(psi, MAXPATHLEN, "%s/%s", path, entries[i]->d_name)) {
-			C->error(PSI_WARNING, "Path to PSI file too long: %s/%s",
-				path, entries[i]->d_name);
-		}
-		if (!PSI_ParserInit(&P, psi, C->error, 0)) {
-			C->error(PSI_WARNING, "Failed to init PSI parser (%s): %s",
-				psi, strerror(errno));
-			continue;
+		if (sep) {
+			*sep = 0;
 		}
 
-		while (-1 != PSI_ParserScan(&P)) {
-			PSI_ParserParse(&P, PSI_TokenAlloc(&P));
-		};
-		PSI_ParserParse(&P, NULL);
-		PSI_ContextValidate(C, &P);
-		PSI_ParserDtor(&P);
-	}
+		n = php_scandir(ptr, &entries, psi_select_dirent, alphasort);
+
+		if (n > 0) {
+			for (i = 0; i < n; ++i) {
+				char psi[MAXPATHLEN];
+				PSI_Parser P;
+
+				if (MAXPATHLEN <= slprintf(psi, MAXPATHLEN, "%s/%s", ptr, entries[i]->d_name)) {
+					C->error(PSI_WARNING, "Path to PSI file too long: %s/%s",
+						ptr, entries[i]->d_name);
+				}
+				if (!PSI_ParserInit(&P, psi, C->error, 0)) {
+					C->error(PSI_WARNING, "Failed to init PSI parser (%s): %s",
+						psi, strerror(errno));
+					continue;
+				}
+
+				while (-1 != PSI_ParserScan(&P)) {
+					PSI_ParserParse(&P, PSI_TokenAlloc(&P));
+				};
+				PSI_ParserParse(&P, NULL);
+				PSI_ContextValidate(C, &P);
+				PSI_ParserDtor(&P);
+			}
+		}
+
+		if (entries) {
+			for (i = 0; i < n; ++i) {
+				free(entries[i]);
+			}
+			free(entries);
+		}
+
+		ptr = sep + 1;
+	} while (sep);
+
 
 	if (PSI_ContextCompile(C) && SUCCESS != zend_register_functions(NULL, C->closures, NULL, MODULE_PERSISTENT)) {
 		C->error(PSI_WARNING, "Failed to register functions!");
 	}
 
-	if (entries) {
-		for (i = 0; i < n; ++i) {
-			free(entries[i]);
-		}
-		free(entries);
-	}
+	free(cpy);
 
 }
 
