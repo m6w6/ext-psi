@@ -38,12 +38,7 @@ void psi_to_double(zval *return_value, token_t t, impl_val *ret_val, set_value *
 void psi_to_string(zval *return_value, token_t t, impl_val *ret_val, set_value *set, decl_var *var);
 void psi_to_array(zval *return_value, token_t t, impl_val *ret_val, set_value *set, decl_var *var);
 
-ZEND_RESULT_CODE psi_parse_args(zend_execute_data *execute_data, impl *impl);
-void *psi_do_let(decl_arg *darg);
-void psi_do_set(zval *return_value, set_value *set);
-void psi_do_return(zval *return_value, return_stmt *ret, impl_val *ret_val);
-void psi_do_free(free_stmt *fre);
-void psi_do_clean(impl *impl);
+void psi_call(zend_execute_data *execute_data, zval *return_value, impl *impl);
 
 ZEND_BEGIN_MODULE_GLOBALS(psi)
 	char *engine;

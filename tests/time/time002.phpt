@@ -7,7 +7,7 @@ extension_loaded("psi") or die("skip - need ext/psi");
 --ENV--
 TZ=UTC
 --INI--
-psi.directory = {PWD}
+psi.directory = {PWD}/../../psis:{PWD}
 --FILE--
 ===TEST===
 <?php

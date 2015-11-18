@@ -439,7 +439,7 @@ void psi_to_array(zval *return_value, token_t t, impl_val *ret_val, set_value *s
 	}
 }
 
-ZEND_RESULT_CODE psi_parse_args(zend_execute_data *execute_data, impl *impl)
+static inline ZEND_RESULT_CODE psi_parse_args(zend_execute_data *execute_data, impl *impl)
 {
 	impl_arg *iarg;
 
@@ -497,7 +497,7 @@ ZEND_RESULT_CODE psi_parse_args(zend_execute_data *execute_data, impl *impl)
 	return SUCCESS;
 }
 
-void *psi_do_calloc(let_calloc *alloc)
+static inline void *psi_do_calloc(let_calloc *alloc)
 {
 	decl_type *type = real_decl_type(alloc->type);
 	size_t size;
@@ -512,7 +512,7 @@ void *psi_do_calloc(let_calloc *alloc)
 	return ecalloc(alloc->n, size);
 }
 
-void *psi_do_let(decl_arg *darg)
+static inline void *psi_do_let(decl_arg *darg)
 {
 	impl_arg *iarg = darg->let->arg;
 	impl_val *arg_val;
@@ -596,7 +596,7 @@ void *psi_do_let(decl_arg *darg)
 	}
 }
 
-void psi_do_set(zval *return_value, set_value *set)
+static inline void psi_do_set(zval *return_value, set_value *set)
 {
 	impl_val *val = (impl_val *) &set->vars->vars[0]->arg->let->ptr;
 	token_t t = real_decl_type(set->vars->vars[0]->arg->type)->type;
@@ -607,17 +607,17 @@ void psi_do_set(zval *return_value, set_value *set)
 	set->func->handler(return_value, t, val, set, set->vars->vars[0]);
 }
 
-void psi_do_return(zval *return_value, return_stmt *ret, impl_val *ret_val)
+static inline void psi_do_return(zval *return_value, return_stmt *ret, impl_val *ret_val)
 {
 	token_t t = real_decl_type(ret->decl->type)->type;
 
 	ret->set->func->handler(return_value, t, ret_val, ret->set, ret->decl->var);
 }
 
-void psi_do_free(free_stmt *fre)
+static inline void psi_do_free(free_stmt *fre)
 {
 	size_t i, j;
-	impl_val dummy, *argps[0x20];
+	impl_val dummy;
 
 	for (i = 0; i < fre->calls->count; ++i) {
 		free_call *f = fre->calls->list[i];
@@ -626,14 +626,14 @@ void psi_do_free(free_stmt *fre)
 			decl_var *dvar = f->vars->vars[j];
 			decl_arg *darg = dvar->arg;
 
-			argps[j] = &darg->let->out;
+			f->decl->call.args[j] = &darg->let->out;
 		}
 
-		PSI_ContextCall(&PSI_G(context), &dummy, f->decl, argps);
+		PSI_ContextCall(&PSI_G(context), &dummy, f->decl);
 	}
 }
 
-void psi_do_clean(impl *impl)
+static inline void psi_do_clean(impl *impl)
 {
 	size_t i;
 
@@ -666,6 +666,44 @@ void psi_do_clean(impl *impl)
 			darg->let->mem = NULL;
 		}
 	}
+}
+
+void psi_call(zend_execute_data *execute_data, zval *return_value, impl *impl)
+{
+	impl_val ret_val;
+	size_t i;
+
+	if (SUCCESS != psi_parse_args(execute_data, impl)) {
+		return;
+	}
+
+	if (impl->decl->args) {
+		for (i = 0; i < impl->decl->args->count; ++i) {
+			decl_arg *darg = impl->decl->args->args[i];
+
+			impl->decl->call.args[i] = psi_do_let(darg);
+		}
+	}
+
+	PSI_ContextCall(&PSI_G(context), &ret_val, impl->decl);
+
+	psi_do_return(return_value, impl->stmts->ret.list[0], &ret_val);
+
+	for (i = 0; i < impl->stmts->set.count; ++i) {
+		set_stmt *set = impl->stmts->set.list[i];
+
+		if (set->arg->_zv) {
+			psi_do_set(set->arg->_zv, set->val);
+		}
+	}
+
+	for (i = 0; i < impl->stmts->fre.count; ++i) {
+		free_stmt *fre = impl->stmts->fre.list[i];
+
+		psi_do_free(fre);
+	}
+
+	psi_do_clean(impl);
 }
 
 PHP_MINIT_FUNCTION(psi)

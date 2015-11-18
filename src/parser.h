@@ -234,7 +234,12 @@ typedef struct decl {
 	decl_abi *abi;
 	decl_arg *func;
 	decl_args *args;
-	void *dlptr;
+	struct impl *impl;
+	struct {
+		void *sym;
+		void *info;
+		void **args;
+	} call;
 } decl;
 
 static inline decl* init_decl(decl_abi *abi, decl_arg *func, decl_args *args) {
@@ -359,7 +364,7 @@ static inline impl_val *enref_impl_val(void *ptr, decl_var *var) {
 	if (!var->pointer_level && real_decl_type(var->arg->type)->type != PSI_T_STRUCT) {
 		return ptr;
 	}
-	val = val_ptr = calloc(var->pointer_level, sizeof(void *));
+	val = val_ptr = calloc(var->pointer_level + 1, sizeof(void *));
 	for (i = 1; i < var->pointer_level; ++i) {
 		val_ptr->ptr = (void **) val_ptr + 1;
 		val_ptr = val_ptr->ptr;

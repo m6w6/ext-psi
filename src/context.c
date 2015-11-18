@@ -235,19 +235,19 @@ static inline int validate_decl_func(PSI_Data *data, void *dl, decl *decl, decl_
 #ifndef RTLD_NEXT
 # define RTLD_NEXT ((void *) -1l)
 #endif
-	decl->dlptr = dlsym(dl ?: RTLD_NEXT, func->var->name);
-	if (!decl->dlptr) {
+	decl->call.sym = dlsym(dl ?: RTLD_NEXT, func->var->name);
+	if (!decl->call.sym) {
 		size_t i;
 
 		for (i = 0; i < psi_predef_func_count(); ++i) {
 			psi_predef_func *pre = &psi_predef_funcs[i];
 
 			if (!strcmp(func->var->name, pre->name)) {
-				decl->dlptr = pre->func;
+				decl->call.sym = pre->func;
 				break;
 			}
 		}
-		if (!decl->dlptr) {
+		if (!decl->call.sym) {
 			data->error(PSI_WARNING, "Failed to locate symbol '%s': %s",
 				func->var->name, dlerror());
 		}
@@ -368,9 +368,12 @@ static inline int validate_impl_ret_stmt(PSI_Data *data, impl *impl) {
 				impl->func->name);
 		return 0;
 	}
+
 	if (!validate_set_value(data, ret->set, ret->decl)) {
 		return 0;
 	}
+
+	impl->decl->impl = impl;
 
 	return 1;
 }
@@ -576,7 +579,13 @@ PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErr
 
 	C->error = error;
 	C->ops = ops;
-	ops->init(C);
+
+	if (ops->init) {
+		ops->init(C);
+	}
+
+	ZEND_ASSERT(ops->call != NULL);
+	ZEND_ASSERT(ops->compile != NULL);
 
 	/* build up predefs in a temporary PSI_Data for validation */
 	memset(&T, 0, sizeof(T));
@@ -818,29 +827,34 @@ zend_function_entry *PSI_ContextCompile(PSI_Context *C)
 		}
 	}
 
-
 	return C->closures = C->ops->compile(C);
 }
 
 
-void PSI_ContextCall(PSI_Context *C, impl_val *ret_val, decl *decl, impl_val **args)
+void PSI_ContextCall(PSI_Context *C, impl_val *ret_val, decl *decl)
 {
-	C->ops->call(C, ret_val, decl, args);
+	C->ops->call(C, ret_val, decl);
 }
 
 void PSI_ContextDtor(PSI_Context *C)
 {
 	size_t i;
+	zend_function_entry *zfe;
 
-	C->ops->dtor(C);
+	if (C->ops->dtor) {
+		C->ops->dtor(C);
+	}
 
 	free_decl_libs(&C->psi.libs);
 
 	for (i = 0; i < C->count; ++i) {
 		PSI_DataDtor(&C->data[i]);
 	}
-
 	free(C->data);
+
+	for (zfe = C->closures; zfe->fname; ++zfe) {
+		free((void *) zfe->arg_info);
+	}
 	free(C->closures);
 
 	if (C->consts) {
