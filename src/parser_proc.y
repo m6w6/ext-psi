@@ -64,21 +64,10 @@ decl_struct(strct) ::= STRUCT NAME(N) LBRACE struct_args(args) RBRACE. {
 	free(N);
 }
 
+%token_class const_type_token BOOL INT FLOAT STRING.
 %type const_type {const_type*}
 %destructor const_type {free_const_type($$);}
-const_type(type_) ::= BOOL(T). {
-	type_ = init_const_type(T->type, T->text);
-	free(T);
-}
-const_type(type_) ::= INT(T). {
-	type_ = init_const_type(T->type, T->text);
-	free(T);
-}
-const_type(type_) ::= FLOAT(T). {
-	type_ = init_const_type(T->type, T->text);
-	free(T);
-}
-const_type(type_) ::= STRING(T). {
+const_type(type_) ::= const_type_token(T). {
 	type_ = init_const_type(T->type, T->text);
 	free(T);
 }
@@ -109,8 +98,23 @@ decl_typedef(def) ::= TYPEDEF decl_struct(s) NAME(ALIAS) EOS. {
 
 %type decl {decl*}
 %destructor decl {free_decl($$);}
-decl(decl) ::= decl_abi(abi) decl_arg(func) LPAREN decl_args(args) RPAREN EOS. {
+decl(decl) ::= decl_abi(abi) decl_func(func) LPAREN decl_args(args) RPAREN EOS. {
 	decl = init_decl(abi, func, args);
+}
+
+%type decl_func {decl_arg*}
+%destructor decl_func {free_decl_arg($$);}
+decl_func(func) ::= decl_arg(arg). {
+	func = arg;
+}
+/* special case for void functions */
+decl_func(func) ::= VOID(T) NAME(N). {
+	func = init_decl_arg(
+		init_decl_type(T->type, T->text),
+		init_decl_var(N->text, 0, 0)
+	);
+	free(T);
+	free(N);
 }
 
 %type decl_abi {decl_abi*}
@@ -122,20 +126,11 @@ decl_abi(abi) ::= NAME(T). {
 
 %type decl_var {decl_var*}
 %destructor decl_var {free_decl_var($$);}
-decl_var(var) ::= NAME(T). {
-	var = init_decl_var(T->text, 0, 0);
-	free(T);
-}
-decl_var(var) ::= pointers(p) NAME(T). {
+decl_var(var) ::= indirection(p) NAME(T). {
 	var = init_decl_var(T->text, p, 0);
 	free(T);
 }
-decl_var(var) ::= NAME(T) LBRACKET NUMBER(D) RBRACKET. {
-	var = init_decl_var(T->text, 1, atol(D->text));
-	free(T);
-	free(D);
-}
-decl_var(var) ::= pointers(p) NAME(T) LBRACKET NUMBER(D) RBRACKET. {
+decl_var(var) ::= indirection(p) NAME(T) LBRACKET NUMBER(D) RBRACKET. {
 	var = init_decl_var(T->text, p+1, atol(D->text));
 	free(T);
 	free(D);
@@ -155,9 +150,20 @@ decl_vars(vars) ::= decl_vars(vars_) COMMA decl_var(var). {
 decl_arg(arg_) ::= decl_type(type) decl_var(var). {
 	arg_ = var->arg = init_decl_arg(type, var);
 }
+/* void pointers need a specific rule */
+decl_arg(arg_) ::= VOID(T) pointers(p) NAME(N). {
+	arg_ = init_decl_arg(
+		init_decl_type(T->type, T->text),
+		init_decl_var(N->text, p, 0)
+	);
+	arg_->var->arg = arg_;
+	free(T);
+	free(N);
+}
 
 %type decl_args {decl_args*}
 %destructor decl_args {free_decl_args($$);}
+decl_args ::= .
 decl_args ::= VOID.
 decl_args(args) ::= decl_arg(arg). {
 	args = init_decl_args(arg);
@@ -174,17 +180,10 @@ struct_args(args) ::= struct_args(args_) decl_arg(arg) EOS. {
 	args = add_decl_arg(args_, arg);
 }
 
+%token_class decl_type_token FLOAT DOUBLE INT8 UINT8 INT16 UINT16 INT32 UINT32 INT64 UINT64 NAME.
 %type decl_type {decl_type*}
 %destructor decl_type {free_decl_type($$);}
-decl_type(type_) ::= VOID(T). {
-	type_ = init_decl_type(T->type, T->text);
-	free(T);
-}
-decl_type(type_) ::= FLOAT(T). {
-	type_ = init_decl_type(T->type, T->text);
-	free(T);
-}
-decl_type(type_) ::= DOUBLE(T). {
+decl_type(type_) ::= decl_type_token(T). {
 	type_ = init_decl_type(T->type, T->text);
 	free(T);
 }
@@ -193,42 +192,7 @@ decl_type(type_) ::= INT(T). {
 	type_ = init_decl_type(PSI_T_NAME, T->text);
 	free(T);
 }
-decl_type(type_) ::= INT8(T). {
-	type_ = init_decl_type(T->type, T->text);
-	free(T);
-}
-decl_type(type_) ::= UINT8(T). {
-	type_ = init_decl_type(T->type, T->text);
-	free(T);
-}
-decl_type(type_) ::= INT16(T). {
-	type_ = init_decl_type(T->type, T->text);
-	free(T);
-}
-decl_type(type_) ::= UINT16(T). {
-	type_ = init_decl_type(T->type, T->text);
-	free(T);
-}
-decl_type(type_) ::= INT32(T). {
-	type_ = init_decl_type(T->type, T->text);
-	free(T);
-}
-decl_type(type_) ::= UINT32(T). {
-	type_ = init_decl_type(T->type, T->text);
-	free(T);
-}
-decl_type(type_) ::= INT64(T). {
-	type_ = init_decl_type(T->type, T->text);
-	free(T);
-}
-decl_type(type_) ::= UINT64(T). {
-	type_ = init_decl_type(T->type, T->text);
-	free(T);
-}
-decl_type(type_) ::= NAME(T). {
-	type_ = init_decl_type(T->type, T->text);
-	free(T);
-}
+/* structs ! */
 decl_type(type_) ::= STRUCT(S) NAME(T). {
 	type_ = init_decl_type(S->type, T->text);
 	free(S);
@@ -252,25 +216,10 @@ impl_func(func) ::= FUNCTION REFERENCE NSNAME(NAME) impl_args(args) COLON impl_t
 	free(NAME);
 }
 
+%token_class impl_def_val_token NULL NUMBER TRUE FALSE QUOTED_STRING.
 %type impl_def_val {impl_def_val*}
 %destructor impl_def_val {free_impl_def_val($$);}
-impl_def_val(def) ::= NULL(T). {
-	def = init_impl_def_val(T->type, T->text);
-	free(T);
-}
-impl_def_val(def) ::= NUMBER(T). {
-	def = init_impl_def_val(T->type, T->text);
-	free(T);
-}
-impl_def_val(def) ::= TRUE(T). {
-	def = init_impl_def_val(T->type, T->text);
-	free(T);
-}
-impl_def_val(def) ::= FALSE(T). {
-	def = init_impl_def_val(T->type, T->text);
-	free(T);
-}
-impl_def_val(def) ::= QUOTED_STRING(T). {
+impl_def_val(def) ::= impl_def_val_token(T). {
 	def = init_impl_def_val(T->type, T->text);
 	free(T);
 }
@@ -358,42 +307,17 @@ let_value(val) ::= CALLOC(F) LPAREN NUMBER(N) COMMA decl_type(t) RPAREN. {
 	free(F);
 	free(N);
 }
-let_value(val) ::= let_func(func) LPAREN impl_var(var) RPAREN. {
-	val = init_let_value(func, var, 0);
+let_value(val) ::= reference(r) let_func(func) LPAREN impl_var(var) RPAREN. {
+	val = init_let_value(func, var, r);
 }
-let_value(val) ::= REFERENCE let_func(func) LPAREN impl_var(var) RPAREN. {
-	val = init_let_value(func, var, 1);
-}
-let_value(val) ::= REFERENCE NULL. {
-	val = init_let_value(NULL, NULL, 1);
-}
-let_value(val) ::= NULL. {
-	val = init_let_value(NULL, NULL, 0);
+let_value(val) ::= reference(r) NULL. {
+	val = init_let_value(NULL, NULL, r);
 }
 
+%token_class let_func_token ARRVAL STRLEN STRVAL FLOATVAL INTVAL BOOLVAL.
 %type let_func {let_func*}
 %destructor let_func {free_let_func($$);}
-let_func(func) ::= STRLEN(T). {
-	func = init_let_func(T->type, T->text, NULL);
-	free(T);
-}
-let_func(func) ::= STRVAL(T). {
-	func = init_let_func(T->type, T->text, NULL);
-	free(T);
-}
-let_func(func) ::= INTVAL(T). {
-	func = init_let_func(T->type, T->text, NULL);
-	free(T);
-}
-let_func(func) ::= FLOATVAL(T). {
-	func = init_let_func(T->type, T->text, NULL);
-	free(T);
-}
-let_func(func) ::= BOOLVAL(T). {
-	func = init_let_func(T->type, T->text, NULL);
-	free(T);
-}
-let_func(func) ::= ARRVAL(T). {
+let_func(func) ::= let_func_token(T). {
 	func = init_let_func(T->type, T->text, NULL);
 	free(T);
 }
@@ -423,29 +347,10 @@ set_vals(vals) ::= set_vals(vals_) COMMA set_value(val). {
 	vals = add_inner_set_value(vals_, val);
 }
 
+%token_class set_func_token TO_ARRAY TO_STRING TO_INT TO_FLOAT TO_BOOL VOID.
 %type set_func {set_func*}
 %destructor set_func {free_set_func($$);}
-set_func(func) ::= TO_ARRAY(T). {
-	func = init_set_func(T->type, T->text);
-	free(T);
-}
-set_func(func) ::= TO_STRING(T). {
-	func = init_set_func(T->type, T->text);
-	free(T);
-}
-set_func(func) ::= TO_INT(T). {
-	func = init_set_func(T->type, T->text);
-	free(T);
-}
-set_func(func) ::= TO_FLOAT(T). {
-	func = init_set_func(T->type, T->text);
-	free(T);
-}
-set_func(func) ::= TO_BOOL(T). {
-	func = init_set_func(T->type, T->text);
-	free(T);
-}
-set_func(func) ::= VOID(T). {
+set_func(func) ::= set_func_token(T). {
 	func = init_set_func(T->type, T->text);
 	free(T);
 }
@@ -477,37 +382,22 @@ free_call(call) ::= NAME(F) LPAREN decl_vars(vars) RPAREN. {
 	call = init_free_call(F->text, vars);
 }
 
+%token_class impl_type_token VOID MIXED BOOL INT FLOAT STRING ARRAY.
 %type impl_type {impl_type*}
 %destructor impl_type {free_impl_type($$);}
-impl_type(type_) ::= VOID(T). {
-	type_ = init_impl_type(T->type, T->text);
-	free(T);
-}
-impl_type(type_) ::= MIXED(T). {
-	type_ = init_impl_type(T->type, T->text);
-	free(T);
-}
-impl_type(type_) ::= BOOL(T). {
-	type_ = init_impl_type(T->type, T->text);
-	free(T);
-}
-impl_type(type_) ::= INT(T). {
-	type_ = init_impl_type(T->type, T->text);
-	free(T);
-}
-impl_type(type_) ::= FLOAT(T). {
-	type_ = init_impl_type(T->type, T->text);
-	free(T);
-}
-impl_type(type_) ::= STRING(T). {
-	type_ = init_impl_type(T->type, T->text);
-	free(T);
-}
-impl_type(type_) ::= ARRAY(T). {
+impl_type(type_) ::= impl_type_token(T). {
 	type_ = init_impl_type(T->type, T->text);
 	free(T);
 }
 
+%type reference {char}
+reference(r) ::= . {r = 0;}
+reference(r) ::= REFERENCE. {r = 1;}
+
+%type indirection {unsigned}
+indirection(i) ::= . {i = 0;}
+indirection(i) ::= pointers(p). {i = p;}
+
 %type pointers {unsigned}
-pointers(p) ::= POINTER. {++p;}
+pointers(p) ::= POINTER. {p = 1;}
 pointers(p) ::= pointers(P) POINTER. {p = P+1;}
