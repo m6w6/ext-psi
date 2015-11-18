@@ -1,3 +1,9 @@
+extern time_t time(time_t *t);
+function psi\time() : int {
+	let t = NULL;
+	return to_int(time);
+}
+
 extern int gettimeofday(struct timeval *tv, struct timezone *tz);
 function psi\gettimeofday(array &$tv = NULL, array &$tz = NULL) : int {
 	let tv = calloc(1, struct timeval);

@@ -11,9 +11,6 @@ static inline jit_abi_t psi_jit_abi(const char *convention) {
 }
 static inline jit_type_t psi_jit_token_type(token_t t) {
 	switch (t) {
-	default:
-		ZEND_ASSERT(0);
-		/* no break */
 	case PSI_T_VOID:
 		return jit_type_void;
 	case PSI_T_INT8:
@@ -34,12 +31,11 @@ static inline jit_type_t psi_jit_token_type(token_t t) {
 		return jit_type_ulong;
 	case PSI_T_BOOL:
 		return jit_type_sys_bool;
-	case PSI_T_INT:
-		return jit_type_sys_int;
 	case PSI_T_FLOAT:
 		return jit_type_sys_float;
 	case PSI_T_DOUBLE:
 		return jit_type_sys_double;
+	EMPTY_SWITCH_DEFAULT_CASE();
 	}
 }
 static inline jit_type_t psi_jit_decl_type(decl_type *type) {

@@ -685,6 +685,7 @@ void psi_call(zend_execute_data *execute_data, zval *return_value, impl *impl)
 		}
 	}
 
+	memset(&ret_val, 0, sizeof(ret_val));
 	PSI_ContextCall(&PSI_G(context), &ret_val, impl->decl);
 
 	psi_do_return(return_value, impl->stmts->ret.list[0], &ret_val);
