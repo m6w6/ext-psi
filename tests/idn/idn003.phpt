@@ -1,7 +1,7 @@
 --TEST--
 libidn
 --INI--
-psi.directory={PWD}
+psi.directory={PWD}/../../psis:{PWD}
 --SKIPIF--
 <?php
 extension_loaded("psi") or die("skip - need ext/psi");

@@ -16,10 +16,10 @@
 /* TOKEN is defined inside syntax_error */
 %syntax_error {
 	PSI_ParserSyntaxError(P, P->psi.file.fn, P->line, "Unexpected token '%s'", TOKEN->text);
-	TOKEN->type = PSI_T_NAME;
 }
 
 %nonassoc NAME.
+%fallback NAME FREE SET LET RETURN LIB.
 
 file ::= blocks.
 
