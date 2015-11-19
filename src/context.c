@@ -276,23 +276,27 @@ static inline int validate_decl(PSI_Data *data, void *dl, decl *decl) {
 	}
 	return 1;
 }
+static inline decl_arg *locate_decl_var_arg(decl_var *var, decl_args *args) {
+	size_t i;
 
-static inline decl_arg *locate_struct_member(decl_struct *s, decl_var *var) {
-	if (s->args) {
-		size_t i;
+	for (i = 0; i < args->count; ++i) {
+		decl_arg *arg = args->args[i];
 
-		for (i = 0; i < s->args->count; ++i) {
-			decl_arg *darg = s->args->args[i];
-
-			if (!strcmp(var->name, darg->var->name)) {
-				return var->arg = darg;
-			}
+		if (!strcmp(var->name, arg->var->name)) {
+			return var->arg = arg;
 		}
 	}
 
 	return NULL;
 }
-static inline int validate_set_value(PSI_Data *data, set_value *set, decl_arg *ref) {
+static inline decl_arg *locate_struct_member(decl_struct *s, decl_var *var) {
+	if (s->args) {
+		return locate_decl_var_arg(var, s->args);
+	}
+
+	return NULL;
+}
+static inline int validate_set_value(PSI_Data *data, set_value *set, decl_arg *ref, decl_args *ref_list) {
 	size_t i;
 	decl_type *ref_type = real_decl_type(ref->type);
 	decl_var *set_var = set->vars->vars[0];
@@ -316,10 +320,11 @@ static inline int validate_set_value(PSI_Data *data, set_value *set, decl_arg *r
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}
 
-	if (strcmp(set_var->name, ref->var->name)) {
-		return 0;
+	for (i = 1; i < set->vars->count; ++i) {
+		if (!locate_decl_var_arg(set->vars->vars[i], ref_list)) {
+			return 0;
+		}
 	}
-	ZEND_ASSERT(!set_var->arg || set_var->arg == ref);
 	set_var->arg = ref;
 
 	if (set->count && (set->func->type != PSI_T_TO_ARRAY || (ref_type->type != PSI_T_STRUCT && !ref->var->arg->var->pointer_level))) {
@@ -328,24 +333,32 @@ static inline int validate_set_value(PSI_Data *data, set_value *set, decl_arg *r
 	}
 
 	if (ref_type->type == PSI_T_STRUCT) {
+		/* to_array(struct, to_...) */
 		for (i = 0; i < set->count; ++i) {
 			decl_var *sub_var = set->inner[i]->vars->vars[0];
 			decl_arg *sub_ref = locate_struct_member(ref_type->strct, sub_var);
 
 			if (sub_ref) {
-				if (!validate_set_value(data, set->inner[i], sub_ref)) {
+				if (!validate_set_value(data, set->inner[i], sub_ref, ref_type->strct->args)) {
 					return 0;
 				}
+				set->inner[i]->outer.set = set;
 			}
 		}
 	} else if (set->count == 1) {
+		/* to_array(ptr, to_string(*ptr)) */
 		decl_var *sub_var = set->inner[0]->vars->vars[0];
-		decl_arg *sub_ref = sub_var->arg;
+		decl_arg *sub_ref = locate_decl_var_arg(sub_var, ref_list);
 
 		if (sub_ref) {
-			if (!validate_set_value(data, set->inner[0], sub_ref)) {
+			if (strcmp(sub_var->name, set_var->name)) {
+				data->error(E_WARNING, "Inner `set` statement casts on pointers must reference the same variable");
 				return 0;
 			}
+			if (!validate_set_value(data, set->inner[0], sub_ref, ref_list)) {
+				return 0;
+			}
+			set->inner[0]->outer.set = set;
 		}
 	} else if (set->count > 1) {
 		data->error(E_WARNING, "Inner `set` statement casts on pointers may only occur once");
@@ -393,7 +406,7 @@ static inline int validate_impl_ret_stmt(PSI_Data *data, impl *impl) {
 		return 0;
 	}
 
-	if (!validate_set_value(data, ret->set, ret->decl)) {
+	if (!validate_set_value(data, ret->set, ret->decl, impl->decl->args)) {
 		return 0;
 	}
 
@@ -491,7 +504,7 @@ static inline int validate_impl_set_stmts(PSI_Data *data, impl *impl) {
 
 				if (!strcmp(set_var->name, set_arg->var->name)) {
 					check = 1;
-					if (!validate_set_value(data, set->val, set_arg)) {
+					if (!validate_set_value(data, set->val, set_arg, impl->decl->args)) {
 						return 0;
 					}
 					set_var->arg = set_arg;

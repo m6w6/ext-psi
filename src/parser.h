@@ -613,6 +613,10 @@ static inline void free_set_func(set_func *func) {
 typedef struct set_value {
 	set_func *func;
 	decl_vars *vars;
+	struct {
+		struct set_value *set;
+		impl_val *val;
+	} outer;
 	struct set_value **inner;
 	size_t count;
 } set_value;
