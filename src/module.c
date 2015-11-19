@@ -10,13 +10,21 @@
 #include "php_psi.h"
 #include "parser.h"
 
-#include "libjit.h"
-#include "libffi.h"
+#if HAVE_LIBJIT
+# include "libjit.h"
+# ifndef HAVE_LIBFFI
+#  define PSI_ENGINE "jit"
+# endif
+#endif
+#if HAVE_LIBFFI
+# include "libffi.h"
+# define PSI_ENGINE "ffi"
+#endif
 
 ZEND_DECLARE_MODULE_GLOBALS(psi);
 
 PHP_INI_BEGIN()
-	STD_PHP_INI_ENTRY("psi.engine", "ffi", PHP_INI_SYSTEM, OnUpdateString, engine, zend_psi_globals, psi_globals)
+	STD_PHP_INI_ENTRY("psi.engine", PSI_ENGINE, PHP_INI_SYSTEM, OnUpdateString, engine, zend_psi_globals, psi_globals)
 	STD_PHP_INI_ENTRY("psi.directory", "psi.d", PHP_INI_SYSTEM, OnUpdateString, directory, zend_psi_globals, psi_globals)
 PHP_INI_END();
 
@@ -629,6 +637,7 @@ static inline void psi_do_free(free_stmt *fre)
 			f->decl->call.args[j] = &darg->let->out;
 		}
 
+		/* FIXME: check in validate_* that free functions return scalar */
 		PSI_ContextCall(&PSI_G(context), &dummy, f->decl);
 	}
 }
@@ -709,14 +718,22 @@ void psi_call(zend_execute_data *execute_data, zval *return_value, impl *impl)
 
 PHP_MINIT_FUNCTION(psi)
 {
-	PSI_ContextOps *ops;
+	PSI_ContextOps *ops = NULL;
 
 	REGISTER_INI_ENTRIES();
 
+#ifdef HAVE_LIBJIT
 	if (!strcasecmp(PSI_G(engine), "jit")) {
 		ops = PSI_Libjit();
-	} else {
+	} else
+#endif
+#ifdef HAVE_LIBFFI
 		ops = PSI_Libffi();
+#endif
+
+	if (!ops) {
+		php_error(E_WARNING, "No PSI engine found");
+		return FAILURE;
 	}
 
 	PSI_ContextInit(&PSI_G(context), ops, psi_error);

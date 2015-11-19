@@ -1,4 +1,11 @@
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #include "php.h"
+
+#ifdef HAVE_LIBFFI
+
 #include "php_psi.h"
 #include "libffi.h"
 
@@ -257,3 +264,5 @@ PSI_ContextOps *PSI_Libffi(void)
 {
 	return &ops;
 }
+
+#endif /* HAVE_LIBFFI */

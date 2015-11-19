@@ -3,6 +3,8 @@
 
 #include "context.h"
 
+#ifdef HAVE_LIBFFI
 PSI_ContextOps *PSI_Libffi(void);
+#endif
 
 #endif

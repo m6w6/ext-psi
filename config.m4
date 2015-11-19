@@ -31,6 +31,7 @@ if test "$PHP_PSI" != "no"; then
 		AC_MSG_RESULT($PSI_cv_LIBFFI_DIR)
 		PHP_EVAL_INCLINE(`$PKG_CONFIG --cflags libffi`)
 		PHP_EVAL_LIBLINE(`$PKG_CONFIG --libs libffi`, PSI_SHARED_LIBADD)
+		AC_DEFINE(HAVE_LIBFFI, 1, Have libffi)
 	else
 		AC_CACHE_CHECK(for libffi, PSI_cv_LIBFFI_DIR, [
 		for PSI_cv_LIBFFI_DIR in $PHP_PSI_LIBFFI {/usr{,/local},/opt}{,/libffi}
@@ -45,6 +46,7 @@ if test "$PHP_PSI" != "no"; then
 		then
 			PHP_ADD_INCLUDE($PSI_cv_LIBFFI_DIR/include/ffi)
 			PHP_ADD_LIBRARY_WITH_PATH(ffi, $PSI_cv_LIBFFI_DIR/$PHP_LIBDIR, PSI_SHARED_LIBADD)
+			AC_DEFINE(HAVE_LIBFFI, 1, Have libffi)
 		else
 			AC_MSG_WARN([Could not find libffi, please provide the base install path])
 		fi
@@ -76,6 +78,7 @@ if test "$PHP_PSI" != "no"; then
 	then
 		PHP_ADD_INCLUDE($PSI_cv_LIBJIT_DIR/include)
 		PHP_ADD_LIBRARY_WITH_PATH(jit, $PSI_cv_LIBJIT_DIR/$PHP_LIBDIR, PSI_SHARED_LIBADD)
+		AC_DEFINE(HAVE_LIBJIT, 1, Have libjit)
 	else
 		AC_MSG_WARN([Could not find libjit, please provide the base install path])
 	fi

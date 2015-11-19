@@ -1,4 +1,11 @@
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #include "php.h"
+
+#ifdef HAVE_LIBJIT
+
 #include "php_psi.h"
 #include "libjit.h"
 
@@ -217,3 +224,5 @@ PSI_ContextOps *PSI_Libjit(void)
 {
 	return &ops;
 }
+
+#endif /* HAVE_LIBJIT */
