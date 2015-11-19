@@ -152,7 +152,7 @@ static inline void PSI_LibffiCallInitClosure(PSI_Context *C, PSI_LibffiCall *cal
 			call->code);
 
 #elif PSI_HAVE_FFI_PREP_CLOSURE
-	rc = ffi_prep_closure(data->code, &context->signature, psi_ffi_handler, data);
+	rc = ffi_prep_closure(call->code, &context->signature, psi_ffi_handler, impl);
 #else
 # error "Neither ffi_prep_closure() nor ffi_prep_closure_loc() available"
 #endif
