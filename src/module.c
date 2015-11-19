@@ -17,7 +17,7 @@ ZEND_DECLARE_MODULE_GLOBALS(psi);
 
 PHP_INI_BEGIN()
 	STD_PHP_INI_ENTRY("psi.engine", "ffi", PHP_INI_SYSTEM, OnUpdateString, engine, zend_psi_globals, psi_globals)
-	STD_PHP_INI_ENTRY("psi.directory", "psis", PHP_INI_SYSTEM, OnUpdateString, directory, zend_psi_globals, psi_globals)
+	STD_PHP_INI_ENTRY("psi.directory", "psi.d", PHP_INI_SYSTEM, OnUpdateString, directory, zend_psi_globals, psi_globals)
 PHP_INI_END();
 
 void psi_error(int type, const char *msg, ...)

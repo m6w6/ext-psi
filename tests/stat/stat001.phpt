@@ -1,7 +1,7 @@
 --TEST--
 stat
 --INI--
-psi.directory={PWD}/../../psis:{PWD}
+psi.directory={PWD}/../../psi.d:{PWD}
 --SKIPIF--
 <?php 
 extension_loaded("psi") or die("skip - need ext/psi");

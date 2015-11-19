@@ -50,3 +50,6 @@ tests/*/*.sh
 /libffi.h
 /libjit.j
 /tests/*/*.mem
+/config.cache
+*~
+*.swp
