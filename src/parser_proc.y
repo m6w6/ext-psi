@@ -19,14 +19,12 @@
 }
 
 %nonassoc NAME.
-%fallback NAME FREE SET LET RETURN LIB.
+%fallback NAME FREE SET LET RETURN LIB INT.
 
 file ::= blocks.
 
 blocks ::= block.
 blocks ::= blocks block.
-
-block ::= COMMENT.
 
 block ::= LIB(T) QUOTED_STRING(libname) EOS. {
 	if (P->psi.file.ln) {
@@ -59,9 +57,19 @@ block ::= decl_struct(strct). {
 
 %type decl_struct {decl_struct*}
 %destructor decl_struct {free_decl_struct($$);}
-decl_struct(strct) ::= STRUCT NAME(N) LBRACE struct_args(args) RBRACE. {
+decl_struct(strct) ::= STRUCT NAME(N) struct_size(size_) LBRACE struct_args(args) RBRACE. {
 	strct = init_decl_struct(N->text, args);
+	strct->size = size_;
 	free(N);
+}
+
+%type struct_size {size_t}
+struct_size(size) ::= . {
+	size = 0;
+}
+struct_size(size) ::= COLON COLON LPAREN NUMBER(SIZ) RPAREN. {
+	size = atol(SIZ->text);
+	free(SIZ);
 }
 
 %token_class const_type_token BOOL INT FLOAT STRING.
@@ -173,11 +181,28 @@ decl_args(args) ::= decl_args(args_) COMMA decl_arg(arg). {
 }
 %type struct_args {decl_args*}
 %destructor struct_args {free_decl_args($$);}
-struct_args(args) ::= decl_arg(arg) EOS. {
+struct_args(args) ::= struct_arg(arg). {
 	args = init_decl_args(arg);
 }
-struct_args(args) ::= struct_args(args_) decl_arg(arg) EOS. {
+struct_args(args) ::= struct_args(args_) struct_arg(arg). {
 	args = add_decl_arg(args_, arg);
+}
+%type struct_arg {decl_arg*}
+%destructor struct_arg {free_decl_arg($$);}
+struct_arg(arg) ::= decl_arg(arg_) struct_layout(layout_) EOS. {
+	arg_->layout = layout_;
+	arg = arg_;
+}
+
+%type struct_layout {decl_struct_layout*}
+%destructor struct_layout {free_decl_struct_layout($$);}
+struct_layout(layout) ::= . {
+	layout = NULL;
+}
+struct_layout(layout) ::= COLON COLON LPAREN NUMBER(POS) COMMA NUMBER(SIZ) RPAREN. {
+	layout = init_decl_struct_layout(atol(POS->text), atol(SIZ->text));
+	free(POS);
+	free(SIZ);
 }
 
 %token_class decl_type_token FLOAT DOUBLE INT8 UINT8 INT16 UINT16 INT32 UINT32 INT64 UINT64 NAME.

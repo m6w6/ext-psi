@@ -14,6 +14,9 @@
 #include "context.h"
 #include "parser.h"
 
+#include "libjit.h"
+#include "libffi.h"
+
 #define psi_predef_count(of) ((sizeof(psi_predef ##of## s)/sizeof(psi_predef ##of))-1)
 typedef struct psi_predef_type {
 	token_t type_tag;
@@ -275,14 +278,15 @@ static inline int validate_decl(PSI_Data *data, void *dl, decl *decl) {
 }
 
 static inline decl_arg *locate_struct_member(decl_struct *s, decl_var *var) {
-	size_t i;
+	if (s->args) {
+		size_t i;
 
-	ZEND_ASSERT(s);
-	for (i = 0; i < s->args->count; ++i) {
-		decl_arg *darg = s->args->args[i];
+		for (i = 0; i < s->args->count; ++i) {
+			decl_arg *darg = s->args->args[i];
 
-		if (!strcmp(var->name, darg->var->name)) {
-			return var->arg = darg;
+			if (!strcmp(var->name, darg->var->name)) {
+				return var->arg = darg;
+			}
 		}
 	}
 
@@ -315,33 +319,53 @@ static inline int validate_set_value(PSI_Data *data, set_value *set, decl_arg *r
 	if (strcmp(set_var->name, ref->var->name)) {
 		return 0;
 	}
+	ZEND_ASSERT(!set_var->arg || set_var->arg == ref);
+	set_var->arg = ref;
 
-	if (set->count && (set->func->type != PSI_T_TO_ARRAY || ref_type->type != PSI_T_STRUCT)) {
-		data->error(E_WARNING, "Inner `set` statement casts only work with to_array() casts on structs");
+	if (set->count && (set->func->type != PSI_T_TO_ARRAY || (ref_type->type != PSI_T_STRUCT && !ref->var->arg->var->pointer_level))) {
+		data->error(E_WARNING, "Inner `set` statement casts only work with to_array() casts on structs or pointers");
 		return 0;
 	}
-	for (i = 0; i < set->count; ++i) {
-		decl_var *sub_var = set->inner[i]->vars->vars[0];
-		decl_arg *sub_ref = locate_struct_member(ref_type->strct, sub_var);
+
+	if (ref_type->type == PSI_T_STRUCT) {
+		for (i = 0; i < set->count; ++i) {
+			decl_var *sub_var = set->inner[i]->vars->vars[0];
+			decl_arg *sub_ref = locate_struct_member(ref_type->strct, sub_var);
+
+			if (sub_ref) {
+				if (!validate_set_value(data, set->inner[i], sub_ref)) {
+					return 0;
+				}
+			}
+		}
+	} else if (set->count == 1) {
+		decl_var *sub_var = set->inner[0]->vars->vars[0];
+		decl_arg *sub_ref = sub_var->arg;
 
 		if (sub_ref) {
-			if (!validate_set_value(data, set->inner[i], sub_ref)) {
+			if (!validate_set_value(data, set->inner[0], sub_ref)) {
 				return 0;
 			}
 		}
+	} else if (set->count > 1) {
+		data->error(E_WARNING, "Inner `set` statement casts on pointers may only occur once");
+		return 0;
 	}
 
 	return 1;
 }
 static inline decl *locate_impl_decl(decls *decls, return_stmt *ret) {
-	size_t i;
+	if (decls) {
+		size_t i;
 
-	for (i = 0; i < decls->count; ++i) {
-		if (!strcmp(decls->list[i]->func->var->name, ret->set->vars->vars[0]->name)) {
-			ret->decl = decls->list[i]->func;
-			return decls->list[i];
+		for (i = 0; i < decls->count; ++i) {
+			if (!strcmp(decls->list[i]->func->var->name, ret->set->vars->vars[0]->name)) {
+				ret->decl = decls->list[i]->func;
+				return decls->list[i];
+			}
 		}
 	}
+
 	return NULL;
 }
 static inline int validate_impl_ret_stmt(PSI_Data *data, impl *impl) {
@@ -486,14 +510,17 @@ static inline int validate_impl_set_stmts(PSI_Data *data, impl *impl) {
 	return 1;
 }
 static inline decl *locate_free_decl(decls *decls, free_call *f) {
-	size_t i;
+	if (decls)  {
+		size_t i;
 
-	for (i = 0; i < decls->count; ++i) {
-		if (!strcmp(decls->list[i]->func->var->name, f->func)) {
-			f->decl = decls->list[i];
-			return decls->list[i];
+		for (i = 0; i < decls->count; ++i) {
+			if (!strcmp(decls->list[i]->func->var->name, f->func)) {
+				f->decl = decls->list[i];
+				return decls->list[i];
+			}
 		}
 	}
+
 	return NULL;
 }
 static inline int validate_impl_free_stmts(PSI_Data *data, impl *impl) {
@@ -739,7 +766,7 @@ static int psi_select_dirent(const struct dirent *entry)
 
 void PSI_ContextBuild(PSI_Context *C, const char *paths)
 {
-	int i, n;
+	int i, n, flags = getenv("PSI_DEBUG") ? PSI_PARSER_DEBUG : 0;
 	char *sep = NULL, *cpy = strdup(paths), *ptr = cpy;
 	struct dirent **entries = NULL;
 
@@ -762,7 +789,7 @@ void PSI_ContextBuild(PSI_Context *C, const char *paths)
 					C->error(PSI_WARNING, "Path to PSI file too long: %s/%s",
 						ptr, entries[i]->d_name);
 				}
-				if (!PSI_ParserInit(&P, psi, C->error, 0)) {
+				if (!PSI_ParserInit(&P, psi, C->error, flags)) {
 					C->error(PSI_WARNING, "Failed to init PSI parser (%s): %s",
 						psi, strerror(errno));
 					continue;
@@ -836,6 +863,68 @@ void PSI_ContextCall(PSI_Context *C, impl_val *ret_val, decl *decl)
 	C->ops->call(C, ret_val, decl);
 }
 
+static inline void dump_decl_type(int fd, decl_type *t) {
+	const char *pre;
+
+	switch (t->type) {
+	case PSI_T_STRUCT:
+		pre = "struct ";
+		break;
+	default:
+		pre = "";
+	}
+	dprintf(fd, "%s%s", pre, t->name);
+}
+static inline void dump_decl_var(int fd, decl_var *v) {
+	dprintf(fd, "%.*s%s", v->pointer_level-!!v->array_size, "**********", v->name);
+	if (v->array_size) {
+		dprintf(fd, "[%u]", v->array_size);
+	}
+}
+static inline void dump_decl_arg(int fd, decl_arg *a) {
+	dump_decl_type(fd, a->type);
+	dprintf(fd, " ");
+	dump_decl_var(fd, a->var);
+}
+void PSI_ContextDump(PSI_Context *C, int fd)
+{
+	size_t i, j;
+
+#ifdef HAVE_LIBJIT
+	if (C->ops == PSI_Libjit()) {
+		dprintf(fd, "#PSI(libjit)\n");
+	}
+#endif
+#ifdef HAVE_LIBFFI
+	if (C->ops == PSI_Libffi()) {
+		dprintf(fd, "#PSI(libffi)\n");
+	}
+#endif
+
+	if (C->defs) for (i = 0; i < C->defs->count; ++i) {
+		decl_typedef *tdef = C->defs->list[i];
+
+		dprintf(fd, "typedef ");
+		dump_decl_type(fd, tdef->type);
+		dprintf(fd, " %s;\n", tdef->alias);
+	}
+	if (C->structs) for (i = 0; i < C->structs->count; ++i) {
+		decl_struct *strct = C->structs->list[i];
+		decl_arg *sarg = NULL;
+
+		dprintf(fd, "struct %s::(%zu) {\n", strct->name, strct->size);
+		for (j = 0; j < strct->args->count; ++j) {
+			sarg = strct->args->args[j];
+			dprintf(fd, "\t");
+			dump_decl_arg(fd, sarg);
+			dprintf(fd, "::(%zu, %zu);\n", sarg->layout->pos, sarg->layout->len);
+		}
+		dprintf(fd, "}\n");
+	}
+
+	dprintf(fd, "\n");
+}
+
 void PSI_ContextDtor(PSI_Context *C)
 {
 	size_t i;
@@ -847,15 +936,19 @@ void PSI_ContextDtor(PSI_Context *C)
 
 	free_decl_libs(&C->psi.libs);
 
-	for (i = 0; i < C->count; ++i) {
-		PSI_DataDtor(&C->data[i]);
+	if (C->data) {
+		for (i = 0; i < C->count; ++i) {
+			PSI_DataDtor(&C->data[i]);
+		}
+		free(C->data);
 	}
-	free(C->data);
 
-	for (zfe = C->closures; zfe->fname; ++zfe) {
-		free((void *) zfe->arg_info);
+	if (C->closures) {
+		for (zfe = C->closures; zfe->fname; ++zfe) {
+			free((void *) zfe->arg_info);
+		}
+		free(C->closures);
 	}
-	free(C->closures);
 
 	if (C->consts) {
 		if (C->consts->list) {

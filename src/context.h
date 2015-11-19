@@ -31,6 +31,7 @@ void PSI_ContextBuild(PSI_Context *C, const char *path);
 int PSI_ContextValidate(PSI_Context *C, PSI_Parser *P);
 zend_function_entry *PSI_ContextCompile(PSI_Context *C);
 void PSI_ContextCall(PSI_Context *C, impl_val *ret_val, decl *decl);
+void PSI_ContextDump(PSI_Context *C, int fd);
 void PSI_ContextDtor(PSI_Context *C);
 void PSI_ContextFree(PSI_Context **C);
 

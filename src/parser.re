@@ -144,21 +144,6 @@ void PSI_ParserFree(PSI_Parser **P)
 	return t; \
 } while(1)
 
-/*		DIGIT = [0-9]
-		DIGITS = DIGIT+
-		DECIMALS = (+|-)? DIGIT* "."
-		digits ::= digits DIGIT.
-		decimals ::= digits DOT digits.
-		decimals ::= DOT digits.
-		decimals ::= digits DOT.
-		number ::= digits.
-		number ::= PLUS digits.
-		number ::= MINUS digits.
-		number ::= decimals.
-		number ::= MINUS decimals.
-		number ::= PLUS decimals.
-
-*/
 token_t PSI_ParserScan(PSI_Parser *P)
 {
 	for (;;) {
@@ -179,7 +164,7 @@ token_t PSI_ParserScan(PSI_Parser *P)
 		QUOTED_STRING = "\"" ([^\"])+ "\"";
 		NUMBER = [+-]? [0-9]* "."? [0-9]+ ([eE] [+-]? [0-9]+)?;
 
-		"#" .* "\n" { ++P->line; RETURN(PSI_T_COMMENT);}
+		("#"|"//") .* "\n" { ++P->line; continue;}
 		"(" {RETURN(PSI_T_LPAREN);}
 		")" {RETURN(PSI_T_RPAREN);}
 		";" {RETURN(PSI_T_EOS);}

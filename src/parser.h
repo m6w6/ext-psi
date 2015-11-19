@@ -351,7 +351,7 @@ typedef union impl_val {
 static inline impl_val *deref_impl_val(impl_val *ret_val, decl_var *var) {
 	unsigned i;
 
-	if (var->arg->var != var) for (i = 0; i < var->pointer_level; ++i) {
+	if (var->arg->var != var) for (i = 1; i < var->pointer_level; ++i) {
 		ret_val = *(void **) ret_val;
 	}
 	return ret_val;
@@ -595,7 +595,7 @@ struct set_value;
 typedef struct set_func {
 	token_t type;
 	char *name;
-	void (*handler)(zval *, token_t, impl_val *, struct set_value *set, decl_var *);
+	void (*handler)(zval *, struct set_value *set, impl_val *ret_val);
 } set_func;
 
 static inline set_func *init_set_func(token_t type, const char *name) {

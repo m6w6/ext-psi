@@ -192,14 +192,17 @@ static void psi_ffi_init(PSI_Context *C)
 	C->context = PSI_LibffiContextInit(NULL);
 }
 
-static void psi_ffi_dtor(PSI_Context *C) {
-	size_t i;
+static void psi_ffi_dtor(PSI_Context *C)
+{
+	if (C->decls) {
+		size_t i;
 
-	for (i = 0; i < C->decls->count; ++i) {
-		decl *decl = C->decls->list[i];
+		for (i = 0; i < C->decls->count; ++i) {
+			decl *decl = C->decls->list[i];
 
-		if (decl->call.info) {
-			PSI_LibffiCallFree(decl->call.info);
+			if (decl->call.info) {
+				PSI_LibffiCallFree(decl->call.info);
+			}
 		}
 	}
 	free(C->context);

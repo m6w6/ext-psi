@@ -238,7 +238,7 @@ if test "$PHP_PSI" != "no"; then
 				fi
 			], [], PSI_INCLUDES_DEFAULT($4))
 		])
-		if test "$1" != "$psi_struct_name"
+		if test "$1" = "$psi_struct_name"
 		then
 			PSI_TYPES="{PSI_T_STRUCT, \"$psi_struct_name\", \"$psi_struct_name\"}, $PSI_TYPES"
 		fi

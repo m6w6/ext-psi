@@ -149,12 +149,14 @@ static void psi_jit_init(PSI_Context *C)
 
 static void psi_jit_dtor(PSI_Context *C)
 {
-	size_t i;
+	if (C->decls) {
+		size_t i;
 
-	for (i = 0; i < C->decls->count; ++i) {
-		decl *decl = C->decls->list[i];
+		for (i = 0; i < C->decls->count; ++i) {
+			decl *decl = C->decls->list[i];
 
-		PSI_LibjitCallFree(decl->call.info);
+			PSI_LibjitCallFree(decl->call.info);
+		}
 	}
 	PSI_LibjitContextFree((void *) &C->context);
 }

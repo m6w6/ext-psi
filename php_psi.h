@@ -32,11 +32,11 @@ int psi_internal_type(impl_type *type);
 zend_internal_arg_info *psi_internal_arginfo(impl *impl);
 size_t psi_num_min_args(impl *impl);
 
-void psi_to_bool(zval *return_value, token_t t, impl_val *ret_val, set_value *set, decl_var *var);
-void psi_to_int(zval *return_value, token_t t, impl_val *ret_val, set_value *set, decl_var *var);
-void psi_to_double(zval *return_value, token_t t, impl_val *ret_val, set_value *set, decl_var *var);
-void psi_to_string(zval *return_value, token_t t, impl_val *ret_val, set_value *set, decl_var *var);
-void psi_to_array(zval *return_value, token_t t, impl_val *ret_val, set_value *set, decl_var *var);
+void psi_to_bool(zval *return_value, set_value *set, impl_val *ret_val);
+void psi_to_int(zval *return_value, set_value *set, impl_val *ret_val);
+void psi_to_double(zval *return_value, set_value *set, impl_val *ret_val);
+void psi_to_string(zval *return_value, set_value *set, impl_val *ret_val);
+void psi_to_array(zval *return_value, set_value *set, impl_val *ret_val);
 
 void psi_call(zend_execute_data *execute_data, zval *return_value, impl *impl);
 
