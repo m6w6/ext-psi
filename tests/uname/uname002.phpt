@@ -5,7 +5,7 @@ psi.directory={PWD}/../../psi.d:{PWD}
 --SKIPIF--
 <?php
 extension_loaded("psi") or die("skip - need ext/psi");
-PHP_OS === "Linux" or die("skip - only for Linux");
+PHP_OS === "Darwin" or die("skip - for OSX");
 ?>
 --FILE--
 ===TEST===
@@ -16,9 +16,9 @@ var_dump(psi\uname($uname), $uname);
 --EXPECTF--
 ===TEST===
 int(0)
-array(6) {
+array(5) {
   ["sysname"]=>
-  string(5) "Linux"
+  string(6) "Darwin"
   ["nodename"]=>
   string(%d) "%s"
   ["release"]=>
@@ -26,8 +26,6 @@ array(6) {
   ["version"]=>
   string(%d) "%s"
   ["machine"]=>
-  string(%d) "%s"
-  ["domainname"]=>
   string(%d) "%s"
 }
 ===DONE===

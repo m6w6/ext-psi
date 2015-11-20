@@ -6,6 +6,8 @@ psi.directory = {PWD}/../../psi.d:{PWD}
 <?php
 extension_loaded("psi") or die("skip - need ext/psi");
 ?>
+--ENV--
+TZ=UTC
 --FILE--
 ===TEST===
 <?php
@@ -28,9 +30,9 @@ array(4) {
   ["usec"]=>
   int(%d)
   ["minuteswest"]=>
-  int(%d)
+  int(%i)
   ["dsttime"]=>
-  int(%d)
+  int(%i)
 }
 int(0)
 int(0)
@@ -49,10 +51,9 @@ array(2) {
 }
 array(2) {
   ["tz_minuteswest"]=>
-  int(%d)
+  int(%i)
   ["tz_dsttime"]=>
-  int(%d)
+  int(%i)
 }
 bool(true)
 ===DONE===
-                         

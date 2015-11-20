@@ -15,31 +15,35 @@ function psi\stat(string $path, array &$buf = NULL) : int {
 		to_array(st_atim,
 			to_int(tv_sec),
 			to_int(tv_nsec)
-		), 
+		),
 		to_array(st_atimespec,
 			to_int(tv_sec),
 			to_int(tv_nsec)
 		),
+		to_int(st_atime),
 		to_array(st_mtim,
 			to_int(tv_sec),
 			to_int(tv_nsec)
-		), 
+		),
 		to_array(st_mtimespec,
 			to_int(tv_sec),
 			to_int(tv_nsec)
 		),
+		to_int(st_mtime),
 		to_array(st_ctim,
 			to_int(tv_sec),
 			to_int(tv_nsec)
-		), 
+		),
 		to_array(st_ctimespec,
 			to_int(tv_sec),
 			to_int(tv_nsec)
 		),
+		to_int(st_ctime),
 		to_array(st_birthtimespec,
 			to_int(tv_sec),
 			to_int(tv_nsec)
 		),
+		to_int(st_birthtime),
 		to_int(st_blksize),
 		to_int(st_blocks),
 		to_int(st_flags),

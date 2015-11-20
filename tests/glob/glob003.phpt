@@ -5,7 +5,7 @@ psi.directory={PWD}/../../psi.d:{PWD}
 --SKIPIF--
 <?php
 extension_loaded("psi") or die("skip - need ext/psi");
-PHP_OS === "Linux" or die("skip - only for Linux");
+PHP_OS === "Darwin" or die("skip - only for OSX");
 ?>
 --FILE--
 ===TEST===
@@ -19,13 +19,15 @@ var_dump($glob);
 --EXPECTF--
 ===TEST===
 int(0)
-array(4) {
+array(5) {
+  ["gl_matchc"]=>
+  int(4)
   ["gl_pathc"]=>
   int(4)
   ["gl_offs"]=>
   int(3)
   ["gl_flags"]=>
-  int(%d)
+  int(386)
   ["gl_pathv"]=>
   array(7) {
     [0]=>
@@ -35,7 +37,7 @@ array(4) {
     [2]=>
     string(0) ""
     [3]=>
-    string(11) "glob002.php"
+    string(11) "glob003.php"
     [4]=>
     string(12) "glob001.phpt"
     [5]=>

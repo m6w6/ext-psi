@@ -206,21 +206,7 @@ size_t psi_num_min_args(impl *impl)
 
 void psi_to_bool(zval *return_value, set_value *set, impl_val *ret_val)
 {
-	decl_var *var = set->vars->vars[0];
-	token_t t = real_decl_type(var->arg->type)->type;
-	impl_val *v = deref_impl_val(ret_val, var);
-
-	switch (t) {
-	case PSI_T_FLOAT:
-		RETVAL_DOUBLE((double) v->fval);
-		break;
-	case PSI_T_DOUBLE:
-		RETVAL_DOUBLE(v->dval);
-		break;
-	default:
-		RETVAL_LONG(v->lval);
-		break;
-	}
+	psi_to_int(return_value, set, ret_val);
 	convert_to_boolean(return_value);
 }
 
@@ -233,15 +219,54 @@ void psi_to_int(zval *return_value, set_value *set, impl_val *ret_val)
 	switch (t) {
 	case PSI_T_FLOAT:
 		RETVAL_DOUBLE((double) v->fval);
+		convert_to_long(return_value);
 		break;
 	case PSI_T_DOUBLE:
 		RETVAL_DOUBLE(v->dval);
+		convert_to_long(return_value);
 		break;
-	default:
-		RETVAL_LONG(v->lval);
-		return;
+	case PSI_T_INT8:
+		RETVAL_LONG(v->i8);
+		break;
+	case PSI_T_UINT8:
+		RETVAL_LONG(v->u8);
+		break;
+	case PSI_T_INT16:
+		RETVAL_LONG(v->i16);
+		break;
+	case PSI_T_UINT16:
+		RETVAL_LONG(v->u16);
+		break;
+	case PSI_T_INT32:
+		RETVAL_LONG(v->i32);
+		break;
+	case PSI_T_UINT32:
+#if UINT32_MAX >= ZEND_LONG_MAX
+		if (v->u32 > ZEND_LONG_MAX) {
+			char d[12] = {0};
+
+			RETVAL_STRING(zend_print_ulong_to_buf(&d[10], v->u32));
+		} else {
+#endif
+			RETVAL_LONG(v->u32);
+#if UINT32_MAX >= ZEND_LONG_MAX
+		}
+#endif
+		break;
+	case PSI_T_INT64:
+		RETVAL_LONG(v->i64);
+		break;
+	case PSI_T_UINT64:
+		if (v->u64 > ZEND_LONG_MAX) {
+			char d[24] = {0};
+
+			RETVAL_STRING(zend_print_ulong_to_buf(&d[22], v->u64));
+		} else {
+			RETVAL_LONG(v->u64);
+		}
+		break;
+	EMPTY_SWITCH_DEFAULT_CASE();
 	}
-	convert_to_long(return_value);
 }
 
 void psi_to_double(zval *return_value, set_value *set, impl_val *ret_val)

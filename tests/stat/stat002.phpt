@@ -5,7 +5,7 @@ psi.directory={PWD}/../../psi.d:{PWD}
 --SKIPIF--
 <?php
 extension_loaded("psi") or die("skip - need ext/psi");
-PHP_OS === "Linux" or die("skip - only for Linux");
+PHP_OS === "Darwin" or die("skip - only for OSX");
 ?>
 --FILE--
 ===TEST===
@@ -16,7 +16,7 @@ var_dump(psi\stat(__FILE__, $stat), $stat);
 --EXPECTF--
 ===TEST===
 int(0)
-array(13) {
+array(20) {
   ["st_dev"]=>
   int(%d)
   ["st_ino"]=>
@@ -32,31 +32,50 @@ array(13) {
   ["st_rdev"]=>
   int(%d)
   ["st_size"]=>
-  int(76)
-  ["st_atim"]=>
+  int(75)
+  ["st_atimespec"]=>
   array(2) {
     ["tv_sec"]=>
     int(1%d)
     ["tv_nsec"]=>
     int(%d)
   }
-  ["st_mtim"]=>
+  ["st_atime"]=>
+  int(1%d)
+  ["st_mtimespec"]=>
   array(2) {
     ["tv_sec"]=>
     int(1%d)
     ["tv_nsec"]=>
     int(%d)
   }
-  ["st_ctim"]=>
+  ["st_mtime"]=>
+  int(1%d)
+  ["st_ctimespec"]=>
   array(2) {
     ["tv_sec"]=>
     int(1%d)
     ["tv_nsec"]=>
     int(%d)
   }
+  ["st_ctime"]=>
+  int(1%d)
+  ["st_birthtimespec"]=>
+  array(2) {
+    ["tv_sec"]=>
+    int(1%d)
+    ["tv_nsec"]=>
+    int(%d)
+  }
+  ["st_birthtime"]=>
+  int(1%d)
   ["st_blksize"]=>
   int(%d)
   ["st_blocks"]=>
+  int(%d)
+  ["st_flags"]=>
+  int(%d)
+  ["st_gen"]=>
   int(%d)
 }
 ===DONE===

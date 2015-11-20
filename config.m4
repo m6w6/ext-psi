@@ -94,12 +94,27 @@ if test "$PHP_PSI" != "no"; then
 		)
 	])
 
+	AC_DEFUN([AX_CHECK_SIGN], [
+		typename=`echo $1 | sed "s/@<:@^a-zA-Z0-9_@:>@/_/g"`
+		AC_CACHE_CHECK([whether $1 is signed], ax_cv_decl_${typename}_signed, [
+				AC_TRY_COMPILE([$4],
+						[ int foo @<:@ 1 - 2 * !((($1) -1) < 0) @:>@ ],
+						[ eval "ax_cv_decl_${typename}_signed=\"yes\"" ],
+						[ eval "ax_cv_decl_${typename}_signed=\"no\"" ])])
+		symbolname=`echo $1 | sed "s/@<:@^a-zA-Z0-9_@:>@/_/g" | tr "a-z" "A-Z"`
+		if eval "test \"\${ax_cv_decl_${typename}_signed}\" = \"yes\""; then
+				$2
+		elif eval "test \"\${ax_cv_decl_${typename}_signed}\" = \"no\""; then
+				$3
+		fi
+	])
+
 	psi_type_pair() { # (type, size)
 		local psi_type_name=`tr -cd A-Za-z <<<$1`
 		local psi_type_lower=`tr A-Z a-z <<<$psi_type_name`
 		case $psi_type_lower in
 		int*|uint*)
-			local psi_type_upper=`tr a-z A-Z <<<$1`
+			local psi_type_upper=`tr a-z A-Z <<<$psi_type_name`
 			local psi_type_bits=`expr $2 \* 8`
 			echo "PSI_T_${psi_type_upper}${psi_type_bits}, \"${psi_type_lower}${psi_type_bits}_t\""
 			;;
@@ -115,10 +130,23 @@ if test "$PHP_PSI" != "no"; then
 	PSI_TYPES=""
 	dnl PSI_TYPE(type name, basic type, includes)
 	AC_DEFUN(PSI_TYPE, [
+		ifdef(AS_TR_CPP(AC_TYPE_$1), AS_TR_CPP(AC_TYPE_$1))
 		ifdef(AC_TYPE_[]patsubst(translit($1,a-z,A-Z),\W,_),AC_TYPE_[]patsubst(translit($1,a-z,A-Z),\W,_))
 		AC_CHECK_SIZEOF($1, [], PSI_INCLUDES_DEFAULT($3))
+		psi_basic_type=$2
+		case $psi_basic_type in
+		int)
+			AX_CHECK_SIGN($1, :, [
+				psi_basic_type=uint
+			], PSI_INCLUDES_DEFAULT($3))
+			;;
+		sint)
+			psi_basic_type=int
+			;;
+		esac
 		if test "$2" && test "$ac_cv_sizeof_[]$1" -gt 0; then
-			PSI_TYPES="{`psi_type_pair $2 $ac_cv_sizeof_[]$1`, \""$1"\"}, $PSI_TYPES"
+			AS_TR_SH(psi_basic_type_$1)=$psi_basic_type
+			PSI_TYPES="{`psi_type_pair $psi_basic_type $ac_cv_sizeof_[]$1`, \""$1"\"}, $PSI_TYPES"
 		fi
 	])
 
@@ -168,20 +196,6 @@ if test "$PHP_PSI" != "no"; then
 		fi
 	])
 
-	AC_DEFUN([AX_CHECK_SIGN], [
-		typename=`echo $1 | sed "s/@<:@^a-zA-Z0-9_@:>@/_/g"`
-		AC_CACHE_CHECK([whether $1 is signed], ax_cv_decl_${typename}_signed, [
-				AC_TRY_COMPILE([$4],
-						[ int foo @<:@ 1 - 2 * !((($1) -1) < 0) @:>@ ],
-						[ eval "ax_cv_decl_${typename}_signed=\"yes\"" ],
-						[ eval "ax_cv_decl_${typename}_signed=\"no\"" ])])
-		symbolname=`echo $1 | sed "s/@<:@^a-zA-Z0-9_@:>@/_/g" | tr "a-z" "A-Z"`
-		if eval "test \"\${ax_cv_decl_${typename}_signed}\" = \"yes\""; then
-				$2
-		elif eval "test \"\${ax_cv_decl_${typename}_signed}\" = \"no\""; then
-				$3
-		fi
-	])
 	dnl PSI_CHECK_OFFSETOF(struct, member, include)
 	dnl[AS_LITERAL_IF([$1], [], [m4_fatal([$0: requires literal arguments])])]dnl
 	dnl[AS_LITERAL_IF([$2], [], [m4_fatal([$0: requires literal arguments])])]dnl
@@ -249,37 +263,47 @@ if test "$PHP_PSI" != "no"; then
 	AC_PROG_NM
 	AC_PROG_AWK
 	PSI_FUNCS=
-	dnl PSI_FUNC(fn)
+	dnl PSI_FUNC(fn, include)
 	AC_DEFUN(PSI_FUNC, [
 		psi_symbol=$1
 		AC_CACHE_CHECK(for $1, psi_cv_fn_$1, [
 			psi_symbol_redirect=
-			AC_TRY_LINK_FUNC($1, [
+			AC_TRY_LINK(PSI_INCLUDES_DEFAULT($2), [
+				void (*fn)(void) = (void (*)(void)) $psi_symbol;
+			], [
 				psi_symbol_redirect=`$NM -g conftest$ac_exeext | $AWK -F" *|@" '/ U .*$1.*/ {print$[]3}'`
 			])
-			case "$psi_symbol_redirect" in
-			"_$psi_symbol"|"$psi_symbol"|"")
-				psi_cv_fn_$1=$psi_symbol
-				;;
-			*)
-				psi_cv_fn_$1=$psi_symbol_redirect
-				;;
-			esac
+			psi_cv_fn_$1=$psi_symbol_redirect
 		])
-		if test "$psi_cv_fn_$1" != "$psi_symbol"
-		then
-			PSI_FUNCS="{\"$psi_symbol\", (void *) $psi_symbol}, $PSI_FUNCS"
-		fi
+		case "$psi_cv_fn_$1" in
+		"$psi_symbol"|"_$psi_symbol"|"")
+			;;
+		*)
+			PSI_FUNCS="{\"$psi_symbol\", (void (*)(void)) $psi_symbol}, $PSI_FUNCS"
+			;;
+		esac
 	])
 
 	PSI_MACROS=
 	dnl PSI_MACRO(macro, return type, decl args, call args, include)
 	AC_DEFUN(PSI_MACRO, [
 		AC_CHECK_DECL($1$3, [
-			PSI_MACROS="static $2 psi_macro_$1$3 {return $1$4;} $PSI_MACROS"
-			PSI_FUNCS="{\"$1\", (void *) psi_macro_$1}, $PSI_FUNCS"
+			PSI_MACROS="static $2 psi_macro_$1$3 { ifelse($2,void,,return) $1$4;} $PSI_MACROS"
+			PSI_FUNCS="{\"$1\", (void (*)(void)) psi_macro_$1}, $PSI_FUNCS"
 		], [], PSI_INCLUDES_DEFAULT($5))
 	])
+
+	dnl PSI_DECL(var, type, include)
+	AC_DEFUN(PSI_DECL, [
+		AC_CHECK_DECL($1, [
+			PSI_MACROS="static $2 psi_macro_$1(void) {return $1;} $PSI_MACROS"
+			PSI_FUNCS="{\"$1\", (void (*)(void)) psi_macro_$1}, $PSI_FUNCS"
+		], [], PSI_INCLUDES_DEFAULT($3))
+	])
+
+	CPPFLAGS="$CPPFLAGS -D_DARWIN_USE_64_BIT_INODE"
+	AC_FUNC_FNMATCH
+	AC_HEADER_DIRENT
 
 	AC_TYPE_INT8_T
 	AC_CHECK_ALIGNOF(int8_t)
@@ -306,7 +330,110 @@ if test "$PHP_PSI" != "no"; then
 	PSI_TYPE(double)
 	PSI_TYPE(void *)
 
+	dnl sys/types.h
+	AC_CHECK_HEADERS(sys/types.h)
+	PSI_TYPE(blkcnt_t, int)
+	PSI_TYPE(blksize_t, int)
+	PSI_TYPE(clock_t, int)
+	PSI_TYPE(clockid_t, int)
+	PSI_TYPE(dev_t, int)
+	PSI_TYPE(fsblkcnt_t, uint)
+	PSI_TYPE(fsfilcnt_t, uint)
+	PSI_TYPE(gid_t, int)
+	PSI_TYPE(id_t, int)
+	PSI_TYPE(ino_t, uint)
+	PSI_TYPE(key_t, int)
+	PSI_TYPE(mode_t, int)
+	PSI_TYPE(nlink_t, int)
+	PSI_TYPE(off_t, int)
+	PSI_TYPE(pid_t, int)
+	PSI_TYPE(ssize_t, int)
+	PSI_TYPE(suseconds_t, int)
+	PSI_TYPE(time_t, int)
+	PSI_TYPE(timer_t, int)
+	PSI_TYPE(uid_t, int)
+
+	dnl stdint.h
+	AC_CHECK_HEADERS(stdint.h)
+	PSI_TYPE(int_least8_t, int)
+	PSI_TYPE(int_least16_t, int)
+	PSI_TYPE(int_least32_t, int)
+	PSI_TYPE(int_least64_t, int)
+	PSI_TYPE(uint_least8_t, uint)
+	PSI_TYPE(uint_least16_t, uint)
+	PSI_TYPE(uint_least32_t, uint)
+	PSI_TYPE(uint_least64_t, uint)
+	PSI_TYPE(int_fast8_t, int)
+	PSI_TYPE(int_fast16_t, int)
+	PSI_TYPE(int_fast32_t, int)
+	PSI_TYPE(int_fast64_t, int)
+	PSI_TYPE(uint_fast8_t, uint)
+	PSI_TYPE(uint_fast16_t, uint)
+	PSI_TYPE(uint_fast32_t, uint)
+	PSI_TYPE(uint_fast64_t, uint)
+	PSI_TYPE(intptr_t, int)
+	PSI_TYPE(uintptr_t, uint)
+	PSI_TYPE(intmax_t, int)
+	PSI_TYPE(uintmax_t, uint)
+
+	PSI_CONST(INT8_MIN, int)
+	PSI_CONST(INT8_MAX, int)
+	PSI_CONST(UINT8_MAX, int)
+	PSI_CONST(INT16_MIN, int)
+	PSI_CONST(INT16_MAX, int)
+	PSI_CONST(UINT16_MAX, int)
+	PSI_CONST(INT32_MIN, int)
+	PSI_CONST(INT32_MAX, int)
+	PSI_CONST(UINT32_MAX, int)
+	PSI_CONST(INT64_MIN, int)
+	PSI_CONST(INT64_MAX, int)
+	PSI_CONST(UINT64_MAX, int)
+
+	PSI_CONST(INT_LEAST8_MIN, int)
+	PSI_CONST(INT_LEAST8_MAX, int)
+	PSI_CONST(UINT_LEAST8_MAX, int)
+	PSI_CONST(INT_LEAST16_MIN, int)
+	PSI_CONST(INT_LEAST16_MAX, int)
+	PSI_CONST(UINT_LEAST16_MAX, int)
+	PSI_CONST(INT_LEAST32_MIN, int)
+	PSI_CONST(INT_LEAST32_MAX, int)
+	PSI_CONST(UINT_LEAST32_MAX, int)
+	PSI_CONST(INT_LEAST64_MIN, int)
+	PSI_CONST(INT_LEAST64_MAX, int)
+	PSI_CONST(UINT_LEAST64_MAX, int)
+
+	PSI_CONST(INT_FAST8_MIN, int)
+	PSI_CONST(INT_FAST8_MAX, int)
+	PSI_CONST(UINT_FAST8_MAX, int)
+	PSI_CONST(INT_FAST16_MIN, int)
+	PSI_CONST(INT_FAST16_MAX, int)
+	PSI_CONST(UINT_FAST16_MAX, int)
+	PSI_CONST(INT_FAST32_MIN, int)
+	PSI_CONST(INT_FAST32_MAX, int)
+	PSI_CONST(UINT_FAST32_MAX, int)
+	PSI_CONST(INT_FAST64_MIN, int)
+	PSI_CONST(INT_FAST64_MAX, int)
+	PSI_CONST(UINT_FAST64_MAX, int)
+
+	PSI_CONST(INTPTR_MIN, int)
+	PSI_CONST(INTPTR_MAX, int)
+	PSI_CONST(UINTPTR_MAX, int)
+	PSI_CONST(INTMAX_MIN, int)
+	PSI_CONST(INTMAX_MAX, int)
+	PSI_CONST(UINTMAX_MAX, int)
+
+	dnl stddef.h
+	PSI_TYPE(ptrdiff_t, int)
+	PSI_CONST(PTRDIFF_MIN, int)
+	PSI_CONST(PTRDIFF_MAX, int)
+	PSI_TYPE(size_t, uint)
+	PSI_CONST(SIZE_MAX, int)
+	PSI_TYPE(wchar_t, int)
+	PSI_CONST(WCHAR_MIN, int)
+	PSI_CONST(WCHAR_MAX, int)
+
 	dnl errno.h
+	AC_CHECK_HEADERS(errno.h)
 	PSI_MACRO(errno, int, [()], [], errno.h)
 	PSI_CONST(E2BIG, int, errno.h)
 	PSI_CONST(EACCES, int, errno.h)
@@ -391,14 +518,15 @@ if test "$PHP_PSI" != "no"; then
 	PSI_CONST(EXDEV, int, errno.h)
 
 	dnl glob.h
-	PSI_FUNC(glob)
-	PSI_FUNC(globfree)
+	AC_CHECK_HEADERS(glob.h)
+	PSI_FUNC(glob, glob.h)
+	PSI_FUNC(globfree, glob.h)
 	PSI_STRUCT(glob_t, [
 		[gl_pathc], [gl_matchc],
 		[gl_pathv],
 		[gl_offs],
 		[gl_flags]], [
-		gl_pathc|gloffs) psi_member_type=uint ;;
+		gl_matchc|gl_pathc|gloffs) psi_member_type=uint ;;
 		gl_pathv)  psi_member_type="char**" ;;
 	], glob.h)
 	PSI_CONST(GLOB_APPEND, int, glob.h)
@@ -418,87 +546,6 @@ if test "$PHP_PSI" != "no"; then
 	PSI_CONST(GLOB_NOMATCH, int, glob.h)
 	PSI_CONST(GLOB_NOSPACE, int, glob.h)
 
-	dnl stdint.h
-	PSI_TYPE(int_least8_t, int)
-	PSI_TYPE(int_least16_t, int)
-	PSI_TYPE(int_least32_t, int)
-	PSI_TYPE(int_least64_t, int)
-	PSI_TYPE(uint_least8_t, uint)
-	PSI_TYPE(uint_least16_t, uint)
-	PSI_TYPE(uint_least32_t, uint)
-	PSI_TYPE(uint_least64_t, uint)
-	PSI_TYPE(int_fast8_t, int)
-	PSI_TYPE(int_fast16_t, int)
-	PSI_TYPE(int_fast32_t, int)
-	PSI_TYPE(int_fast64_t, int)
-	PSI_TYPE(uint_fast8_t, uint)
-	PSI_TYPE(uint_fast16_t, uint)
-	PSI_TYPE(uint_fast32_t, uint)
-	PSI_TYPE(uint_fast64_t, uint)
-	PSI_TYPE(intptr_t, int)
-	PSI_TYPE(uintptr_t, uint)
-	PSI_TYPE(intmax_t, int)
-	PSI_TYPE(uintmax_t, uint)
-
-	PSI_CONST(INT8_MIN, int)
-	PSI_CONST(INT8_MAX, int)
-	PSI_CONST(UINT8_MAX, int)
-	PSI_CONST(INT16_MIN, int)
-	PSI_CONST(INT16_MAX, int)
-	PSI_CONST(UINT16_MAX, int)
-	PSI_CONST(INT32_MIN, int)
-	PSI_CONST(INT32_MAX, int)
-	PSI_CONST(UINT32_MAX, int)
-	PSI_CONST(INT64_MIN, int)
-	PSI_CONST(INT64_MAX, int)
-	PSI_CONST(UINT64_MAX, int)
-
-	PSI_CONST(INT_LEAST8_MIN, int)
-	PSI_CONST(INT_LEAST8_MAX, int)
-	PSI_CONST(UINT_LEAST8_MAX, int)
-	PSI_CONST(INT_LEAST16_MIN, int)
-	PSI_CONST(INT_LEAST16_MAX, int)
-	PSI_CONST(UINT_LEAST16_MAX, int)
-	PSI_CONST(INT_LEAST32_MIN, int)
-	PSI_CONST(INT_LEAST32_MAX, int)
-	PSI_CONST(UINT_LEAST32_MAX, int)
-	PSI_CONST(INT_LEAST64_MIN, int)
-	PSI_CONST(INT_LEAST64_MAX, int)
-	PSI_CONST(UINT_LEAST64_MAX, int)
-
-	PSI_CONST(INT_FAST8_MIN, int)
-	PSI_CONST(INT_FAST8_MAX, int)
-	PSI_CONST(UINT_FAST8_MAX, int)
-	PSI_CONST(INT_FAST16_MIN, int)
-	PSI_CONST(INT_FAST16_MAX, int)
-	PSI_CONST(UINT_FAST16_MAX, int)
-	PSI_CONST(INT_FAST32_MIN, int)
-	PSI_CONST(INT_FAST32_MAX, int)
-	PSI_CONST(UINT_FAST32_MAX, int)
-	PSI_CONST(INT_FAST64_MIN, int)
-	PSI_CONST(INT_FAST64_MAX, int)
-	PSI_CONST(UINT_FAST64_MAX, int)
-
-	PSI_CONST(INTPTR_MIN, int)
-	PSI_CONST(INTPTR_MAX, int)
-	PSI_CONST(UINTPTR_MAX, int)
-	PSI_CONST(INTMAX_MIN, int)
-	PSI_CONST(INTMAX_MAX, int)
-	PSI_CONST(UINTMAX_MAX, int)
-
-	dnl stddef.h
-	PSI_TYPE(ptrdiff_t, int)
-	PSI_CONST(PTRDIFF_MIN, int)
-	PSI_CONST(PTRDIFF_MAX, int)
-	PSI_TYPE(size_t, uint)
-	PSI_CONST(SIZE_MAX, int)
-	AC_CHECK_TYPE(wchar_t, [
-		AX_CHECK_SIGN(wchar_t, psi_wchar_t=int, psi_wchar_t=uint)
-		PSI_TYPE(wchar_t, $psi_wchar_t)
-		PSI_CONST(WCHAR_MIN, int)
-		PSI_CONST(WCHAR_MAX, int)
-	])
-
 	dnl stdio.h
 	PSI_CONST(BUFSIZ, int)
 	PSI_CONST(_IOFBF, int)
@@ -514,99 +561,151 @@ if test "$PHP_PSI" != "no"; then
 	PSI_CONST(P_tmpdir, string)
 	PSI_CONST(L_ctermid, int)
 	PSI_CONST(L_tmpnam, int)
-	PSI_FUNC(clearerr)
-	PSI_FUNC(ctermid)
-	PSI_FUNC(dprintf)
-	PSI_FUNC(fclose)
-	PSI_FUNC(fdopen)
-	PSI_FUNC(feof)
-	PSI_FUNC(ferror)
-	PSI_FUNC(fflush)
-	PSI_FUNC(fgetc)
-	PSI_FUNC(fgetpos)
-	PSI_FUNC(fgets)
-	PSI_FUNC(fileno)
-	PSI_FUNC(flockfile)
-	PSI_FUNC(fmemopen)
-	PSI_FUNC(fopen)
-	PSI_FUNC(fprintf)
-	PSI_FUNC(fputc)
-	PSI_FUNC(fputs)
-	PSI_FUNC(fread)
-	PSI_FUNC(freopen)
-	PSI_FUNC(fscanf)
-	PSI_FUNC(fseek)
-	PSI_FUNC(fseeko)
-	PSI_FUNC(fsetpos)
-	PSI_FUNC(ftell)
-	PSI_FUNC(ftello)
-	PSI_FUNC(ftrylockfile)
-	PSI_FUNC(funlockfile)
-	PSI_FUNC(fwrite)
-	PSI_FUNC(getc)
-	PSI_FUNC(getchar)
-	PSI_FUNC(getc_unlocked)
-	PSI_FUNC(getchar_unlocked)
-	PSI_FUNC(getdelim)
-	PSI_FUNC(getline)
-	PSI_FUNC(gets)
-	PSI_FUNC(open_memstream)
-	PSI_FUNC(pclose)
-	PSI_FUNC(perror)
-	PSI_FUNC(popen)
-	PSI_FUNC(printf)
-	PSI_FUNC(putc)
-	PSI_FUNC(putchar)
-	PSI_FUNC(putc_unlocked)
-	PSI_FUNC(putchar_unlocked)
-	PSI_FUNC(puts)
-	PSI_FUNC(remove)
-	PSI_FUNC(rename)
-	PSI_FUNC(renameat)
-	PSI_FUNC(rewind)
-	PSI_FUNC(scanf)
-	PSI_FUNC(setbuf)
-	PSI_FUNC(setvbuf)
-	PSI_FUNC(snprintf)
-	PSI_FUNC(sprintf)
-	PSI_FUNC(sscanf)
-	PSI_FUNC(tempnam)
-	PSI_FUNC(tmpfile)
-	PSI_FUNC(tmpnam)
-	PSI_FUNC(ungetc)
-	PSI_FUNC(vdprintf)
-	PSI_FUNC(vfprintf)
-	PSI_FUNC(vfscanf)
-	PSI_FUNC(vprintf)
-	PSI_FUNC(vscanf)
-	PSI_FUNC(vsnprintf)
-	PSI_FUNC(vsprintf)
-	PSI_FUNC(vsscanf)
+	PSI_FUNC(clearerr, stdio.h)
+	PSI_FUNC(ctermid, stdio.h)
+	PSI_FUNC(dprintf, stdio.h)
+	PSI_FUNC(fclose, stdio.h)
+	PSI_FUNC(fdopen, stdio.h)
+	PSI_FUNC(feof, stdio.h)
+	PSI_FUNC(ferror, stdio.h)
+	PSI_FUNC(fflush, stdio.h)
+	PSI_FUNC(fgetc, stdio.h)
+	PSI_FUNC(fgetpos, stdio.h)
+	PSI_FUNC(fgets, stdio.h)
+	PSI_FUNC(fileno, stdio.h)
+	PSI_FUNC(flockfile, stdio.h)
+	PSI_FUNC(fmemopen, stdio.h)
+	PSI_FUNC(fopen, stdio.h)
+	PSI_FUNC(fprintf, stdio.h)
+	PSI_FUNC(fputc, stdio.h)
+	PSI_FUNC(fputs, stdio.h)
+	PSI_FUNC(fread, stdio.h)
+	PSI_FUNC(freopen, stdio.h)
+	PSI_FUNC(fscanf, stdio.h)
+	PSI_FUNC(fseek, stdio.h)
+	PSI_FUNC(fseeko, stdio.h)
+	PSI_FUNC(fsetpos, stdio.h)
+	PSI_FUNC(ftell, stdio.h)
+	PSI_FUNC(ftello, stdio.h)
+	PSI_FUNC(ftrylockfile, stdio.h)
+	PSI_FUNC(funlockfile, stdio.h)
+	PSI_FUNC(fwrite, stdio.h)
+	PSI_FUNC(getc, stdio.h)
+	PSI_FUNC(getchar, stdio.h)
+	PSI_FUNC(getc_unlocked, stdio.h)
+	PSI_FUNC(getchar_unlocked, stdio.h)
+	PSI_FUNC(getdelim, stdio.h)
+	PSI_FUNC(getline, stdio.h)
+	PSI_FUNC(gets, stdio.h)
+	PSI_FUNC(open_memstream, stdio.h)
+	PSI_FUNC(pclose, stdio.h)
+	PSI_FUNC(perror, stdio.h)
+	PSI_FUNC(popen, stdio.h)
+	PSI_FUNC(printf, stdio.h)
+	PSI_FUNC(putc, stdio.h)
+	PSI_FUNC(putchar, stdio.h)
+	PSI_FUNC(putc_unlocked, stdio.h)
+	PSI_FUNC(putchar_unlocked, stdio.h)
+	PSI_FUNC(puts, stdio.h)
+	PSI_FUNC(remove, stdio.h)
+	PSI_FUNC(rename, stdio.h)
+	PSI_FUNC(renameat, stdio.h)
+	PSI_FUNC(rewind, stdio.h)
+	PSI_FUNC(scanf, stdio.h)
+	PSI_FUNC(setbuf, stdio.h)
+	PSI_FUNC(setvbuf, stdio.h)
+	PSI_FUNC(snprintf, stdio.h)
+	PSI_FUNC(sprintf, stdio.h)
+	PSI_FUNC(sscanf, stdio.h)
+	PSI_FUNC(tempnam, stdio.h)
+	PSI_FUNC(tmpfile, stdio.h)
+	PSI_FUNC(tmpnam, stdio.h)
+	PSI_FUNC(ungetc, stdio.h)
+	PSI_FUNC(vdprintf, stdio.h)
+	PSI_FUNC(vfprintf, stdio.h)
+	PSI_FUNC(vfscanf, stdio.h)
+	PSI_FUNC(vprintf, stdio.h)
+	PSI_FUNC(vscanf, stdio.h)
+	PSI_FUNC(vsnprintf, stdio.h)
+	PSI_FUNC(vsprintf, stdio.h)
+	PSI_FUNC(vsscanf, stdio.h)
 
 	dnl stdlib.h
-	PSI_FUNC(free)
+	PSI_FUNC(_Exit, stdlib.h)
+    PSI_FUNC(a64l, stdlib.h)
+    PSI_FUNC(abort, stdlib.h)
+    PSI_FUNC(abs, stdlib.h)
+    PSI_FUNC(atexit, stdlib.h)
+    PSI_FUNC(atof, stdlib.h)
+    PSI_FUNC(atoi, stdlib.h)
+    PSI_FUNC(atol, stdlib.h)
+    PSI_FUNC(atoll, stdlib.h)
+    PSI_FUNC(div, stdlib.h)
+    PSI_FUNC(drand48, stdlib.h)
+    PSI_FUNC(erand48, stdlib.h)
+    PSI_FUNC(exit, stdlib.h)
+    PSI_FUNC(free, stdlib.h)
+    PSI_FUNC(getsubopt, stdlib.h)
+    PSI_FUNC(grantpt, stdlib.h)
+    PSI_FUNC(jrand48, stdlib.h)
+    PSI_FUNC(labs, stdlib.h)
+    PSI_FUNC(lcong48, stdlib.h)
+    PSI_FUNC(ldiv, stdlib.h)
+    PSI_FUNC(llabs, stdlib.h)
+    PSI_FUNC(lldiv, stdlib.h)
+    PSI_FUNC(lrand48, stdlib.h)
+    PSI_FUNC(mblen, stdlib.h)
+    PSI_FUNC(mbstowcs, stdlib.h)
+    PSI_FUNC(mbtowc, stdlib.h)
+    PSI_FUNC(mkstemp, stdlib.h)
+    PSI_FUNC(mrand48, stdlib.h)
+    PSI_FUNC(nrand48, stdlib.h)
+    PSI_FUNC(posix_memalign, stdlib.h)
+    PSI_FUNC(posix_openpt, stdlib.h)
+    PSI_FUNC(putenv, stdlib.h)
+    PSI_FUNC(qsort, stdlib.h)
+    PSI_FUNC(rand, stdlib.h)
+    PSI_FUNC(rand_r, stdlib.h)
+    PSI_FUNC(random, stdlib.h)
+    PSI_FUNC(setenv, stdlib.h)
+    PSI_FUNC(setkey, stdlib.h)
+    PSI_FUNC(srand, stdlib.h)
+    PSI_FUNC(srand48, stdlib.h)
+    PSI_FUNC(srandom, stdlib.h)
+    PSI_FUNC(strtod, stdlib.h)
+    PSI_FUNC(strtof, stdlib.h)
+    PSI_FUNC(strtol, stdlib.h)
+    PSI_FUNC(strtold, stdlib.h)
+    PSI_FUNC(strtoll, stdlib.h)
+    PSI_FUNC(strtoul, stdlib.h)
+    PSI_FUNC(system, stdlib.h)
+    PSI_FUNC(unlockpt, stdlib.h)
+    PSI_FUNC(unsetenv, stdlib.h)
+    PSI_FUNC(wcstombs, stdlib.h)
+    PSI_FUNC(wctomb, stdlib.h)
 	PSI_CONST(EXIT_FAILURE, int)
 	PSI_CONST(EXIT_SUCCESS, int)
 	PSI_CONST(RAND_MAX, int)
 	PSI_CONST(MB_CUR_MAX, int)
 
 	dnl sys/stat.h
-	PSI_FUNC(chmod)
-	PSI_FUNC(fchmod)
-	PSI_FUNC(fchmodat)
-	PSI_FUNC(fstat)
-	PSI_FUNC(fstatat)
-	PSI_FUNC(futimens)
-	PSI_FUNC(lstat)
-	PSI_FUNC(mkdir)
-	PSI_FUNC(mkdirat)
-	PSI_FUNC(mkfifo)
-	PSI_FUNC(mkfifoat)
-	PSI_FUNC(mknod)
-	PSI_FUNC(mknodat)
-	PSI_FUNC(stat)
-	PSI_FUNC(umask)
-	PSI_FUNC(utimensat)
+	AC_CHECK_HEADERS(sys/stat.h)
+	PSI_FUNC(chmod, sys/stat.h)
+	PSI_FUNC(fchmod, sys/stat.h)
+	PSI_FUNC(fchmodat, sys/stat.h)
+	PSI_FUNC(fstat, sys/stat.h)
+	PSI_FUNC(fstatat, sys/stat.h)
+	PSI_FUNC(futimens, sys/stat.h)
+	PSI_FUNC(lstat, sys/stat.h)
+	PSI_FUNC(mkdir, sys/stat.h)
+	PSI_FUNC(mkdirat, sys/stat.h)
+	PSI_FUNC(mkfifo, sys/stat.h)
+	PSI_FUNC(mkfifoat, sys/stat.h)
+	PSI_FUNC(mknod, sys/stat.h)
+	PSI_FUNC(mknodat, sys/stat.h)
+	PSI_FUNC(stat, sys/stat.h)
+	PSI_FUNC(umask, sys/stat.h)
+	PSI_FUNC(utimensat, sys/stat.h)
 	PSI_STRUCT(struct stat, [
 		[st_dev],
 		[st_ino],
@@ -616,15 +715,27 @@ if test "$PHP_PSI" != "no"; then
 		[st_gid],
 		[st_rdev],
 		[st_size],
-		[st_atim], [st_atimespec],
-		[st_mtim], [st_mtimespec],
-		[st_ctim], [st_ctimespec],
-		[st_birthtimespec],
+		[st_atim], [st_atimespec], [st_atime],
+		[st_mtim], [st_mtimespec], [st_mtime],
+		[st_ctim], [st_ctimespec], [st_ctime],
+		[st_birthtimespec], [st_birthtime],
 		[st_blksize],
 		[st_blocks],
 		[st_flags],
-		[st_gen]], [
+		[st_gen],
+		[st_lspare]], [
+		st_dev) psi_member_type=$psi_basic_type_dev_t ;;
+		st_ino) psi_member_type=$psi_basic_type_ino_t ;;
+		st_mode) psi_member_type=$psi_basic_type_mode_t ;;
+		st_nlink) psi_member_type=$psi_basic_type_nlink_t ;;
+		st_uid) psi_member_type=$psi_basic_type_uid_t ;;
+		st_gid) psi_member_type=$psi_basic_type_gid_t ;;
+		st_rdev) psi_member_type=$psi_basic_type_dev_t ;;
+		st_size) psi_member_type=$psi_basic_type_off_t ;;
+		st_blksize) psi_member_type=$psi_basic_type_blksize_t ;;
+		st_blkcnt) psi_member_type=$psi_basic_type_blkcnt_t ;;
 		st_?tim) psi_member_type="struct timespec" ;;
+		st_*time) psi_member_type=$psi_basic_type_time_t ;;
 		st_*timespec) psi_member_type="struct timespec" ;;
 	], sys/stat.h)
 	PSI_CONST(S_IFMT, int, sys/stat.h)
@@ -662,10 +773,14 @@ if test "$PHP_PSI" != "no"; then
 	PSI_MACRO(S_TYPEISSEM, int, [(struct stat *s)], [(s)], sys/stat.h)
 	PSI_MACRO(S_TYPEISSHM, int, [(struct stat *s)], [(s)], sys/stat.h)
 	PSI_MACRO(S_TYPEISTMO, int, [(struct stat *s)], [(s)], sys/stat.h)
+
 	dnl sys/time.h
+	AC_CHECK_HEADERS(sys/time.h)
 	PSI_STRUCT(struct timeval, [
 		[tv_sec],
 		[tv_usec]], [
+		tv_sec) psi_member_type=$psi_basic_type_time_t ;;
+		tv_usec) psi_member_type=$psi_basic_type_suseconds_t ;;
 	], sys/time.h)
 	PSI_STRUCT(struct itimerval, [
 		[it_interval],
@@ -676,40 +791,41 @@ if test "$PHP_PSI" != "no"; then
 		[tz_minuteswest],
 		[tz_dsttime]], [
 	], sys/time.h)
+	PSI_FUNC(getitimer, sys/time.h)
+	PSI_FUNC(gettimeofday, sys/time.h)
+	PSI_FUNC(setitimer, sys/time.h)
+	PSI_FUNC(utimes, sys/time.h)
 	PSI_CONST(ITIMER_REAL, int, sys/time.h)
 	PSI_CONST(ITIMER_VIRTUAL, int, sys/time.h)
 	PSI_CONST(ITIMER_PROF, int, sys/time.h)
+
+	dnl sys/select.h
+	AC_CHECK_HEADERS(sys/select.h)
+	PSI_STRUCT(fd_set, [], [], sys/select.h)
+	PSI_FUNC(select, sys/select.h)
+	PSI_FUNC(pselect, sys/select.h)
+	PSI_CONST(FD_SETSIZE, int, sys/select.h)
+	PSI_MACRO(FD_CLEAR, void, [(int fd, fd_set *s)], [(fd, s)], sys/select.h)
+	PSI_MACRO(FD_COPY, void, [(fd_set *s1, fd_set *s2)], [(s1, s2)], sys/select.h)
+	PSI_MACRO(FD_CLR, void, [(int fd, fd_set *s)], [(fd, s)], sys/select.h)
+	PSI_MACRO(FD_SET, void, [(int fd, fd_set *s)], [(fd, s)], sys/select.h)
+	PSI_MACRO(FD_ISSET, int, [(int fd, fd_set *s)], [(fd, s)], sys/select.h)
+	PSI_MACRO(FD_ZERO, void, [(fd_set *s)], [(s)], sys/select.h)
+
 	dnl sys/times.h
-	PSI_FUNC(times)
+	AC_CHECK_HEADERS(sys/times.h)
+	PSI_FUNC(times, sys/times.h)
 	PSI_STRUCT(struct tms, [
 		[tms_utime],
 		[tms_stime],
 		[tms_cutime],
 		[tms_cstime]], [
+		tms_*) psi_member_type=$psi_basic_type_clock_t ;;
 	], sys/times.h)
-	dnl sys/types.h
-	PSI_TYPE(blkcnt_t, int)
-	PSI_TYPE(blksize_t, int)
-	PSI_TYPE(clock_t, int)
-	PSI_TYPE(clockid_t, int)
-	PSI_TYPE(dev_t, int)
-	PSI_TYPE(fsblkcnt_t, uint)
-	PSI_TYPE(fsfilcnt_t, uint)
-	PSI_TYPE(gid_t, int)
-	PSI_TYPE(id_t, int)
-	PSI_TYPE(ino_t, uint)
-	PSI_TYPE(key_t, int)
-	PSI_TYPE(mode_t, int)
-	PSI_TYPE(nlink_t, int)
-	PSI_TYPE(off_t, int)
-	PSI_TYPE(pid_t, int)
-	PSI_TYPE(ssize_t, int)
-	PSI_TYPE(suseconds_t, int)
-	PSI_TYPE(time_t, int)
-	PSI_TYPE(timer_t, int)
-	PSI_TYPE(uid_t)
+
 	dnl sys/utsname.h
-	PSI_FUNC(uname)
+	AC_CHECK_HEADERS(sys/utsname.h)
+	PSI_FUNC(uname, sys/utsname.h)
 	PSI_STRUCT(struct utsname, [
 		[sysname],
 		[nodename],
@@ -719,7 +835,9 @@ if test "$PHP_PSI" != "no"; then
 		[domainname]], [
 		*) psi_member_type="char@<:@$psi_member_size@:>@" ;;
 	], sys/utsname.h)
+
 	dnl time.h
+	AC_CHECK_HEADERS(time.h)
 	PSI_STRUCT(struct tm, [
 		[tm_sec],
 		[tm_min],
@@ -734,25 +852,302 @@ if test "$PHP_PSI" != "no"; then
 	PSI_STRUCT(struct timespec, [
 		[tv_sec],
 		[tv_nsec]], [
+		tv_sec) psi_member_type=$psi_basic_type_time_t ;;
 	], time.h)
+	PSI_FUNC(clock, time.h)
+    PSI_FUNC(clock_getcpuclockid, time.h)
+    PSI_FUNC(clock_getres, time.h)
+    PSI_FUNC(clock_gettime, time.h)
+    PSI_FUNC(clock_settime, time.h)
+    PSI_FUNC(difftime, time.h)
+    PSI_FUNC(mktime, time.h)
+    PSI_FUNC(nanosleep, time.h)
+    PSI_FUNC(time, time.h)
+    PSI_FUNC(timer_delete, time.h)
+    PSI_FUNC(timer_getoverrun, time.h)
+    PSI_FUNC(timer_gettime, time.h)
+    PSI_FUNC(tzset, time.h)
 	PSI_CONST(CLOCKS_PER_SEC, int, time.h)
 	PSI_CONST(CLOCK_MONOTONIC, int, time.h)
 	PSI_CONST(CLOCK_PROCESS_CPUTIME_ID, int, time.h)
 	PSI_CONST(CLOCK_REALTIME, int, time.h)
 	PSI_CONST(CLOCK_THREAD_CPUTIME_ID, int, time.h)
 	PSI_CONST(TIMER_ABSTIME, int, time.h)
-	dnl wchar.h
-	AC_CHECK_TYPE(wint_t, [
-		AX_CHECK_SIGN(wint_t, psi_wint_t=int, psi_wint_t=uint)
-		PSI_TYPE(wint_t, $psi_wint_t, wchar.h)
-		PSI_CONST(WINT_MIN, int, wchar.h)
-		PSI_CONST(WINT_MAX, int, wchar.h)
-		PSI_CONST(WEOF, int, wchar.h)
-	], [], [
-		AC_INCLUDES_DEFAULT()
-		#include <wchar.h>
-	])
 
+	dnl unistd.h
+	AC_CHECK_HEADERS(unistd.h)
+	PSI_CONST(F_LOCK, int, unistd.h)
+	PSI_CONST(F_OK, int, unistd.h)
+	PSI_CONST(F_TEST, int, unistd.h)
+	PSI_CONST(F_TLOCK, int, unistd.h)
+	PSI_CONST(F_ULOCK, int, unistd.h)
+	PSI_CONST(R_OK, int, unistd.h)
+	PSI_CONST(STDERR_FILENO, int, unistd.h)
+	PSI_CONST(STDIN_FILENO, int, unistd.h)
+	PSI_CONST(STDOUT_FILENO, int, unistd.h)
+	PSI_CONST(W_OK, int, unistd.h)
+	PSI_CONST(X_OK, int, unistd.h)
+	PSI_CONST(_CS_PATH, int, unistd.h)
+	PSI_CONST(_PC_ALLOC_SIZE_MIN, int, unistd.h)
+	PSI_CONST(_PC_ASYNC_IO, int, unistd.h)
+	PSI_CONST(_PC_CHOWN_RESTRICTED, int, unistd.h)
+	PSI_CONST(_PC_FILESIZEBITS, int, unistd.h)
+	PSI_CONST(_PC_LINK_MAX, int, unistd.h)
+	PSI_CONST(_PC_MAX_CANON, int, unistd.h)
+	PSI_CONST(_PC_MAX_INPUT, int, unistd.h)
+	PSI_CONST(_PC_NAME_MAX, int, unistd.h)
+	PSI_CONST(_PC_NO_TRUNC, int, unistd.h)
+	PSI_CONST(_PC_PATH_MAX, int, unistd.h)
+	PSI_CONST(_PC_PIPE_BUF, int, unistd.h)
+	PSI_CONST(_PC_PRIO_IO, int, unistd.h)
+	PSI_CONST(_PC_REC_INCR_XFER_SIZE, int, unistd.h)
+	PSI_CONST(_PC_REC_MAX_XFER_SIZE, int, unistd.h)
+	PSI_CONST(_PC_REC_MIN_XFER_SIZE, int, unistd.h)
+	PSI_CONST(_PC_REC_XFER_ALIGN, int, unistd.h)
+	PSI_CONST(_PC_SYMLINK_MAX, int, unistd.h)
+	PSI_CONST(_PC_SYNC_IO, int, unistd.h)
+	PSI_CONST(_PC_TIMESTAMP_RESOLUTION, int, unistd.h)
+	PSI_CONST(_PC_VDISABLE, int, unistd.h)
+	PSI_CONST(_POSIX_ADVISORY_INFO, int, unistd.h)
+	PSI_CONST(_POSIX_ASYNCHRONOUS_IO, int, unistd.h)
+	PSI_CONST(_POSIX_ASYNC_IO, int, unistd.h)
+	PSI_CONST(_POSIX_BARRIERS, int, unistd.h)
+	PSI_CONST(_POSIX_CHOWN_RESTRICTED, int, unistd.h)
+	PSI_CONST(_POSIX_CLOCK_SELECTION, int, unistd.h)
+	PSI_CONST(_POSIX_CPUTIME, int, unistd.h)
+	PSI_CONST(_POSIX_FSYNC, int, unistd.h)
+	PSI_CONST(_POSIX_JOB_CONTROL, int, unistd.h)
+	PSI_CONST(_POSIX_MAPPED_FILES, int, unistd.h)
+	PSI_CONST(_POSIX_MEMLOCK, int, unistd.h)
+	PSI_CONST(_POSIX_MEMLOCK_RANGE, int, unistd.h)
+	PSI_CONST(_POSIX_MEMORY_PROTECTION, int, unistd.h)
+	PSI_CONST(_POSIX_MESSAGE_PASSING, int, unistd.h)
+	PSI_CONST(_POSIX_MONOTONIC_CLOCK, int, unistd.h)
+	PSI_CONST(_POSIX_NO_TRUNC, int, unistd.h)
+	PSI_CONST(_POSIX_PRIORITIZED_IO, int, unistd.h)
+	PSI_CONST(_POSIX_PRIORITY_SCHEDULING, int, unistd.h)
+	PSI_CONST(_POSIX_PRIO_IO, int, unistd.h)
+	PSI_CONST(_POSIX_RAW_SOCKETS, int, unistd.h)
+	PSI_CONST(_POSIX_READER_WRITER_LOCKS, int, unistd.h)
+	PSI_CONST(_POSIX_REALTIME_SIGNALS, int, unistd.h)
+	PSI_CONST(_POSIX_REGEXP, int, unistd.h)
+	PSI_CONST(_POSIX_SAVED_IDS, int, unistd.h)
+	PSI_CONST(_POSIX_SEMAPHORES, int, unistd.h)
+	PSI_CONST(_POSIX_SHARED_MEMORY_OBJECTS, int, unistd.h)
+	PSI_CONST(_POSIX_SHELL, int, unistd.h)
+	PSI_CONST(_POSIX_SPAWN, int, unistd.h)
+	PSI_CONST(_POSIX_SPIN_LOCKS, int, unistd.h)
+	PSI_CONST(_POSIX_SPORADIC_SERVER, int, unistd.h)
+	PSI_CONST(_POSIX_SYNCHRONIZED_IO, int, unistd.h)
+	PSI_CONST(_POSIX_SYNC_IO, int, unistd.h)
+	PSI_CONST(_POSIX_THREADS, int, unistd.h)
+	PSI_CONST(_POSIX_THREAD_ATTR_STACKADDR, int, unistd.h)
+	PSI_CONST(_POSIX_THREAD_ATTR_STACKSIZE, int, unistd.h)
+	PSI_CONST(_POSIX_THREAD_CPUTIME, int, unistd.h)
+	PSI_CONST(_POSIX_THREAD_PRIORITY_SCHEDULING, int, unistd.h)
+	PSI_CONST(_POSIX_THREAD_PRIO_INHERIT, int, unistd.h)
+	PSI_CONST(_POSIX_THREAD_PRIO_PROTECT, int, unistd.h)
+	PSI_CONST(_POSIX_THREAD_PROCESS_SHARED, int, unistd.h)
+	PSI_CONST(_POSIX_THREAD_ROBUST_PRIO_INHERIT, int, unistd.h)
+	PSI_CONST(_POSIX_THREAD_ROBUST_PRIO_PROTECT, int, unistd.h)
+	PSI_CONST(_POSIX_THREAD_SAFE_FUNCTIONS, int, unistd.h)
+	PSI_CONST(_POSIX_THREAD_SPORADIC_SERVER, int, unistd.h)
+	PSI_CONST(_POSIX_TIMEOUTS, int, unistd.h)
+	PSI_CONST(_POSIX_TIMERS, int, unistd.h)
+	PSI_CONST(_POSIX_TIMESTAMP_RESOLUTION, int, unistd.h)
+	PSI_CONST(_POSIX_TRACE, int, unistd.h)
+	PSI_CONST(_POSIX_TRACE_EVENT_FILTER, int, unistd.h)
+	PSI_CONST(_POSIX_TRACE_INHERIT, int, unistd.h)
+	PSI_CONST(_POSIX_TRACE_LOG, int, unistd.h)
+	PSI_CONST(_POSIX_TYPED_MEMORY_OBJECTS, int, unistd.h)
+	PSI_CONST(_POSIX_VDISABLE, int, unistd.h)
+	PSI_CONST(_POSIX_VERSION, int, unistd.h)
+	PSI_CONST(_SC_ADVISORY_INFO, int, unistd.h)
+	PSI_CONST(_SC_AIO_LISTIO_MAX, int, unistd.h)
+	PSI_CONST(_SC_AIO_MAX, int, unistd.h)
+	PSI_CONST(_SC_AIO_PRIO_DELTA_MAX, int, unistd.h)
+	PSI_CONST(_SC_ARG_MAX, int, unistd.h)
+	PSI_CONST(_SC_ASYNCHRONOUS_IO, int, unistd.h)
+	PSI_CONST(_SC_ATEXIT_MAX, int, unistd.h)
+	PSI_CONST(_SC_BARRIERS, int, unistd.h)
+	PSI_CONST(_SC_BC_BASE_MAX, int, unistd.h)
+	PSI_CONST(_SC_BC_DIM_MAX, int, unistd.h)
+	PSI_CONST(_SC_BC_SCALE_MAX, int, unistd.h)
+	PSI_CONST(_SC_BC_STRING_MAX, int, unistd.h)
+	PSI_CONST(_SC_CHILD_MAX, int, unistd.h)
+	PSI_CONST(_SC_CLK_TCK, int, unistd.h)
+	PSI_CONST(_SC_CLOCK_SELECTION, int, unistd.h)
+	PSI_CONST(_SC_COLL_WEIGHTS_MAX, int, unistd.h)
+	PSI_CONST(_SC_CPUTIME, int, unistd.h)
+	PSI_CONST(_SC_DELAYTIMER_MAX, int, unistd.h)
+	PSI_CONST(_SC_EXPR_NEST_MAX, int, unistd.h)
+	PSI_CONST(_SC_FSYNC, int, unistd.h)
+	PSI_CONST(_SC_GETGR_R_SIZE_MAX, int, unistd.h)
+	PSI_CONST(_SC_GETPW_R_SIZE_MAX, int, unistd.h)
+	PSI_CONST(_SC_HOST_NAME_MAX, int, unistd.h)
+	PSI_CONST(_SC_IOV_MAX, int, unistd.h)
+	PSI_CONST(_SC_JOB_CONTROL, int, unistd.h)
+	PSI_CONST(_SC_LINE_MAX, int, unistd.h)
+	PSI_CONST(_SC_LOGIN_NAME_MAX, int, unistd.h)
+	PSI_CONST(_SC_MAPPED_FILES, int, unistd.h)
+	PSI_CONST(_SC_MEMLOCK, int, unistd.h)
+	PSI_CONST(_SC_MEMLOCK_RANGE, int, unistd.h)
+	PSI_CONST(_SC_MEMORY_PROTECTION, int, unistd.h)
+	PSI_CONST(_SC_MESSAGE_PASSING, int, unistd.h)
+	PSI_CONST(_SC_MONOTONIC_CLOCK, int, unistd.h)
+	PSI_CONST(_SC_MQ_OPEN_MAX, int, unistd.h)
+	PSI_CONST(_SC_MQ_PRIO_MAX, int, unistd.h)
+	PSI_CONST(_SC_NGROUPS_MAX, int, unistd.h)
+	PSI_CONST(_SC_OPEN_MAX, int, unistd.h)
+	PSI_CONST(_SC_PAGESIZE, int, unistd.h)
+	PSI_CONST(_SC_PAGE_SIZE, int, unistd.h)
+	PSI_CONST(_SC_PRIORITIZED_IO, int, unistd.h)
+	PSI_CONST(_SC_PRIORITY_SCHEDULING, int, unistd.h)
+	PSI_CONST(_SC_RAW_SOCKETS, int, unistd.h)
+	PSI_CONST(_SC_READER_WRITER_LOCKS, int, unistd.h)
+	PSI_CONST(_SC_REALTIME_SIGNALS, int, unistd.h)
+	PSI_CONST(_SC_REGEXP, int, unistd.h)
+	PSI_CONST(_SC_RE_DUP_MAX, int, unistd.h)
+	PSI_CONST(_SC_RTSIG_MAX, int, unistd.h)
+	PSI_CONST(_SC_SAVED_IDS, int, unistd.h)
+	PSI_CONST(_SC_SEMAPHORES, int, unistd.h)
+	PSI_CONST(_SC_SEM_NSEMS_MAX, int, unistd.h)
+	PSI_CONST(_SC_SEM_VALUE_MAX, int, unistd.h)
+	PSI_CONST(_SC_SHARED_MEMORY_OBJECTS, int, unistd.h)
+	PSI_CONST(_SC_SHELL, int, unistd.h)
+	PSI_CONST(_SC_SIGQUEUE_MAX, int, unistd.h)
+	PSI_CONST(_SC_SPAWN, int, unistd.h)
+	PSI_CONST(_SC_SPIN_LOCKS, int, unistd.h)
+	PSI_CONST(_SC_SPORADIC_SERVER, int, unistd.h)
+	PSI_CONST(_SC_SS_REPL_MAX, int, unistd.h)
+	PSI_CONST(_SC_STREAM_MAX, int, unistd.h)
+	PSI_CONST(_SC_SYMLOOP_MAX, int, unistd.h)
+	PSI_CONST(_SC_SYNCHRONIZED_IO, int, unistd.h)
+	PSI_CONST(_SC_THREADS, int, unistd.h)
+	PSI_CONST(_SC_THREAD_ATTR_STACKADDR, int, unistd.h)
+	PSI_CONST(_SC_THREAD_ATTR_STACKSIZE, int, unistd.h)
+	PSI_CONST(_SC_THREAD_CPUTIME, int, unistd.h)
+	PSI_CONST(_SC_THREAD_DESTRUCTOR_ITERATIONS, int, unistd.h)
+	PSI_CONST(_SC_THREAD_KEYS_MAX, int, unistd.h)
+	PSI_CONST(_SC_THREAD_PRIORITY_SCHEDULING, int, unistd.h)
+	PSI_CONST(_SC_THREAD_PRIO_INHERIT, int, unistd.h)
+	PSI_CONST(_SC_THREAD_PRIO_PROTECT, int, unistd.h)
+	PSI_CONST(_SC_THREAD_PROCESS_SHARED, int, unistd.h)
+	PSI_CONST(_SC_THREAD_ROBUST_PRIO_INHERIT, int, unistd.h)
+	PSI_CONST(_SC_THREAD_ROBUST_PRIO_PROTECT, int, unistd.h)
+	PSI_CONST(_SC_THREAD_SAFE_FUNCTIONS, int, unistd.h)
+	PSI_CONST(_SC_THREAD_SPORADIC_SERVER, int, unistd.h)
+	PSI_CONST(_SC_THREAD_STACK_MIN, int, unistd.h)
+	PSI_CONST(_SC_THREAD_THREADS_MAX, int, unistd.h)
+	PSI_CONST(_SC_TIMEOUTS, int, unistd.h)
+	PSI_CONST(_SC_TIMERS, int, unistd.h)
+	PSI_CONST(_SC_TIMER_MAX, int, unistd.h)
+	PSI_CONST(_SC_TRACE, int, unistd.h)
+	PSI_CONST(_SC_TRACE_EVENT_FILTER, int, unistd.h)
+	PSI_CONST(_SC_TRACE_EVENT_NAME_MAX, int, unistd.h)
+	PSI_CONST(_SC_TRACE_INHERIT, int, unistd.h)
+	PSI_CONST(_SC_TRACE_LOG, int, unistd.h)
+	PSI_CONST(_SC_TRACE_NAME_MAX, int, unistd.h)
+	PSI_CONST(_SC_TRACE_SYS_MAX, int, unistd.h)
+	PSI_CONST(_SC_TRACE_USER_EVENT_MAX, int, unistd.h)
+	PSI_CONST(_SC_TTY_NAME_MAX, int, unistd.h)
+	PSI_CONST(_SC_TYPED_MEMORY_OBJECTS, int, unistd.h)
+	PSI_CONST(_SC_TZNAME_MAX, int, unistd.h)
+	PSI_CONST(_SC_VERSION, int, unistd.h)
+	PSI_CONST(_SC_XOPEN_CRYPT, int, unistd.h)
+	PSI_CONST(_SC_XOPEN_REALTIME, int, unistd.h)
+	PSI_CONST(_SC_XOPEN_REALTIME_THREADS, int, unistd.h)
+	PSI_CONST(_SC_XOPEN_SHM, int, unistd.h)
+	PSI_CONST(_SC_XOPEN_STREAMS, int, unistd.h)
+	PSI_CONST(_SC_XOPEN_UNIX, int, unistd.h)
+	PSI_CONST(_SC_XOPEN_UUCP, int, unistd.h)
+	PSI_CONST(_SC_XOPEN_VERSION, int, unistd.h)
+	PSI_CONST(_XOPEN_CRYPT, int, unistd.h)
+	PSI_CONST(_XOPEN_REALTIME, int, unistd.h)
+	PSI_CONST(_XOPEN_REALTIME_THREADS, int, unistd.h)
+	PSI_CONST(_XOPEN_SHM, int, unistd.h)
+	PSI_CONST(_XOPEN_STREAMS, int, unistd.h)
+	PSI_CONST(_XOPEN_UNIX, int, unistd.h)
+	PSI_CONST(_XOPEN_UUCP, int, unistd.h)
+	PSI_CONST(_XOPEN_VERSION, int, unistd.h)
+	PSI_FUNC(access, unistd.h)
+    PSI_FUNC(alarm, unistd.h)
+    PSI_FUNC(chdir, unistd.h)
+    PSI_FUNC(chown, unistd.h)
+    PSI_FUNC(close, unistd.h)
+    PSI_FUNC(confstr, unistd.h)
+    PSI_FUNC(dup, unistd.h)
+    PSI_FUNC(dup2, unistd.h)
+    PSI_FUNC(_exit, unistd.h)
+    PSI_FUNC(faccessat, unistd.h)
+    PSI_FUNC(fchdir, unistd.h)
+    PSI_FUNC(fchown, unistd.h)
+    PSI_FUNC(fchownat, unistd.h)
+    PSI_FUNC(fdatasync, unistd.h)
+    PSI_FUNC(fork, unistd.h)
+    PSI_FUNC(fpathconf, unistd.h)
+    PSI_FUNC(fsync, unistd.h)
+    PSI_FUNC(ftruncate, unistd.h)
+    PSI_FUNC(getegid, unistd.h)
+    PSI_FUNC(geteuid, unistd.h)
+    PSI_FUNC(getgid, unistd.h)
+    PSI_FUNC(gethostid, unistd.h)
+    PSI_FUNC(gethostname, unistd.h)
+    PSI_FUNC(getlogin_r, unistd.h)
+    PSI_FUNC(getpgid, unistd.h)
+    PSI_FUNC(getpgrp, unistd.h)
+    PSI_FUNC(getpid, unistd.h)
+    PSI_FUNC(getppid, unistd.h)
+    PSI_FUNC(getsid, unistd.h)
+    PSI_FUNC(getuid, unistd.h)
+    PSI_FUNC(isatty, unistd.h)
+    PSI_FUNC(lchown, unistd.h)
+    PSI_FUNC(link, unistd.h)
+    PSI_FUNC(linkat, unistd.h)
+    PSI_FUNC(lockf, unistd.h)
+    PSI_FUNC(lseek, unistd.h)
+    PSI_FUNC(nice, unistd.h)
+    PSI_FUNC(pathconf, unistd.h)
+    PSI_FUNC(pause, unistd.h)
+    PSI_FUNC(pread, unistd.h)
+    PSI_FUNC(pwrite, unistd.h)
+    PSI_FUNC(read, unistd.h)
+    PSI_FUNC(readlink, unistd.h)
+    PSI_FUNC(readlinkat, unistd.h)
+    PSI_FUNC(rmdir, unistd.h)
+    PSI_FUNC(setegid, unistd.h)
+    PSI_FUNC(seteuid, unistd.h)
+    PSI_FUNC(setgid, unistd.h)
+    PSI_FUNC(setpgid, unistd.h)
+    PSI_FUNC(setpgrp, unistd.h)
+    PSI_FUNC(setregid, unistd.h)
+    PSI_FUNC(setreuid, unistd.h)
+    PSI_FUNC(setsid, unistd.h)
+    PSI_FUNC(setuid, unistd.h)
+    PSI_FUNC(sleep, unistd.h)
+    PSI_FUNC(swab, unistd.h)
+    PSI_FUNC(symlink, unistd.h)
+    PSI_FUNC(symlinkat, unistd.h)
+    PSI_FUNC(sync, unistd.h)
+    PSI_FUNC(sysconf, unistd.h)
+    PSI_FUNC(tcgetpgrp, unistd.h)
+    PSI_FUNC(tcsetpgrp, unistd.h)
+    PSI_FUNC(truncate, unistd.h)
+    PSI_FUNC(ttyname_r, unistd.h)
+    PSI_FUNC(unlink, unistd.h)
+    PSI_FUNC(unlinkat, unistd.h)
+    PSI_FUNC(write, unistd.h)
+	PSI_DECL(optarg, char *, unistd.h)
+	PSI_DECL(opterr, int, unistd.h)
+	PSI_DECL(optind, int, unistd.h)
+	PSI_DECL(optopt, int, unistd.h)
+
+	dnl wchar.h
+	AC_CHECK_HEADERS(wchar.h)
+	PSI_TYPE(wint_t, int, wchar.h)
+	PSI_CONST(WINT_MIN, int, wchar.h)
+	PSI_CONST(WINT_MAX, int, wchar.h)
+	PSI_CONST(WEOF, int, wchar.h)
 
 	AC_DEFINE_UNQUOTED(PHP_PSI_FUNCS, $PSI_FUNCS, Redirected functions)
 	AC_DEFINE_UNQUOTED(PHP_PSI_MACROS, $PSI_MACROS, Exported macros)

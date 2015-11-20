@@ -1,12 +1,85 @@
-#include <sys/param.h>
-#include <dlfcn.h>
-#include <dirent.h>
-#include <fnmatch.h>
-#include <errno.h>
-
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+
+#include "php.h"
+
+#include <stdio.h>
+#ifdef HAVE_SYS_TYPES_H
+# include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_STAT_H
+# include <sys/stat.h>
+#endif
+#ifdef STDC_HEADERS
+# include <stdlib.h>
+# include <stddef.h>
+#else
+# ifdef HAVE_STDLIB_H
+#  include <stdlib.h>
+# endif
+#endif
+#ifdef HAVE_STRING_H
+# if !defined STDC_HEADERS && defined HAVE_MEMORY_H
+#  include <memory.h>
+# endif
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+#ifdef HAVE_INTTYPES_H
+# include <inttypes.h>
+#endif
+#ifdef HAVE_STDINT_H
+# include <stdint.h>
+#endif
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
+
+#ifdef HAVE_ERRNO_H
+# include <errno.h>
+#endif
+#ifdef HAVE_GLOB_H
+# include <glob.h>
+#endif
+#ifdef HAVE_SYS_TIME_H
+# include <sys/time.h>
+#endif
+#ifdef HAVE_SYS_TIMES_H
+# include <sys/times.h>
+#endif
+#ifdef HAVE_SYS_UTSNAME_H
+# include <sys/utsname.h>
+#endif
+#ifdef HAVE_TIME_H
+# include <time.h>
+#endif
+#ifdef HAVE_WCHAR_H
+# include <wchar.h>
+#endif
+
+#ifdef HAVE_DIRENT_H
+# include <dirent.h>
+# define NAMLEN(dirent) strlen ((dirent)->d_name)
+#else
+# define dirent direct
+# define NAMLEN(dirent) ((dirent)->d_namlen)
+# ifdef HAVE_SYS_NDIR_H
+#  include <sys/ndir.h>
+# endif
+# ifdef HAVE_SYS_DIR_H
+#  include <sys/dir.h>
+# endif
+# ifdef HAVE_NDIR_H
+#  include <ndir.h>
+# endif
+#endif
+
+#include <sys/param.h>
+#include <dlfcn.h>
+#include <fnmatch.h>
 
 #include "php.h"
 #include "php_scandir.h"
@@ -127,7 +200,7 @@ static inline int locate_decl_type_struct(decl_structs *structs, decl_type *type
 static inline int validate_decl_type(PSI_Data *data, decl_type *type) {
 	switch (type->type) {
 	case PSI_T_NAME:
-		if (!data->defs || !locate_decl_type_alias(data->defs, type)) {
+		if (!data->defs |!locate_decl_type_alias(data->defs, type)) {
 			return 0;
 		}
 		return validate_decl_type(data, type->real);
@@ -227,6 +300,8 @@ static inline int validate_decl_abi(PSI_Data *data, decl_abi *abi) {
 }
 static inline int validate_decl_func(PSI_Data *data, void *dl, decl *decl, decl_arg *func)
 {
+	size_t i;
+
 	if (!strcmp(func->var->name, "dlsym")) {
 		data->error(PSI_WARNING, "Cannot dlsym dlsym (sic!)");
 		return 0;
@@ -235,21 +310,19 @@ static inline int validate_decl_func(PSI_Data *data, void *dl, decl *decl, decl_
 	if (!validate_decl_arg(data, func)) {
 		return 0;
 	}
+	for (i = 0; i < psi_predef_func_count(); ++i) {
+		psi_predef_func *pre = &psi_predef_funcs[i];
+
+		if (!strcmp(func->var->name, pre->name)) {
+			decl->call.sym = pre->func;
+			break;
+		}
+	}
+	if (!decl->call.sym) {
 #ifndef RTLD_NEXT
 # define RTLD_NEXT ((void *) -1l)
 #endif
-	decl->call.sym = dlsym(dl ?: RTLD_NEXT, func->var->name);
-	if (!decl->call.sym) {
-		size_t i;
-
-		for (i = 0; i < psi_predef_func_count(); ++i) {
-			psi_predef_func *pre = &psi_predef_funcs[i];
-
-			if (!strcmp(func->var->name, pre->name)) {
-				decl->call.sym = pre->func;
-				break;
-			}
-		}
+		decl->call.sym = dlsym(dl ?: RTLD_NEXT, func->var->name);
 		if (!decl->call.sym) {
 			data->error(PSI_WARNING, "Failed to locate symbol '%s': %s",
 				func->var->name, dlerror());
