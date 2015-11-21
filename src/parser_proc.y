@@ -92,6 +92,12 @@ decl_typedef(def) ::= TYPEDEF decl_type(type) NAME(ALIAS) EOS. {
 	def = init_decl_typedef(ALIAS->text, type);
 	free(ALIAS);
 }
+/* support opaque types */
+decl_typedef(def) ::= TYPEDEF VOID(V) NAME(ALIAS) EOS. {
+	def = init_decl_typedef(ALIAS->text, init_decl_type(V->type, V->text));
+	free(V);
+	free(ALIAS);
+}
 decl_typedef(def) ::= TYPEDEF STRUCT(S) NAME(N) NAME(ALIAS) EOS. {
 	def = init_decl_typedef(ALIAS->text, init_decl_type(S->type, N->text));
 	free(ALIAS);
@@ -155,11 +161,20 @@ decl_vars(vars) ::= decl_vars(vars_) COMMA decl_var(var). {
 
 %type decl_arg {decl_arg*}
 %destructor decl_arg {free_decl_arg($$);}
-decl_arg(arg_) ::= decl_type(type) decl_var(var). {
+decl_arg(arg_) ::= const_decl_type(type) decl_var(var). {
 	arg_ = var->arg = init_decl_arg(type, var);
 }
 /* void pointers need a specific rule */
 decl_arg(arg_) ::= VOID(T) pointers(p) NAME(N). {
+	arg_ = init_decl_arg(
+		init_decl_type(T->type, T->text),
+		init_decl_var(N->text, p, 0)
+	);
+	arg_->var->arg = arg_;
+	free(T);
+	free(N);
+}
+decl_arg(arg_) ::= CONST VOID(T) pointers(p) NAME(N). {
 	arg_ = init_decl_arg(
 		init_decl_type(T->type, T->text),
 		init_decl_var(N->text, p, 0)
@@ -222,6 +237,15 @@ decl_type(type_) ::= STRUCT(S) NAME(T). {
 	type_ = init_decl_type(S->type, T->text);
 	free(S);
 	free(T);
+}
+
+%type const_decl_type {decl_type*}
+%destructor const_decl_type {free_decl_type($$);}
+const_decl_type(type) ::= decl_type(type_). {
+	type = type_;
+}
+const_decl_type(type) ::= CONST decl_type(type_). {
+	type = type_;
 }
 
 %type impl {impl*}

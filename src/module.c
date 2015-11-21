@@ -42,99 +42,46 @@ void psi_error(int type, const char *msg, ...)
 
 size_t psi_t_alignment(token_t t)
 {
-	size_t align;
-#define PSI_TAS_D(T) struct PSI_TAS_ ##T { \
-	char c; \
-	T x; \
-}
-#define PSI_TAS_P(T) struct PSI_TAS_ ## T ## _pointer { \
-	char c; \
-	T *x; \
-}
-#define PSI_TAS_C(T) align = offsetof(struct PSI_TAS_ ##T, x)
-#define PSI_TAS_CASE(T) { \
-	PSI_TAS_D(T); \
-	PSI_TAS_C(T); \
-}
+#define PSI_ALIGNOF(T) case PSI_T_## T: return ALIGNOF_## T ##_T;
 	switch (t) {
-	case PSI_T_INT8:
-		PSI_TAS_CASE(int8_t);
-		break;
-	case PSI_T_UINT8:
-		PSI_TAS_CASE(uint8_t);
-		break;
-	case PSI_T_INT16:
-		PSI_TAS_CASE(int16_t);
-		break;
-	case PSI_T_UINT16:
-		PSI_TAS_CASE(uint16_t);
-		break;
-	case PSI_T_INT32:
-		PSI_TAS_CASE(int32_t);
-		break;
-	case PSI_T_UINT32:
-		PSI_TAS_CASE(uint32_t);
-		break;
-	case PSI_T_INT64:
-		PSI_TAS_CASE(int64_t);
-		break;
-	case PSI_T_UINT64:
-		PSI_TAS_CASE(uint64_t);
-		break;
+	PSI_ALIGNOF(INT8);
+	PSI_ALIGNOF(UINT8);
+	PSI_ALIGNOF(INT16);
+	PSI_ALIGNOF(UINT16);
+	PSI_ALIGNOF(INT32);
+	PSI_ALIGNOF(UINT32);
+	PSI_ALIGNOF(INT64);
+	PSI_ALIGNOF(UINT64);
 	case PSI_T_FLOAT:
-		PSI_TAS_CASE(float);
-		break;
+		return ALIGNOF_FLOAT;
 	case PSI_T_DOUBLE:
-		PSI_TAS_CASE(double);
-		break;
+		return ALIGNOF_DOUBLE;
 	case PSI_T_POINTER:
-		{
-			PSI_TAS_P(char);
-			PSI_TAS_C(char_pointer);
-		}
-		break;
+		return ALIGNOF_VOID_P;
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}
-
-	return align;
 }
 
 size_t psi_t_size(token_t t)
 {
-	size_t size;
-
+#define PSI_SIZEOF(T) case PSI_T_## T : return SIZEOF_## T ##_T;
 	switch (t) {
-	case PSI_T_INT8:
-	case PSI_T_UINT8:
-		size = 1;
-		break;
-	case PSI_T_INT16:
-	case PSI_T_UINT16:
-		size = 2;
-		break;
-	case PSI_T_INT:
-		size = sizeof(int);
-		break;
-	case PSI_T_INT32:
-	case PSI_T_UINT32:
-		size = 4;
-		break;
-	case PSI_T_INT64:
-	case PSI_T_UINT64:
-		size = 8;
-		break;
+	PSI_SIZEOF(INT8);
+	PSI_SIZEOF(UINT8);
+	PSI_SIZEOF(INT16);
+	PSI_SIZEOF(UINT16);
+	PSI_SIZEOF(INT32);
+	PSI_SIZEOF(UINT32);
+	PSI_SIZEOF(INT64);
+	PSI_SIZEOF(UINT64);
 	case PSI_T_FLOAT:
-		size = sizeof(float);
-		break;
+		return SIZEOF_FLOAT;
 	case PSI_T_DOUBLE:
-		size = sizeof(double);
-		break;
+		return SIZEOF_DOUBLE;
 	case PSI_T_POINTER:
-		size = sizeof(char *);
-		break;
+		return SIZEOF_VOID_P;
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}
-	return size;
 }
 
 size_t psi_t_align(token_t t, size_t s)
@@ -282,9 +229,31 @@ void psi_to_double(zval *return_value, set_value *set, impl_val *ret_val)
 	case PSI_T_DOUBLE:
 		RETVAL_DOUBLE(v->dval);
 		break;
-	default:
-		RETVAL_DOUBLE((double) v->lval);
+	case PSI_T_INT8:
+		RETVAL_DOUBLE((double) v->i8);
 		break;
+	case PSI_T_UINT8:
+		RETVAL_DOUBLE((double) v->u8);
+		break;
+	case PSI_T_INT16:
+		RETVAL_DOUBLE((double) v->i16);
+		break;
+	case PSI_T_UINT16:
+		RETVAL_DOUBLE((double) v->u16);
+		break;
+	case PSI_T_INT32:
+		RETVAL_DOUBLE((double) v->i32);
+		break;
+	case PSI_T_UINT32:
+		RETVAL_DOUBLE((double) v->u32);
+		break;
+	case PSI_T_INT64:
+		RETVAL_DOUBLE((double) v->i64);
+		break;
+	case PSI_T_UINT64:
+		RETVAL_DOUBLE((double) v->u64);
+		break;
+	EMPTY_SWITCH_DEFAULT_CASE();
 	}
 }
 
@@ -314,7 +283,7 @@ void psi_to_string(zval *return_value, set_value *set, impl_val *ret_val)
 		RETVAL_DOUBLE(deref_impl_val(ret_val, var)->dval);
 		break;
 	default:
-		RETVAL_LONG(deref_impl_val(ret_val, var)->lval);
+		psi_to_int(return_value, set, ret_val);
 		break;
 	}
 	convert_to_string(return_value);

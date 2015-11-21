@@ -44,11 +44,32 @@
 #ifdef HAVE_GLOB_H
 # include <glob.h>
 #endif
+#ifdef HAVE_NETINET_IN_H
+# include <netinet/in.h>
+#endif
+#ifdef HAVE_ARPA_NAMESER_H
+# include <arpa/nameser.h>
+#endif
+#ifdef HAVE_NETDB_H
+# include <netdb.h>
+#endif
+#ifdef HAVE_RESOLV_H
+# include <resolv.h>
+#endif
+#ifdef HAVE_SYS_SELECT_H
+# include <sys/select.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+# include <sys/socket.h>
+#endif
 #ifdef HAVE_SYS_TIME_H
 # include <sys/time.h>
 #endif
 #ifdef HAVE_SYS_TIMES_H
 # include <sys/times.h>
+#endif
+#ifdef HAVE_SYS_UIO_H
+# include <sys/uio.h>
 #endif
 #ifdef HAVE_SYS_UTSNAME_H
 # include <sys/utsname.h>
@@ -229,8 +250,8 @@ static inline int validate_constant(PSI_Data *data, constant *c) {
 
 static inline int validate_decl_arg(PSI_Data *data, decl_arg *arg) {
 	if (!validate_decl_type(data, arg->type)) {
-		data->error(PSI_WARNING, "Cannot use '%s' as type for '%s'",
-			arg->type->name, arg->var->name);
+		data->error(PSI_WARNING, "Cannot use '%s'(%d) as type for '%s'",
+			arg->type->name, arg->type->type, arg->var->name);
 		return 0;
 	}
 	return 1;
