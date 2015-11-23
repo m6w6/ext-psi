@@ -9,12 +9,18 @@ if test "$PHP_PSI" != no; then
 
 	sinclude(config.ax_check_sign.m4)
 	sinclude(config.psi.m4)
+	sinclude(config.psi_type.m4)
+	sinclude(config.psi_const.m4)
+	sinclude(config.psi_decl.m4)
+	sinclude(config.psi_macro.m4)
+	sinclude(config.psi_struct.m4)
+
 	sinclude(config.psi_errno.m4)
 	sinclude(config.psi_glob.m4)
 	sinclude(config.psi_stddef.m4)
+	sinclude(config.psi_stdio.m4)
 	sinclude(config.psi_stdint.m4)
 	sinclude(config.psi_sys_types.m4)
-	sinclude(config.psi_type.m4)
 
 	PSI_LEMON
 	PSI_CHECK_LIBJIT
@@ -29,11 +35,13 @@ if test "$PHP_PSI" != no; then
 	PSI_CHECK_SYS_TYPES
 	PSI_CHECK_ERRNO
 	PSI_CHECK_GLOB
+	PSI_CHECK_STDIO
 
 	echo PSI_TYPES=$PSI_TYPES
 	echo PSI_MACROS=$PSI_MACROS
-	echo PSI_REDIR=$PSI_REDIR
+	echo PSI_REDIRS=$PSI_REDIRS
 	echo PSI_DECLS=$PSI_DECLS
+	echo PSI_STRUCTS=$PSI_STRUCTS
 
 	PHP_SUBST(PSI_SHARED_LIBADD)
 

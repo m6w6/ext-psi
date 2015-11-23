@@ -6,8 +6,10 @@ AC_DEFUN(PSI_CHECK_GLOB, [
         size_t gl_offs,
         int gl_flags,
         char **gl_pathv])
-    PSI_DECL(int, glob, [(char *path, int flags, void *err, glob_t *buf)])
-    PSI_DECL(void, globfree, [(glob_t *buf)])
+
+    PSI_DECL(int glob, [(char *path, int flags, void *err, glob_t *buf)])
+    PSI_DECL(void globfree, [(glob_t *buf)])
+
     PSI_CONST(GLOB_APPEND, int)
     PSI_CONST(GLOB_BRACE, int)
     PSI_CONST(GLOB_DOOFFS, int)

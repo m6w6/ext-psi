@@ -1,11 +1,14 @@
-psi_type_pair() { # (type, size)
-	local psi_type_name=`tr -cd A-Za-z <<<$1`
+# psi_type_pair(type, size)
+psi_type_pair() {
+	local psi_type_name=`tr -cd A-Za-z0-9_ <<<$1`
 	local psi_type_lower=`tr A-Z a-z <<<$psi_type_name`
 	case $psi_type_lower in
 	int*|uint*)
 		local psi_type_upper=`tr a-z A-Z <<<$psi_type_name`
 		local psi_type_bits=`expr $2 \* 8`
+		echo psi_type_bits=$psi_type_bits "expr $2 \* 8" "$@" >&2
 		echo "PSI_T_${psi_type_upper}${psi_type_bits}, \"${psi_type_lower}${psi_type_bits}_t\""
+		eval AS_TR_SH([psi_standard_type_]$1)="${psi_type_lower}${psi_type_bits}_t"
 		;;
 	struct*)
 		echo "PSI_T_STRUCT, \"$2\""
@@ -35,154 +38,30 @@ AC_DEFUN(PSI_TYPE, [
 		psi_basic_type=int
 		;;
 	esac
-	if test "$2" && test "$ac_cv_sizeof_[]$1" -gt 0; then
+	if test "$2" && test "$AS_TR_SH([ac_cv_sizeof_]$1)" -gt 0; then
 		AS_TR_SH(psi_basic_type_$1)=$psi_basic_type
-		PSI_TYPES="{`psi_type_pair $psi_basic_type $ac_cv_sizeof_[]$1`, \""$1"\"}, $PSI_TYPES"
+		PSI_TYPES="{`psi_type_pair $psi_basic_type $AS_TR_SH([ac_cv_sizeof_]$1)`, \"$1\"}, $PSI_TYPES"
 	fi
 ])
 
-PSI_CONSTS=""
-# add_str_const(name, value)
-add_str_const() {
-	PSI_CONSTS="{PSI_T_STRING, \"string\", \"psi\\\\$1\", $2, PSI_T_QUOTED_STRING}, $PSI_CONSTS"
-}
-# add_int_const(name, value)
-add_int_const() {
-	PSI_CONSTS="{PSI_T_INT, \"int\", \"psi\\\\$1\", \"$2\", PSI_T_NUMBER}, $PSI_CONSTS"
-}
-dnl PSI_CONST(const name, type)
-AC_DEFUN(PSI_CONST, [
-	AC_CACHE_CHECK(value of $1, psi_cv_const_$1, [
-		psi_const_val=
-		case $2 in
-		str*)
-			if test "$cross_compiling" = "yes"
-			then
-				AC_TRY_CPP(PSI_INCLUDES $1, psi_const_val=`eval "$ac_try|tail -n1"`, psi_const_val=)
-			else
-				PSI_COMPUTE_STR(psi_const_val, $1, PSI_INCLUDES)
-			fi
-			;;
-		int)
-			AC_COMPUTE_INT(psi_const_val, $1, PSI_INCLUDES)
-			;;
-		esac
-		psi_cv_const_$1=$psi_const_val
-	])
-	if test "$psi_cv_const_$1"
-	then
-		case $2 in
-		str*)
-			add_str_const "$1" "$psi_cv_const_$1"
-			;;
-		int)
-			add_int_const "$1" "$psi_cv_const_$1"
-			;;
-		esac
-	fi
-])
+dnl unsigned char* buf[16] -> char
+AC_DEFUN(PSI_TYPE_NAME, [m4_bregexp([$1], [\(\(struct \)?[^ ]+\)[ *]+[^ ]+$], [\1])])
+dnl unsigned char* buf[16] -> buf
+AC_DEFUN(PSI_VAR_NAME, [m4_bregexp(m4_bregexp([$1], [[^ ]+$], [\&]), [\w+], [\&])])
+dnl PSI_TYPE_SIZE(type, pointer level, array size)
+AC_DEFUN(PSI_TYPE_SIZE, [ifelse(
+	[$3], 0,
+		[ifelse([$2], 0, $AS_TR_SH([ac_cv_sizeof_]$1), $ac_cv_sizeof_void_p)],
+		[ifelse([$2], 1, [`expr $3 \* $AS_TR_SH([ac_cv_sizeof_]$1)`], $ac_cv_sizeof_void_p)]
+)])
+dnl PSI_TYPE_BITS(type)
+AC_DEFUN(PSI_TYPE_BITS, [`expr 8 \* $AS_TR_SH([ac_cv_sizeof_]$1)`])
 
-PSI_DECLS=
-# add_decl(ret type, symbol, args)
-add_decl() {
-	local size
-	eval size=\$ac_cv_sizeof_$1
-	PSI_DECLS="{`psi_type_pair \"$1\" \"$size\"`, \"$2\"}, $PSI_DECLS"
-}
-PSI_REDIR=
-# add_redir(symbol, macro=symbol)
-add_redir() {
-	local sym=$2
-	test -z "$sym" && sym=$1
-	PSI_REDIR="{\"$1\", (void (*)(void)) $sym}, $PSI_REDIR"
-}
-# arg_names(typed args)
-arg_names() {
-	AS_ECHO_N([$1]) \
-		| tr -cd '()' \
-		| $AWK -F, '{for (i=1;i<NF;++i) print $i ","; print $NF}' \
-		| $AWK '{print $NF}' \
-		| xargs
-}
-PSI_MACROS=
-# gen_macro(ret type, symbol, args)
-gen_macro() {
-	local dargs="$3"
-	test -z "$3" && dargs="()"
-	AS_ECHO_N(["static $1 psi_macro_$2$dargs {"])
-	if test "$1" != "void"; then
-		AS_ECHO_N(["return "])
-	fi
-	arg_names "$3"
-	AS_ECHO_N(["$2`arg_names \"$3\"`;}"])
-}
-# add_macro(ret type, symbol, args)
-add_macro() {
-	PSI_MACROS="`gen_macro \"$1\" \"$2\" \"$3\"` $PSI_MACROS"
-	add_redir "$2" "psi_macro_$2"
-}
-
-dnl PSI_MACRO(macro, decl args, action-if-true)
-AC_DEFUN(PSI_MACRO, [
-	AC_CHECK_DECL($1$2, $3, [], PSI_INCLUDES)
-])
-
-dnl PSI_FUNC(fn, action-if-yes, action-if-no)
-AC_DEFUN(PSI_FUNC, [
-	AC_REQUIRE([AC_PROG_NM])
-	AC_REQUIRE([AC_PROG_AWK])
-	psi_symbol=$1
-	AC_CACHE_CHECK(for $1, psi_cv_fn_$1, [
-		psi_symbol_redirect=
-		AC_TRY_LINK(PSI_INCLUDES, [
-			void (*fn)(void) = (void (*)(void)) $psi_symbol;
-		], [
-			psi_symbol_redirect=`$NM -g conftest$ac_exeext | $AWK -F" *|@" '/ U .*$1.*/ {print$[]3; exit}'`
-		])
-		psi_cv_fn_$1=$psi_symbol_redirect
-	])
-	case "$psi_cv_fn_$1" in
-	"") $3 ;;
-	"$psi_symbol"|"_$psi_symbol") $2 ;;
-	*) add_redir "$psi_symbol"; $2 ;;
-	esac
-])
-
-dnl PSI_EXTVAR(var, type)
-AC_DEFUN(PSI_EXTVAR, [
-	AC_CHECK_DECL($1, [
-		add_macro "$2" "$1"
-	], [], PSI_INCLUDES)
-])
-
-
-dnl PSI_DECL(ret type, func, args)
-AC_DEFUN(PSI_DECL, [
-	PSI_FUNC($2, [
-		add_decl "$1" "$2" "$3"
-	], [
-		PSI_MACRO($2, $3, [
-			add_macro "$1" "$2" "$3"
-			add_decl "$1" "$2" "$3"
-		])
-	])
-])
-
-AC_DEFUN(PSI_STRUCT_MEMBER, [
-	psi_member_name=
-	psi_member_type=
-	m4_map_args_w([$1], [
-		psi_member_type="$psi_member_type $psi_member_name"
-		psi_member_name=], [
-	])
-	AC_MSG_RESULT([member=$psi_member_name - $psi_member_type])
-])
-
-AC_DEFUN(PSI_STRUCT, [
-	AC_CHECK_SIZEOF($1, [], PSI_INCLUDES)
-	m4_map_args([PSI_STRUCT_MEMBER], $2)
-	exit
-])
+AC_DEFUN(PSI_TYPE_PAIR, [m4_case(m4_bregexp([$1], [^\w+], [\&]),
+	[void], [PSI_T_VOID, \"void\"],
+	[struct], [PSI_T_STRUCT, \"m4_bregexp($1, [^struct \(\w+\)], [\1])\"],
+	[PSI_T_NAME, \"$1\"]
+)])
 
 AC_DEFUN(PSI_CHECK_STD_TYPES, [
 	AC_CHECK_HEADERS(stdint.h)
@@ -220,7 +99,12 @@ AC_DEFUN(PSI_CHECK_STD_TYPES, [
 	AC_CHECK_ALIGNOF(void *)
 
 	PSI_TYPE(char, int)
+	PSI_TYPE(unsigned char, uint)
 	PSI_TYPE(short, int)
+	PSI_TYPE(unsigned short, uint)
 	PSI_TYPE(int, int)
+	PSI_TYPE(unsigned int, uint)
+	PSI_TYPE(unsigned, uint)
 	PSI_TYPE(long, int)
+	PSI_TYPE(unsigned long, uint)
 ])

@@ -8,7 +8,8 @@ psi_includes() {
 EOF
 }
 
-AC_DEFUN(PSI_INCLUDES, [AC_INCLUDES_DEFAULT([`psi_includes`])])
+AC_DEFUN(PSI_INCLUDES, [AC_INCLUDES_DEFAULT()
+`psi_includes`])
 
 AC_DEFUN(PSI_LEMON, [
 	AC_ARG_VAR(LEMON, The lemon parser generator of the SQLite project)
