@@ -1,6 +1,8 @@
 AC_DEFUN(PSI_CHECK_ERRNO, [
     AC_CHECK_HEADERS(errno.h)
-    PSI_EXTVAR(errno, int)
+    
+    PSI_EXTVAR(int errno)
+    
     PSI_CONST(E2BIG, int)
     PSI_CONST(EACCES, int)
     PSI_CONST(EADDRINUSE, int)

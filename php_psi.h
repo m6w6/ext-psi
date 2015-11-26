@@ -24,6 +24,11 @@ extern zend_module_entry psi_module_entry;
 
 void psi_error(int type, const char *msg, ...);
 
+static inline int psi_check_env(const char *var) {
+	char *set = getenv(var);
+	return (set && *set && '0' != *set);
+}
+
 size_t psi_t_alignment(token_t t);
 size_t psi_t_size(token_t t);
 size_t psi_t_align(token_t t, size_t s);

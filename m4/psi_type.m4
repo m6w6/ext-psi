@@ -6,7 +6,6 @@ psi_type_pair() {
 	int*|uint*)
 		local psi_type_upper=`tr a-z A-Z <<<$psi_type_name`
 		local psi_type_bits=`expr $2 \* 8`
-		echo psi_type_bits=$psi_type_bits "expr $2 \* 8" "$@" >&2
 		echo "PSI_T_${psi_type_upper}${psi_type_bits}, \"${psi_type_lower}${psi_type_bits}_t\""
 		eval AS_TR_SH([psi_standard_type_]$1)="${psi_type_lower}${psi_type_bits}_t"
 		;;
@@ -22,7 +21,6 @@ psi_type_pair() {
 	esac
 }
 
-PSI_TYPES=""
 dnl PSI_TYPE(type name, basic type, includes)
 AC_DEFUN(PSI_TYPE, [
 	ifdef(AS_TR_CPP(AC_TYPE_$1), AS_TR_CPP(AC_TYPE_$1))
@@ -45,9 +43,9 @@ AC_DEFUN(PSI_TYPE, [
 ])
 
 dnl unsigned char* buf[16] -> char
-AC_DEFUN(PSI_TYPE_NAME, [m4_bregexp([$1], [\(\(struct \)?[^ ]+\)[ *]+[^ ]+$], [\1])])
+AC_DEFUN(PSI_VAR_TYPE, [m4_bregexp([$1], [\(\(struct \)?[^ ]+\)[ *]+[^ ]+$], [\1])])
 dnl unsigned char* buf[16] -> buf
-AC_DEFUN(PSI_VAR_NAME, [m4_bregexp(m4_bregexp([$1], [[^ ]+$], [\&]), [\w+], [\&])])
+AC_DEFUN(PSI_VAR_NAME, [m4_bregexp(m4_bregexp([$1], [\([^ ]+\)$], [\1]), [\w+], [\&])])
 dnl PSI_TYPE_SIZE(type, pointer level, array size)
 AC_DEFUN(PSI_TYPE_SIZE, [ifelse(
 	[$3], 0,
@@ -59,9 +57,8 @@ AC_DEFUN(PSI_TYPE_BITS, [`expr 8 \* $AS_TR_SH([ac_cv_sizeof_]$1)`])
 
 AC_DEFUN(PSI_TYPE_PAIR, [m4_case(m4_bregexp([$1], [^\w+], [\&]),
 	[void], [PSI_T_VOID, \"void\"],
-	[struct], [PSI_T_STRUCT, \"m4_bregexp($1, [^struct \(\w+\)], [\1])\"],
-	[PSI_T_NAME, \"$1\"]
-)])
+	[struct], [PSI_T_STRUCT, \"m4_bregexp([$1], [^struct \(\w+\)], [\1])\"],
+	[PSI_T_NAME, \"$1\"])])
 
 AC_DEFUN(PSI_CHECK_STD_TYPES, [
 	AC_CHECK_HEADERS(stdint.h)

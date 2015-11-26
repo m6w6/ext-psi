@@ -1,4 +1,3 @@
-PSI_CONSTS=""
 # add_str_const(name, value)
 add_str_const() {
 	PSI_CONSTS="{PSI_T_STRING, \"string\", \"psi\\\\$1\", $2, PSI_T_QUOTED_STRING}, $PSI_CONSTS"

@@ -1,3 +1,10 @@
+PSI_TYPES=
+PSI_STRUCTS=
+PSI_CONSTS=
+PSI_REDIRS=
+PSI_MACROS=
+PSI_DECLS=
+
 psi_includes() {
 	local have_
 	have_=`AS_ECHO($ac_header) | $as_tr_cpp`

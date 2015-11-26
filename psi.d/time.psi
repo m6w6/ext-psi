@@ -1,4 +1,3 @@
-extern time_t time(time_t *t);
 function psi\time() : int {
 	let t = NULL;
 	return to_int(time);
@@ -9,11 +8,11 @@ function psi\gettimeofday(array &$tv = NULL, array &$tz = NULL) : int {
 	let tv = calloc(1, struct timeval);
 	let tz = calloc(1, struct timezone);
 	return to_int(gettimeofday);
-	set $tv = to_array(*tv, 
-		to_int(tv_sec), 
+	set $tv = to_array(*tv,
+		to_int(tv_sec),
 		to_int(tv_usec));
-	set $tz = to_array(*tz, 
-		to_int(tz_minuteswest), 
+	set $tz = to_array(*tz,
+		to_int(tz_minuteswest),
 		to_int(tz_dsttime));
 }
 

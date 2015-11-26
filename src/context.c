@@ -111,59 +111,76 @@
 #include "libjit.h"
 #include "libffi.h"
 
-#define psi_predef_count(of) ((sizeof(psi_predef ##of## s)/sizeof(psi_predef ##of))-1)
-typedef struct psi_predef_type {
+static struct psi_std_type {
+	token_t type_tag;
+	const char *type_name;
+} psi_std_types[] = {
+	{PSI_T_FLOAT, "float"},
+	{PSI_T_DOUBLE, "double"},
+	{PSI_T_INT8, "int8_t"},
+	{PSI_T_INT16, "int16_t"},
+	{PSI_T_INT32, "int32_t"},
+	{PSI_T_INT64, "int64_t"},
+	{PSI_T_UINT8, "uint8_t"},
+	{PSI_T_UINT16, "uint16_t"},
+	{PSI_T_UINT32, "uint32_t"},
+	{PSI_T_UINT64, "uint64_t"},
+	{0}
+};
+
+static struct psi_predef_type {
 	token_t type_tag;
 	const char *type_name;
 	const char *alias;
-} psi_predef_type;
-static const psi_predef_type psi_predef_types[] = {
-	PHP_PSI_TYPES{0}
+} psi_predef_types[] = {
+	PSI_TYPES
+	{0}
 };
-#define psi_predef_type_count() psi_predef_count(_type)
 
-typedef struct psi_predef_const {
+static struct psi_predef_const {
 	token_t type_tag;
 	const char *type_name;
-	const char *name;
+	const char *var_name;
 	const char *val_text;
 	token_t val_type_tag;
-} psi_predef_const;
-static const psi_predef_const psi_predef_consts[] = {
-	PHP_PSI_CONSTS{0}
+} psi_predef_consts[] = {
+	PSI_CONSTS
+	{0}
 };
-#define psi_predef_const_count() psi_predef_count(_const)
 
-typedef struct psi_predef_struct_member {
-	token_t type_tag;
-	const char *type_name;
-	const char *name;
-	size_t off;
-	size_t len;
-	size_t pointer_level;
-	size_t array_size;
-} psi_predef_struct_member;
-#define PSI_PREDEF_STRUCT_MEMBERS 32
-typedef struct psi_predef_struct {
-	const char *name;
-	size_t size;
-	psi_predef_struct_member members[PSI_PREDEF_STRUCT_MEMBERS];
-} psi_predef_struct;
-static const psi_predef_struct psi_predef_structs[] = {
-	PHP_PSI_STRUCTS{0}
-};
-#define psi_predef_struct_count() psi_predef_count(_struct)
+PSI_MACROS
 
-PHP_PSI_MACROS
-
-typedef struct psi_predef_func {
+static struct psi_func_redir {
 	const char *name;
 	void (*func)(void);
-} psi_predef_func;
-static psi_predef_func psi_predef_funcs[] = {
-	PHP_PSI_FUNCS{0}
+} psi_func_redirs[] = {
+	PSI_REDIRS
+	{0}
 };
-#define psi_predef_func_count() psi_predef_count(_func)
+
+static struct psi_predef_decl {
+	token_t type_tag;
+	const char *type_name;
+	const char *var_name;
+	size_t pointer_level;
+	size_t array_size;
+} psi_predef_decls[] = {
+	PSI_DECLS
+	{0}
+};
+
+static struct psi_predef_struct {
+	token_t type_tag;
+	const char *type_name;
+	const char *var_name;
+	size_t offset;
+	size_t size;
+	size_t pointer_level;
+	size_t array_size;
+} psi_predef_structs[] = {
+	PSI_STRUCTS
+	{0}
+};
 
 static int validate_lib(PSI_Data *data, void **dlopened) {
 	char lib[MAXPATHLEN];
@@ -191,16 +208,26 @@ static int validate_lib(PSI_Data *data, void **dlopened) {
 
 static inline int locate_decl_type_alias(decl_typedefs *defs, decl_type *type) {
 	size_t i;
+	struct psi_std_type *stdtyp;
 
 	if (type->real) {
 		return 1;
 	}
 	for (i = 0; i < defs->count; ++i) {
-		if (!strcmp(defs->list[i]->alias, type->name)) {
-			type->real = defs->list[i]->type;
+		decl_typedef *def = defs->list[i];
+
+		if (def->type->type != type->type && !strcmp(def->alias, type->name)) {
+			type->real = def->type;
 			return 1;
 		}
 	}
+	for (stdtyp = &psi_std_types[0]; stdtyp->type_tag; ++stdtyp) {
+		if (!strcmp(type->name, stdtyp->type_name)) {
+			type->type = stdtyp->type_tag;
+		}
+		return 1;
+	}
+
 	return 0;
 }
 static inline int locate_decl_type_struct(decl_structs *structs, decl_type *type) {
@@ -221,10 +248,13 @@ static inline int locate_decl_type_struct(decl_structs *structs, decl_type *type
 static inline int validate_decl_type(PSI_Data *data, decl_type *type) {
 	switch (type->type) {
 	case PSI_T_NAME:
-		if (!data->defs |!locate_decl_type_alias(data->defs, type)) {
+		if (!data->defs || !locate_decl_type_alias(data->defs, type)) {
 			return 0;
 		}
-		return validate_decl_type(data, type->real);
+		if (type->real) {
+			return validate_decl_type(data, type->real);
+		}
+		return 1;
 	case PSI_T_STRUCT:
 		if (!data->structs || !locate_decl_type_struct(data->structs, type)) {
 			return 0;
@@ -235,8 +265,8 @@ static inline int validate_decl_type(PSI_Data *data, decl_type *type) {
 }
 static inline int validate_decl_typedef(PSI_Data *data, decl_typedef *def) {
 	if (!validate_decl_type(data, def->type)) {
-		data->error(PSI_WARNING, "Type '%s' cannot be aliased to '%s'",
-			def->type->name, def->alias);
+		data->error(PSI_WARNING, "Type '%s' cannot be aliased to %s'%s'",
+			def->type->name, def->type->type == PSI_T_STRUCT?"struct ":"",def->alias);
 		return 0;
 	}
 	/* FIXME: check def->alias */
@@ -321,7 +351,7 @@ static inline int validate_decl_abi(PSI_Data *data, decl_abi *abi) {
 }
 static inline int validate_decl_func(PSI_Data *data, void *dl, decl *decl, decl_arg *func)
 {
-	size_t i;
+	struct psi_func_redir *redir;
 
 	if (!strcmp(func->var->name, "dlsym")) {
 		data->error(PSI_WARNING, "Cannot dlsym dlsym (sic!)");
@@ -331,12 +361,9 @@ static inline int validate_decl_func(PSI_Data *data, void *dl, decl *decl, decl_
 	if (!validate_decl_arg(data, func)) {
 		return 0;
 	}
-	for (i = 0; i < psi_predef_func_count(); ++i) {
-		psi_predef_func *pre = &psi_predef_funcs[i];
-
-		if (!strcmp(func->var->name, pre->name)) {
-			decl->call.sym = pre->func;
-			break;
+	for (redir = &psi_func_redirs[0]; redir->name; ++redir) {
+		if (!strcmp(func->var->name, redir->name)) {
+			decl->call.sym = redir->func;
 		}
 	}
 	if (!decl->call.sym) {
@@ -703,8 +730,12 @@ static inline int validate_impl_stmts(PSI_Data *data, impl *impl) {
 
 PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErrorFunc error)
 {
-	size_t i, j;
+	size_t i;
 	PSI_Data T;
+	struct psi_predef_type *predef_type;
+	struct psi_predef_const *predef_const;
+	struct psi_predef_struct *predef_struct;
+	struct psi_predef_decl *predef_decl;
 
 	if (!C) {
 		C = malloc(sizeof(*C));
@@ -725,49 +756,61 @@ PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErr
 	memset(&T, 0, sizeof(T));
 	T.error = error;
 
-	for (i = 0; i < psi_predef_type_count(); ++i) {
-		const psi_predef_type *pre = &psi_predef_types[i];
-		decl_type *type = init_decl_type(pre->type_tag, pre->type_name);
-		decl_typedef *def = init_decl_typedef(pre->alias, type);
+	for (predef_type = &psi_predef_types[0]; predef_type->type_tag; ++predef_type) {
+		decl_type *type = init_decl_type(predef_type->type_tag, predef_type->type_name);
+		decl_typedef *def = init_decl_typedef(predef_type->alias, type);
 
 		T.defs = add_decl_typedef(T.defs, def);
 	}
-	for (i = 0; i < psi_predef_const_count(); ++i) {
-		const psi_predef_const *pre = &psi_predef_consts[i];
-		impl_def_val *val = init_impl_def_val(pre->val_type_tag, pre->val_text);
-		const_type *type = init_const_type(pre->type_tag, pre->type_name);
-		constant *constant = init_constant(type, pre->name, val);
+	for (predef_const = &psi_predef_consts[0]; predef_const->type_tag; ++predef_const) {
+		impl_def_val *val = init_impl_def_val(predef_const->val_type_tag, predef_const->val_text);
+		const_type *type = init_const_type(predef_const->type_tag, predef_const->type_name);
+		constant *constant = init_constant(type, predef_const->var_name, val);
 
 		T.consts = add_constant(T.consts, constant);
 	}
-	for (i = 0; i < psi_predef_struct_count(); ++i) {
-		const psi_predef_struct *pre = &psi_predef_structs[i];
+	for (predef_struct = &psi_predef_structs[0]; predef_struct->type_tag; ++predef_struct) {
+		struct psi_predef_struct *member;
 		decl_args *dargs = init_decl_args(NULL);
-		decl_struct *dstruct;
+		decl_struct *dstruct = init_decl_struct(predef_struct->var_name, dargs);
 
-		for (j = 0; j < PSI_PREDEF_STRUCT_MEMBERS; ++j) {
-			const psi_predef_struct_member *member = &pre->members[j];
+		dstruct->size = predef_struct->size;
+		for (member = &predef_struct[1]; member->type_tag; ++member) {
 			decl_type *type;
 			decl_var *dvar;
 			decl_arg *darg;
 
-			if (!member->name) {
-				break;
-			}
-
 			type = init_decl_type(member->type_tag, member->type_name);
-			dvar = init_decl_var(member->name, member->pointer_level, member->array_size);
+			dvar = init_decl_var(member->var_name, member->pointer_level, member->array_size);
 			darg = init_decl_arg(type, dvar);
-			darg->layout = init_decl_struct_layout(member->off, member->len);
+			darg->layout = init_decl_struct_layout(member->offset, member->size);
 			dargs = add_decl_arg(dargs, darg);
 		}
 
-		dstruct = init_decl_struct(pre->name, dargs);
-		dstruct->size = pre->size;
 		T.structs = add_decl_struct(T.structs, dstruct);
+		predef_struct = member;
+	}
+	for (predef_decl = &psi_predef_decls[0]; predef_decl->type_tag; ++predef_decl) {
+		struct psi_predef_decl *farg;
+		decl_type *ftype = init_decl_type(predef_decl->type_tag, predef_decl->type_name);
+		decl_var *fname = init_decl_var(predef_decl->var_name, predef_decl->pointer_level, predef_decl->array_size);
+		decl_arg *func = init_decl_arg(ftype, fname);
+		decl_args *args = init_decl_args(NULL);
+		decl *decl = init_decl(init_decl_abi("default"), func, args);
+
+
+		for (farg = &predef_decl[1]; farg->type_tag; ++farg) {
+			decl_type *arg_type = init_decl_type(farg->type_tag, farg->type_name);
+			decl_var *arg_var = init_decl_var(farg->var_name, farg->pointer_level, farg->array_size);
+			decl_arg *darg = init_decl_arg(arg_type, arg_var);
+			args = add_decl_arg(args, darg);
+		}
+
+		T.decls = add_decl(T.decls, decl);
+		predef_decl = farg;
 	}
 
-	for (i = 0; i < psi_predef_type_count(); ++i) {
+	for (i = 0; i < T.defs->count; ++i) {
 		decl_typedef *def = T.defs->list[i];
 
 		if (validate_decl_typedef(&T, def)) {
@@ -775,7 +818,7 @@ PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErr
 		}
 	}
 
-	for (i = 0; i < psi_predef_const_count(); ++i) {
+	for (i = 0; i < T.consts->count; ++i) {
 		constant *constant = T.consts->list[i];
 
 		if (validate_constant(&T, constant)) {
@@ -783,11 +826,19 @@ PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErr
 		}
 	}
 
-	for (i = 0; i < psi_predef_struct_count(); ++i) {
+	for (i = 0; i < T.structs->count; ++i) {
 		decl_struct *dstruct = T.structs->list[i];
 
 		if (validate_decl_struct(&T, dstruct)) {
 			C->structs = add_decl_struct(C->structs, dstruct);
+		}
+	}
+
+	for (i = 0; i < T.decls->count; ++i) {
+		decl *decl = T.decls->list[i];
+
+		if (validate_decl(&T, NULL, decl)) {
+			C->decls = add_decl(C->decls, decl);
 		}
 	}
 
@@ -873,7 +924,7 @@ static int psi_select_dirent(const struct dirent *entry)
 
 void PSI_ContextBuild(PSI_Context *C, const char *paths)
 {
-	int i, n, flags = getenv("PSI_DEBUG") ? PSI_PARSER_DEBUG : 0;
+	int i, n, flags = psi_check_env("PSI_DEBUG") ? PSI_PARSER_DEBUG : 0;
 	char *sep = NULL, *cpy = strdup(paths), *ptr = cpy;
 	struct dirent **entries = NULL;
 

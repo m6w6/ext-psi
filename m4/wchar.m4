@@ -1,0 +1,9 @@
+AC_DEFUN(PSI_CHECK_WCHAR, [
+	AC_CHECK_HEADERS(wchar.h)
+	
+	PSI_TYPE(wint_t, int)
+	
+	PSI_CONST(WINT_MIN, int)
+	PSI_CONST(WINT_MAX, int)
+	PSI_CONST(WEOF, int)
+])

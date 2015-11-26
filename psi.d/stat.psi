@@ -1,4 +1,3 @@
-extern int stat(char *path, struct stat *buf);
 function psi\stat(string $path, array &$buf = NULL) : int {
 	let path = strval($path);
 	let buf = calloc(1, struct stat);

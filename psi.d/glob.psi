@@ -1,8 +1,5 @@
-extern void globfree(glob_t *buf);
-
-extern int glob(char *pat, int flags, void *err, glob_t *buf);
 function psi\glob(string $pattern, int $flags, array &$glob = NULL) : int {
-	let pat = strval($pattern);
+	let path = strval($pattern);
 	let flags = intval($flags);
 	let err = NULL;
 	let buf = arrval($glob);
@@ -14,5 +11,5 @@ function psi\glob(string $pattern, int $flags, array &$glob = NULL) : int {
 		to_int(gl_flags),
 		to_array(**gl_pathv, gl_pathc, gl_offs, to_string(*gl_pathv))
 	);
-	//free globfree(buf);
+	free globfree(buf);
 }

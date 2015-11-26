@@ -740,7 +740,7 @@ PHP_MINIT_FUNCTION(psi)
 	PSI_ContextInit(&PSI_G(context), ops, psi_error);
 	PSI_ContextBuild(&PSI_G(context), PSI_G(directory));
 
-	if (getenv("PSI_DUMP")) {
+	if (psi_check_env("PSI_DUMP")) {
 		PSI_ContextDump(&PSI_G(context), STDOUT_FILENO);
 	}
 

@@ -7,21 +7,32 @@ if test "$PHP_PSI" != no; then
 	PHP_PSI_SRCDIR=PHP_EXT_SRCDIR(psi)
 	PHP_PSI_BUILDDIR=PHP_EXT_BUILDDIR(psi)
 
-	sinclude(config.ax_check_sign.m4)
-	sinclude(config.psi.m4)
-	sinclude(config.psi_type.m4)
-	sinclude(config.psi_const.m4)
-	sinclude(config.psi_decl.m4)
-	sinclude(config.psi_macro.m4)
-	sinclude(config.psi_struct.m4)
-
-	sinclude(config.psi_errno.m4)
-	sinclude(config.psi_glob.m4)
-	sinclude(config.psi_stddef.m4)
-	sinclude(config.psi_stdio.m4)
-	sinclude(config.psi_stdint.m4)
-	sinclude(config.psi_sys_types.m4)
-
+	m4_foreach(incfile, [
+		[ax_check_sign.m4],
+		[psi.m4],
+		[psi_type.m4],
+		[psi_const.m4],
+		[psi_decl.m4],
+		[psi_macro.m4],
+		[psi_struct.m4],
+		[errno.m4],
+		[glob.m4],
+		[stddef.m4],
+		[stdio.m4],
+		[stdint.m4],
+		[stdlib.m4],
+		[sys_stat.m4],
+		[sys_time.m4],
+		[sys_times.m4],
+		[sys_types.m4],
+		[sys_uio.m4],
+		[time.m4],
+		[wchar.m4]], [
+		dnl pecl build
+		sinclude([m4/]incfile)
+		dnl php-src build
+		sinclude([ext/psi/m4/]incfile)
+	])
 	PSI_LEMON
 	PSI_CHECK_LIBJIT
 	PSI_CHECK_LIBFFI
@@ -36,14 +47,24 @@ if test "$PHP_PSI" != no; then
 	PSI_CHECK_ERRNO
 	PSI_CHECK_GLOB
 	PSI_CHECK_STDIO
-
-	echo PSI_TYPES=$PSI_TYPES
-	echo PSI_MACROS=$PSI_MACROS
-	echo PSI_REDIRS=$PSI_REDIRS
-	echo PSI_DECLS=$PSI_DECLS
-	echo PSI_STRUCTS=$PSI_STRUCTS
+	PSI_CHECK_STDLIB
+	PSI_CHECK_TIME
+	PSI_CHECK_SYS_TIME
+	PSI_CHECK_SYS_TIMES
+	PSI_CHECK_SYS_STAT
+	PSI_CHECK_SYS_UIO
+	PSI_CHECK_WCHAR
 
 	PHP_SUBST(PSI_SHARED_LIBADD)
+
+	AC_DEFINE_UNQUOTED(PHP_PSI_SHLIB_SUFFIX, ["$SHLIB_SUFFIX_NAME"], DL suffix)
+
+	AC_DEFINE_UNQUOTED([PSI_TYPES], [$PSI_TYPES], [Predefined types])
+	AC_DEFINE_UNQUOTED([PSI_STRUCTS], [$PSI_STRUCTS], [Predefined structs])
+	AC_DEFINE_UNQUOTED([PSI_CONSTS], [$PSI_CONSTS], [Predefined constants])
+	AC_DEFINE_UNQUOTED([PSI_MACROS], [$PSI_MACROS], [Redirected Macros])
+	AC_DEFINE_UNQUOTED([PSI_REDIRS], [$PSI_REDIRS], [Redirected functions])
+	AC_DEFINE_UNQUOTED([PSI_DECLS], [$PSI_DECLS], [Predefined functions])
 
 	PHP_ADD_INCLUDE($PHP_PSI_SRCDIR/src)
 	PHP_ADD_BUILD_DIR($PHP_PSI_BUILDDIR/src)
