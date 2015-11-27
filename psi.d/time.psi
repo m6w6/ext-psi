@@ -3,12 +3,12 @@ function psi\time() : int {
 	return to_int(time);
 }
 
-extern int gettimeofday(struct timeval *tv, struct timezone *tz);
+// extern int gettimeofday(struct timeval *tp, struct timezone *tz);
 function psi\gettimeofday(array &$tv = NULL, array &$tz = NULL) : int {
-	let tv = calloc(1, struct timeval);
+	let tp = calloc(1, struct timeval);
 	let tz = calloc(1, struct timezone);
 	return to_int(gettimeofday);
-	set $tv = to_array(*tv,
+	set $tv = to_array(*tp,
 		to_int(tv_sec),
 		to_int(tv_usec));
 	set $tz = to_array(*tz,
@@ -16,22 +16,22 @@ function psi\gettimeofday(array &$tv = NULL, array &$tz = NULL) : int {
 		to_int(tz_dsttime));
 }
 
-extern char *asctime(struct tm *tm);
+// extern char *asctime(struct tm *tm);
 function psi\asctime(array $tm = NULL) : string {
 	let tm = arrval($tm);
 	return to_string(asctime);
 }
 
-extern char *asctime_r(struct tm *tm, char *buf);
+// extern char *asctime_r(struct tm *tm, char *buf);
 function psi\asctime_r(array $tm = NULL) : string {
 	let tm = arrval($tm);
 	let buf = calloc(32, char);
 	return to_string(asctime_r);
 }
 
-extern struct tm *gmtime(time_t *tp);
+// extern struct tm *gmtime(time_t *t);
 function psi\gmtime(int $ts) : array {
-	let tp = &intval($ts);
+	let t = &intval($ts);
 	return to_array(*gmtime,
 		to_int(tm_sec),
 		to_int(tm_min),
@@ -45,9 +45,9 @@ function psi\gmtime(int $ts) : array {
 	);
 }
 
-extern struct tm *gmtime_r(time_t *tp, struct tm *buf);
+// extern struct tm *gmtime_r(time_t *t, struct tm *buf);
 function psi\gmtime_r(int $ts) : array {
-	let tp = &intval($ts);
+	let t = &intval($ts);
 	let buf = calloc(1, struct tm);
 	return to_array(*gmtime_r,
 		to_int(tm_sec),
@@ -62,18 +62,18 @@ function psi\gmtime_r(int $ts) : array {
 	);
 }
 
-extern int nanosleep(struct timespec *rqtp, struct timespec *rmtp);
+// extern int nanosleep(struct timespec *rqts, struct timespec *rmts);
 function psi\nanosleep(array $rq = NULL, array &$rm = NULL) : int {
-	let rqtp = arrval($rq);
-	let rmtp = calloc(1, struct timespec);
+	let rqts = arrval($rq);
+	let rmts = calloc(1, struct timespec);
 	return to_int(nanosleep);
-	set $rm = to_array(*rmtp,
+	set $rm = to_array(*rmts,
 		to_int(tv_sec),
 		to_int(tv_nsec)
 	);
 }
 
-extern clock_t times(struct tms *buf);
+// extern clock_t times(struct tms *buf);
 function psi\times(array &$tms = NULL) : int {
 	let buf = calloc(1, struct tms);
 	return to_int(times);

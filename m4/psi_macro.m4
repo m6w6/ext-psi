@@ -2,8 +2,8 @@ dnl PSI_MACRO(macro, decl args, action-if-true)
 AC_DEFUN(PSI_MACRO, [
 	AC_CHECK_DECL(PSI_VAR_NAME($1)$2, [
 		$3
-		macro_type=PSI_VAR_TYPE($1)
-		macro_name=PSI_VAR_NAME($1)
+		macro_type="PSI_VAR_TYPE($1)"
+		macro_name="PSI_VAR_NAME($1)"
 		ifelse([$2], [], [
 			macro_decl="()"
 			macro_call=""

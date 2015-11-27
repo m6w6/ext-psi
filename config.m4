@@ -21,11 +21,14 @@ if test "$PHP_PSI" != no; then
 		[stdio.m4],
 		[stdint.m4],
 		[stdlib.m4],
+		[sys_select.m4],
+		[sys_socket.m4],
 		[sys_stat.m4],
 		[sys_time.m4],
 		[sys_times.m4],
 		[sys_types.m4],
 		[sys_uio.m4],
+		[sys_utsname.m4],
 		[time.m4],
 		[wchar.m4]], [
 		dnl pecl build
@@ -49,10 +52,13 @@ if test "$PHP_PSI" != no; then
 	PSI_CHECK_STDIO
 	PSI_CHECK_STDLIB
 	PSI_CHECK_TIME
+	PSI_CHECK_SYS_SELECT
+	PSI_CHECK_SYS_SOCKET
 	PSI_CHECK_SYS_TIME
 	PSI_CHECK_SYS_TIMES
 	PSI_CHECK_SYS_STAT
 	PSI_CHECK_SYS_UIO
+	PSI_CHECK_SYS_UTSNAME
 	PSI_CHECK_WCHAR
 
 	PHP_SUBST(PSI_SHARED_LIBADD)

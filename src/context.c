@@ -224,8 +224,8 @@ static inline int locate_decl_type_alias(decl_typedefs *defs, decl_type *type) {
 	for (stdtyp = &psi_std_types[0]; stdtyp->type_tag; ++stdtyp) {
 		if (!strcmp(type->name, stdtyp->type_name)) {
 			type->type = stdtyp->type_tag;
+			return 1;
 		}
-		return 1;
 	}
 
 	return 0;
@@ -404,6 +404,7 @@ static inline decl_arg *locate_decl_var_arg(decl_var *var, decl_args *args) {
 		decl_arg *arg = args->args[i];
 
 		if (!strcmp(var->name, arg->var->name)) {
+			ZEND_ASSERT(!var->arg || var->arg == arg);
 			return var->arg = arg;
 		}
 	}
@@ -448,9 +449,14 @@ static inline int validate_set_value(PSI_Data *data, set_value *set, decl_arg *r
 	}
 	set_var->arg = ref;
 
-	if (set->count && (set->func->type != PSI_T_TO_ARRAY || (ref_type->type != PSI_T_STRUCT && !ref->var->arg->var->pointer_level))) {
-		data->error(E_WARNING, "Inner `set` statement casts only work with to_array() casts on structs or pointers");
-		return 0;
+	if (set->count) {
+		int is_to_array = (set->func->type == PSI_T_TO_ARRAY);
+		int is_pointer_to_struct = (ref_type->type == PSI_T_STRUCT && ref->var->pointer_level);
+		if (is_to_array && !is_pointer_to_struct) {
+			data->error(E_WARNING, "Inner `set` statement casts only work with "
+					"to_array() casts on structs or pointers: %s(%s...", set->func->name, set->vars->vars[0]->name);
+			return 0;
+		}
 	}
 
 	if (ref_type->type == PSI_T_STRUCT) {
@@ -459,11 +465,11 @@ static inline int validate_set_value(PSI_Data *data, set_value *set, decl_arg *r
 			decl_var *sub_var = set->inner[i]->vars->vars[0];
 			decl_arg *sub_ref = locate_struct_member(ref_type->strct, sub_var);
 
+			set->inner[i]->outer.set = set;
 			if (sub_ref) {
 				if (!validate_set_value(data, set->inner[i], sub_ref, ref_type->strct->args)) {
 					return 0;
 				}
-				set->inner[i]->outer.set = set;
 			}
 		}
 	} else if (set->count == 1) {
@@ -471,6 +477,7 @@ static inline int validate_set_value(PSI_Data *data, set_value *set, decl_arg *r
 		decl_var *sub_var = set->inner[0]->vars->vars[0];
 		decl_arg *sub_ref = locate_decl_var_arg(sub_var, ref_list);
 
+		set->inner[0]->outer.set = set;
 		if (sub_ref) {
 			if (strcmp(sub_var->name, set_var->name)) {
 				data->error(E_WARNING, "Inner `set` statement casts on pointers must reference the same variable");
@@ -479,7 +486,6 @@ static inline int validate_set_value(PSI_Data *data, set_value *set, decl_arg *r
 			if (!validate_set_value(data, set->inner[0], sub_ref, ref_list)) {
 				return 0;
 			}
-			set->inner[0]->outer.set = set;
 		}
 	} else if (set->count > 1) {
 		data->error(E_WARNING, "Inner `set` statement casts on pointers may only occur once");
@@ -625,10 +631,10 @@ static inline int validate_impl_set_stmts(PSI_Data *data, impl *impl) {
 
 				if (!strcmp(set_var->name, set_arg->var->name)) {
 					check = 1;
+					set_var->arg = set_arg;
 					if (!validate_set_value(data, set->val, set_arg, impl->decl->args)) {
 						return 0;
 					}
-					set_var->arg = set_arg;
 					break;
 				}
 			}
@@ -1044,43 +1050,189 @@ static inline void dump_decl_arg(int fd, decl_arg *a) {
 	dprintf(fd, " ");
 	dump_decl_var(fd, a->var);
 }
+static inline void dump_level(int fd, unsigned level) {
+	dprintf(fd, "%.*s", level, "\t\t\t\t\t\t\t\t\t");
+}
+static inline void dump_impl_set_value(int fd, set_value *set, unsigned level) {
+	size_t i;
+
+	if (level > 1) {
+		/* only if not directly after `set ...` */
+		dump_level(fd, level);
+	}
+	dprintf(fd, "%s(", set->func->name);
+
+	for (i = 0; i < set->vars->count; ++i) {
+		decl_var *svar = set->vars->vars[i];
+		if (i) {
+			dprintf(fd, ", ");
+		}
+		dump_decl_var(fd, svar);
+	}
+	if (set->inner) {
+		dprintf(fd, ",\n");
+		for (i = 0; i < set->count; ++i) {
+			dump_impl_set_value(fd, set->inner[i], level+1);
+		}
+		/* only if inner stmts, i.e. with new lines, were dumped */
+		dump_level(fd, level);
+	}
+	if (level > 1) {
+		dprintf(fd, "),\n");
+	} else {
+		dprintf(fd, ");\n");
+	}
+}
 void PSI_ContextDump(PSI_Context *C, int fd)
 {
-	size_t i, j;
+	size_t i, j, k, l;
 
 #ifdef HAVE_LIBJIT
 	if (C->ops == PSI_Libjit()) {
-		dprintf(fd, "#PSI(libjit)\n");
+		dprintf(fd, "// psi.engine=jit\n");
 	}
 #endif
 #ifdef HAVE_LIBFFI
 	if (C->ops == PSI_Libffi()) {
-		dprintf(fd, "#PSI(libffi)\n");
+		dprintf(fd, "// psi.engine=ffi\n");
 	}
 #endif
-
-	if (C->defs) for (i = 0; i < C->defs->count; ++i) {
-		decl_typedef *tdef = C->defs->list[i];
-
-		dprintf(fd, "typedef ");
-		dump_decl_type(fd, tdef->type);
-		dprintf(fd, " %s;\n", tdef->alias);
-	}
-	if (C->structs) for (i = 0; i < C->structs->count; ++i) {
-		decl_struct *strct = C->structs->list[i];
-		decl_arg *sarg = NULL;
-
-		dprintf(fd, "struct %s::(%zu) {\n", strct->name, strct->size);
-		for (j = 0; j < strct->args->count; ++j) {
-			sarg = strct->args->args[j];
-			dprintf(fd, "\t");
-			dump_decl_arg(fd, sarg);
-			dprintf(fd, "::(%zu, %zu);\n", sarg->layout->pos, sarg->layout->len);
-		}
-		dprintf(fd, "}\n");
-	}
-
 	dprintf(fd, "\n");
+
+	if (C->defs) {
+		for (i = 0; i < C->defs->count; ++i) {
+			decl_typedef *tdef = C->defs->list[i];
+
+			dprintf(fd, "typedef ");
+			dump_decl_type(fd, tdef->type);
+			dprintf(fd, " %s;\n", tdef->alias);
+		}
+		dprintf(fd, "\n");
+	}
+
+	if (C->structs) {
+		for (i = 0; i < C->structs->count; ++i) {
+			decl_struct *strct = C->structs->list[i];
+
+			dprintf(fd, "struct %s::(%zu) {\n", strct->name, strct->size);
+			if (strct->args) for (j = 0; j < strct->args->count; ++j) {
+				decl_arg *sarg = strct->args->args[j];
+
+				dprintf(fd, "\t");
+				dump_decl_arg(fd, sarg);
+				dprintf(fd, "::(%zu, %zu);\n", sarg->layout->pos, sarg->layout->len);
+			}
+			dprintf(fd, "}\n");
+		}
+		dprintf(fd, "\n");
+	}
+	if (C->consts) {
+		for (i = 0; i < C->consts->count; ++i) {
+			constant *cnst = C->consts->list[i];
+
+			dprintf(fd, "const %s %s = ", cnst->type->name, cnst->name);
+			if (cnst->val->type == PSI_T_QUOTED_STRING) {
+				dprintf(fd, "\"%s\";\n", cnst->val->text);
+			} else {
+				dprintf(fd, "%s;\n", cnst->val->text);
+			}
+		}
+		dprintf(fd, "\n");
+	}
+	if (C->decls) {
+		for (i = 0; i < C->decls->count; ++i) {
+			decl *decl = C->decls->list[i];
+
+			dprintf(fd, "%s ", decl->abi->convention);
+			dump_decl_arg(fd, decl->func);
+			dprintf(fd, "(");
+			if (decl->args) for (j = 0; j < decl->args->count; ++j) {
+				if (j) {
+					dprintf(fd, ", ");
+				}
+				dump_decl_arg(fd, decl->args->args[j]);
+			}
+			dprintf(fd, ");\n");
+		}
+		dprintf(fd, "\n");
+	}
+	if (C->impls) {
+		for (i = 0; i < C->impls->count; ++i) {
+			impl *impl = C->impls->list[i];
+
+			dprintf(fd, "function %s(", impl->func->name);
+			if (impl->func->args) for (j = 0; j < impl->func->args->count; ++j) {
+				impl_arg *iarg = impl->func->args->args[j];
+
+				dprintf(fd, "%s%s %s$%s",
+						j ? ", " : "",
+						iarg->type->name,
+						iarg->var->reference ? "&" : "",
+						iarg->var->name);
+				if (iarg->def) {
+					dprintf(fd, " = %s", iarg->def->text);
+				}
+			}
+			dprintf(fd, ") : %s%s {\n",
+					impl->func->return_reference ? "&":"",
+					impl->func->return_type->name);
+			if (impl->stmts) {
+				for (j = 0; j < impl->stmts->let.count; ++j) {
+					let_stmt *let = impl->stmts->let.list[j];
+
+					dprintf(fd, "\tlet %s", let->var->name);
+					if (let->val) {
+						dprintf(fd, " = %s", let->val->is_reference ? "&" : "");
+						if (let->val->func) {
+							dprintf(fd, "%s(", let->val->func->name);
+							if (let->val->func->alloc) {
+								dprintf(fd, "%zu, ", let->val->func->alloc->n);
+								dump_decl_type(fd, let->val->func->alloc->type);
+							} else {
+								dprintf(fd, "$%s", let->val->var->name);
+							}
+							dprintf(fd, ");\n");
+						} else {
+							dprintf(fd, "NULL;\n");
+						}
+					}
+				}
+				for (j = 0; j < impl->stmts->ret.count; ++j) {
+					return_stmt *ret = impl->stmts->ret.list[j];
+
+					dprintf(fd, "\treturn ");
+					dump_impl_set_value(fd, ret->set, 1);
+				}
+				for (j = 0; j < impl->stmts->set.count; ++j) {
+					set_stmt *set = impl->stmts->set.list[j];
+
+					dprintf(fd, "\tset $%s = ", set->var->name);
+					dump_impl_set_value(fd, set->val, 1);
+				}
+				for (j = 0; j < impl->stmts->fre.count; ++j) {
+					free_stmt *fre = impl->stmts->fre.list[j];
+
+					dprintf(fd, "\tfree ");
+					for (k = 0; k < fre->calls->count; ++k) {
+						free_call *call = fre->calls->list[k];
+
+						if (k) {
+							dprintf(fd, ", ");
+						}
+						dprintf(fd, "%s(", call->func);
+						for (l = 0; l < call->vars->count; ++l) {
+							decl_var *fvar = call->vars->vars[l];
+
+							dump_decl_var(fd, fvar);
+						}
+						dprintf(fd, ");\n");
+					}
+				}
+			}
+			dprintf(fd, "}\n");
+		}
+		dprintf(fd, "\n");
+	}
 }
 
 void PSI_ContextDtor(PSI_Context *C)

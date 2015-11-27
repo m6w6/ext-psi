@@ -1,8 +1,7 @@
-extern int uname(struct utsname *u);
 function psi\uname(array &$u = NULL) : int {
-	let u = calloc(1, struct utsname);
+	let name = calloc(1, struct utsname);
 	return to_int(uname);
-	set $u = to_array(*u,
+	set $u = to_array(*name,
 		to_string(sysname),
 		to_string(nodename),
 		to_string(release),

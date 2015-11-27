@@ -42,8 +42,9 @@ AC_DEFUN(PSI_TYPE, [
 	fi
 ])
 
-dnl unsigned char* buf[16] -> char
-AC_DEFUN(PSI_VAR_TYPE, [m4_bregexp([$1], [\(\(struct \)?[^ ]+\)[ *]+[^ ]+$], [\1])])
+dnl unsigned char* buf[16] -> unsigned char*
+dnl AC_DEFUN(PSI_VAR_TYPE, [m4_bregexp([$1], [\(\(struct \)?[^ ]+\)[ *]+[^ ]+$], [\1])])
+AC_DEFUN(PSI_VAR_TYPE, [m4_bregexp([$1], [^\(const \)?\(.*\) \([*]*\)[^ ]+$], [\2\3])])
 dnl unsigned char* buf[16] -> buf
 AC_DEFUN(PSI_VAR_NAME, [m4_bregexp(m4_bregexp([$1], [\([^ ]+\)$], [\1]), [\w+], [\&])])
 dnl PSI_TYPE_SIZE(type, pointer level, array size)
@@ -55,10 +56,40 @@ AC_DEFUN(PSI_TYPE_SIZE, [ifelse(
 dnl PSI_TYPE_BITS(type)
 AC_DEFUN(PSI_TYPE_BITS, [`expr 8 \* $AS_TR_SH([ac_cv_sizeof_]$1)`])
 
+dnl PSI_TYPE_INDIRECTION(type, size, pointer_level_var, array_size_var)
+AC_DEFUN(PSI_TYPE_INDIRECTION, [
+	AC_MSG_CHECKING(indirection of $1)
+	m4_define([pointer_level], m4_len(m4_bpatsubst([PSI_VAR_TYPE($1)], [[^*]])))
+	m4_define([array_size], [m4_bregexp([PSI_VAR_TYPE($1)], [@<:@\([0-9]+\)@:>@], [\1])])
+	
+	ifelse(array_size.$2,0., [
+		AC_MSG_ERROR([cannot compute dynamic array size of a non-struct member])
+	], [
+		ifelse(pointer_level,0,[
+			m4_define([type_size],[$]AS_TR_SH([ac_cv_sizeof_]m4_bregexp(PSI_VAR_TYPE([$1]), [^\( \|\w\)+], [\&])))
+		],[
+			m4_define([type_size],$ac_cv_sizeof_void_p)
+		])
+	])
+	
+	m4_case(array_size,,[
+		$3=pointer_level
+		$4=0]
+	,0,[
+		$3=m4_incr(pointer_level)
+		$4="`expr $2 / type_size`"
+	], [
+		$3=m4_incr(pointer_level)
+		$4=array_size
+	])
+	
+	AC_MSG_RESULT([[$]$3, [$]$4])
+])
+
 AC_DEFUN(PSI_TYPE_PAIR, [m4_case(m4_bregexp([$1], [^\w+], [\&]),
 	[void], [PSI_T_VOID, \"void\"],
 	[struct], [PSI_T_STRUCT, \"m4_bregexp([$1], [^struct \(\w+\)], [\1])\"],
-	[PSI_T_NAME, \"$1\"])])
+	[PSI_T_NAME, \"m4_bregexp([$1], [^\(\w+ \)*\w+], [\&])\"])])
 
 AC_DEFUN(PSI_CHECK_STD_TYPES, [
 	AC_CHECK_HEADERS(stdint.h)

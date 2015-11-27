@@ -43,16 +43,12 @@ AC_DEFUN(PSI_FUNC, [
 AC_DEFUN(PSI_DECL_ARG, [
     m4_define([member_name], PSI_VAR_NAME($1))
     m4_define([member_type], PSI_VAR_TYPE($1))
-    m4_define([pointer_level], m4_len(m4_bpatsubst([$1], [[^*]])))
-	m4_define([array_size], [m4_bregexp([$1], [@<:@\([0-9]+\)@:>@], [\1])])
-	ifelse(array_size, [],
-		[m4_define([array_size], 0)],
-		[m4_define([pointer_level], m4_incr(pointer_level))]
-	)
+
+	PSI_TYPE_INDIRECTION([$1],, pl, as)
     if test -n "$psi_decl_args"; then
         psi_decl_args="$psi_decl_args, "
     fi
-    psi_decl_args="[$psi_decl_args{]PSI_TYPE_PAIR(member_type)[, \"]member_name[\",] pointer_level, array_size[}]"
+    psi_decl_args="[$psi_decl_args{]PSI_TYPE_PAIR(member_type)[, \"]member_name[\",] $pl, $as[}]"
 ])
 
 dnl PSI_DECL(type func, args)
@@ -62,7 +58,7 @@ AC_DEFUN(PSI_DECL, [
 	m4_case([$2],
 		[(void)], [],
 		[()], [],
-		[m4_map_args_sep([PSI_DECL_ARG(], [)], [], [m4_bregexp([$2], [(\(.*\))], [\1])])])
+		[m4_map_args_sep([PSI_DECL_ARG(m4_normalize(], [))], [], m4_bregexp([$2], [(\(.*\))], [\1]))])
 	PSI_FUNC(PSI_VAR_NAME($1), [
 		PSI_DECLS="$psi_decl_args, {0}, $PSI_DECLS"
 	], [

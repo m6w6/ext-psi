@@ -1,5 +1,14 @@
 AC_DEFUN(PSI_CHECK_STDLIB, [
 	AC_CHECK_HEADERS(stdlib.h)
+	
+	PSI_STRUCT(div_t, [
+		int quot,
+		int rem
+	])
+	PSI_STRUCT(ldiv_t, [
+		long quot,
+		long rem
+	])
 
 	PSI_CONST(EXIT_FAILURE, int)
 	PSI_CONST(EXIT_SUCCESS, int)
@@ -12,7 +21,7 @@ AC_DEFUN(PSI_CHECK_STDLIB, [
 	PSI_DECL(double atof, [(char *str)])
 	PSI_DECL(int atoi, [(char *str)])
 	PSI_DECL(long atol, [(char *str)])
-	PSI_DECL(div_t div, [(int numerator, int denominator)])
+	dnl PSI_DECL(div_t div, [(int numerator, int denominator)])
 	PSI_DECL(double drand48, [()])
 	PSI_DECL(double erand48, [(unsigned short xsubi@<:@3@:>@)])
 	PSI_DECL(void exit, [(int status)])
@@ -23,7 +32,7 @@ AC_DEFUN(PSI_CHECK_STDLIB, [
 	PSI_DECL(long jrand48, [(unsigned short xsubi@<:@3@:>@)])
 	PSI_DECL(long labs, [(long l)])
 	PSI_DECL(void lcong48, [(unsigned short param@<:@7@:>@)])
-	PSI_DECL(long ldiv, [(long numerator, long denominator)])
+	dnl PSI_DECL(ldiv_t ldiv, [(long numerator, long denominator)])
 	PSI_DECL(long lrand48, [()])
 	PSI_DECL(int mblen, [(const char *s, size_t n)])
 	PSI_DECL(size_t mbstowcs, [(wchar_t *dest, char *src, size_t n)])

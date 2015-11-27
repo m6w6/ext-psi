@@ -15,7 +15,11 @@
 %extra_argument {PSI_Parser *P}
 /* TOKEN is defined inside syntax_error */
 %syntax_error {
-	PSI_ParserSyntaxError(P, P->psi.file.fn, P->line, "Unexpected token '%s'", TOKEN->text);
+	if (TOKEN) {
+		PSI_ParserSyntaxError(P, P->psi.file.fn, P->line, "Unexpected token '%s'", TOKEN->text);
+	} else {
+		PSI_ParserSyntaxError(P, P->psi.file.fn, P->line, "Unexpected end of input");
+	}
 }
 
 %nonassoc NAME.
@@ -162,7 +166,7 @@ decl_vars(vars) ::= decl_vars(vars_) COMMA decl_var(var). {
 %type decl_arg {decl_arg*}
 %destructor decl_arg {free_decl_arg($$);}
 decl_arg(arg_) ::= const_decl_type(type) decl_var(var). {
-	arg_ = var->arg = init_decl_arg(type, var);
+	arg_ = init_decl_arg(type, var);
 }
 /* void pointers need a specific rule */
 decl_arg(arg_) ::= VOID(T) pointers(p) NAME(N). {
@@ -170,7 +174,6 @@ decl_arg(arg_) ::= VOID(T) pointers(p) NAME(N). {
 		init_decl_type(T->type, T->text),
 		init_decl_var(N->text, p, 0)
 	);
-	arg_->var->arg = arg_;
 	free(T);
 	free(N);
 }
@@ -179,7 +182,6 @@ decl_arg(arg_) ::= CONST VOID(T) pointers(p) NAME(N). {
 		init_decl_type(T->type, T->text),
 		init_decl_var(N->text, p, 0)
 	);
-	arg_->var->arg = arg_;
 	free(T);
 	free(N);
 }
@@ -226,6 +228,15 @@ struct_layout(layout) ::= COLON COLON LPAREN NUMBER(POS) COMMA NUMBER(SIZ) RPARE
 decl_type(type_) ::= decl_type_token(T). {
 	type_ = init_decl_type(T->type, T->text);
 	free(T);
+}
+/* unsigned, urgh */
+decl_type(type_) ::= UNSIGNED NAME(T). {
+	type_ = init_decl_type(T->type, T->text);
+	type_->name = realloc(type_->name, T->size + sizeof("unsigned"));
+	memmove(type_->name + sizeof("unsigned"), type_->name, T->size);
+	memcpy(type_->name, "unsigned", sizeof("unsigned")-1);
+	type_->name[sizeof("unsigned")] = ' ';
+	type_->name[T->size + sizeof("unsigned")] = 0;
 }
 /* we have to support plain int here because we have it in our lexer rules */
 decl_type(type_) ::= INT(T). {

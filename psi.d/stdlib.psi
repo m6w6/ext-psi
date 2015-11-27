@@ -1,2 +1,4 @@
-
-extern void free(void *ptr);
+function psi\abs(int $i) : int {
+	let n = intval($i);
+	return to_int(abs);
+}

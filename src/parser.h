@@ -141,6 +141,7 @@ static inline decl_arg *init_decl_arg(decl_type *type, decl_var *var) {
 	decl_arg *arg = calloc(1, sizeof(*arg));
 	arg->type = type;
 	arg->var = var;
+	var->arg = arg;
 	return arg;
 }
 
