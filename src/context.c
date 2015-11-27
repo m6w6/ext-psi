@@ -452,7 +452,8 @@ static inline int validate_set_value(PSI_Data *data, set_value *set, decl_arg *r
 	if (set->count) {
 		int is_to_array = (set->func->type == PSI_T_TO_ARRAY);
 		int is_pointer_to_struct = (ref_type->type == PSI_T_STRUCT && ref->var->pointer_level);
-		if (is_to_array && !is_pointer_to_struct) {
+
+		if (!is_to_array && !is_pointer_to_struct) {
 			data->error(E_WARNING, "Inner `set` statement casts only work with "
 					"to_array() casts on structs or pointers: %s(%s...", set->func->name, set->vars->vars[0]->name);
 			return 0;
