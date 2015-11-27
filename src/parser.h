@@ -1065,7 +1065,7 @@ static inline PSI_Token *PSI_TokenAlloc(PSI_Parser *P) {
 	PSI_Token *T;
 	size_t token_len;
 
-	if (P->cur <= P->tok) {
+	if (P->cur < P->tok) {
 		return NULL;
 	}
 

@@ -960,9 +960,13 @@ void PSI_ContextBuild(PSI_Context *C, const char *paths)
 					continue;
 				}
 
-				while (-1 != PSI_ParserScan(&P)) {
+				while (0 < PSI_ParserScan(&P)) {
 					PSI_ParserParse(&P, PSI_TokenAlloc(&P));
-				};
+					if (P.num == PSI_T_EOF) {
+						break;
+					}
+				}
+
 				PSI_ParserParse(&P, NULL);
 				PSI_ContextValidate(C, &P);
 				PSI_ParserDtor(&P);

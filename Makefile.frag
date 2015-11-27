@@ -6,7 +6,7 @@ PHP_PSI_SOURCES := $(addprefix $(PHP_PSI_SRCDIR)/,$(PHP_PSI_SOURCES))
 $(PHP_PSI_BUILDDIR)/%.h: $(PHP_PSI_SRCDIR)/src/%.h
 	@cat >$@ <$<
 
-all: psi-build-headers
+install-headers: psi-build-headers
 clean: psi-clean-headers
 
 .PHONY: psi-build-headers
@@ -25,18 +25,16 @@ lemon.c:
 ./lemon: lemon.c | lempar.c
 	$(CC) -o $@ $<
 
-$(PHP_PSI_SRCDIR)/src/context.c: $(PHP_PSI_SRCDIR)/config.m4
+$(PHP_PSI_SRCDIR)/src/parser_proc.h: $(PHP_PSI_SRCDIR)/src/parser_proc.y
+ 
+$(PHP_PSI_SRCDIR)/src/%.c: $(PHP_PSI_SRCDIR)/src/parser.h $(PHP_PSI_SRCDIR)/src/parser_proc.h
 	touch $@
-$(PHP_PSI_BUILDDIR)/parser.h: $(PHP_PSI_BUILDDIR)/parser_proc.h
-	touch $@
-$(PHP_PSI_SRCDIR)/src/%.c: $(PHP_PSI_BUILDDIR)/parser.h
-	touch $@
-$(PHP_PSI_SRCDIR)/src/parser_proc.y: $(PHP_PSI_BUILDDIR)/parser.h
+$(PHP_PSI_SRCDIR)/src/parser_proc.y: $(PHP_PSI_SRCDIR)/src/parser.h
 	touch $@
 $(PHP_PSI_SRCDIR)/src/parser_proc.c: $(PHP_PSI_SRCDIR)/src/parser_proc.y $(LEMON)
 	$(LEMON) -c $<
 
-$(PHP_PSI_SRCDIR)/src/parser.re: $(PHP_PSI_BUILDDIR)/parser.h $(PHP_PSI_BUILDDIR)/parser_proc.h
+$(PHP_PSI_SRCDIR)/src/parser.re: $(PHP_PSI_SRCDIR)/src/parser.h $(PHP_PSI_SRCDIR)/src/parser_proc.h
 	touch $@
 $(PHP_PSI_SRCDIR)/src/parser.c: $(PHP_PSI_SRCDIR)/src/parser.re
 	$(RE2C) -o $@ $<

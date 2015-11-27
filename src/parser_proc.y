@@ -23,12 +23,14 @@
 }
 
 %nonassoc NAME.
-%fallback NAME FREE SET LET RETURN LIB INT.
+%fallback NAME FREE SET LET RETURN LIB INT UNSIGNED.
 
 file ::= blocks.
 
 blocks ::= block.
 blocks ::= blocks block.
+
+block ::= EOF.
 
 block ::= LIB(T) QUOTED_STRING(libname) EOS. {
 	if (P->psi.file.ln) {

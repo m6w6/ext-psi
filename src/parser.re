@@ -141,6 +141,9 @@ void PSI_ParserFree(PSI_Parser **P)
 
 #define RETURN(t) do { \
 	P->num = t; \
+	if (P->flags & PSI_PARSER_DEBUG) { \
+		fprintf(stderr, "PSI> TOKEN: %d %.*s (EOF=%d)\n", P->num, (int) (P->cur-P->tok), P->tok, P->num == PSI_T_EOF); \
+	} \
 	return t; \
 } while(1)
 
@@ -154,7 +157,7 @@ token_t PSI_ParserScan(PSI_Parser *P)
 		re2c:define:YYCURSOR = P->cur;
 		re2c:define:YYLIMIT = P->lim;
 		re2c:define:YYMARKER = P->mrk;
-		re2c:define:YYFILL = "{ if (!PSI_ParserFill(P,@@)) RETURN(-1); }";
+		re2c:define:YYFILL = "{ if (!PSI_ParserFill(P,@@)) RETURN(PSI_T_EOF); }";
 		re2c:yyfill:parameter = 0;
 
 		B = [^a-zA-Z0-9_];
