@@ -15,7 +15,7 @@
 %extra_argument {PSI_Parser *P}
 /* TOKEN is defined inside syntax_error */
 %syntax_error {
-	if (TOKEN) {
+	if (TOKEN && TOKEN->type != PSI_T_EOF) {
 		PSI_ParserSyntaxError(P, P->psi.file.fn, P->line, "Unexpected token '%s'", TOKEN->text);
 	} else {
 		PSI_ParserSyntaxError(P, P->psi.file.fn, P->line, "Unexpected end of input");
