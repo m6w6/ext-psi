@@ -1,5 +1,5 @@
 function psi\uname(array &$u = NULL) : int {
-	let name = calloc(1, struct utsname);
+	let name = calloc(1, psi\SIZEOF_STRUCT_UTSNAME);
 	return to_int(uname);
 	set $u = to_array(*name,
 		to_string(sysname),

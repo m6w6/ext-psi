@@ -23,7 +23,8 @@
 }
 
 %nonassoc NAME.
-%left PLUS MINUS SLASH ASTERISK.
+%left PLUS MINUS.
+%left SLASH ASTERISK.
 %fallback NAME FREE SET LET RETURN LIB INT UNSIGNED.
 
 file ::= blocks.

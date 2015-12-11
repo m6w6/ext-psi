@@ -576,10 +576,11 @@ typedef struct num_exp {
 	token_t t;
 	union {
 		char *numb;
-		char *cnst;
+		constant *cnst;
 		decl_var *dvar;
 	} u;
 	token_t operator;
+	int (*calculator)(int t1, impl_val *v1, int t2, impl_val *v2, impl_val *res);
 	struct num_exp *operand;
 } num_exp;
 
@@ -587,10 +588,8 @@ static inline num_exp *init_num_exp(token_t t, void *num) {
 	num_exp *exp = calloc(1, sizeof(*exp));
 	switch (exp->t = t) {
 	case PSI_T_NUMBER:
-		exp->u.numb = strdup(num);
-		break;
 	case PSI_T_NSNAME:
-		exp->u.cnst = strdup(num);
+		exp->u.numb = strdup(num);
 		break;
 	case PSI_T_NAME:
 		exp->u.dvar = num;
@@ -606,7 +605,6 @@ static inline void free_num_exp(num_exp *exp) {
 		free(exp->u.numb);
 		break;
 	case PSI_T_NSNAME:
-		free(exp->u.cnst);
 		break;
 	case PSI_T_NAME:
 		free_decl_var(exp->u.dvar);

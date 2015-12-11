@@ -548,6 +548,42 @@ static inline int validate_impl_ret_stmt(PSI_Data *data, impl *impl) {
 
 	return 1;
 }
+static inline constant *locate_num_exp_constant(num_exp *exp, constants *consts) {
+	size_t i;
+
+	for (i = 0; i < consts->count; ++i) {
+		constant *cnst = consts->list[i];
+
+		if (!strcmp(cnst->name, exp->u.numb)) {
+			free(exp->u.numb);
+			return exp->u.cnst = cnst;
+		}
+	}
+
+	return NULL;
+}
+static inline int validate_num_exp(PSI_Data *data, impl *impl, num_exp *exp) {
+	switch (exp->t) {
+	case PSI_T_NAME:
+		if (!locate_decl_var_arg(exp->u.dvar, impl->decl->args)) {
+			data->error(PSI_WARNING, "Unknown variable '%s' in numeric expression"
+					" of implementation '%s'", exp->u.dvar->name, impl->func->name);
+			return 0;
+		}
+		return 1;
+	case PSI_T_NSNAME:
+		if (!locate_num_exp_constant(exp, data->consts)) {
+			data->error(PSI_WARNING, "Unknown constant '%s' in numeric expression"
+					" of implementation '%s'", exp->u.numb, impl->func->name);
+			return 0;
+		}
+		return 1;
+	case PSI_T_NUMBER:
+		return 1;
+	default:
+		return 0;
+	}
+}
 static inline int validate_impl_let_stmts(PSI_Data *data, impl *impl) {
 	size_t i, j;
 	/* we can have multiple let stmts */
@@ -579,9 +615,10 @@ static inline int validate_impl_let_stmts(PSI_Data *data, impl *impl) {
 		int check = 0;
 
 		if (let->val && let->val->func && let->val->func->alloc) {
-			if (!validate_decl_type(data, let->val->func->alloc->type)) {
-				data->error(PSI_WARNING, "Cannot use '%s' as type for calloc in `let` statement",
-					let->val->func->alloc->type->name);
+			if (!validate_num_exp(data, impl, let->val->func->alloc->nmemb)) {
+				return 0;
+			}
+			if (!validate_num_exp(data, impl, let->val->func->alloc->size)) {
 				return 0;
 			}
 		}
@@ -1095,6 +1132,20 @@ static inline void dump_impl_set_value(int fd, set_value *set, unsigned level) {
 		dprintf(fd, ");\n");
 	}
 }
+static inline void dump_num_exp(int fd, num_exp *exp) {
+	switch (exp->t) {
+	case PSI_T_NUMBER:
+		dprintf(fd, "%s", exp->u.numb);
+		break;
+	case PSI_T_NAME:
+		dump_decl_var(fd, exp->u.dvar);
+		break;
+	case PSI_T_NSNAME:
+		dprintf(fd, "%s", exp->u.cnst->name);
+		break;
+	EMPTY_SWITCH_DEFAULT_CASE();
+	}
+}
 void PSI_ContextDump(PSI_Context *C, int fd)
 {
 	size_t i, j, k, l;
@@ -1198,8 +1249,9 @@ void PSI_ContextDump(PSI_Context *C, int fd)
 						if (let->val->func) {
 							dprintf(fd, "%s(", let->val->func->name);
 							if (let->val->func->alloc) {
-								dprintf(fd, "%zu, ", let->val->func->alloc->n);
-								dump_decl_type(fd, let->val->func->alloc->type);
+								dump_num_exp(fd, let->val->func->alloc->nmemb);
+								dprintf(fd, ", ");
+								dump_num_exp(fd, let->val->func->alloc->size);
 							} else {
 								dprintf(fd, "$%s", let->val->var->name);
 							}

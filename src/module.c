@@ -7,6 +7,8 @@
 #include "php_ini.h"
 #include "ext/standard/info.h"
 #include "zend_exceptions.h"
+#include "zend_constants.h"
+#include "zend_operators.h"
 
 #include "php_psi.h"
 #include "parser.h"
@@ -550,17 +552,10 @@ static inline ZEND_RESULT_CODE psi_parse_args(zend_execute_data *execute_data, i
 
 static inline void *psi_do_calloc(let_calloc *alloc)
 {
-	decl_type *type = real_decl_type(alloc->type);
-	size_t size;
-
-	if (type->type == PSI_T_STRUCT) {
-		/* psi_do_clean expects at least one NULL pointer after the struct */
-		size = type->strct->size + sizeof(void *);
-	} else {
-		size = psi_t_size(type->type);
-	}
-
-	return ecalloc(alloc->n, size);
+	zend_long n = psi_long_num_exp(alloc->nmemb), s = psi_long_num_exp(alloc->size);
+	void *mem = safe_emalloc(n, s, sizeof(void *));
+	memset(mem, 0, n * s + sizeof(void *));
+	return mem;
 }
 
 static inline void *psi_do_let(decl_arg *darg)
@@ -732,6 +727,134 @@ static inline void psi_do_clean(impl *impl)
 			darg->let->mem = NULL;
 		}
 	}
+}
+
+
+#define PSI_CALC_OP(var) res->var = PSI_CALC(v1->var, v2->var)
+#define PSI_CALC_OP2(vres, var1, var2) res->vres = PSI_CALC(v1->var1, v2->var2)
+
+int psi_calc_plus(unsigned char t1, impl_val *v1, unsigned char t2, impl_val *v2, impl_val *res)
+{
+#undef PSI_CALC
+#define PSI_CALC(var1, var2) (var1) + (var2)
+	if (t1 == t2) {
+		switch (t1) {
+		case PSI_T_FLOAT:	PSI_CALC_OP(fval);	break;
+		case PSI_T_DOUBLE:	PSI_CALC_OP(dval);	break;
+		case PSI_T_INT8:	PSI_CALC_OP(i8);	break;
+		case PSI_T_UINT8:	PSI_CALC_OP(u8);	break;
+		case PSI_T_INT16:	PSI_CALC_OP(i16);	break;
+		case PSI_T_UINT16:	PSI_CALC_OP(u16);	break;
+		case PSI_T_INT32:	PSI_CALC_OP(i32);	break;
+		case PSI_T_UINT32:	PSI_CALC_OP(u32);	break;
+		case PSI_T_INT64:	PSI_CALC_OP(i64);	break;
+		case PSI_T_UINT64:	PSI_CALC_OP(u64);	break;
+		EMPTY_SWITCH_DEFAULT_CASE();
+		}
+		return t1;
+	} else if (t1 == PSI_T_DOUBLE) {
+		switch (t2) {
+		case PSI_T_FLOAT:	PSI_CALC_OP2(dval, dval, fval);	break;
+		case PSI_T_INT8:	PSI_CALC_OP2(dval, dval, i8);	break;
+		case PSI_T_UINT8:	PSI_CALC_OP2(dval, dval, u8);	break;
+		case PSI_T_INT16:	PSI_CALC_OP2(dval, dval, i16);	break;
+		case PSI_T_UINT16:	PSI_CALC_OP2(dval, dval, u16);	break;
+		case PSI_T_INT32:	PSI_CALC_OP2(dval, dval, i32);	break;
+		case PSI_T_UINT32:	PSI_CALC_OP2(dval, dval, u32);	break;
+		case PSI_T_INT64:	PSI_CALC_OP2(dval, dval, i64);	break;
+		case PSI_T_UINT64:	PSI_CALC_OP2(dval, dval, u64);	break;
+		EMPTY_SWITCH_DEFAULT_CASE();
+		}
+		return t1;
+	} else if (t2 == PSI_T_DOUBLE) {
+		switch (t1) {
+		case PSI_T_FLOAT:	PSI_CALC_OP2(dval, fval, dval);	break;
+		case PSI_T_INT8:	PSI_CALC_OP2(dval, i8, dval);	break;
+		case PSI_T_UINT8:	PSI_CALC_OP2(dval, u8, dval);	break;
+		case PSI_T_INT16:	PSI_CALC_OP2(dval, i16, dval);	break;
+		case PSI_T_UINT16:	PSI_CALC_OP2(dval, u16, dval);	break;
+		case PSI_T_INT32:	PSI_CALC_OP2(dval, i32, dval);	break;
+		case PSI_T_UINT32:	PSI_CALC_OP2(dval, u32, dval);	break;
+		case PSI_T_INT64:	PSI_CALC_OP2(dval, i64, dval);	break;
+		case PSI_T_UINT64:	PSI_CALC_OP2(dval, u64, dval);	break;
+		EMPTY_SWITCH_DEFAULT_CASE();
+		}
+		return t2;
+	} else if (t1 == PSI_T_FLOAT) {
+		switch (t2) {
+		case PSI_T_DOUBLE:	PSI_CALC_OP2(dval, fval, dval);	return t2;
+		case PSI_T_INT8:	PSI_CALC_OP2(fval, fval, i8);	break;
+		case PSI_T_UINT8:	PSI_CALC_OP2(fval, fval, u8);	break;
+		case PSI_T_INT16:	PSI_CALC_OP2(fval, fval, i16);	break;
+		case PSI_T_UINT16:	PSI_CALC_OP2(fval, fval, u16);	break;
+		case PSI_T_INT32:	PSI_CALC_OP2(fval, fval, i32);	break;
+		case PSI_T_UINT32:	PSI_CALC_OP2(fval, fval, u32);	break;
+		case PSI_T_INT64:	PSI_CALC_OP2(fval, fval, i64);	break;
+		case PSI_T_UINT64:	PSI_CALC_OP2(fval, fval, u64);	break;
+		EMPTY_SWITCH_DEFAULT_CASE();
+		}
+		return t1;
+	} else if (t2 == PSI_T_FLOAT) {
+		switch (t1) {
+		case PSI_T_DOUBLE:	PSI_CALC_OP2(dval, dval, fval);	return t1;
+		case PSI_T_INT8:	PSI_CALC_OP2(fval, i8, fval);	break;
+		case PSI_T_UINT8:	PSI_CALC_OP2(fval, u8, fval);	break;
+		case PSI_T_INT16:	PSI_CALC_OP2(fval, i16, fval);	break;
+		case PSI_T_UINT16:	PSI_CALC_OP2(fval, u16, fval);	break;
+		case PSI_T_INT32:	PSI_CALC_OP2(fval, i32, fval);	break;
+		case PSI_T_UINT32:	PSI_CALC_OP2(fval, u32, fval);	break;
+		case PSI_T_INT64:	PSI_CALC_OP2(fval, i64, fval);	break;
+		case PSI_T_UINT64:	PSI_CALC_OP2(fval, u64, fval);	break;
+		EMPTY_SWITCH_DEFAULT_CASE();
+		}
+		return t2;
+	} else {
+		int64_t sval1 = v1->i64, sval2 = v2->i64;
+		uint64_t uval1 = v1->u64, uval2 = v2->u64;
+
+		switch (t1) {
+		case PSI_T_INT8:	sval1 >>= 8;
+		case PSI_T_INT16:	sval1 >>= 8;
+		case PSI_T_INT32:	sval1 >>= 8;
+		case PSI_T_INT64:
+			switch (t2) {
+			case PSI_T_INT8:	sval2 >>= 8;
+			case PSI_T_INT16:	sval2 >>= 8;
+			case PSI_T_INT32:	sval2 >>= 8;
+			case PSI_T_INT64:
+				res->i64 = PSI_CALC(sval1 , sval2);
+				return PSI_T_INT64;
+			case PSI_T_UINT8:	uval2 >>= 8;
+			case PSI_T_UINT16:	uval2 >>= 8;
+			case PSI_T_UINT32:	uval2 >>= 8;
+			case PSI_T_UINT64:
+				res->i64 = PSI_CALC(sval1, uval2);
+				return PSI_T_INT64;
+			}
+			break;
+		case PSI_T_UINT8:	uval1 >>= 8;
+		case PSI_T_UINT16:	uval1 >>= 8;
+		case PSI_T_UINT32:	uval1 >>= 8;
+		case PSI_T_UINT64:
+			switch (t2) {
+			case PSI_T_INT8:	sval2 >>= 8;
+			case PSI_T_INT16:	sval2 >>= 8;
+			case PSI_T_INT32:	sval2 >>= 8;
+			case PSI_T_INT64:
+				res->i64 = PSI_CALC(uval1, sval2);
+				return PSI_T_INT64;
+			case PSI_T_UINT8:	uval2 >>= 8;
+			case PSI_T_UINT16:	uval2 >>= 8;
+			case PSI_T_UINT32:	uval2 >>= 8;
+			case PSI_T_UINT64:
+				res->u64 = PSI_CALC(uval1, uval2);
+				return PSI_T_UINT64;
+			}
+			break;
+		}
+	}
+	ZEND_ASSERT(0);
+	return 0;
 }
 
 void psi_call(zend_execute_data *execute_data, zval *return_value, impl *impl)

@@ -1,7 +1,7 @@
 // extern int stat(char *path, struct stat *buf);
 function psi\stat(string $path, array &$buf = NULL) : int {
 	let path = strval($path);
-	let buf = calloc(1, struct stat);
+	let buf = calloc(1, psi\SIZEOF_STRUCT_STAT);
 	return to_int(stat);
 	set $buf = to_array(*buf,
 		to_int(st_dev),
