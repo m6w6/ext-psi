@@ -412,13 +412,23 @@ set_stmt(set) ::= SET impl_var(var) EQUALS set_value(val) EOS. {
 
 %type set_value {set_value*}
 %destructor set_value {free_set_value($$);}
-set_value(val) ::= set_func(func) LPAREN decl_vars(vars) RPAREN. {
-	val = init_set_value(func, vars);
+set_value(val) ::= set_func(func) LPAREN decl_var(var) RPAREN. {
+	val = init_set_value(func, init_decl_vars(var));
 }
-set_value(val) ::= set_func(func_) LPAREN decl_vars(vars_) COMMA set_vals(vals) RPAREN. {
+set_value(val) ::= set_func(func) LPAREN decl_var(var) COMMA num_exp(num_) RPAREN. {
+	val = init_set_value(func, init_decl_vars(var));
+	val->num = num_;
+}
+set_value(val) ::= set_func(func_) LPAREN decl_var(var) COMMA set_vals(vals) RPAREN. {
 	val = vals;
 	val->func = func_;
-	val->vars = vars_;
+	val->vars = init_decl_vars(var);
+}
+set_value(val) ::= set_func(func_) LPAREN decl_var(var) COMMA num_exp(num_) COMMA set_vals(vals) RPAREN. {
+	val = vals;
+	val->func = func_;
+	val->num = num_;
+	val->vars = init_decl_vars(var);
 }
 %type set_vals {set_value*}
 %destructor set_vals {free_set_value($$);}

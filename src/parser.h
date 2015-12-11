@@ -728,6 +728,7 @@ static inline void free_set_func(set_func *func) {
 typedef struct set_value {
 	set_func *func;
 	decl_vars *vars;
+	num_exp *num;
 	struct {
 		struct set_value *set;
 		impl_val *val;
@@ -1012,6 +1013,16 @@ static void free_impls(impls *impls) {
 	free(impls);
 }
 
+static inline impl_val *struct_member_ref(decl_arg *set_arg, impl_val *struct_ptr, impl_val **to_free) {
+	void *ptr = (char *) struct_ptr->ptr + set_arg->layout->pos;
+	impl_val *val = enref_impl_val(ptr, set_arg->var);
+
+	if (val != ptr) {
+		*to_free = val;
+	}
+
+	return val;
+}
 
 #define PSI_ERROR 16
 #define PSI_WARNING 32

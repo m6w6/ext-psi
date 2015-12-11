@@ -418,6 +418,62 @@ static inline decl_arg *locate_struct_member(decl_struct *s, decl_var *var) {
 
 	return NULL;
 }
+static inline constant *locate_num_exp_constant(num_exp *exp, constants *consts) {
+	size_t i;
+
+	for (i = 0; i < consts->count; ++i) {
+		constant *cnst = consts->list[i];
+
+		if (!strcmp(cnst->name, exp->u.numb)) {
+			free(exp->u.numb);
+			return exp->u.cnst = cnst;
+		}
+	}
+
+	return NULL;
+}
+static inline int validate_num_exp(PSI_Data *data, decl_args *dargs, num_exp *exp) {
+	if (exp->operand) {
+		switch (exp->operator) {
+		case PSI_T_PLUS:
+			exp->calculator = psi_calc_add;
+			break;
+		case PSI_T_MINUS:
+			exp->calculator = psi_calc_sub;
+			break;
+		case PSI_T_ASTERISK:
+			exp->calculator = psi_calc_mul;
+			break;
+		case PSI_T_SLASH:
+			exp->calculator = psi_calc_div;
+			break;
+		EMPTY_SWITCH_DEFAULT_CASE();
+		}
+		if (!validate_num_exp(data, dargs, exp->operand)) {
+			return 0;
+		}
+	}
+	switch (exp->t) {
+	case PSI_T_NAME:
+		if (!locate_decl_var_arg(exp->u.dvar, dargs)) {
+			data->error(PSI_WARNING, "Unknown variable '%s' in numeric expression",
+					exp->u.dvar->name);
+			return 0;
+		}
+		return 1;
+	case PSI_T_NSNAME:
+		if (!locate_num_exp_constant(exp, data->consts)) {
+			data->error(PSI_WARNING, "Unknown constant '%s' in numeric expression",
+					exp->u.numb);
+			return 0;
+		}
+		return 1;
+	case PSI_T_NUMBER:
+		return 1;
+	default:
+		return 0;
+	}
+}
 static inline int validate_set_value(PSI_Data *data, set_value *set, decl_arg *ref, decl_args *ref_list) {
 	size_t i;
 	decl_type *ref_type = real_decl_type(ref->type);
@@ -462,6 +518,11 @@ static inline int validate_set_value(PSI_Data *data, set_value *set, decl_arg *r
 		if (!is_to_array && !is_pointer_to_struct) {
 			data->error(E_WARNING, "Inner `set` statement casts only work with "
 					"to_array() casts on structs or pointers: %s(%s...", set->func->name, set->vars->vars[0]->name);
+			return 0;
+		}
+	}
+	if (set->num) {
+		if (!validate_num_exp(data, ref_list, set->num)) {
 			return 0;
 		}
 	}
@@ -548,42 +609,7 @@ static inline int validate_impl_ret_stmt(PSI_Data *data, impl *impl) {
 
 	return 1;
 }
-static inline constant *locate_num_exp_constant(num_exp *exp, constants *consts) {
-	size_t i;
 
-	for (i = 0; i < consts->count; ++i) {
-		constant *cnst = consts->list[i];
-
-		if (!strcmp(cnst->name, exp->u.numb)) {
-			free(exp->u.numb);
-			return exp->u.cnst = cnst;
-		}
-	}
-
-	return NULL;
-}
-static inline int validate_num_exp(PSI_Data *data, impl *impl, num_exp *exp) {
-	switch (exp->t) {
-	case PSI_T_NAME:
-		if (!locate_decl_var_arg(exp->u.dvar, impl->decl->args)) {
-			data->error(PSI_WARNING, "Unknown variable '%s' in numeric expression"
-					" of implementation '%s'", exp->u.dvar->name, impl->func->name);
-			return 0;
-		}
-		return 1;
-	case PSI_T_NSNAME:
-		if (!locate_num_exp_constant(exp, data->consts)) {
-			data->error(PSI_WARNING, "Unknown constant '%s' in numeric expression"
-					" of implementation '%s'", exp->u.numb, impl->func->name);
-			return 0;
-		}
-		return 1;
-	case PSI_T_NUMBER:
-		return 1;
-	default:
-		return 0;
-	}
-}
 static inline int validate_impl_let_stmts(PSI_Data *data, impl *impl) {
 	size_t i, j;
 	/* we can have multiple let stmts */
@@ -615,10 +641,10 @@ static inline int validate_impl_let_stmts(PSI_Data *data, impl *impl) {
 		int check = 0;
 
 		if (let->val && let->val->func && let->val->func->alloc) {
-			if (!validate_num_exp(data, impl, let->val->func->alloc->nmemb)) {
+			if (!validate_num_exp(data, impl->decl->args, let->val->func->alloc->nmemb)) {
 				return 0;
 			}
-			if (!validate_num_exp(data, impl, let->val->func->alloc->size)) {
+			if (!validate_num_exp(data, impl->decl->args, let->val->func->alloc->size)) {
 				return 0;
 			}
 		}
