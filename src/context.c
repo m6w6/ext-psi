@@ -439,6 +439,12 @@ static inline int validate_set_value(PSI_Data *data, set_value *set, decl_arg *r
 	case PSI_T_TO_ARRAY:
 		set->func->handler = psi_to_array;
 		break;
+	case PSI_T_TO_OBJECT:
+		set->func->handler = psi_to_object;
+		break;
+	case PSI_T_VOID:
+		set->func->handler = psi_to_void;
+		break;
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}
 
@@ -1029,6 +1035,7 @@ zend_function_entry *PSI_ContextCompile(PSI_Context *C)
 
 void PSI_ContextCall(PSI_Context *C, impl_val *ret_val, decl *decl)
 {
+	errno = 0;
 	C->ops->call(C, ret_val, decl);
 }
 

@@ -1,7 +1,7 @@
 AC_DEFUN(PSI_STRUCT_MEMBER, [
 	m4_define([member_name], PSI_VAR_NAME($2))
 	m4_define([member_type], PSI_VAR_TYPE($2))
-	AC_CHECK_SIZEOF(AS_TR_SH($1)[_]member_name, [], PSI_INCLUDES
+	PSI_CHECK_SIZEOF(AS_TR_SH($1)[_]member_name, PSI_INCLUDES
 		[#define ]AS_TR_SH($1)[_]member_name (($1 *)0)->member_name
 	)
 	if test -n "$AS_TR_SH([ac_cv_sizeof_$1][_]member_name)" \
@@ -13,7 +13,7 @@ AC_DEFUN(PSI_STRUCT_MEMBER, [
 ])
 
 AC_DEFUN(PSI_STRUCT, [
-	AC_CHECK_SIZEOF($1, [], PSI_INCLUDES)
+	PSI_CHECK_SIZEOF($1, PSI_INCLUDES)
 	psi_struct_name=m4_bregexp([$1], [^\(struct \)?\(\w+\)], [\2])
 	psi_struct_members="{PSI_T_STRUCT, \"struct\", \"$psi_struct_name\", 0, $AS_TR_SH([ac_cv_sizeof_]$1), 0, 0}"
 	ifelse([$2],,,[m4_map_args_sep([PSI_STRUCT_MEMBER($1, m4_normalize(], [))], [], $2)])

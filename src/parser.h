@@ -12,6 +12,7 @@
 
 #define BSIZE 256
 
+#define PSI_T_POINTER PSI_T_ASTERISK
 typedef int token_t;
 
 /* in php_psi.h */
@@ -377,6 +378,7 @@ static inline impl_val *enref_impl_val(void *ptr, decl_var *var) {
 	val_ptr->ptr = ptr;
 	return val;
 }
+
 typedef struct impl_type {
 	char *name;
 	token_t type;
@@ -427,6 +429,68 @@ static inline impl_def_val *init_impl_def_val(token_t t, const char *text) {
 static inline void free_impl_def_val(impl_def_val *def) {
 	free(def->text);
 	free(def);
+}
+
+typedef struct const_type {
+	token_t type;
+	char *name;
+} const_type;
+
+static inline const_type *init_const_type(token_t type, const char *name) {
+	const_type *ct = calloc(1, sizeof(*ct));
+	ct->type = type;
+	ct->name = strdup(name);
+	return ct;
+}
+
+static inline void free_const_type(const_type *type) {
+	free(type->name);
+	free(type);
+}
+
+typedef struct constant {
+	const_type *type;
+	char *name;
+	impl_def_val *val;
+} constant;
+
+static inline constant *init_constant(const_type *type, const char *name, impl_def_val *val) {
+	constant *c = calloc(1, sizeof(*c));
+	c->type = type;
+	c->name = strdup(name);
+	c->val = val;
+	return c;
+}
+
+static inline void free_constant(constant *constant) {
+	free_const_type(constant->type);
+	free(constant->name);
+	free_impl_def_val(constant->val);
+	free(constant);
+}
+
+typedef struct constants {
+	size_t count;
+	constant **list;
+} constants;
+
+static inline constants *add_constant(constants *constants, constant *constant) {
+	if (!constants) {
+		constants = calloc(1, sizeof(*constants));
+	}
+	constants->list = realloc(constants->list, ++constants->count * sizeof(*constants->list));
+	constants->list[constants->count-1] = constant;
+	return constants;
+}
+
+static inline void free_constants(constants *c) {
+	size_t i;
+
+	for (i = 0; i < c->count; ++i) {
+		free_constant(c->list[i]);
+	}
+	free(c->list);
+	free(c);
 }
 
 typedef struct impl_arg {
@@ -508,20 +572,68 @@ static inline void free_impl_func(impl_func *f) {
 	free(f);
 }
 
+typedef struct num_exp {
+	token_t t;
+	union {
+		char *numb;
+		char *cnst;
+		decl_var *dvar;
+	} u;
+	token_t operator;
+	struct num_exp *operand;
+} num_exp;
+
+static inline num_exp *init_num_exp(token_t t, void *num) {
+	num_exp *exp = calloc(1, sizeof(*exp));
+	switch (exp->t = t) {
+	case PSI_T_NUMBER:
+		exp->u.numb = strdup(num);
+		break;
+	case PSI_T_NSNAME:
+		exp->u.cnst = strdup(num);
+		break;
+	case PSI_T_NAME:
+		exp->u.dvar = num;
+		break;
+	EMPTY_SWITCH_DEFAULT_CASE();
+	}
+	return exp;
+}
+
+static inline void free_num_exp(num_exp *exp) {
+	switch (exp->t) {
+	case PSI_T_NUMBER:
+		free(exp->u.numb);
+		break;
+	case PSI_T_NSNAME:
+		free(exp->u.cnst);
+		break;
+	case PSI_T_NAME:
+		free_decl_var(exp->u.dvar);
+		break;
+	EMPTY_SWITCH_DEFAULT_CASE();
+	}
+	if (exp->operand) {
+		free_num_exp(exp->operand);
+	}
+	free(exp);
+}
+
 typedef struct let_calloc {
-	size_t n;
-	decl_type *type;
+	num_exp *nmemb;
+	num_exp *size;
 } let_calloc;
 
-static inline let_calloc *init_let_calloc(long n, decl_type *type) {
+static inline let_calloc *init_let_calloc(num_exp *nmemb, num_exp *size) {
 	let_calloc *alloc = calloc(1, sizeof(*alloc));
-	alloc->n = n;
-	alloc->type = type;
+	alloc->nmemb = nmemb;
+	alloc->size = size;
 	return alloc;
 }
 
 static inline void free_let_calloc(let_calloc *alloc) {
-	free_decl_type(alloc->type);
+	free_num_exp(alloc->nmemb);
+	free_num_exp(alloc->size);
 	free(alloc);
 }
 
@@ -902,67 +1014,6 @@ static void free_impls(impls *impls) {
 	free(impls);
 }
 
-typedef struct const_type {
-	token_t type;
-	char *name;
-} const_type;
-
-static inline const_type *init_const_type(token_t type, const char *name) {
-	const_type *ct = calloc(1, sizeof(*ct));
-	ct->type = type;
-	ct->name = strdup(name);
-	return ct;
-}
-
-static inline void free_const_type(const_type *type) {
-	free(type->name);
-	free(type);
-}
-
-typedef struct constant {
-	const_type *type;
-	char *name;
-	impl_def_val *val;
-} constant;
-
-static inline constant *init_constant(const_type *type, const char *name, impl_def_val *val) {
-	constant *c = calloc(1, sizeof(*c));
-	c->type = type;
-	c->name = strdup(name);
-	c->val = val;
-	return c;
-}
-
-static inline void free_constant(constant *constant) {
-	free_const_type(constant->type);
-	free(constant->name);
-	free_impl_def_val(constant->val);
-	free(constant);
-}
-
-typedef struct constants {
-	size_t count;
-	constant **list;
-} constants;
-
-static inline constants *add_constant(constants *constants, constant *constant) {
-	if (!constants) {
-		constants = calloc(1, sizeof(*constants));
-	}
-	constants->list = realloc(constants->list, ++constants->count * sizeof(*constants->list));
-	constants->list[constants->count-1] = constant;
-	return constants;
-}
-
-static inline void free_constants(constants *c) {
-	size_t i;
-
-	for (i = 0; i < c->count; ++i) {
-		free_constant(c->list[i]);
-	}
-	free(c->list);
-	free(c);
-}
 
 #define PSI_ERROR 16
 #define PSI_WARNING 32

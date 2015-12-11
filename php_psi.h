@@ -29,6 +29,19 @@ static inline int psi_check_env(const char *var) {
 	return (set && *set && '0' != *set);
 }
 
+typedef struct psi_object {
+	void *data;
+	size_t size;
+	zend_object std;
+} psi_object;
+
+static inline psi_object *PSI_OBJ(zval *zv, zend_object *zo) {
+	if (zv) {
+		zo = Z_OBJ_P(zv);
+	}
+	return (void *) (((char *) zo) - zo->handlers->offset);
+}
+
 size_t psi_t_alignment(token_t t);
 size_t psi_t_size(token_t t);
 size_t psi_t_align(token_t t, size_t s);
@@ -37,11 +50,13 @@ int psi_internal_type(impl_type *type);
 zend_internal_arg_info *psi_internal_arginfo(impl *impl);
 size_t psi_num_min_args(impl *impl);
 
+void psi_to_void(zval *return_value, set_value *set, impl_val *ret_val);
 void psi_to_bool(zval *return_value, set_value *set, impl_val *ret_val);
 void psi_to_int(zval *return_value, set_value *set, impl_val *ret_val);
 void psi_to_double(zval *return_value, set_value *set, impl_val *ret_val);
 void psi_to_string(zval *return_value, set_value *set, impl_val *ret_val);
 void psi_to_array(zval *return_value, set_value *set, impl_val *ret_val);
+void psi_to_object(zval *return_value, set_value *set, impl_val *ret_val);
 
 void psi_call(zend_execute_data *execute_data, zval *return_value, impl *impl);
 

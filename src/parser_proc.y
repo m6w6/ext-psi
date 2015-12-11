@@ -23,6 +23,7 @@
 }
 
 %nonassoc NAME.
+%left PLUS MINUS SLASH ASTERISK.
 %fallback NAME FREE SET LET RETURN LIB INT UNSIGNED.
 
 file ::= blocks.
@@ -273,7 +274,7 @@ impl_func(func) ::= FUNCTION NSNAME(NAME) impl_args(args) COLON impl_type(type).
 	func = init_impl_func(NAME->text, args, type, 0);
 	free(NAME);
 }
-impl_func(func) ::= FUNCTION REFERENCE NSNAME(NAME) impl_args(args) COLON impl_type(type). {
+impl_func(func) ::= FUNCTION AMPERSAND NSNAME(NAME) impl_args(args) COLON impl_type(type). {
 	func = init_impl_func(NAME->text, args, type, 1);
 	free(NAME);
 }
@@ -292,7 +293,7 @@ impl_var(var) ::= DOLLAR NAME(T). {
 	var = init_impl_var(T->text, 0);
 	free(T);
 }
-impl_var(var) ::= REFERENCE DOLLAR NAME(T). {
+impl_var(var) ::= AMPERSAND DOLLAR NAME(T). {
 	var = init_impl_var(T->text, 1);
 	free(T);
 }
@@ -358,17 +359,35 @@ let_stmt(let) ::= LET decl_var(var) EQUALS let_value(val) EOS. {
 
 %type let_value {let_value*}
 %destructor let_value {free_let_value($$);}
-let_value(val) ::= CALLOC(F) LPAREN NUMBER(N) COMMA decl_type(t) RPAREN. {
-	val = init_let_value(
-		init_let_func(F->type, F->text,
-			init_let_calloc(
-				atol(N->text), t
-			)
-		), NULL, 0
-	);
+let_value(val) ::= CALLOC(F) LPAREN let_calloc(alloc) RPAREN. {
+	val = init_let_value(init_let_func(F->type, F->text, alloc), NULL, 0);
 	free(F);
-	free(N);
 }
+
+%type let_calloc {let_calloc*}
+%destructor let_calloc {free_let_calloc($$);}
+let_calloc(alloc) ::= num_exp(nmemb) COMMA num_exp(size). {
+	alloc = init_let_calloc(nmemb, size);
+}
+
+%token_class num_exp_token NUMBER NSNAME.
+%token_class num_exp_op_token PLUS MINUS ASTERISK SLASH.
+%type num_exp {num_exp*}
+%destructor num_exp {free_num_exp($$);}
+num_exp(exp) ::= num_exp_token(tok). {
+	exp = init_num_exp(tok->type, tok->text);
+	free(tok);
+}
+num_exp(exp) ::= decl_var(var). {
+	exp = init_num_exp(PSI_T_NAME, var);
+}
+num_exp(exp) ::= num_exp(exp_) num_exp_op_token(operator_) num_exp(operand_). {
+	exp_->operator = operator_->type;
+	exp_->operand = operand_;
+	exp = exp_;
+	free(operator_);
+}
+
 let_value(val) ::= reference(r) let_func(func) LPAREN impl_var(var) RPAREN. {
 	val = init_let_value(func, var, r);
 }
@@ -376,7 +395,7 @@ let_value(val) ::= reference(r) NULL. {
 	val = init_let_value(NULL, NULL, r);
 }
 
-%token_class let_func_token ARRVAL STRLEN STRVAL FLOATVAL INTVAL BOOLVAL.
+%token_class let_func_token OBJVAL ARRVAL PATHVAL STRLEN STRVAL FLOATVAL INTVAL BOOLVAL.
 %type let_func {let_func*}
 %destructor let_func {free_let_func($$);}
 let_func(func) ::= let_func_token(T). {
@@ -409,7 +428,7 @@ set_vals(vals) ::= set_vals(vals_) COMMA set_value(val). {
 	vals = add_inner_set_value(vals_, val);
 }
 
-%token_class set_func_token TO_ARRAY TO_STRING TO_INT TO_FLOAT TO_BOOL VOID.
+%token_class set_func_token TO_OBJECT TO_ARRAY TO_STRING TO_INT TO_FLOAT TO_BOOL VOID.
 %type set_func {set_func*}
 %destructor set_func {free_set_func($$);}
 set_func(func) ::= set_func_token(T). {
@@ -444,7 +463,7 @@ free_call(call) ::= NAME(F) LPAREN decl_vars(vars) RPAREN. {
 	call = init_free_call(F->text, vars);
 }
 
-%token_class impl_type_token VOID MIXED BOOL INT FLOAT STRING ARRAY.
+%token_class impl_type_token VOID MIXED BOOL INT FLOAT STRING ARRAY OBJECT.
 %type impl_type {impl_type*}
 %destructor impl_type {free_impl_type($$);}
 impl_type(type_) ::= impl_type_token(T). {
@@ -454,12 +473,12 @@ impl_type(type_) ::= impl_type_token(T). {
 
 %type reference {char}
 reference(r) ::= . {r = 0;}
-reference(r) ::= REFERENCE. {r = 1;}
+reference(r) ::= AMPERSAND. {r = 1;}
 
 %type indirection {unsigned}
 indirection(i) ::= . {i = 0;}
 indirection(i) ::= pointers(p). {i = p;}
 
 %type pointers {unsigned}
-pointers(p) ::= POINTER. {p = 1;}
-pointers(p) ::= pointers(P) POINTER. {p = P+1;}
+pointers(p) ::= ASTERISK. {p = 1;}
+pointers(p) ::= pointers(P) ASTERISK. {p = P+1;}

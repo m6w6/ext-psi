@@ -6,6 +6,7 @@
 #include "php.h"
 #include "php_ini.h"
 #include "ext/standard/info.h"
+#include "zend_exceptions.h"
 
 #include "php_psi.h"
 #include "parser.h"
@@ -27,6 +28,9 @@ PHP_INI_BEGIN()
 	STD_PHP_INI_ENTRY("psi.engine", PSI_ENGINE, PHP_INI_SYSTEM, OnUpdateString, engine, zend_psi_globals, psi_globals)
 	STD_PHP_INI_ENTRY("psi.directory", "psi.d", PHP_INI_SYSTEM, OnUpdateString, directory, zend_psi_globals, psi_globals)
 PHP_INI_END();
+
+static zend_object_handlers psi_object_handlers;
+static zend_class_entry *psi_class_entry;
 
 void psi_error(int type, const char *msg, ...)
 {
@@ -151,6 +155,11 @@ size_t psi_num_min_args(impl *impl)
 	return n;
 }
 
+void psi_to_void(zval *return_value, set_value *set, impl_val *ret_val)
+{
+	RETVAL_NULL();
+}
+
 void psi_to_bool(zval *return_value, set_value *set, impl_val *ret_val)
 {
 	psi_to_int(return_value, set, ret_val);
@@ -263,6 +272,7 @@ void psi_to_string(zval *return_value, set_value *set, impl_val *ret_val)
 	token_t t = real_decl_type(var->arg->type)->type;
 
 	switch (t) {
+	case PSI_T_VOID:
 	case PSI_T_INT8:
 	case PSI_T_UINT8:
 		if (!var->arg->var->pointer_level) {
@@ -450,15 +460,36 @@ void psi_to_array(zval *return_value, set_value *set, impl_val *r_val)
 	} else {
 		ZEND_ASSERT(0);
 	}
+}
 
+void psi_to_object(zval *return_value, set_value *set, impl_val *r_val)
+{
+	decl_var *var = set->vars->vars[0];
+	impl_val *ret_val = deref_impl_val(r_val, var);
+	psi_object *obj;
+
+	if (ret_val->ptr) {
+		object_init_ex(return_value, psi_class_entry);
+		obj = PSI_OBJ(return_value, NULL);
+		obj->data = ret_val->ptr;
+	} else {
+		RETVAL_NULL();
+	}
 }
 
 static inline ZEND_RESULT_CODE psi_parse_args(zend_execute_data *execute_data, impl *impl)
 {
 	impl_arg *iarg;
+	zend_error_handling zeh;
+
+	zend_replace_error_handling(EH_THROW, zend_exception_get_default(), &zeh);
 
 	if (!impl->func->args->count) {
-		return zend_parse_parameters_none();
+		ZEND_RESULT_CODE rv;
+
+		rv = zend_parse_parameters_none();
+		zend_restore_error_handling(&zeh);
+		return rv;
 	}
 
 	ZEND_PARSE_PARAMETERS_START(psi_num_min_args(impl), impl->func->args->count)
@@ -497,7 +528,9 @@ static inline ZEND_RESULT_CODE psi_parse_args(zend_execute_data *execute_data, i
 			}
 		} else if (PSI_T_ARRAY == iarg->type->type) {
 			/* handled as _zv in let or set */
-			Z_PARAM_PROLOGUE(0);
+			Z_PARAM_ARRAY_EX(iarg->_zv, 1, 0);
+		} else if (PSI_T_OBJECT == iarg->type->type) {
+			Z_PARAM_OBJECT_EX(iarg->_zv, 1, 0);
 		} else {
 			error_code = ZPP_ERROR_FAILURE;
 			break;
@@ -506,8 +539,12 @@ static inline ZEND_RESULT_CODE psi_parse_args(zend_execute_data *execute_data, i
 		if (_i < _max_num_args) {
 			goto nextarg;
 		}
-	ZEND_PARSE_PARAMETERS_END_EX(return FAILURE);
+	ZEND_PARSE_PARAMETERS_END_EX(
+		zend_restore_error_handling(&zeh);
+		return FAILURE
+	);
 
+	zend_restore_error_handling(&zeh);
 	return SUCCESS;
 }
 
@@ -565,6 +602,7 @@ static inline void *psi_do_let(decl_arg *darg)
 				arg_val->lval = zval_get_long(iarg->_zv);
 			}
 			break;
+		case PSI_T_PATHVAL:
 		case PSI_T_STRVAL:
 			if (iarg->type->type == PSI_T_STRING) {
 				arg_val->ptr = estrdup(iarg->val.zend.str->val);
@@ -575,6 +613,12 @@ static inline void *psi_do_let(decl_arg *darg)
 				arg_val->ptr = estrdup(zs->val);
 				darg->let->mem = arg_val->ptr;
 				zend_string_release(zs);
+			}
+			if (PSI_T_PATHVAL == darg->let->val->func->type) {
+				if (SUCCESS != php_check_open_basedir(arg_val->ptr)) {
+					efree(arg_val->ptr);
+					return NULL;
+				}
 			}
 			break;
 		case PSI_T_STRLEN:
@@ -597,6 +641,18 @@ static inline void *psi_do_let(decl_arg *darg)
 					darg->let->mem = arg_val->ptr;
 					break;
 				}
+			}
+			break;
+		case PSI_T_OBJVAL:
+			if (iarg->type->type == PSI_T_OBJECT) {
+				psi_object *obj;
+
+				if (!instanceof_function(Z_OBJCE_P(iarg->_zv), psi_class_entry)) {
+					return NULL;
+				}
+
+				obj = PSI_OBJ(iarg->_zv, NULL);
+				arg_val->ptr = obj->data;
 			}
 			break;
 		EMPTY_SWITCH_DEFAULT_CASE();
@@ -691,7 +747,9 @@ void psi_call(zend_execute_data *execute_data, zval *return_value, impl *impl)
 		for (i = 0; i < impl->decl->args->count; ++i) {
 			decl_arg *darg = impl->decl->args->args[i];
 
-			impl->decl->call.args[i] = psi_do_let(darg);
+			if (!(impl->decl->call.args[i] = psi_do_let(darg))) {
+				goto cleanup;
+			}
 		}
 	}
 
@@ -713,15 +771,51 @@ void psi_call(zend_execute_data *execute_data, zval *return_value, impl *impl)
 
 		psi_do_free(fre);
 	}
-
 	psi_do_clean(impl);
+	return;
+
+cleanup:
+	memset(&ret_val, 0, sizeof(ret_val));
+	psi_do_return(return_value, impl->stmts->ret.list[0], &ret_val);
+	psi_do_clean(impl);
+}
+
+static void psi_object_free(zend_object *o)
+{
+	psi_object *obj = PSI_OBJ(NULL, o);
+
+	if (obj->data) {
+		// free(obj->data);
+		obj->data = NULL;
+	}
+	zend_object_std_dtor(o);
+}
+
+static zend_object *psi_object_init(zend_class_entry *ce)
+{
+	psi_object *o = ecalloc(1, sizeof(*o) + zend_object_properties_size(ce));
+
+	zend_object_std_init(&o->std, ce);
+	object_properties_init(&o->std, ce);
+	o->std.handlers = &psi_object_handlers;
+	return &o->std;
 }
 
 PHP_MINIT_FUNCTION(psi)
 {
 	PSI_ContextOps *ops = NULL;
+	zend_class_entry ce = {0};
 
 	REGISTER_INI_ENTRIES();
+
+	INIT_NS_CLASS_ENTRY(ce, "psi", "object", NULL);
+	psi_class_entry = zend_register_internal_class_ex(&ce, NULL);
+	psi_class_entry->create_object = psi_object_init;
+
+	memcpy(&psi_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
+	psi_object_handlers.offset = XtOffsetOf(psi_object, std);
+	psi_object_handlers.free_obj = psi_object_free;
+	psi_object_handlers.clone_obj = NULL;
 
 #ifdef HAVE_LIBJIT
 	if (!strcasecmp(PSI_G(engine), "jit")) {

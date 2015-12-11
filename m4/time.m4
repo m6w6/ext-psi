@@ -54,6 +54,6 @@ AC_DEFUN(PSI_CHECK_TIME, [
 	PSI_DECL(int timer_delete, [(timer_t t)])
 	PSI_DECL(int timer_getoverrun, [(timer_t t)])
 	PSI_DECL(int timer_gettime, [(timer_t t, struct itimerspec *ts)])
-	PSI_DECL(int timer_settime, [(timer_t t, struct itimerspec *value, struct itimerspec *ovalue)])
+	PSI_DECL(int timer_settime, [(timer_t t, int flags, struct itimerspec *value, struct itimerspec *ovalue)])
 	PSI_DECL(void tzset, [()])
 ])

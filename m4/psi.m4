@@ -32,6 +32,13 @@ AC_DEFUN([PSI_PKG_CONFIG], [
 	export PKG_CONFIG_PATH="$PHP_PSI_LIBFFI/lib/pkgconfig:$PHP_PSI_LIBJIT/lib/pkgconfig:$PKG_CONFIG_PATH"
 ])
 
+AC_DEFUN(PSI_CHECK_SIZEOF, [
+	AC_CHECK_SIZEOF($1, [], $2)
+	if test "$AS_TR_SH([ac_cv_sizeof_]$1)"; then
+		add_int_const "AS_TR_CPP([SIZEOF_]$1)" "$AS_TR_SH([ac_cv_sizeof_]$1)"
+	fi
+])
+
 AC_DEFUN(PSI_CHECK_OFFSETOF, [
 	_AC_CACHE_CHECK_INT(
 		[offset of $2 in $1],
