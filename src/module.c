@@ -454,7 +454,7 @@ void psi_to_array(zval *return_value, set_value *set, impl_val *r_val)
 		/* to_array(arr_var, num_expr, to_int(*arr_var))
 		 */
 		zval ele;
-		zend_long i, n = psi_long_num_exp(set->num, r_val);
+		zend_long i, n = psi_long_num_exp(set->num, set->outer.val);
 
 		for (i = 0; i < n; ++i) {
 			size_t size = psi_t_size(var->arg->var->pointer_level ? PSI_T_POINTER : t);
@@ -812,8 +812,19 @@ int psi_calc_num_exp(num_exp *exp, impl_val *ref, impl_val *res) {
 	return num_type;
 }
 
-#define PSI_CALC_OP(var) res->var = PSI_CALC(v1->var, v2->var)
-#define PSI_CALC_OP2(vres, var1, var2) res->vres = PSI_CALC(v1->var1, v2->var2)
+#define PRIfval "f"
+#define PRIdval "lf"
+
+#define PSI_CALC_OP(var) do { \
+	const char *fmt = "calc: %" PRI##var ", %" PRI##var ": %" PRI##var "\n"; \
+	res->var = PSI_CALC(v1->var, v2->var); \
+	/*fprintf(stderr, fmt, v1->var, v2->var, res->var);*/ \
+} while (0)
+#define PSI_CALC_OP2(vres, var1, var2) do { \
+	const char *fmt = "calc: %" PRI##var1 ", %" PRI##var2 ": %" PRI##vres "\n"; \
+	res->vres = PSI_CALC(v1->var1, v2->var2); \
+	/*fprintf(stderr, fmt, v1->var1, v2->var2, res->vres);*/ \
+} while(0)
 #define PSI_CALC_FN(op) int psi_calc_##op(int t1, impl_val *v1, int t2, impl_val *v2, impl_val *res) \
 { \
 	if (t1 == t2) { \
