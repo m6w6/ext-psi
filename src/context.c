@@ -150,10 +150,24 @@ static struct psi_predef_const {
 
 PSI_MACROS
 
+size_t psi_fread(void *ptr, size_t size, size_t nmemb, FILE *stream)
+{
+	size_t rv = fread(ptr, size, nmemb, stream);
+	return rv;
+}
+
+FILE *psi_fopen(const char *path, const char *mode)
+{
+	FILE *f = fopen(path, mode);
+	return f;
+}
+
 static struct psi_func_redir {
 	const char *name;
 	void (*func)(void);
 } psi_func_redirs[] = {
+		{"fopen", (void (*)(void)) psi_fopen},
+		{"fread", (void (*)(void)) psi_fread},
 	PSI_REDIRS
 	{0}
 };
@@ -477,11 +491,7 @@ static inline int validate_num_exp(PSI_Data *data, decl_args *dargs, decl_arg *f
 		return 0;
 	}
 }
-static inline int validate_set_value(PSI_Data *data, set_value *set, decl_arg *ref, decl_args *ref_list) {
-	size_t i;
-	decl_type *ref_type = real_decl_type(ref->type);
-	decl_var *set_var = set->vars->vars[0];
-
+static inline int validate_set_value_handler(set_value *set) {
 	switch (set->func->type) {
 	case PSI_T_TO_BOOL:
 		set->func->handler = psi_to_bool;
@@ -504,15 +514,45 @@ static inline int validate_set_value(PSI_Data *data, set_value *set, decl_arg *r
 	case PSI_T_VOID:
 		set->func->handler = psi_to_void;
 		break;
-	EMPTY_SWITCH_DEFAULT_CASE();
+	default:
+		return 0;
+	}
+	return 1;
+}
+static inline void decl_var_arg_v(decl_args *args, va_list argp) {
+	int argc;
+	decl_arg **argv;
+
+	memset(args, 0, sizeof(*args));
+
+	while ((argc = va_arg(argp, int))) {
+		argv = va_arg(argp, decl_arg **);
+		while (argc--) {
+			add_decl_arg(args, *argv++);
+		}
+	}
+}
+static inline int validate_set_value_ex(PSI_Data *data, set_value *set, decl_arg *ref, decl_args *ref_list) {
+	size_t i;
+	decl_type *ref_type;
+	decl_var *set_var = set->vars->vars[0];
+
+	if (!validate_set_value_handler(set)) {
+		data->error(PSI_WARNING, "Invalid cast '%s'", set->func->name);
+		return 0;
 	}
 
-	for (i = 1; i < set->vars->count; ++i) {
-		if (!locate_decl_var_arg(set->vars->vars[i], ref_list, ref)) {
+	for (i = 0; i < set->vars->count; ++i) {
+		if (!locate_decl_var_arg(set->vars->vars[i], ref_list, NULL)) {
+			data->error(PSI_WARNING, "Unknown variable '%s'", set->vars->vars[i]->name);
 			return 0;
 		}
 	}
-	set_var->arg = ref;
+
+	if (!ref) {
+		ref = set_var->arg;
+	}
+	ref_type = real_decl_type(ref->type);
 
 	if (set->count) {
 		int is_to_array = (set->func->type == PSI_T_TO_ARRAY);
@@ -538,7 +578,7 @@ static inline int validate_set_value(PSI_Data *data, set_value *set, decl_arg *r
 
 			set->inner[i]->outer.set = set;
 			if (sub_ref) {
-				if (!validate_set_value(data, set->inner[i], sub_ref, ref_type->strct->args)) {
+				if (!validate_set_value_ex(data, set->inner[i], sub_ref, ref_type->strct->args)) {
 					return 0;
 				}
 			}
@@ -554,7 +594,7 @@ static inline int validate_set_value(PSI_Data *data, set_value *set, decl_arg *r
 				data->error(E_WARNING, "Inner `set` statement casts on pointers must reference the same variable");
 				return 0;
 			}
-			if (!validate_set_value(data, set->inner[0], sub_ref, ref_list)) {
+			if (!validate_set_value_ex(data, set->inner[0], sub_ref, ref_list)) {
 				return 0;
 			}
 		}
@@ -564,6 +604,21 @@ static inline int validate_set_value(PSI_Data *data, set_value *set, decl_arg *r
 	}
 
 	return 1;
+}
+static inline int validate_set_value(PSI_Data *data, set_value *set, ...) {
+	va_list argp;
+	decl_args args = {0};
+	int check;
+
+	va_start(argp, set);
+	decl_var_arg_v(&args, argp);
+	va_end(argp);
+
+	check = validate_set_value_ex(data, set, NULL, &args);
+	if (args.args) {
+		free(args.args);
+	}
+	return check;
 }
 static inline decl *locate_impl_decl(decls *decls, return_stmt *ret) {
 	if (decls) {
@@ -604,7 +659,7 @@ static inline int validate_impl_ret_stmt(PSI_Data *data, impl *impl) {
 		return 0;
 	}
 
-	if (!validate_set_value(data, ret->set, ret->decl, impl->decl->args)) {
+	if (!validate_set_value(data, ret->set, 1, &ret->decl, impl->decl->args ? (int) impl->decl->args->count : 0, impl->decl->args ? impl->decl->args->args : NULL, 0)) {
 		return 0;
 	}
 
@@ -616,6 +671,17 @@ static inline int validate_impl_ret_stmt(PSI_Data *data, impl *impl) {
 static inline int validate_impl_let_stmts(PSI_Data *data, impl *impl) {
 	size_t i, j;
 	/* we can have multiple let stmts */
+	/* check that we have a decl arg for every let stmt */
+	for (i = 0; i < impl->stmts->let.count; ++i) {
+		let_stmt *let = impl->stmts->let.list[i];
+
+		if (!locate_decl_var_arg(let->var, impl->decl->args, impl->decl->func)) {
+			data->error(PSI_WARNING, "Unknown variable '%s' in `let` statement"
+					" of implementation '%s'", let->var->name, impl->func->name);
+			return 0;
+		}
+	}
+
 	/* check that we have a let stmt for every decl arg */
 	if (impl->decl->args) for (i = 0; i < impl->decl->args->count; ++i) {
 		decl_arg *darg = impl->decl->args->args[i];
@@ -705,7 +771,7 @@ static inline int validate_impl_set_stmts(PSI_Data *data, impl *impl) {
 				if (!strcmp(set_var->name, set_arg->var->name)) {
 					check = 1;
 					set_var->arg = set_arg;
-					if (!validate_set_value(data, set->val, set_arg, impl->decl->args)) {
+					if (!validate_set_value(data, set->val, 1, &set_arg, 1, &impl->decl->func, impl->decl->args->count, impl->decl->args->args, 0)) {
 						return 0;
 					}
 					break;
@@ -1101,7 +1167,6 @@ zend_function_entry *PSI_ContextCompile(PSI_Context *C)
 
 void PSI_ContextCall(PSI_Context *C, impl_val *ret_val, decl *decl)
 {
-	errno = 0;
 	C->ops->call(C, ret_val, decl);
 }
 
@@ -1131,6 +1196,35 @@ static inline void dump_decl_arg(int fd, decl_arg *a) {
 static inline void dump_level(int fd, unsigned level) {
 	dprintf(fd, "%.*s", level, "\t\t\t\t\t\t\t\t\t");
 }
+static inline void dump_num_exp(int fd, num_exp *exp) {
+	while (exp) {
+		switch (exp->t) {
+		case PSI_T_NUMBER:
+			dprintf(fd, "%s", exp->u.numb);
+			break;
+		case PSI_T_NSNAME:
+			dprintf(fd, "%s", exp->u.cnst->name);
+			break;
+		case PSI_T_NAME:
+			dump_decl_var(fd, exp->u.dvar);
+			break;
+		EMPTY_SWITCH_DEFAULT_CASE();
+		}
+		if (exp->operand) {
+			char op;
+
+			switch (exp->operator) {
+			case PSI_T_PLUS:	op = '+'; break;
+			case PSI_T_MINUS:	op = '-'; break;
+			case PSI_T_ASTERISK:op = '*'; break;
+			case PSI_T_SLASH:	op = '/'; break;
+			EMPTY_SWITCH_DEFAULT_CASE();
+			}
+			dprintf(fd, " %c ", op);
+		}
+		exp = exp->operand;
+	}
+}
 static inline void dump_impl_set_value(int fd, set_value *set, unsigned level) {
 	size_t i;
 
@@ -1147,6 +1241,10 @@ static inline void dump_impl_set_value(int fd, set_value *set, unsigned level) {
 		}
 		dump_decl_var(fd, svar);
 	}
+	if (set->num) {
+		dprintf(fd, ", ");
+		dump_num_exp(fd, set->num);
+	}
 	if (set->inner) {
 		dprintf(fd, ",\n");
 		for (i = 0; i < set->count; ++i) {
@@ -1159,20 +1257,6 @@ static inline void dump_impl_set_value(int fd, set_value *set, unsigned level) {
 		dprintf(fd, "),\n");
 	} else {
 		dprintf(fd, ");\n");
-	}
-}
-static inline void dump_num_exp(int fd, num_exp *exp) {
-	switch (exp->t) {
-	case PSI_T_NUMBER:
-		dprintf(fd, "%s", exp->u.numb);
-		break;
-	case PSI_T_NAME:
-		dump_decl_var(fd, exp->u.dvar);
-		break;
-	case PSI_T_NSNAME:
-		dprintf(fd, "%s", exp->u.cnst->name);
-		break;
-	EMPTY_SWITCH_DEFAULT_CASE();
 	}
 }
 void PSI_ContextDump(PSI_Context *C, int fd)

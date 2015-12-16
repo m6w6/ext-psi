@@ -1,4 +1,3 @@
-
 #ifndef PHP_PSI_H
 #define PHP_PSI_H
 
@@ -19,8 +18,8 @@ extern zend_module_entry psi_module_entry;
 #include "TSRM.h"
 #endif
 
-#include "context.h"
 #include "parser.h"
+#include "context.h"
 
 void psi_error(int type, const char *msg, ...);
 
@@ -78,6 +77,7 @@ static inline zend_long psi_long_num_exp(num_exp *exp, impl_val *ref) {
 	case PSI_T_DOUBLE:	return val.dval;
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}
+	return 0;
 }
 
 int psi_calc_add(int t1, impl_val *v1, int t2, impl_val *v2, impl_val *res);

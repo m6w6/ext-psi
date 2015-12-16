@@ -26,6 +26,30 @@ typedef struct PSI_Token {
 	char text[1];
 } PSI_Token;
 
+typedef union impl_val {
+	char cval;
+	int8_t i8;
+	uint8_t u8;
+	short sval;
+	int16_t i16;
+	uint16_t u16;
+	int ival;
+	int32_t i32;
+	uint32_t u32;
+	long lval;
+	int64_t i64;
+	uint64_t u64;
+	float fval;
+	double dval;
+	union {
+		zend_bool bval;
+		zend_long lval;
+		zend_string *str;
+	} zend;
+	void *ptr;
+	uint8_t _dbg[sizeof(void *)];
+} impl_val;
+
 typedef struct decl_type {
 	char *name;
 	token_t type;
@@ -136,6 +160,9 @@ typedef struct decl_arg {
 	decl_var *var;
 	decl_struct_layout *layout;
 	struct let_stmt *let;
+	impl_val val;
+	void *ptr;
+	void *mem;
 } decl_arg;
 
 static inline decl_arg *init_decl_arg(decl_type *type, decl_var *var) {
@@ -143,6 +170,7 @@ static inline decl_arg *init_decl_arg(decl_type *type, decl_var *var) {
 	arg->type = type;
 	arg->var = var;
 	var->arg = arg;
+	arg->ptr = &arg->val;
 	return arg;
 }
 
@@ -328,55 +356,6 @@ static inline void free_decl_structs(decl_structs *ss) {
 	}
 	free(ss->list);
 	free(ss);
-}
-
-typedef union impl_val {
-	char cval;
-	int8_t i8;
-	uint8_t u8;
-	short sval;
-	int16_t i16;
-	uint16_t u16;
-	int ival;
-	int32_t i32;
-	uint32_t u32;
-	long lval;
-	int64_t i64;
-	uint64_t u64;
-	float fval;
-	double dval;
-	union {
-		zend_bool bval;
-		zend_long lval;
-		zend_string *str;
-	} zend;
-	void *ptr;
-	uint8_t _dbg[sizeof(void *)];
-} impl_val;
-
-static inline impl_val *deref_impl_val(impl_val *ret_val, decl_var *var) {
-	unsigned i;
-
-	if (var->arg->var != var) for (i = 1; i < var->pointer_level; ++i) {
-		ret_val = *(void **) ret_val;
-	}
-	return ret_val;
-}
-
-static inline impl_val *enref_impl_val(void *ptr, decl_var *var) {
-	impl_val *val, *val_ptr;
-	unsigned i;
-
-	if (!var->pointer_level && real_decl_type(var->arg->type)->type != PSI_T_STRUCT) {
-		return ptr;
-	}
-	val = val_ptr = calloc(var->pointer_level + 1, sizeof(void *));
-	for (i = 1; i < var->pointer_level; ++i) {
-		val_ptr->ptr = (void **) val_ptr + 1;
-		val_ptr = val_ptr->ptr;
-	}
-	val_ptr->ptr = ptr;
-	return val;
 }
 
 typedef struct impl_type {
@@ -685,9 +664,7 @@ typedef struct let_stmt {
 	decl_var *var;
 	let_value *val;
 	impl_arg *arg;
-	impl_val out;
 	void *ptr;
-	void *mem;
 } let_stmt;
 
 static inline let_stmt *init_let_stmt(decl_var *var, let_value *val) {
@@ -1013,21 +990,6 @@ static void free_impls(impls *impls) {
 	free(impls);
 }
 
-static inline impl_val *struct_member_ref(decl_arg *set_arg, impl_val *struct_ptr, impl_val **to_free) {
-	void *ptr = (char *) struct_ptr->ptr + set_arg->layout->pos;
-	impl_val *val = enref_impl_val(ptr, set_arg->var);
-
-	if (val != ptr) {
-		*to_free = val;
-	}
-
-	return val;
-}
-
-#define PSI_ERROR 16
-#define PSI_WARNING 32
-typedef void (*psi_error_cb)(int type, const char *msg, ...);
-
 typedef struct decl_file {
 	char *ln;
 	char *fn;
@@ -1065,6 +1027,46 @@ static inline void add_decl_lib(decl_libs *libs, void *dlopened) {
 	libs->dl = realloc(libs->dl, ++libs->count * sizeof(*libs->dl));
 	libs->dl[libs->count-1] = dlopened;
 }
+
+static inline impl_val *deref_impl_val(impl_val *ret_val, decl_var *var) {
+	unsigned i;
+
+	if (var->arg->var != var) for (i = 1; i < var->pointer_level; ++i) {
+		ret_val = *(void **) ret_val;
+	}
+	return ret_val;
+}
+
+static inline impl_val *enref_impl_val(void *ptr, decl_var *var) {
+	impl_val *val, *val_ptr;
+	unsigned i;
+
+	if (!var->pointer_level && real_decl_type(var->arg->type)->type != PSI_T_STRUCT) {
+		return ptr;
+	}
+	val = val_ptr = calloc(var->pointer_level + 1, sizeof(void *));
+	for (i = 1; i < var->pointer_level; ++i) {
+		val_ptr->ptr = (void **) val_ptr + 1;
+		val_ptr = val_ptr->ptr;
+	}
+	val_ptr->ptr = ptr;
+	return val;
+}
+
+static inline impl_val *struct_member_ref(decl_arg *set_arg, impl_val *struct_ptr, impl_val **to_free) {
+	void *ptr = (char *) struct_ptr->ptr + set_arg->layout->pos;
+	impl_val *val = enref_impl_val(ptr, set_arg->var);
+
+	if (val != ptr) {
+		*to_free = val;
+	}
+
+	return val;
+}
+
+#define PSI_ERROR 16
+#define PSI_WARNING 32
+typedef void (*psi_error_cb)(int type, const char *msg, ...);
 
 #define PSI_DATA(D) ((PSI_Data *) (D))
 #define PSI_DATA_MEMBERS \
