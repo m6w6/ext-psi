@@ -397,7 +397,7 @@ static inline int validate_decl(PSI_Data *data, void *dl, decl *decl) {
 	}
 	return 1;
 }
-static inline decl_arg *locate_decl_var_arg(decl_var *var, decl_args *args) {
+static inline decl_arg *locate_decl_var_arg(decl_var *var, decl_args *args, decl_arg *func) {
 	size_t i;
 
 	for (i = 0; i < args->count; ++i) {
@@ -408,12 +408,15 @@ static inline decl_arg *locate_decl_var_arg(decl_var *var, decl_args *args) {
 			return var->arg = arg;
 		}
 	}
+	if (func && !strcmp(var->name, func->var->name)) {
+		return var->arg = func;
+	}
 
 	return NULL;
 }
 static inline decl_arg *locate_struct_member(decl_struct *s, decl_var *var) {
 	if (s->args) {
-		return locate_decl_var_arg(var, s->args);
+		return locate_decl_var_arg(var, s->args, NULL);
 	}
 
 	return NULL;
@@ -432,7 +435,7 @@ static inline constant *locate_num_exp_constant(num_exp *exp, constants *consts)
 
 	return NULL;
 }
-static inline int validate_num_exp(PSI_Data *data, decl_args *dargs, num_exp *exp) {
+static inline int validate_num_exp(PSI_Data *data, decl_args *dargs, decl_arg *func, num_exp *exp) {
 	if (exp->operand) {
 		switch (exp->operator) {
 		case PSI_T_PLUS:
@@ -449,13 +452,13 @@ static inline int validate_num_exp(PSI_Data *data, decl_args *dargs, num_exp *ex
 			break;
 		EMPTY_SWITCH_DEFAULT_CASE();
 		}
-		if (!validate_num_exp(data, dargs, exp->operand)) {
+		if (!validate_num_exp(data, dargs, func, exp->operand)) {
 			return 0;
 		}
 	}
 	switch (exp->t) {
 	case PSI_T_NAME:
-		if (!locate_decl_var_arg(exp->u.dvar, dargs)) {
+		if (!locate_decl_var_arg(exp->u.dvar, dargs, func)) {
 			data->error(PSI_WARNING, "Unknown variable '%s' in numeric expression",
 					exp->u.dvar->name);
 			return 0;
@@ -505,7 +508,7 @@ static inline int validate_set_value(PSI_Data *data, set_value *set, decl_arg *r
 	}
 
 	for (i = 1; i < set->vars->count; ++i) {
-		if (!locate_decl_var_arg(set->vars->vars[i], ref_list)) {
+		if (!locate_decl_var_arg(set->vars->vars[i], ref_list, ref)) {
 			return 0;
 		}
 	}
@@ -522,7 +525,7 @@ static inline int validate_set_value(PSI_Data *data, set_value *set, decl_arg *r
 		}
 	}
 	if (set->num) {
-		if (!validate_num_exp(data, ref_list, set->num)) {
+		if (!validate_num_exp(data, ref_list, ref, set->num)) {
 			return 0;
 		}
 	}
@@ -543,7 +546,7 @@ static inline int validate_set_value(PSI_Data *data, set_value *set, decl_arg *r
 	} else if (set->count == 1) {
 		/* to_array(ptr, to_string(*ptr)) */
 		decl_var *sub_var = set->inner[0]->vars->vars[0];
-		decl_arg *sub_ref = locate_decl_var_arg(sub_var, ref_list);
+		decl_arg *sub_ref = locate_decl_var_arg(sub_var, ref_list, ref);
 
 		set->inner[0]->outer.set = set;
 		if (sub_ref) {
@@ -641,10 +644,10 @@ static inline int validate_impl_let_stmts(PSI_Data *data, impl *impl) {
 		int check = 0;
 
 		if (let->val && let->val->func && let->val->func->alloc) {
-			if (!validate_num_exp(data, impl->decl->args, let->val->func->alloc->nmemb)) {
+			if (!validate_num_exp(data, impl->decl->args, impl->decl->func, let->val->func->alloc->nmemb)) {
 				return 0;
 			}
-			if (!validate_num_exp(data, impl->decl->args, let->val->func->alloc->size)) {
+			if (!validate_num_exp(data, impl->decl->args, impl->decl->func, let->val->func->alloc->size)) {
 				return 0;
 			}
 		}

@@ -66,15 +66,15 @@ static inline zend_long psi_long_num_exp(num_exp *exp, impl_val *ref) {
 	impl_val val = {0};
 
 	switch (psi_calc_num_exp(exp, ref, &val)) {
-	case PSI_T_UINT8:	val.u16 = val.u8;
-	case PSI_T_UINT16:	val.u32 = val.u16;
-	case PSI_T_UINT32:	val.u64 = val.u32;
-	case PSI_T_UINT64:	return val.u64;
-	case PSI_T_INT8:	val.i16 = val.i8;
-	case PSI_T_INT16:	val.i32 = val.i16;
-	case PSI_T_INT32:	val.i64 = val.i32;
+	case PSI_T_UINT8:	return val.u8;
+	case PSI_T_UINT16:	return val.u16;
+	case PSI_T_UINT32:	return val.u32;
+	case PSI_T_UINT64:	return val.u64; /* FIXME */
+	case PSI_T_INT8:	return val.i8;
+	case PSI_T_INT16:	return val.i16;
+	case PSI_T_INT32:	return val.i32;
 	case PSI_T_INT64:	return val.i64;
-	case PSI_T_FLOAT:	val.dval = val.fval;
+	case PSI_T_FLOAT:	return val.fval;
 	case PSI_T_DOUBLE:	return val.dval;
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}
