@@ -59,12 +59,12 @@ void psi_to_object(zval *return_value, set_value *set, impl_val *ret_val);
 
 void psi_call(zend_execute_data *execute_data, zval *return_value, impl *impl);
 
-int psi_calc_num_exp(num_exp *exp, impl_val *ref, impl_val *res);
+int psi_calc_num_exp(num_exp *exp, impl_val *strct, impl_val *res);
 
-static inline zend_long psi_long_num_exp(num_exp *exp, impl_val *ref) {
+static inline zend_long psi_long_num_exp(num_exp *exp, impl_val *strct) {
 	impl_val val = {0};
 
-	switch (psi_calc_num_exp(exp, ref, &val)) {
+	switch (psi_calc_num_exp(exp, strct, &val)) {
 	case PSI_T_UINT8:	return val.u8;
 	case PSI_T_UINT16:	return val.u16;
 	case PSI_T_UINT32:	return val.u32;

@@ -286,7 +286,7 @@ void psi_to_string(zval *return_value, set_value *set, impl_val *ret_val)
 			ret_val = deref_impl_val(ret_val, var);
 			if (ret_val && ret_val->ptr) {
 				if (set->num) {
-					RETVAL_STRINGL(ret_val->ptr, psi_long_num_exp(set->num, NULL));
+					RETVAL_STRINGL(ret_val->ptr, psi_long_num_exp(set->num, set->outer.val));
 				} else {
 					RETVAL_STRING(ret_val->ptr);
 				}
@@ -514,10 +514,10 @@ static inline ZEND_RESULT_CODE psi_parse_args(zend_execute_data *execute_data, i
 		if (i < EX_NUM_ARGS()) {
 			iarg->_zv = ++zarg;
 			ZVAL_DEREF(iarg->_zv);
-			if (iarg->var->reference) {
-				zval_dtor(iarg->_zv);
-				ZVAL_NULL(iarg->_zv);
-			}
+//			if (iarg->var->reference) {
+//				zval_dtor(iarg->_zv);
+//				ZVAL_NULL(iarg->_zv);
+//			}
 		}
 
 		if (iarg->def) {
@@ -698,6 +698,7 @@ static inline void *psi_do_let(let_stmt *let)
 
 static inline void psi_do_set(zval *return_value, set_value *set)
 {
+	zval_dtor(return_value);
 	set->func->handler(return_value, set, set->vars->vars[0]->arg->ptr);
 }
 
@@ -766,8 +767,8 @@ static inline void psi_do_clean(impl *impl)
 	}
 }
 
-static inline int psi_calc_num_exp_value(num_exp *exp, impl_val *ref, impl_val *res) {
-	impl_val *tmp = NULL;
+static inline int psi_calc_num_exp_value(num_exp *exp, impl_val *strct, impl_val *res) {
+	impl_val *ref, *tmp = NULL;
 
 	switch (exp->t) {
 	case PSI_T_NUMBER:
@@ -793,10 +794,10 @@ static inline int psi_calc_num_exp_value(num_exp *exp, impl_val *ref, impl_val *
 		break;
 
 	case PSI_T_NAME:
-		if (1) {
-			ref = exp->u.dvar->arg->ptr;
+		if (strct) {
+			ref = struct_member_ref(exp->u.dvar->arg, strct, &tmp);
 		} else {
-			ref = struct_member_ref(exp->u.dvar->arg, ref, &tmp);
+			ref = exp->u.dvar->arg->ptr;
 		}
 		switch (real_decl_type(exp->u.dvar->arg->type)->type) {
 		case PSI_T_INT8:
@@ -830,13 +831,13 @@ static inline int psi_calc_num_exp_value(num_exp *exp, impl_val *ref, impl_val *
 	return  0;
 }
 
-int psi_calc_num_exp(num_exp *exp, impl_val *ref, impl_val *res) {
+int psi_calc_num_exp(num_exp *exp, impl_val *strct, impl_val *res) {
 	impl_val num = {0};
-	int num_type = psi_calc_num_exp_value(exp, ref, &num);
+	int num_type = psi_calc_num_exp_value(exp, strct, &num);
 
 	if (exp->operand) {
 		impl_val tmp = {0};
-		int tmp_type = psi_calc_num_exp(exp->operand, ref, &tmp);
+		int tmp_type = psi_calc_num_exp(exp->operand, strct, &tmp);
 
 		return exp->calculator(num_type, &num, tmp_type, &tmp, res);
 	}

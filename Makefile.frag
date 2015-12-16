@@ -17,10 +17,10 @@ psi-clean-headers:
 	-rm -f $(PHP_PSI_HEADERS)
 
 lempar.c:
-	curl -sSo $@ "http://www.sqlite.org/src/raw/tool/lempar.c?name=3617143ddb9b176c3605defe6a9c798793280120"
+	curl -sSo $@ "http://www.sqlite.org/src/raw/tool/lempar.c?name=3ec1463a034b37d87d782be5f6b8b10a3b1ecbe7"
 
 lemon.c:
-	curl -sSo $@ "http://www.sqlite.org/src/raw/tool/lemon.c?name=039f813b520b9395740c52f9cbf36c90b5d8df03"
+	curl -sSo $@ "http://www.sqlite.org/src/raw/tool/lemon.c?name=799e73e19a33b8dd7767a7fa34618ed2a9c2397d"
 
 ./lemon: lemon.c | lempar.c
 	$(CC) -o $@ $<
