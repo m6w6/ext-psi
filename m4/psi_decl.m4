@@ -7,7 +7,7 @@ AC_DEFUN(PSI_FUNC_LIBC_MAIN, [
 	AC_CACHE_CHECK(for libc start main symbol, psi_cv_libc_main, [
 		psi_libc_main=
 		AC_TRY_LINK(PSI_INCLUDES, [(void)0;], [
-			psi_libc_main=`$NM -g conftest$ac_exeext | $AWK -F" *|@" '/^\s+U / {print$[]3; exit}'`
+			psi_libc_main=`$NM -g conftest$ac_exeext | $AWK -F" *|@" '/^@<:@@<:@:space:@:>@@:>@+U / {print$[]3; exit}'`
 		])
 		psi_cv_libc_main=$psi_libc_main
 	])
@@ -22,7 +22,7 @@ AC_DEFUN(PSI_FUNC, [
 		AC_TRY_LINK(PSI_INCLUDES, [
 			void (*fn)(void) = (void (*)(void)) $psi_symbol;
 		], [
-			psi_symbol_redirect=`$NM -g conftest$ac_exeext | $AWK -F" *|@" '/^\s+U '$psi_cv_libc_main'/ {next} /^\s+U / {print$[]3; exit}'`
+			psi_symbol_redirect=`$NM -g conftest$ac_exeext | $AWK -F" *|@" '/^@<:@@<:@:space:@:>@@:>@+U '$psi_cv_libc_main'/ {next} /^@<:@@<:@:space:@:>@@:>@+U / {print$[]3; exit}'`
 		])
 		psi_cv_fn_$1=$psi_symbol_redirect
 	])
