@@ -150,24 +150,24 @@ static struct psi_predef_const {
 
 PSI_MACROS
 
-size_t psi_fread(void *ptr, size_t size, size_t nmemb, FILE *stream)
-{
-	size_t rv = fread(ptr, size, nmemb, stream);
+int psi_glob(const char *pattern, int flags,
+               int (*errfunc) (const char *epath, int eerrno),
+               glob_t *pglob) {
+	size_t offs = flags & GLOB_DOOFFS ? pglob->gl_offs : 0;
+	int rv = glob(pattern, flags, errfunc, pglob);
+	if (pglob->gl_pathv) {
+		while (offs--) {
+			pglob->gl_pathv[offs] = NULL;
+		}
+	}
 	return rv;
-}
-
-FILE *psi_fopen(const char *path, const char *mode)
-{
-	FILE *f = fopen(path, mode);
-	return f;
 }
 
 static struct psi_func_redir {
 	const char *name;
 	void (*func)(void);
 } psi_func_redirs[] = {
-		{"fopen", (void (*)(void)) psi_fopen},
-		{"fread", (void (*)(void)) psi_fread},
+	{"glob", (void (*)(void)) psi_glob},
 	PSI_REDIRS
 	{0}
 };

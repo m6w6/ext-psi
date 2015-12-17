@@ -1,0 +1,5 @@
+// redirected macro
+extern int errno();
+function psi\errno() : int {
+	return to_int(errno);
+}

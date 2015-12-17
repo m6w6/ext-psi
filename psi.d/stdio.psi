@@ -1,0 +1,66 @@
+// extern FILE *fopen(char *path, char *mode);
+function psi\fopen(string $path, string $mode) : object {
+	let path = pathval($path);
+	let mode = strval($mode);
+	return to_object(*fopen);
+}
+
+// extern int fclose(FILE *stream);
+function psi\fclose(object $stream) : int {
+	let stream = objval($stream);
+	return to_int(fclose);
+}
+
+// extern size_t fread(void *buf, size_t len, size_t n, FILE *stream);
+function psi\fread(object $stream, string &$data = NULL, int $len = 1, int $n = 8192) : int {
+	let len = intval($len);
+	let n = intval($n);
+	let stream = objval($stream);
+	let buf = calloc(n, len);
+	return to_int(fread);
+	set $data = to_string(buf, fread * len);
+}
+
+// extern int feof(FILE *stream);
+function psi\feof(object $stream) : int {
+	let stream = objval($stream);
+	return to_int(feof);
+}
+
+// extern int fileno(FILE *stream);
+function psi\fileno(object $stream) : int {
+	let stream = objval($stream);
+	return to_int(fileno);
+}
+
+// extern int ferror(FILE *stream);
+function psi\ferror(object $stream) : int {
+	let stream = objval($stream);
+	return to_int(ferror);
+}
+
+// extern void clearerr(FILE *stream);
+function psi\clearerr(object $stream) : void {
+	let stream = objval($stream);
+	return void(clearerr);
+}
+
+// extern int fseek(FILE *stream, long offset, int whence);
+function psi\fseek(object $stream, int $offset, int $whence) : int {
+	let stream = objval($stream);
+	let offset = intval($offset);
+	let whence = intval($whence);
+	return to_int(fseek);
+}
+
+//extern long ftell(FILE *stream);
+function psi\ftell(object $stream) : int {
+	let stream = objval($stream);
+	return to_int(ftell);
+}
+
+// extern void rewind(FILE *stream);
+function psi\rewind(object $stream) : void {
+	let stream = objval($stream);
+	return void(rewind);
+}

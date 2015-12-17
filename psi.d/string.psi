@@ -1,0 +1,5 @@
+extern char *strerror(int errno);
+function psi\strerror(int $errno) : string {
+	let errno = intval($errno);
+	return to_string(strerror);
+}
