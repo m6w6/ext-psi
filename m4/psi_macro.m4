@@ -4,13 +4,24 @@ AC_DEFUN(PSI_MACRO, [
 		$3
 		macro_type="PSI_VAR_TYPE($1)"
 		macro_name="PSI_VAR_NAME($1)"
-		ifelse([$2], [], [
-			macro_decl="()"
-			macro_call=""
-		], [
-			macro_decl="$2"
-			macro_call="(m4_map_args_sep([PSI_VAR_NAME(], [)], [, ], m4_bregexp($2, [(\(.*\))], [\1])))"
-		])
+		m4_case([$2],
+			[(void)], [
+				macro_decl="(void)"
+				macro_call="()"
+			],
+			[()], [
+				macro_decl="()"
+				macro_call="()"
+			],
+			[], [
+				macro_decl="()"
+				macro_call=""
+			],
+			[
+				macro_decl="$2"
+				macro_call="(m4_map_args_sep([PSI_VAR_NAME(], [)], [, ], m4_bregexp($2, [(\(.*\))], [\1])))"
+			]
+		)
 		ifelse(PSI_VAR_TYPE($1), [void], [
 			macro_body="$macro_name$macro_call;"
 		], [
