@@ -23,7 +23,8 @@ AC_DEFUN(PSI_CHECK_SYS_STAT, [
 		struct timespec st_ctimespec,
 		struct timespec st_birthtimespec,
 		time_t st_birthtime,
-		int st_flags]
+		int st_flags,
+		int st_gen]
 	)
 
 	PSI_CONST(S_IFMT, int)
