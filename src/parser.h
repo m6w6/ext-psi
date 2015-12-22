@@ -639,6 +639,7 @@ static inline void free_let_func(let_func *func) {
 typedef struct let_value {
 	let_func *func;
 	impl_var *var;
+	num_exp *num;
 	unsigned is_reference:1;
 } let_value;
 

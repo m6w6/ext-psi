@@ -598,26 +598,25 @@ static inline void *psi_do_calloc(let_calloc *alloc)
 static inline void *psi_do_let(let_stmt *let)
 {
 	decl_arg *darg = let->var->arg;
-	impl_arg *iarg = darg->let->arg;
 	impl_val *arg_val = darg->ptr;
 
-	if (!iarg) {
-		/* let foo = calloc(1, long);
-		 * let foo = NULL;
-		 * let foo;
-		 */
-		if (darg->let->val->func && darg->let->val->func->type == PSI_T_CALLOC) {
-			arg_val->ptr = psi_do_calloc(darg->let->val->func->alloc);
-			darg->mem = arg_val->ptr;
-		} else if (darg->var->array_size) {
+	if (!let->val) {
+		if (darg->var->array_size) {
 			arg_val->ptr = ecalloc(darg->var->array_size, sizeof(*arg_val));
 			darg->mem = arg_val->ptr;
 		} else {
 			memset(arg_val, 0, sizeof(*arg_val));
 		}
+	} else if (let->val->num) {
+		arg_val->zend.lval = psi_long_num_exp(darg->let->val->num, NULL);
 	} else {
+		impl_arg *iarg = darg->let->arg;
 
-		switch (darg->let->val->func->type) {
+		switch (let->val->func->type) {
+		case PSI_T_CALLOC:
+			arg_val->ptr = psi_do_calloc(let->val->func->alloc);
+			darg->mem = arg_val->ptr;
+			break;
 		case PSI_T_BOOLVAL:
 			if (iarg->type->type == PSI_T_BOOL) {
 				arg_val->cval = iarg->val.zend.bval;
@@ -705,11 +704,6 @@ static inline void psi_do_set(zval *return_value, set_value *set)
 static inline void psi_do_return(zval *return_value, return_stmt *ret)
 {
 	ret->set->func->handler(return_value, ret->set, ret->set->vars->vars[0]->arg->ptr);
-}
-
-static inline void psi_do_return2(zval *return_value, return_stmt *ret, impl_val *ret_val)
-{
-	ret->set->func->handler(return_value, ret->set, ret_val);
 }
 
 static inline void psi_do_free(free_stmt *fre)

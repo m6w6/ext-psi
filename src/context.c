@@ -734,6 +734,11 @@ static inline int validate_impl_let_stmts(PSI_Data *data, impl *impl) {
 				return 0;
 			}
 		}
+		if (let->val && let->val->num) {
+			if (!validate_num_exp(data, impl->decl->args, impl->decl->func, let->val->num)) {
+				return 0;
+			}
+		}
 	}
 	return 1;
 }

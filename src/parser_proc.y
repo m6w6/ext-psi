@@ -349,28 +349,6 @@ impl_stmt(stmt) ::= free_stmt(free). {
 	stmt = init_impl_stmt(PSI_T_FREE, free);
 }
 
-%type let_stmt {let_stmt*}
-%destructor let_stmt {free_let_stmt($$);}
-let_stmt(let) ::= LET decl_var(var) EOS. {
-	let = init_let_stmt(var, NULL);
-}
-let_stmt(let) ::= LET decl_var(var) EQUALS let_value(val) EOS. {
-	let = init_let_stmt(var, val);
-}
-
-%type let_value {let_value*}
-%destructor let_value {free_let_value($$);}
-let_value(val) ::= CALLOC(F) LPAREN let_calloc(alloc) RPAREN. {
-	val = init_let_value(init_let_func(F->type, F->text, alloc), NULL, 0);
-	free(F);
-}
-
-%type let_calloc {let_calloc*}
-%destructor let_calloc {free_let_calloc($$);}
-let_calloc(alloc) ::= num_exp(nmemb) COMMA num_exp(size). {
-	alloc = init_let_calloc(nmemb, size);
-}
-
 %token_class num_exp_token NUMBER NSNAME.
 %token_class num_exp_op_token PLUS MINUS ASTERISK SLASH.
 %type num_exp {num_exp*}
@@ -389,6 +367,34 @@ num_exp(exp) ::= num_exp(exp_) num_exp_op_token(operator_) num_exp(operand_). {
 	free(operator_);
 }
 
+%type let_stmt {let_stmt*}
+%destructor let_stmt {free_let_stmt($$);}
+let_stmt(let) ::= LET decl_var(var) EOS. {
+	let = init_let_stmt(var, NULL);
+}
+let_stmt(let) ::= LET decl_var(var) EQUALS let_value(val) EOS. {
+	let = init_let_stmt(var, val);
+}
+let_stmt(let) ::= decl_arg(arg) EQUALS decl_var(var_) EOS. {
+	let = init_let_stmt(arg->var, NULL);
+}
+
+%type let_value {let_value*}
+%destructor let_value {free_let_value($$);}
+let_value(val) ::= reference(r) CALLOC(F) LPAREN let_calloc(alloc) RPAREN. {
+	val = init_let_value(init_let_func(F->type, F->text, alloc), NULL, r);
+	free(F);
+}
+%type let_calloc {let_calloc*}
+%destructor let_calloc {free_let_calloc($$);}
+let_calloc(alloc) ::= num_exp(nmemb) COMMA num_exp(size). {
+	alloc = init_let_calloc(nmemb, size);
+}
+
+let_value(val) ::= reference(r) num_exp(exp). {
+	val = init_let_value(NULL, NULL, r);
+	val->num = exp;
+}
 let_value(val) ::= reference(r) let_func(func) LPAREN impl_var(var) RPAREN. {
 	val = init_let_value(func, var, r);
 }
