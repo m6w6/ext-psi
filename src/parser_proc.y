@@ -241,6 +241,7 @@ decl_type(type_) ::= UNSIGNED NAME(T). {
 	memcpy(type_->name, "unsigned", sizeof("unsigned")-1);
 	type_->name[sizeof("unsigned")] = ' ';
 	type_->name[T->size + sizeof("unsigned")] = 0;
+	free(T);
 }
 /* we have to support plain int here because we have it in our lexer rules */
 decl_type(type_) ::= INT(T). {
@@ -271,12 +272,8 @@ impl(impl) ::= impl_func(func) LBRACE impl_stmts(stmts) RBRACE. {
 
 %type impl_func {impl_func*}
 %destructor impl_func {free_impl_func($$);}
-impl_func(func) ::= FUNCTION NSNAME(NAME) impl_args(args) COLON impl_type(type). {
-	func = init_impl_func(NAME->text, args, type, 0);
-	free(NAME);
-}
-impl_func(func) ::= FUNCTION AMPERSAND NSNAME(NAME) impl_args(args) COLON impl_type(type). {
-	func = init_impl_func(NAME->text, args, type, 1);
+impl_func(func) ::= FUNCTION reference(r) NSNAME(NAME) impl_args(args) COLON impl_type(type). {
+	func = init_impl_func(NAME->text, args, type, r);
 	free(NAME);
 }
 
@@ -290,12 +287,8 @@ impl_def_val(def) ::= impl_def_val_token(T). {
 
 %type impl_var {impl_var*}
 %destructor impl_var {free_impl_var($$);}
-impl_var(var) ::= DOLLAR NAME(T). {
-	var = init_impl_var(T->text, 0);
-	free(T);
-}
-impl_var(var) ::= AMPERSAND DOLLAR NAME(T). {
-	var = init_impl_var(T->text, 1);
+impl_var(var) ::= reference(r) DOLLAR NAME(T). {
+	var = init_impl_var(T->text, r);
 	free(T);
 }
 
@@ -371,10 +364,7 @@ num_exp(exp) ::= num_exp(exp_) num_exp_op_token(operator_) num_exp(operand_). {
 %destructor let_stmt {free_let_stmt($$);}
 let_stmt(let) ::= LET decl_var(var) EOS. {
 	let = init_let_stmt(var, init_let_val(PSI_LET_NULL, NULL));
-}/*
-let_stmt(let) ::= LET decl_var(var) EQUALS let_val(val) EOS. {
-	let = init_let_stmt(var, val);
-}*/
+}
 let_stmt(let) ::= LET decl_var(var) EQUALS reference(r) let_val(val) EOS. {
 	val->flags.one.is_reference = r ? 1 : 0;
 	let = init_let_stmt(var, val);
@@ -397,23 +387,7 @@ let_val(val) ::= CALLOC LPAREN let_calloc(alloc) RPAREN. {
 let_val(val) ::= let_func(func). {
 	val = init_let_val(PSI_LET_FUNC, func);
 }
-/*
-let_stmt(let) ::= LET decl_var(var) EQUALS reference(r) NULL EOS. {
-	let = init_let_stmt(var, init_let_val(PSI_LET_NULL, NULL, r?PSI_LET_REFERENCE:0));
-}
-let_stmt(let) ::= LET decl_var(var) EQUALS reference(r) num_exp(exp) EOS. {
-	let = init_let_stmt(var, init_let_val(PSI_LET_NUMEXP, exp, r?PSI_LET_REFERENCE:0));
-}
-let_stmt(let) ::= LET decl_var(var) EQUALS reference(r) CALLOC LPAREN let_calloc(alloc) RPAREN EOS. {
-	let = init_let_stmt(var, init_let_val(PSI_LET_CALLOC, alloc, r?PSI_LET_REFERENCE:0));
-}
-let_stmt(let) ::= LET decl_var(var) EQUALS reference(r) let_func(func) EOS. {
-	let = init_let_stmt(var, init_let_val(PSI_LET_FUNC, func, r?PSI_LET_REFERENCE:0));
-}
-let_stmt(let) ::= LET decl_var(var) EQUALS decl_var(val) EOS. {
-	let = init_let_stmt(var, init_let_val(PSI_LET_VAR, val, 0));
-}
-*/
+
 %type let_calloc {let_calloc*}
 %destructor let_calloc {free_let_calloc($$);}
 let_calloc(alloc) ::= num_exp(nmemb) COMMA num_exp(size). {
@@ -496,6 +470,7 @@ free_calls(calls) ::= free_calls(calls_) COMMA free_call(call). {
 %destructor free_call {free_free_call($$);}
 free_call(call) ::= NAME(F) LPAREN decl_vars(vars) RPAREN. {
 	call = init_free_call(F->text, vars);
+	free(F);
 }
 
 %token_class impl_type_token VOID MIXED BOOL INT FLOAT STRING ARRAY OBJECT.
