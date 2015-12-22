@@ -699,9 +699,13 @@ static inline int validate_impl_let_stmts(PSI_Data *data, impl *impl) {
 			/* e.g. let foo = *bar;  */
 			let->var->pointer_level = let->val->data.var->pointer_level;
 			let->var->arg = init_decl_arg(
-					init_decl_type(real_decl_type(let->val->data.var->arg->type)->type,
+					init_decl_type(
+							real_decl_type(let->val->data.var->arg->type)->type,
 							real_decl_type(let->val->data.var->arg->type)->name),
-							init_decl_var(let->var->name, let->var->pointer_level, let->var->array_size));
+					init_decl_var(
+							let->var->name,
+							let->var->pointer_level,
+							let->var->array_size));
 			break;
 		case PSI_LET_NUMEXP:
 			if (!validate_num_exp(data, impl->decl->args, impl->decl->func, let->val->data.num)) {

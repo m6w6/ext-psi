@@ -716,10 +716,13 @@ static inline let_stmt *init_let_stmt(decl_var *var, let_val *val) {
 }
 
 static inline void free_let_stmt(let_stmt *stmt) {
-	free_decl_var(stmt->var);
 	if (stmt->val) {
+		if (stmt->val->kind == PSI_LET_TMP && stmt->var->arg) {
+			free_decl_arg(stmt->var->arg);
+		}
 		free_let_val(stmt->val);
 	}
+	free_decl_var(stmt->var);
 	free(stmt);
 }
 
@@ -777,6 +780,9 @@ static inline void free_set_value(set_value *val) {
 		}
 		free(val->inner);
 	}
+	if (val->num) {
+		free_num_exp(val->num);
+	}
 	free(val);
 }
 
@@ -832,6 +838,7 @@ static inline free_call *init_free_call(const char *func, decl_vars *vars) {
 
 static inline void free_free_call(free_call *f) {
 	free(f->func);
+	free_decl_vars(f->vars);
 	free(f);
 }
 
