@@ -25,7 +25,7 @@
 %nonassoc NAME.
 %left PLUS MINUS.
 %left SLASH ASTERISK.
-%fallback NAME FREE SET LET RETURN LIB INT UNSIGNED.
+%fallback NAME TEMP FREE SET LET RETURN LIB INT UNSIGNED.
 
 file ::= blocks.
 
@@ -370,45 +370,63 @@ num_exp(exp) ::= num_exp(exp_) num_exp_op_token(operator_) num_exp(operand_). {
 %type let_stmt {let_stmt*}
 %destructor let_stmt {free_let_stmt($$);}
 let_stmt(let) ::= LET decl_var(var) EOS. {
-	let = init_let_stmt(var, NULL);
-}
-let_stmt(let) ::= LET decl_var(var) EQUALS let_value(val) EOS. {
+	let = init_let_stmt(var, init_let_val(PSI_LET_NULL, NULL));
+}/*
+let_stmt(let) ::= LET decl_var(var) EQUALS let_val(val) EOS. {
+	let = init_let_stmt(var, val);
+}*/
+let_stmt(let) ::= LET decl_var(var) EQUALS reference(r) let_val(val) EOS. {
+	val->flags.one.is_reference = r ? 1 : 0;
 	let = init_let_stmt(var, val);
 }
-let_stmt(let) ::= decl_arg(arg) EQUALS decl_var(var_) EOS. {
-	let = init_let_stmt(arg->var, NULL);
+let_stmt(let) ::= TEMP decl_var(var) EQUALS decl_var(val) EOS. {
+	let = init_let_stmt(var, init_let_val(PSI_LET_TMP, val));
 }
 
-%type let_value {let_value*}
-%destructor let_value {free_let_value($$);}
-let_value(val) ::= reference(r) CALLOC(F) LPAREN let_calloc(alloc) RPAREN. {
-	val = init_let_value(init_let_func(F->type, F->text, alloc), NULL, r);
-	free(F);
+%type let_val {let_val*}
+%destructor let_val {free_let_val($$);}
+let_val(val) ::= NULL. {
+	val = init_let_val(PSI_LET_NULL, NULL);
 }
+let_val(val) ::= num_exp(exp). {
+	val = init_let_val(PSI_LET_NUMEXP, exp);
+}
+let_val(val) ::= CALLOC LPAREN let_calloc(alloc) RPAREN. {
+	val = init_let_val(PSI_LET_CALLOC, alloc);
+}
+let_val(val) ::= let_func(func). {
+	val = init_let_val(PSI_LET_FUNC, func);
+}
+/*
+let_stmt(let) ::= LET decl_var(var) EQUALS reference(r) NULL EOS. {
+	let = init_let_stmt(var, init_let_val(PSI_LET_NULL, NULL, r?PSI_LET_REFERENCE:0));
+}
+let_stmt(let) ::= LET decl_var(var) EQUALS reference(r) num_exp(exp) EOS. {
+	let = init_let_stmt(var, init_let_val(PSI_LET_NUMEXP, exp, r?PSI_LET_REFERENCE:0));
+}
+let_stmt(let) ::= LET decl_var(var) EQUALS reference(r) CALLOC LPAREN let_calloc(alloc) RPAREN EOS. {
+	let = init_let_stmt(var, init_let_val(PSI_LET_CALLOC, alloc, r?PSI_LET_REFERENCE:0));
+}
+let_stmt(let) ::= LET decl_var(var) EQUALS reference(r) let_func(func) EOS. {
+	let = init_let_stmt(var, init_let_val(PSI_LET_FUNC, func, r?PSI_LET_REFERENCE:0));
+}
+let_stmt(let) ::= LET decl_var(var) EQUALS decl_var(val) EOS. {
+	let = init_let_stmt(var, init_let_val(PSI_LET_VAR, val, 0));
+}
+*/
 %type let_calloc {let_calloc*}
 %destructor let_calloc {free_let_calloc($$);}
 let_calloc(alloc) ::= num_exp(nmemb) COMMA num_exp(size). {
 	alloc = init_let_calloc(nmemb, size);
 }
-
-let_value(val) ::= reference(r) num_exp(exp). {
-	val = init_let_value(NULL, NULL, r);
-	val->num = exp;
-}
-let_value(val) ::= reference(r) let_func(func) LPAREN impl_var(var) RPAREN. {
-	val = init_let_value(func, var, r);
-}
-let_value(val) ::= reference(r) NULL. {
-	val = init_let_value(NULL, NULL, r);
-}
-
 %token_class let_func_token OBJVAL ARRVAL PATHVAL STRLEN STRVAL FLOATVAL INTVAL BOOLVAL.
 %type let_func {let_func*}
 %destructor let_func {free_let_func($$);}
-let_func(func) ::= let_func_token(T). {
-	func = init_let_func(T->type, T->text, NULL);
+let_func(func) ::= let_func_token(T) LPAREN impl_var(var) RPAREN. {
+	func = init_let_func(T->type, T->text, var);
 	free(T);
 }
+
 
 %type set_stmt {set_stmt*}
 %destructor set_stmt {free_set_stmt($$);}

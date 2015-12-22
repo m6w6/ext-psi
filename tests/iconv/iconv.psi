@@ -1,0 +1,25 @@
+extern void *iconv_open(char *tocode, char *fromcode);
+function psi\iconv_open(string $to, string $from) : object {
+	let tocode = strval($to);
+	let fromcode = strval($from);
+	return to_object(iconv_open);
+}
+
+extern size_t iconv (void *cd, char **inbuf, size_t *inbytesleft, char **outbuf, size_t *outbytesleft);
+function psi\iconv(object $iconv, string &$inbuf, string &$outbuf) : int {
+	let cd = objval($iconv);
+	let inbuf = &strval($inbuf);
+	let inbytesleft = &strlen($inbuf);
+	let outbytesleft = &8192;
+	let outbuf = &calloc(1, 8192);
+	temp result = *outbuf;
+	return to_int(iconv);
+	set $inbuf = to_string(*inbuf, *inbytesleft);
+	set $outbuf = to_string(result, 8192 - *outbytesleft);
+}
+
+extern int iconv_close(void *cd);
+function psi\iconv_close(object $iconv) : int {
+	let cd = objval($iconv);
+	return to_int(iconv_close);
+}

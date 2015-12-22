@@ -543,8 +543,9 @@ static inline int validate_set_value_ex(PSI_Data *data, set_value *set, decl_arg
 	}
 
 	for (i = 0; i < set->vars->count; ++i) {
-		if (!locate_decl_var_arg(set->vars->vars[i], ref_list, NULL)) {
-			data->error(PSI_WARNING, "Unknown variable '%s'", set->vars->vars[i]->name);
+		decl_var *svar = set->vars->vars[i];
+		if (!svar->arg && !locate_decl_var_arg(svar, ref_list, NULL)) {
+			data->error(PSI_WARNING, "Unknown variable '%s'", svar->name);
 			return 0;
 		}
 	}
@@ -671,14 +672,69 @@ static inline int validate_impl_ret_stmt(PSI_Data *data, impl *impl) {
 static inline int validate_impl_let_stmts(PSI_Data *data, impl *impl) {
 	size_t i, j;
 	/* we can have multiple let stmts */
+
 	/* check that we have a decl arg for every let stmt */
 	for (i = 0; i < impl->stmts->let.count; ++i) {
 		let_stmt *let = impl->stmts->let.list[i];
+		decl_var *let_var;
+		int check = 0;
 
-		if (!locate_decl_var_arg(let->var, impl->decl->args, impl->decl->func)) {
+		if (let->val && let->val->kind == PSI_LET_TMP) {
+			let_var = let->val->data.var;
+		} else {
+			let_var = let->var;
+		}
+
+		if (!locate_decl_var_arg(let_var, impl->decl->args, impl->decl->func)) {
 			data->error(PSI_WARNING, "Unknown variable '%s' in `let` statement"
-					" of implementation '%s'", let->var->name, impl->func->name);
+					" of implementation '%s'", let_var->name, impl->func->name);
 			return 0;
+		}
+
+		switch (let->val->kind) {
+		case PSI_LET_NULL:
+			break;
+		case PSI_LET_TMP:
+			/* e.g. let bar = &strval($bar); // decl_arg(char **bar) */
+			/* e.g. let foo = *bar;  */
+			let->var->pointer_level = let->val->data.var->pointer_level;
+			let->var->arg = init_decl_arg(
+					init_decl_type(real_decl_type(let->val->data.var->arg->type)->type,
+							real_decl_type(let->val->data.var->arg->type)->name),
+							init_decl_var(let->var->name, let->var->pointer_level, let->var->array_size));
+			break;
+		case PSI_LET_NUMEXP:
+			if (!validate_num_exp(data, impl->decl->args, impl->decl->func, let->val->data.num)) {
+				return 0;
+			}
+			break;
+		case PSI_LET_CALLOC:
+			if (!validate_num_exp(data, impl->decl->args, impl->decl->func, let->val->data.alloc->nmemb)) {
+				return 0;
+			}
+			if (!validate_num_exp(data, impl->decl->args, impl->decl->func, let->val->data.alloc->size)) {
+				return 0;
+			}
+			break;
+		case PSI_LET_FUNC:
+			if (impl->func->args) {
+				for (j = 0; j < impl->func->args->count; ++j) {
+					impl_arg *iarg = impl->func->args->args[j];
+
+					if (!strcmp(let->val->data.func->var->name, iarg->var->name)) {
+						let->val->data.func->arg = iarg;
+						check = 1;
+						break;
+					}
+				}
+			}
+			if (!check) {
+				data->error(PSI_WARNING, "Unknown value '$%s' of `let` statement"
+						" for variable '%s' of implementation '%s'",
+						let->val->data.func->var->name, let->var->name, impl->func->name);
+				return 0;
+			}
+			break;
 		}
 	}
 
@@ -704,42 +760,7 @@ static inline int validate_impl_let_stmts(PSI_Data *data, impl *impl) {
 			return 0;
 		}
 	}
-	/* check that the let_value references a known variable or NULL */
-	for (i = 0; i < impl->stmts->let.count; ++i) {
-		let_stmt *let = impl->stmts->let.list[i];
-		int check = 0;
 
-		if (let->val && let->val->func && let->val->func->alloc) {
-			if (!validate_num_exp(data, impl->decl->args, impl->decl->func, let->val->func->alloc->nmemb)) {
-				return 0;
-			}
-			if (!validate_num_exp(data, impl->decl->args, impl->decl->func, let->val->func->alloc->size)) {
-				return 0;
-			}
-		}
-		if (let->val && let->val->var) {
-			if (impl->func->args) for (j = 0; j < impl->func->args->count; ++j) {
-				impl_arg *iarg = impl->func->args->args[j];
-
-				if (!strcmp(let->val->var->name, iarg->var->name)) {
-					let->arg = iarg;
-					check = 1;
-					break;
-				}
-			}
-			if (!check) {
-				data->error(PSI_WARNING, "Unknown value '$%s' of `let` statement"
-						" for variable '%s' of implementation '%s'",
-						let->val->var->name, let->var->name, impl->func->name);
-				return 0;
-			}
-		}
-		if (let->val && let->val->num) {
-			if (!validate_num_exp(data, impl->decl->args, impl->decl->func, let->val->num)) {
-				return 0;
-			}
-		}
-	}
 	return 1;
 }
 static inline int validate_impl_set_stmts(PSI_Data *data, impl *impl) {
@@ -770,16 +791,35 @@ static inline int validate_impl_set_stmts(PSI_Data *data, impl *impl) {
 			decl_var *set_var = set->val->vars->vars[j];
 
 			check = 0;
-			if (impl->decl->args) for (k = 0; k < impl->decl->args->count; ++k) {
-				decl_arg *set_arg = impl->decl->args->args[k];
+			if (impl->decl->args) {
+				for (k = 0; k < impl->decl->args->count; ++k) {
+					decl_arg *set_arg = impl->decl->args->args[k];
 
-				if (!strcmp(set_var->name, set_arg->var->name)) {
-					check = 1;
-					set_var->arg = set_arg;
-					if (!validate_set_value(data, set->val, 1, &set_arg, 1, &impl->decl->func, impl->decl->args->count, impl->decl->args->args, 0)) {
-						return 0;
+					if (!strcmp(set_var->name, set_arg->var->name)) {
+						check = 1;
+						set_var->arg = set_arg;
+						if (!validate_set_value(data, set->val, 1, &set_arg, 1, &impl->decl->func, impl->decl->args->count, impl->decl->args->args, 0)) {
+							return 0;
+						}
+						break;
 					}
-					break;
+				}
+			}
+			if (!check) {
+				for (k = 0; k < impl->stmts->let.count; ++k) {
+					let_stmt *let = impl->stmts->let.list[k];
+
+					/* check temp vars */
+					if (let->val && let->val->kind == PSI_LET_TMP) {
+						if (!strcmp(set_var->name, let->var->name)) {
+							check = 1;
+							set_var->arg = let->var->arg;
+							if (!validate_set_value(data, set->val, 1, &set_var->arg, 1, &impl->decl->func, impl->decl->args->count, impl->decl->args->args, 0)) {
+								return 0;
+							}
+							break;
+						}
+					}
 				}
 			}
 
@@ -1363,20 +1403,29 @@ void PSI_ContextDump(PSI_Context *C, int fd)
 
 					dprintf(fd, "\tlet %s", let->var->name);
 					if (let->val) {
-						dprintf(fd, " = %s", let->val->is_reference ? "&" : "");
-						if (let->val->func) {
-							dprintf(fd, "%s(", let->val->func->name);
-							if (let->val->func->alloc) {
-								dump_num_exp(fd, let->val->func->alloc->nmemb);
-								dprintf(fd, ", ");
-								dump_num_exp(fd, let->val->func->alloc->size);
-							} else {
-								dprintf(fd, "$%s", let->val->var->name);
-							}
-							dprintf(fd, ");\n");
-						} else {
-							dprintf(fd, "NULL;\n");
+						dprintf(fd, " = %s", let->val->flags.one.is_reference ? "&" : "");
+						switch (let->val->kind) {
+						case PSI_LET_NULL:
+							dprintf(fd, "NULL");
+							break;
+						case PSI_LET_TMP:
+							dump_decl_var(fd, let->val->data.var);
+							break;
+						case PSI_LET_CALLOC:
+							dprintf(fd, "calloc(");
+							dump_num_exp(fd, let->val->data.alloc->nmemb);
+							dprintf(fd, ", ");
+							dump_num_exp(fd, let->val->data.alloc->size);
+							dprintf(fd, ")");
+							break;
+						case PSI_LET_FUNC:
+							dprintf(fd, "%s($%s)", let->val->data.func->name,
+									let->val->data.func->var->name);
+							break;
+
+						EMPTY_SWITCH_DEFAULT_CASE();
 						}
+						dprintf(fd, ";\n");
 					}
 				}
 				for (j = 0; j < impl->stmts->ret.count; ++j) {

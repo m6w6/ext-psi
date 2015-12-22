@@ -617,58 +617,98 @@ static inline void free_let_calloc(let_calloc *alloc) {
 typedef struct let_func {
 	token_t type;
 	char *name;
-	let_calloc *alloc;
+	impl_var *var;
+	impl_arg *arg;
 } let_func;
 
-static inline let_func *init_let_func(token_t type, const char *name, let_calloc *alloc) {
+static inline let_func *init_let_func(token_t type, const char *name, impl_var *var) {
 	let_func *func = calloc(1, sizeof(*func));
 	func->type = type;
 	func->name = strdup(name);
-	func->alloc = alloc;
+	func->var = var;
 	return func;
 }
 
 static inline void free_let_func(let_func *func) {
-	if (func->alloc) {
-		free_let_calloc(func->alloc);
-	}
+	free_impl_var(func->var);
 	free(func->name);
 	free(func);
 }
 
-typedef struct let_value {
-	let_func *func;
-	impl_var *var;
-	num_exp *num;
-	unsigned is_reference:1;
-} let_value;
+#define PSI_LET_REFERENCE 0x1;
+typedef struct let_val {
+	enum let_val_kind {
+		PSI_LET_NULL,
+		PSI_LET_NUMEXP,
+		PSI_LET_CALLOC,
+		PSI_LET_FUNC,
+		PSI_LET_TMP,
+	} kind;
+	union {
+		num_exp *num;
+		let_calloc *alloc;
+		let_func *func;
+		decl_var *var;
+	} data;
+	union {
+		struct {
+			unsigned is_reference:1;
+		} one;
+		unsigned all;
+	} flags;
+} let_val;
 
-static inline let_value *init_let_value(let_func *func, impl_var *var, int is_reference) {
-	let_value *val = calloc(1, sizeof(*val));
-	val->is_reference = is_reference;
-	val->func = func;
-	val->var = var;
-	return val;
+static inline let_val *init_let_val(enum let_val_kind kind, void *data) {
+	let_val *let = calloc(1, sizeof(*let));
+	switch (let->kind = kind) {
+	case PSI_LET_NULL:
+		break;
+	case PSI_LET_NUMEXP:
+		let->data.num = data;
+		break;
+	case PSI_LET_CALLOC:
+		let->data.alloc = data;
+		break;
+	case PSI_LET_FUNC:
+		let->data.func = data;
+		break;
+	case PSI_LET_TMP:
+		let->data.var = data;
+		break;
+	EMPTY_SWITCH_DEFAULT_CASE();
+	}
+	return let;
 }
 
-static inline void free_let_value(let_value *val) {
-	if (val->func) {
-		free_let_func(val->func);
+static inline void free_let_val(let_val *let) {
+	switch (let->kind) {
+	case PSI_LET_NULL:
+		break;
+	case PSI_LET_NUMEXP:
+		free_num_exp(let->data.num);
+		break;
+	case PSI_LET_CALLOC:
+		free_let_calloc(let->data.alloc);
+		break;
+	case PSI_LET_FUNC:
+		free_let_func(let->data.func);
+		break;
+	case PSI_LET_TMP:
+		free_decl_var(let->data.var);
+		break;
+	EMPTY_SWITCH_DEFAULT_CASE();
 	}
-	if (val->var) {
-		free_impl_var(val->var);
-	}
-	free(val);
+	free(let);
 }
 
 typedef struct let_stmt {
 	decl_var *var;
-	let_value *val;
-	impl_arg *arg;
+	let_val *val;
+
 	void *ptr;
 } let_stmt;
 
-static inline let_stmt *init_let_stmt(decl_var *var, let_value *val) {
+static inline let_stmt *init_let_stmt(decl_var *var, let_val *val) {
 	let_stmt *let = calloc(1, sizeof(*let));
 	let->var = var;
 	let->val = val;
@@ -678,7 +718,7 @@ static inline let_stmt *init_let_stmt(decl_var *var, let_value *val) {
 static inline void free_let_stmt(let_stmt *stmt) {
 	free_decl_var(stmt->var);
 	if (stmt->val) {
-		free_let_value(stmt->val);
+		free_let_val(stmt->val);
 	}
 	free(stmt);
 }
