@@ -11,8 +11,6 @@
 #include "zend_operators.h"
 
 #include "php_psi.h"
-#include "parser.h"
-#include "context.h"
 
 #if HAVE_LIBJIT
 # include "libjit.h"
@@ -124,12 +122,25 @@ zend_internal_arg_info *psi_internal_arginfo(impl *impl)
 	zend_internal_arg_info *aip;
 	zend_internal_function_info *fi;
 
-	aip = calloc(impl->func->args->count + 1, sizeof(*aip));
+	aip = calloc(impl->func->args->count + 1 + !!impl->func->args->vararg, sizeof(*aip));
 
 	fi = (zend_internal_function_info *) &aip[0];
+	fi->allow_null = 1;
 	fi->required_num_args = psi_num_min_args(impl);
 	fi->return_reference = impl->func->return_reference;
 	fi->type_hint = psi_internal_type(impl->func->return_type);
+
+	if (impl->func->args->vararg) {
+		impl_arg *vararg = impl->func->args->vararg;
+		zend_internal_arg_info *ai = &aip[impl->func->args->count];
+
+		ai->name = vararg->var->name;
+		ai->type_hint = psi_internal_type(vararg->type);
+		if (vararg->var->reference) {
+			ai->pass_by_reference = 1;
+		}
+		ai->is_variadic = 1;
+	}
 
 	for (i = 0; i < impl->func->args->count; ++i) {
 		impl_arg *iarg = impl->func->args->args[i];
@@ -479,7 +490,7 @@ static inline ZEND_RESULT_CODE psi_parse_args(zend_execute_data *execute_data, i
 		return rv;
 	}
 
-	ZEND_PARSE_PARAMETERS_START(psi_num_min_args(impl), impl->func->args->count)
+	ZEND_PARSE_PARAMETERS_START(psi_num_min_args(impl), impl->func->args->vararg ? -1 : impl->func->args->count)
 	nextarg:
 		iarg = impl->func->args->args[_i];
 		if (iarg->def) {
@@ -503,6 +514,20 @@ static inline ZEND_RESULT_CODE psi_parse_args(zend_execute_data *execute_data, i
 		} else {
 			error_code = ZPP_ERROR_FAILURE;
 			break;
+		}
+		if (impl->func->args->vararg) {
+			iarg = impl->func->args->vararg;
+
+			if (_i == impl->func->args->count) {
+				zval *ptr = iarg->_zv = calloc(_num_args - _i + 1, sizeof(zval));
+
+				_optional = 1;
+				while (_i < _num_args) {
+					Z_PARAM_PROLOGUE(0);
+					ZVAL_COPY_VALUE(ptr++, _arg);
+				}
+				break;
+			}
 		}
 		if (_i < _num_args) {
 			goto nextarg;

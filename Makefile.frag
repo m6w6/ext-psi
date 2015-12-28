@@ -26,7 +26,7 @@ lemon.c:
 	$(CC) -o $@ $<
 
 $(PHP_PSI_SRCDIR)/src/parser_proc.h: $(PHP_PSI_SRCDIR)/src/parser_proc.y
- 
+
 $(PHP_PSI_SRCDIR)/src/%.c: $(PHP_PSI_SRCDIR)/src/parser.h $(PHP_PSI_SRCDIR)/src/parser_proc.h
 	touch $@
 $(PHP_PSI_SRCDIR)/src/parser_proc.y: $(PHP_PSI_SRCDIR)/src/parser.h

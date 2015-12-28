@@ -105,8 +105,6 @@
 #include "php.h"
 #include "php_scandir.h"
 #include "php_psi.h"
-#include "context.h"
-#include "parser.h"
 
 #include "libjit.h"
 #include "libffi.h"
@@ -294,8 +292,10 @@ static inline int validate_constant(PSI_Data *data, constant *c) {
 
 static inline int validate_decl_arg(PSI_Data *data, decl_arg *arg) {
 	if (!validate_decl_type(data, arg->type)) {
-		data->error(PSI_WARNING, "Cannot use '%s'(%d) as type for '%s'",
-			arg->type->name, arg->type->type, arg->var->name);
+		data->error(PSI_WARNING, "Cannot use '%s'(%d) as type for decl var '%s'"
+				" in %s on line %zu at col %zu",
+			arg->type->name, arg->type->type, arg->var->name,
+			arg->type->token->file, arg->type->token->line, arg->type->token->col);
 		return 0;
 	}
 	return 1;
@@ -1371,11 +1371,16 @@ void PSI_ContextDump(PSI_Context *C, int fd)
 			dprintf(fd, "%s ", decl->abi->convention);
 			dump_decl_arg(fd, decl->func);
 			dprintf(fd, "(");
-			if (decl->args) for (j = 0; j < decl->args->count; ++j) {
-				if (j) {
-					dprintf(fd, ", ");
+			if (decl->args) {
+				for (j = 0; j < decl->args->count; ++j) {
+					if (j) {
+						dprintf(fd, ", ");
+					}
+					dump_decl_arg(fd, decl->args->args[j]);
 				}
-				dump_decl_arg(fd, decl->args->args[j]);
+				if (decl->args->varargs) {
+					dprintf(fd, ", ...");
+				}
 			}
 			dprintf(fd, ");\n");
 		}
@@ -1386,16 +1391,26 @@ void PSI_ContextDump(PSI_Context *C, int fd)
 			impl *impl = C->impls->list[i];
 
 			dprintf(fd, "function %s(", impl->func->name);
-			if (impl->func->args) for (j = 0; j < impl->func->args->count; ++j) {
-				impl_arg *iarg = impl->func->args->args[j];
+			if (impl->func->args) {
+				for (j = 0; j < impl->func->args->count; ++j) {
+					impl_arg *iarg = impl->func->args->args[j];
 
-				dprintf(fd, "%s%s %s$%s",
-						j ? ", " : "",
-						iarg->type->name,
-						iarg->var->reference ? "&" : "",
-						iarg->var->name);
-				if (iarg->def) {
-					dprintf(fd, " = %s", iarg->def->text);
+					dprintf(fd, "%s%s %s$%s",
+							j ? ", " : "",
+							iarg->type->name,
+							iarg->var->reference ? "&" : "",
+							iarg->var->name);
+					if (iarg->def) {
+						dprintf(fd, " = %s", iarg->def->text);
+					}
+				}
+				if (impl->func->args->vararg) {
+					impl_arg *vararg = impl->func->args->vararg;
+
+					dprintf(fd, ", %s %s...$%s",
+							vararg->type->name,
+							vararg->var->reference ? "&" : "",
+							vararg->var->name);
 				}
 			}
 			dprintf(fd, ") : %s%s {\n",

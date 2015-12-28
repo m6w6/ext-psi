@@ -64,3 +64,9 @@ function psi\rewind(object $stream) : void {
 	let stream = objval($stream);
 	return void(rewind);
 }
+
+extern int printf(const char *fmt, ...);
+function psi\printf(string $fmt, mixed ...$args) : int {
+	let fmt = strval($fmt);
+	return to_int(printf);
+}

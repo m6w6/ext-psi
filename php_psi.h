@@ -18,7 +18,6 @@ extern zend_module_entry psi_module_entry;
 #include "TSRM.h"
 #endif
 
-#include "parser.h"
 #include "context.h"
 
 void psi_error(int type, const char *msg, ...);

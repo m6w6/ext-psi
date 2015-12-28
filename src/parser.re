@@ -32,6 +32,7 @@ PSI_Parser *PSI_ParserInit(PSI_Parser *P, const char *filename, psi_error_cb err
 
 	P->psi.file.fn = strdup(filename);
 	P->fp = fp;
+	P->col = 1;
 	P->line = 1;
 	P->error = error;
 	P->flags = flags;
@@ -139,17 +140,100 @@ void PSI_ParserFree(PSI_Parser **P)
 # error BSIZE must be greater than YYMAXFILL
 #endif
 
+#define PSI_T(n) \
+(n) == PSI_T_NAME ? "NAME" : \
+(n) == PSI_T_PLUS ? "PLUS" : \
+(n) == PSI_T_MINUS ? "MINUS" : \
+(n) == PSI_T_SLASH ? "SLASH" : \
+(n) == PSI_T_ASTERISK ? "ASTERISK" : \
+(n) == PSI_T_TEMP ? "TEMP" : \
+(n) == PSI_T_FREE ? "FREE" : \
+(n) == PSI_T_SET ? "SET" : \
+(n) == PSI_T_LET ? "LET" : \
+(n) == PSI_T_RETURN ? "RETURN" : \
+(n) == PSI_T_LIB ? "LIB" : \
+(n) == PSI_T_INT ? "INT" : \
+(n) == PSI_T_UNSIGNED ? "UNSIGNED" : \
+(n) == PSI_T_EOF ? "EOF" : \
+(n) == PSI_T_QUOTED_STRING ? "QUOTED_STRING" : \
+(n) == PSI_T_EOS ? "EOS" : \
+(n) == PSI_T_STRUCT ? "STRUCT" : \
+(n) == PSI_T_LBRACE ? "LBRACE" : \
+(n) == PSI_T_RBRACE ? "RBRACE" : \
+(n) == PSI_T_COLON ? "COLON" : \
+(n) == PSI_T_LPAREN ? "LPAREN" : \
+(n) == PSI_T_NUMBER ? "NUMBER" : \
+(n) == PSI_T_RPAREN ? "RPAREN" : \
+(n) == PSI_T_BOOL ? "BOOL" : \
+(n) == PSI_T_FLOAT ? "FLOAT" : \
+(n) == PSI_T_STRING ? "STRING" : \
+(n) == PSI_T_CONST ? "CONST" : \
+(n) == PSI_T_NSNAME ? "NSNAME" : \
+(n) == PSI_T_EQUALS ? "EQUALS" : \
+(n) == PSI_T_TYPEDEF ? "TYPEDEF" : \
+(n) == PSI_T_VOID ? "VOID" : \
+(n) == PSI_T_LBRACKET ? "LBRACKET" : \
+(n) == PSI_T_RBRACKET ? "RBRACKET" : \
+(n) == PSI_T_COMMA ? "COMMA" : \
+(n) == PSI_T_ELLIPSIS ? "ELLIPSIS" : \
+(n) == PSI_T_DOUBLE ? "DOUBLE" : \
+(n) == PSI_T_INT8 ? "INT8" : \
+(n) == PSI_T_UINT8 ? "UINT8" : \
+(n) == PSI_T_INT16 ? "INT16" : \
+(n) == PSI_T_UINT16 ? "UINT16" : \
+(n) == PSI_T_INT32 ? "INT32" : \
+(n) == PSI_T_UINT32 ? "UINT32" : \
+(n) == PSI_T_INT64 ? "INT64" : \
+(n) == PSI_T_UINT64 ? "UINT64" : \
+(n) == PSI_T_FUNCTION ? "FUNCTION" : \
+(n) == PSI_T_NULL ? "NULL" : \
+(n) == PSI_T_TRUE ? "TRUE" : \
+(n) == PSI_T_FALSE ? "FALSE" : \
+(n) == PSI_T_DOLLAR ? "DOLLAR" : \
+(n) == PSI_T_CALLOC ? "CALLOC" : \
+(n) == PSI_T_OBJVAL ? "OBJVAL" : \
+(n) == PSI_T_ARRVAL ? "ARRVAL" : \
+(n) == PSI_T_PATHVAL ? "PATHVAL" : \
+(n) == PSI_T_STRLEN ? "STRLEN" : \
+(n) == PSI_T_STRVAL ? "STRVAL" : \
+(n) == PSI_T_FLOATVAL ? "FLOATVAL" : \
+(n) == PSI_T_INTVAL ? "INTVAL" : \
+(n) == PSI_T_BOOLVAL ? "BOOLVAL" : \
+(n) == PSI_T_TO_OBJECT ? "TO_OBJECT" : \
+(n) == PSI_T_TO_ARRAY ? "TO_ARRAY" : \
+(n) == PSI_T_TO_STRING ? "TO_STRING" : \
+(n) == PSI_T_TO_INT ? "TO_INT" : \
+(n) == PSI_T_TO_FLOAT ? "TO_FLOAT" : \
+(n) == PSI_T_TO_BOOL ? "TO_BOOL" : \
+(n) == PSI_T_MIXED ? "MIXED" : \
+(n) == PSI_T_ARRAY ? "ARRAY" : \
+(n) == PSI_T_OBJECT ? "OBJECT" : \
+(n) == PSI_T_AMPERSAND ? "AMPERSAND" : \
+<UNKNOWN>
+
 #define RETURN(t) do { \
 	P->num = t; \
 	if (P->flags & PSI_PARSER_DEBUG) { \
-		fprintf(stderr, "PSI> TOKEN: %d %.*s (EOF=%d)\n", P->num, (int) (P->cur-P->tok), P->tok, P->num == PSI_T_EOF); \
+		fprintf(stderr, "PSI> TOKEN: %d %.*s (EOF=%d %s:%zu:%zu)\n", \
+				P->num, (int) (P->cur-P->tok), P->tok, P->num == PSI_T_EOF, \
+				P->psi.file.fn, P->line, P->col); \
 	} \
 	return t; \
 } while(1)
 
+#define ADDCOLS \
+	P->col += P->cur - P->tok
+
+#define NEWLINE \
+	P->col = 1; \
+	++P->line; \
+	goto nextline
+
 token_t PSI_ParserScan(PSI_Parser *P)
 {
 	for (;;) {
+		ADDCOLS;
+	nextline:
 		P->tok = P->cur;
 		/*!re2c
 		re2c:indent:top = 2;
@@ -167,7 +251,7 @@ token_t PSI_ParserScan(PSI_Parser *P)
 		QUOTED_STRING = "\"" ([^\"])+ "\"";
 		NUMBER = [+-]? [0-9]* "."? [0-9]+ ([eE] [+-]? [0-9]+)?;
 
-		("#"|"//") .* "\n" { ++P->line; continue;}
+		("#"|"//") .* "\n" { NEWLINE; }
 		"(" {RETURN(PSI_T_LPAREN);}
 		")" {RETURN(PSI_T_RPAREN);}
 		";" {RETURN(PSI_T_EOS);}
@@ -184,7 +268,8 @@ token_t PSI_ParserScan(PSI_Parser *P)
 		"+" {RETURN(PSI_T_PLUS);}
 		"-" {RETURN(PSI_T_MINUS);}
 		"/" {RETURN(PSI_T_SLASH);}
-		[\r\n] { ++P->line; continue; }
+		"..." {RETURN(PSI_T_ELLIPSIS);}
+		[\r\n] { NEWLINE; }
 		[\t ]+ { continue; }
 		'TRUE' {RETURN(PSI_T_TRUE);}
 		'FALSE' {RETURN(PSI_T_FALSE);}

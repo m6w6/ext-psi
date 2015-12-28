@@ -103,25 +103,29 @@ decl_typedef(def) ::= TYPEDEF decl_type(type) NAME(ALIAS) EOS. {
 /* support opaque types */
 decl_typedef(def) ::= TYPEDEF VOID(V) NAME(ALIAS) EOS. {
 	def = init_decl_typedef(ALIAS->text, init_decl_type(V->type, V->text));
-	free(V);
+	def->type->token = V;
+	//free(V);
 	free(ALIAS);
 }
 decl_typedef(def) ::= TYPEDEF STRUCT(S) NAME(N) NAME(ALIAS) EOS. {
 	def = init_decl_typedef(ALIAS->text, init_decl_type(S->type, N->text));
+	def->type->token = N;
 	free(ALIAS);
 	free(S);
-	free(N);
+	//free(N);
 }
 decl_typedef(def) ::= TYPEDEF decl_struct(s) NAME(ALIAS) EOS. {
 	def = init_decl_typedef(ALIAS->text, init_decl_type(PSI_T_STRUCT, s->name));
+	def->type->token = ALIAS;
 	def->type->strct = s;
-	free(ALIAS);
+	//free(ALIAS);
 }
 
 %type decl {decl*}
 %destructor decl {free_decl($$);}
 decl(decl) ::= decl_abi(abi) decl_func(func) LPAREN decl_args(args) RPAREN EOS. {
 	decl = init_decl(abi, func, args);
+
 }
 
 %type decl_func {decl_arg*}
@@ -135,7 +139,8 @@ decl_func(func) ::= VOID(T) NAME(N). {
 		init_decl_type(T->type, T->text),
 		init_decl_var(N->text, 0, 0)
 	);
-	free(T);
+	func->type->token = T;
+	//free(T);
 	free(N);
 }
 
@@ -178,7 +183,8 @@ decl_arg(arg_) ::= VOID(T) pointers(p) NAME(N). {
 		init_decl_type(T->type, T->text),
 		init_decl_var(N->text, p, 0)
 	);
-	free(T);
+	arg_->type->token = T;
+	//free(T);
 	free(N);
 }
 decl_arg(arg_) ::= CONST VOID(T) pointers(p) NAME(N). {
@@ -186,7 +192,8 @@ decl_arg(arg_) ::= CONST VOID(T) pointers(p) NAME(N). {
 		init_decl_type(T->type, T->text),
 		init_decl_var(N->text, p, 0)
 	);
-	free(T);
+	arg_->type->token = T;
+	//free(T);
 	free(N);
 }
 
@@ -199,6 +206,10 @@ decl_args(args) ::= decl_arg(arg). {
 }
 decl_args(args) ::= decl_args(args_) COMMA decl_arg(arg). {
 	args = add_decl_arg(args_, arg);
+}
+decl_args(args) ::= decl_args(args_) COMMA ELLIPSIS. {
+	args = args_;
+	args->varargs = 1;
 }
 %type struct_args {decl_args*}
 %destructor struct_args {free_decl_args($$);}
@@ -231,28 +242,32 @@ struct_layout(layout) ::= COLON COLON LPAREN NUMBER(POS) COMMA NUMBER(SIZ) RPARE
 %destructor decl_type {free_decl_type($$);}
 decl_type(type_) ::= decl_type_token(T). {
 	type_ = init_decl_type(T->type, T->text);
-	free(T);
+	type_->token = T;
+	//free(T);
 }
 /* unsigned, urgh */
 decl_type(type_) ::= UNSIGNED NAME(T). {
 	type_ = init_decl_type(T->type, T->text);
+	type_->token = T;
 	type_->name = realloc(type_->name, T->size + sizeof("unsigned"));
 	memmove(type_->name + sizeof("unsigned"), type_->name, T->size);
 	memcpy(type_->name, "unsigned", sizeof("unsigned")-1);
 	type_->name[sizeof("unsigned")] = ' ';
 	type_->name[T->size + sizeof("unsigned")] = 0;
-	free(T);
+	//free(T);
 }
 /* we have to support plain int here because we have it in our lexer rules */
 decl_type(type_) ::= INT(T). {
 	type_ = init_decl_type(PSI_T_NAME, T->text);
-	free(T);
+	type_->token = T;
+	//free(T);
 }
 /* structs ! */
 decl_type(type_) ::= STRUCT(S) NAME(T). {
 	type_ = init_decl_type(S->type, T->text);
+	type_->token = T;
 	free(S);
-	free(T);
+	//free(T);
 }
 
 %type const_decl_type {decl_type*}
@@ -309,6 +324,17 @@ impl_args(args) ::= LPAREN RPAREN. {
 impl_args(args) ::= LPAREN impl_arg_list(args_) RPAREN. {
 	args = args_;
 }
+impl_args(args) ::= LPAREN impl_arg_list(args_) COMMA impl_vararg(va) RPAREN. {
+	args = args_;
+	args->vararg = va;
+}
+
+%type impl_vararg {impl_arg*}
+%destructor impl_vararg {free_impl_arg($$);}
+impl_vararg(va) ::= impl_type(type) reference(r) ELLIPSIS DOLLAR NAME(T). {
+	va = init_impl_arg(type, init_impl_var(T->text, r), NULL);
+}
+
 %type impl_arg_list {impl_args*}
 %destructor impl_arg_list {free_impl_args($$);}
 impl_arg_list(args) ::= impl_arg(arg). {

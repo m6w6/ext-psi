@@ -21,9 +21,9 @@ size_t psi_t_size(token_t);
 
 typedef struct PSI_Token {
 	token_t type;
-	unsigned line;
-	size_t size;
-	char text[1];
+	size_t size, line, col;
+	char *text, *file;
+	char buf[1];
 } PSI_Token;
 
 typedef union impl_val {
@@ -51,6 +51,7 @@ typedef union impl_val {
 } impl_val;
 
 typedef struct decl_type {
+	PSI_Token *token;
 	char *name;
 	token_t type;
 	struct decl_type *real;
@@ -217,6 +218,7 @@ static inline void free_decl_vars(decl_vars *vars) {
 typedef struct decl_args {
 	decl_arg **args;
 	size_t count;
+	unsigned varargs:1;
 } decl_args;
 
 static inline decl_args *init_decl_args(decl_arg *arg) {
@@ -500,6 +502,7 @@ static inline void free_impl_arg(impl_arg *arg) {
 typedef struct impl_args {
 	impl_arg **args;
 	size_t count;
+	impl_arg *vararg;
 } impl_args;
 
 static inline impl_args *init_impl_args(impl_arg *arg) {
@@ -1166,29 +1169,49 @@ typedef struct PSI_Parser {
 	unsigned flags;
 	unsigned errors;
 	void *proc;
-	size_t line;
+	size_t line, col;
 	token_t num;
 	char *cur, *tok, *lim, *eof, *ctx, *mrk, buf[BSIZE];
 } PSI_Parser;
 
 static inline PSI_Token *PSI_TokenAlloc(PSI_Parser *P) {
 	PSI_Token *T;
-	size_t token_len;
+	size_t token_len, fname_len;
+	token_t token_typ;
 
 	if (P->cur < P->tok) {
 		return NULL;
 	}
 
+	token_typ = P->num;
 	token_len = P->cur - P->tok;
+	fname_len = strlen(P->psi.file.fn);
 
-	T = calloc(1, sizeof(*T) + token_len);
-	T->type = P->num;
-	T->line = P->line;
+	T = calloc(1, sizeof(*T) + token_len + fname_len + 1);
+	T->type = token_typ;
 	T->size = token_len;
-	T->text[token_len] = 0;
+	T->line = P->line;
+	T->col = P->col;
+	T->file = &T->buf[0];
+	T->text = &T->buf[fname_len + 1];
+
+	memcpy(T->file, P->psi.file.fn, fname_len);
 	memcpy(T->text, P->tok, token_len);
 
 	return T;
+}
+
+static inline PSI_Token *PSI_TokenCopy(PSI_Token *src) {
+	size_t fname_len = strlen(src->file);
+	size_t strct_len = sizeof(*src) + src->size + fname_len + 1;
+	PSI_Token *ptr = malloc(strct_len);
+
+	memcpy(ptr, src, strct_len);
+
+	ptr->file = &ptr->buf[0];
+	ptr->text = &ptr->buf[fname_len + 1];
+
+	return ptr;
 }
 
 #define PSI_PARSER_DEBUG 0x1
@@ -1197,7 +1220,7 @@ PSI_Parser *PSI_ParserInit(PSI_Parser *P, const char *filename, psi_error_cb err
 void PSI_ParserSyntaxError(PSI_Parser *P, const char *fn, size_t ln, const char *msg, ...);
 size_t PSI_ParserFill(PSI_Parser *P, size_t n);
 token_t PSI_ParserScan(PSI_Parser *P);
-void PSI_ParserParse(PSI_Parser *P, PSI_Token *T);
+void PSI_ParserParse(PSI_Parser *P, PSI_Token *src);
 void PSI_ParserDtor(PSI_Parser *P);
 void PSI_ParserFree(PSI_Parser **P);
 
