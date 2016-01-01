@@ -127,6 +127,8 @@ static inline PSI_LibffiCall *PSI_LibffiCallAlloc(PSI_Context *C, decl *decl) {
 	call->params[c] = NULL;
 
 	decl->call.info = call;
+	decl->call.rval = decl->func->ptr;
+	decl->call.argc = c;
 	decl->call.args = (void **) &call->params[c+1];
 
 	rc = ffi_prep_cif(&call->signature, psi_ffi_abi(decl->abi->convention),
@@ -250,10 +252,10 @@ static zend_function_entry *psi_ffi_compile(PSI_Context *C)
 	return zfe;
 }
 
-static void psi_ffi_call(PSI_Context *C, impl_val *ret_val, decl *decl) {
-	PSI_LibffiCall *call = decl->call.info;
+static void psi_ffi_call(PSI_Context *C, decl_callinfo *decl_call) {
+	PSI_LibffiCall *call = decl_call->info;
 
-	ffi_call(&call->signature, FFI_FN(decl->call.sym), ret_val, decl->call.args);
+	ffi_call(&call->signature, FFI_FN(decl_call->sym), decl_call->rval, decl_call->args);
 }
 
 static PSI_ContextOps ops = {

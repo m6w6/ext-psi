@@ -1214,9 +1214,9 @@ zend_function_entry *PSI_ContextCompile(PSI_Context *C)
 }
 
 
-void PSI_ContextCall(PSI_Context *C, impl_val *ret_val, decl *decl)
+void PSI_ContextCall(PSI_Context *C, decl_callinfo *decl_call)
 {
-	C->ops->call(C, ret_val, decl);
+	C->ops->call(C, decl_call);
 }
 
 static inline void dump_decl_type(int fd, decl_type *t) {

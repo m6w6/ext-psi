@@ -703,7 +703,6 @@ static inline void psi_do_return(zval *return_value, return_stmt *ret)
 static inline void psi_do_free(free_stmt *fre)
 {
 	size_t i, j;
-	impl_val dummy;
 
 	for (i = 0; i < fre->calls->count; ++i) {
 		free_call *f = fre->calls->list[i];
@@ -716,7 +715,7 @@ static inline void psi_do_free(free_stmt *fre)
 		}
 
 		/* FIXME: check in validate_* that free functions return scalar */
-		PSI_ContextCall(&PSI_G(context), &dummy, f->decl);
+		PSI_ContextCall(&PSI_G(context), &f->decl->call);
 	}
 }
 
@@ -1007,7 +1006,7 @@ void psi_call(zend_execute_data *execute_data, zval *return_value, impl *impl)
 		impl->decl->call.args[i] = impl->decl->args->args[i]->let->ptr;
 	}
 
-	PSI_ContextCall(&PSI_G(context), var->arg->ptr, impl->decl);
+	PSI_ContextCall(&PSI_G(context), &impl->decl->call);
 	psi_do_return(return_value, ret);
 
 	for (i = 0; i < impl->stmts->set.count; ++i) {

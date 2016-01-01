@@ -87,6 +87,8 @@ static inline PSI_LibjitCall *PSI_LibjitCallAlloc(PSI_Context *C, decl *decl) {
 	call->params[c] = NULL;
 
 	decl->call.info = call;
+	decl->call.rval = decl->func->ptr;
+	decl->call.argc = c;
 	decl->call.args = (void **) &call->params[c+1];
 
 	call->signature = jit_type_create_signature(
@@ -208,11 +210,11 @@ static zend_function_entry *psi_jit_compile(PSI_Context *C)
 	return zfe;
 }
 
-static void psi_jit_call(PSI_Context *C, impl_val *ret_val, decl *decl) {
-	PSI_LibjitCall *call = decl->call.info;
+static void psi_jit_call(PSI_Context *C, decl_callinfo *decl_call) {
+	PSI_LibjitCall *call = decl_call->info;
 
-	jit_apply(call->signature, decl->call.sym, decl->call.args,
-			decl->args->count, ret_val);
+	jit_apply(call->signature, decl_call->sym, decl_call->args,
+			decl_call->argc, decl_call->rval);
 }
 
 static PSI_ContextOps ops = {

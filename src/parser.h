@@ -262,16 +262,20 @@ static inline void free_decl_abi(decl_abi *abi) {
 	free(abi);
 }
 
+typedef struct decl_callinfo {
+	void *sym;
+	void *info;
+	size_t argc;
+	void **args;
+	void *rval;
+} decl_callinfo;
+
 typedef struct decl {
 	decl_abi *abi;
 	decl_arg *func;
 	decl_args *args;
 	struct impl *impl;
-	struct {
-		void *sym;
-		void *info;
-		void **args;
-	} call;
+	decl_callinfo call;
 } decl;
 
 static inline decl* init_decl(decl_abi *abi, decl_arg *func, decl_args *args) {
