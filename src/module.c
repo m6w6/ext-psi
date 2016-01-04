@@ -476,7 +476,6 @@ void psi_to_object(zval *return_value, set_value *set, impl_val *r_val)
 static inline ZEND_RESULT_CODE psi_parse_args(zend_execute_data *execute_data, impl *impl)
 {
 	size_t i;
-	zval *zarg = ZEND_CALL_ARG(execute_data, 0);
 	impl_arg *iarg;
 	zend_error_handling zeh;
 
@@ -544,10 +543,9 @@ static inline ZEND_RESULT_CODE psi_parse_args(zend_execute_data *execute_data, i
 
 	/* set up defaults */
 	for (i = 0; i < impl->func->args->count; ++i) {
-		iarg = impl->func->args->args[i];
+		if (i >= EX_NUM_ARGS() && iarg->def) {
+			iarg = impl->func->args->args[i];
 
-		if (i < EX_NUM_ARGS()) {
-		} else if (iarg->def) {
 			switch (iarg->type->type) {
 			case PSI_T_BOOL:
 				iarg->val.zend.bval = iarg->def->type == PSI_T_TRUE ? 1 : 0;

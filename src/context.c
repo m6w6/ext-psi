@@ -161,26 +161,11 @@ int psi_glob(const char *pattern, int flags,
 	return rv;
 }
 
-int psi_printf(const char *fmt, ...) {
-	int rs;
-	char *a1;
-	va_list ap1, ap2;
-
-	va_start(ap1, fmt);
-	va_copy(ap2, ap1);
-	a1 = va_arg(ap2, char *);
-	rs = vprintf(fmt, ap1);
-	va_end(ap1);
-	va_end(ap2);
-	return rs;
-}
-
 static struct psi_func_redir {
 	const char *name;
 	void (*func)(void);
 } psi_func_redirs[] = {
 	{"glob", (void (*)(void)) psi_glob},
-	{"printf", (void (*)(void)) psi_printf},
 	PSI_REDIRS
 	{0}
 };

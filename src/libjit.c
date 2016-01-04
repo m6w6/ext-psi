@@ -45,6 +45,20 @@ static inline jit_type_t psi_jit_token_type(token_t t) {
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}
 }
+static inline jit_type_t psi_jit_impl_type(token_t impl_type) {
+	switch (impl_type) {
+	case PSI_T_BOOL:
+		return jit_type_sbyte;
+	case PSI_T_INT:
+		return jit_type_long;
+	case PSI_T_STRING:
+		return jit_type_void_ptr;
+	case PSI_T_FLOAT:
+	case PSI_T_DOUBLE:
+		return jit_type_sys_double;
+	EMPTY_SWITCH_DEFAULT_CASE();
+	}
+}
 static inline jit_type_t psi_jit_decl_type(decl_type *type) {
 	return psi_jit_token_type(real_decl_type(type)->type);
 }
@@ -68,7 +82,7 @@ typedef struct PSI_LibjitContext {
 typedef struct PSI_LibjitCall {
 	void *closure;
 	jit_type_t signature;
-	jit_type_t params[1]; /* [type1, type2, NULL, arg1, arg2] ... */
+	void *params[1]; /* [type1, type2, NULL, arg1, arg2] ... */
 } PSI_LibjitCall;
 
 typedef struct PSI_LibjitData {
@@ -94,7 +108,7 @@ static inline PSI_LibjitCall *PSI_LibjitCallAlloc(PSI_Context *C, decl *decl) {
 	call->signature = jit_type_create_signature(
 			psi_jit_abi(decl->abi->convention),
 			psi_jit_decl_arg_type(decl->func),
-			call->params, c, 1);
+			(jit_type_t *) call->params, c, 1);
 	return call;
 }
 
@@ -106,6 +120,7 @@ static inline void PSI_LibjitCallInitClosure(PSI_Context *C, PSI_LibjitCall *cal
 
 static inline void PSI_LibjitCallFree(PSI_LibjitCall *call) {
 	jit_type_free(call->signature);
+	free(call);
 }
 
 static inline PSI_LibjitContext *PSI_LibjitContextInit(PSI_LibjitContext *L) {
@@ -213,8 +228,34 @@ static zend_function_entry *psi_jit_compile(PSI_Context *C)
 static void psi_jit_call(PSI_Context *C, decl_callinfo *decl_call, impl_vararg *va) {
 	PSI_LibjitCall *call = decl_call->info;
 
-	jit_apply(call->signature, decl_call->sym, decl_call->args,
-			decl_call->argc, decl_call->rval);
+	if (va) {
+		jit_type_t signature;
+		size_t i, nfixedargs = decl_call->argc, ntotalargs = nfixedargs + va->args->count;
+		void **params = calloc(2 * ntotalargs + 2, sizeof(void *));
+
+		for (i = 0; i < nfixedargs; ++i) {
+			params[i] = call->params[i];
+			params[i + ntotalargs + 1] = call->params[i + nfixedargs + 1];
+		}
+		for (i = 0; i < va->args->count; ++i) {
+			params[nfixedargs + i] = psi_jit_impl_type(va->types[i]);
+			params[nfixedargs + i + ntotalargs + 1] = &va->values[i];
+		}
+
+		signature = jit_type_create_signature(
+				jit_type_get_abi(call->signature),
+				jit_type_get_return(call->signature),
+				(jit_type_t *) params, ntotalargs, 1);
+		ZEND_ASSERT(signature);
+
+		jit_apply(signature, decl_call->sym, &params[ntotalargs + 1],
+						nfixedargs, decl_call->rval);
+		jit_type_free(signature);
+		free(params);
+	} else {
+		jit_apply(call->signature, decl_call->sym, decl_call->args,
+				decl_call->argc, decl_call->rval);
+	}
 }
 
 static PSI_ContextOps ops = {
