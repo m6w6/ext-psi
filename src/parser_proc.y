@@ -333,6 +333,7 @@ impl_args(args) ::= LPAREN impl_arg_list(args_) COMMA impl_vararg(va) RPAREN. {
 %destructor impl_vararg {free_impl_arg($$);}
 impl_vararg(va) ::= impl_type(type) reference(r) ELLIPSIS DOLLAR NAME(T). {
 	va = init_impl_arg(type, init_impl_var(T->text, r), NULL);
+	free(T);
 }
 
 %type impl_arg_list {impl_args*}

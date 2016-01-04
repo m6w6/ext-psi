@@ -73,6 +73,9 @@ static inline decl_type *real_decl_type(decl_type *type) {
 }
 
 static inline void free_decl_type(decl_type *type) {
+	if (type->token) {
+		free(type->token);
+	}
 	free(type->name);
 	free(type);
 }
@@ -538,6 +541,9 @@ static inline void free_impl_args(impl_args *args) {
 
 	for (i = 0; i < args->count; ++i) {
 		free_impl_arg(args->args[i]);
+	}
+	if (args->vararg.name) {
+		free_impl_arg(args->vararg.name);
 	}
 	free(args->args);
 	free(args);
