@@ -283,10 +283,15 @@ static void psi_ffi_call(PSI_Context *C, decl_callinfo *decl_call, impl_vararg *
 			params[nfixedargs + i] = psi_ffi_impl_type(va->types[i]);
 			params[nfixedargs + i + ntotalargs + 1] = &va->values[i];
 		}
-
+#ifdef PSI_HAVE_FFI_PREP_CIF_VAR
 		rc = ffi_prep_cif_var(&signature, call->signature.abi,
 				nfixedargs, ntotalargs,
 				call->signature.rtype, (ffi_type **) params);
+#else
+		/* FIXME: test in config.m4; assume we can just call anyway */
+		rc = ffi_prep_cif(&signature, call->signature.abi, ntotalargs,
+				call->signature.rtype, (ffi_type **) params);
+#endif
 		ZEND_ASSERT(FFI_OK == rc);
 		ffi_call(&signature, FFI_FN(decl_call->sym), decl_call->rval, &params[ntotalargs + 1]);
 		free(params);

@@ -130,6 +130,10 @@ AC_DEFUN(PSI_CHECK_LIBFFI, [
 		], [
 		], -L$psi_cv_libffi_dir/$PHP_LIBDIR)
 	], -L$psi_cv_libffi_dir/$PHP_LIBDIR)
+	PHP_CHECK_LIBRARY(ffi, ffi_prep_cif_var, [
+		AC_DEFINE(PSI_HAVE_FFI_PREP_CIF_VAR, 1, [ ])
+	], [
+	], -L$psi_cv_libffi_dir/$PHP_LIBDIR)
 ])
 
 dnl PSI_COMPUTE_STR(variable, string or expression)
