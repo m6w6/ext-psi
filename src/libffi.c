@@ -93,6 +93,20 @@ static inline ffi_type *psi_ffi_token_type(token_t t) {
 		return &ffi_type_double;
 	}
 }
+static inline ffi_type *psi_ffi_impl_type(token_t impl_type) {
+	switch (impl_type) {
+	case PSI_T_BOOL:
+		return &ffi_type_sint8;
+	case PSI_T_INT:
+		return &ffi_type_sint64;
+	case PSI_T_STRING:
+		return &ffi_type_pointer;
+	case PSI_T_FLOAT:
+	case PSI_T_DOUBLE:
+		return &ffi_type_double;
+	EMPTY_SWITCH_DEFAULT_CASE();
+	}
+}
 static inline ffi_type *psi_ffi_decl_type(decl_type *type) {
 	return psi_ffi_token_type(real_decl_type(type)->type);
 }
@@ -252,10 +266,33 @@ static zend_function_entry *psi_ffi_compile(PSI_Context *C)
 	return zfe;
 }
 
-static void psi_ffi_call(PSI_Context *C, decl_callinfo *decl_call) {
+static void psi_ffi_call(PSI_Context *C, decl_callinfo *decl_call, impl_vararg *va) {
 	PSI_LibffiCall *call = decl_call->info;
 
-	ffi_call(&call->signature, FFI_FN(decl_call->sym), decl_call->rval, decl_call->args);
+	if (va) {
+		ffi_status rc;
+		ffi_cif signature;
+		size_t i, nfixedargs = decl_call->argc, ntotalargs = nfixedargs + va->args->count;
+		void **params = calloc(2 * ntotalargs + 2, sizeof(void *));
+
+		for (i = 0; i < nfixedargs; ++i) {
+			params[i] = call->params[i];
+			params[i + ntotalargs + 1] = call->params[i + nfixedargs + 1];
+		}
+		for (i = 0; i < va->args->count; ++i) {
+			params[nfixedargs + i] = psi_ffi_impl_type(va->types[i]);
+			params[nfixedargs + i + ntotalargs + 1] = &va->values[i];
+		}
+
+		rc = ffi_prep_cif_var(&signature, call->signature.abi,
+				nfixedargs, ntotalargs,
+				call->signature.rtype, (ffi_type **) params);
+		ZEND_ASSERT(FFI_OK == rc);
+		ffi_call(&signature, FFI_FN(decl_call->sym), decl_call->rval, &params[ntotalargs + 1]);
+		free(params);
+	} else {
+		ffi_call(&call->signature, FFI_FN(decl_call->sym), decl_call->rval, decl_call->args);
+	}
 }
 
 static PSI_ContextOps ops = {

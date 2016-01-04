@@ -532,6 +532,8 @@ static inline ZEND_RESULT_CODE psi_parse_args(zend_execute_data *execute_data, i
 			error_code = ZPP_ERROR_FAILURE;
 			break;
 		}
+		iarg->_zv = _arg;
+		ZVAL_DEREF(iarg->_zv);
 		if (_i < _num_args) {
 			goto nextarg;
 		}
@@ -545,8 +547,6 @@ static inline ZEND_RESULT_CODE psi_parse_args(zend_execute_data *execute_data, i
 		iarg = impl->func->args->args[i];
 
 		if (i < EX_NUM_ARGS()) {
-			iarg->_zv = ++zarg;
-			ZVAL_DEREF(iarg->_zv);
 		} else if (iarg->def) {
 			switch (iarg->type->type) {
 			case PSI_T_BOOL:
@@ -577,21 +577,6 @@ static inline void *psi_do_calloc(let_calloc *alloc)
 	void *mem = safe_emalloc(n, s, sizeof(void *));
 	memset(mem, 0, n * s + sizeof(void *));
 	return mem;
-}
-
-static inline token_t psi_let_fn(token_t impl_type) {
-	switch (impl_type) {
-	case PSI_T_BOOL:
-		return PSI_T_BOOLVAL;
-	case PSI_T_INT:
-		return PSI_T_INTVAL;
-	case PSI_T_FLOAT:
-	case PSI_T_DOUBLE:
-		return PSI_T_FLOATVAL;
-	case PSI_T_STRING:
-		return PSI_T_STRVAL;
-	}
-	return 0;
 }
 
 static inline ZEND_RESULT_CODE psi_let_val(token_t let_func, impl_arg *iarg, impl_val *arg_val, decl_struct *strct, void **to_free)
@@ -704,7 +689,7 @@ static inline void *psi_do_let(let_stmt *let)
 	case PSI_LET_FUNC:
 		iarg = let->val->data.func->arg;
 
-		if (SUCCESS != psi_let_val(let->val->data.func->type, iarg, real_decl_type(darg->type)->strct, darg->ptr, &darg->mem)) {
+		if (SUCCESS != psi_let_val(let->val->data.func->type, iarg, darg->ptr, real_decl_type(darg->type)->strct, &darg->mem)) {
 			return NULL;
 		}
 	}
@@ -742,7 +727,7 @@ static inline void psi_do_free(free_stmt *fre)
 		}
 
 		/* FIXME: check in validate_* that free functions return scalar */
-		PSI_ContextCall(&PSI_G(context), &f->decl->call);
+		PSI_ContextCall(&PSI_G(context), &f->decl->call, NULL);
 	}
 }
 
@@ -778,6 +763,29 @@ static inline void psi_do_clean(impl *impl)
 			efree(darg->mem);
 			darg->mem = NULL;
 		}
+	}
+
+	if (impl->func->args->vararg.args) {
+		free_impl_args(impl->func->args->vararg.args);
+		impl->func->args->vararg.args = NULL;
+	}
+	if (impl->func->args->vararg.types) {
+		efree(impl->func->args->vararg.types);
+		impl->func->args->vararg.types = NULL;
+	}
+	if (impl->func->args->vararg.values) {
+		efree(impl->func->args->vararg.values);
+		impl->func->args->vararg.values = NULL;
+	}
+	if (impl->func->args->vararg.free_list) {
+		void **list = impl->func->args->vararg.free_list;
+
+		while (*list) {
+			efree(*list++);
+		}
+
+		efree(impl->func->args->vararg.free_list);
+		impl->func->args->vararg.free_list = NULL;
 	}
 }
 
@@ -1015,33 +1023,62 @@ static inline void psi_do_args(impl *impl) {
 	}
 }
 
-static inline void psi_do_varargs(impl *impl, void ***free_list) {
+static inline impl_vararg *psi_do_varargs(impl *impl) {
 	size_t i, j;
 	impl_vararg *va = &impl->func->args->vararg;
 	size_t vacount = va->args->count;
-	void **tmpvals = calloc(vacount, sizeof(*tmpvals));
-	token_t type = psi_let_fn(va->name->type->type);
 
-	va->types = calloc(vacount, sizeof(*va->types));
-	va->values = calloc(vacount, sizeof(*va->values));
+
+	if (!vacount) {
+		return NULL;
+	}
+
+	va->types = ecalloc(vacount, sizeof(*va->types));
+	va->values = ecalloc(vacount, sizeof(*va->values));
 
 	for (i = 0, j = 0; i < vacount; ++i) {
 		impl_arg *vaarg = va->args->args[i];
 		void *to_free = NULL;
+		token_t let_fn, vatype = va->name->type->type;
 
-		psi_let_val(type, vaarg, &va->values[i], NULL, &to_free);
+		if (vatype == PSI_T_MIXED) {
+			switch (Z_TYPE_P(vaarg->_zv)) {
+			case IS_TRUE:
+			case IS_FALSE:	vatype = PSI_T_BOOL;	break;
+			case IS_LONG:	vatype = PSI_T_INT;		break;
+			case IS_DOUBLE:	vatype = PSI_T_FLOAT;	break;
+			default:		vatype = PSI_T_STRING;	break;
+			}
+		}
+
+
+		switch (vatype) {
+		case PSI_T_BOOL:	let_fn = PSI_T_BOOLVAL;	break;
+		case PSI_T_INT:		let_fn = PSI_T_INTVAL;	break;
+		case PSI_T_FLOAT:
+		case PSI_T_DOUBLE:	let_fn = PSI_T_FLOATVAL;break;
+		case PSI_T_STRING:	let_fn = PSI_T_STRVAL;	break;
+		EMPTY_SWITCH_DEFAULT_CASE();
+		}
+
+		va->types[i] = vatype;
+		psi_let_val(let_fn, vaarg, &va->values[i], NULL, &to_free);
+
 		if (to_free) {
-			*free_list = realloc(*free_list, (j + 1) * sizeof(*free_list));
-			(*free_list)[j++] = to_free;
+			if (!va->free_list) {
+				va->free_list = ecalloc(vacount - i + 1, sizeof(*va->free_list));
+			}
+			va->free_list[j++] = to_free;
 		}
 	}
+
+	return va;
 }
 
 void psi_call(zend_execute_data *execute_data, zval *return_value, impl *impl)
 {
-	size_t i, j;
-	decl_callinfo *call = &impl->decl->call;
-	void **free_list = NULL;
+	size_t i;
+	impl_vararg *va = NULL;
 
 	memset(impl->decl->func->ptr, 0, sizeof(impl_val));
 
@@ -1063,15 +1100,11 @@ void psi_call(zend_execute_data *execute_data, zval *return_value, impl *impl)
 		psi_do_args(impl);
 
 		if (impl->func->args->vararg.args) {
-			call = psi_do_varargs(impl, &free_list);
+			va = psi_do_varargs(impl);
 		}
 	}
 
-	if (impl->func->args->vararg.args) {
-		PSI_ContextCallVarargs(&PSI_G(context), &impl->decl->call)
-	} else {
-		PSI_ContextCall(&PSI_G(context), &impl->decl->call);
-	}
+	PSI_ContextCall(&PSI_G(context), &impl->decl->call, va);
 	psi_do_return(return_value, impl->stmts->ret.list[0]);
 
 	for (i = 0; i < impl->stmts->set.count; ++i) {

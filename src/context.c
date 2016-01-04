@@ -161,11 +161,26 @@ int psi_glob(const char *pattern, int flags,
 	return rv;
 }
 
+int psi_printf(const char *fmt, ...) {
+	int rs;
+	char *a1;
+	va_list ap1, ap2;
+
+	va_start(ap1, fmt);
+	va_copy(ap2, ap1);
+	a1 = va_arg(ap2, char *);
+	rs = vprintf(fmt, ap1);
+	va_end(ap1);
+	va_end(ap2);
+	return rs;
+}
+
 static struct psi_func_redir {
 	const char *name;
 	void (*func)(void);
 } psi_func_redirs[] = {
 	{"glob", (void (*)(void)) psi_glob},
+	{"printf", (void (*)(void)) psi_printf},
 	PSI_REDIRS
 	{0}
 };
@@ -1214,9 +1229,9 @@ zend_function_entry *PSI_ContextCompile(PSI_Context *C)
 }
 
 
-void PSI_ContextCall(PSI_Context *C, decl_callinfo *decl_call)
+void PSI_ContextCall(PSI_Context *C, decl_callinfo *decl_call, impl_vararg *va)
 {
-	C->ops->call(C, decl_call);
+	C->ops->call(C, decl_call, va);
 }
 
 static inline void dump_decl_type(int fd, decl_type *t) {

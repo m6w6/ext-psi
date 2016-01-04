@@ -210,7 +210,7 @@ static zend_function_entry *psi_jit_compile(PSI_Context *C)
 	return zfe;
 }
 
-static void psi_jit_call(PSI_Context *C, decl_callinfo *decl_call) {
+static void psi_jit_call(PSI_Context *C, decl_callinfo *decl_call, impl_vararg *va) {
 	PSI_LibjitCall *call = decl_call->info;
 
 	jit_apply(call->signature, decl_call->sym, decl_call->args,

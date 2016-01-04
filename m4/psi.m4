@@ -77,10 +77,10 @@ AC_DEFUN(PSI_CHECK_LIBJIT, [
 	fi
 ])
 
+PHP_ARG_WITH(psi-libffi, where to find libffi,
+[  --with-psi-libffi=DIR   PSI: path to libffi], [ ], [ ])
 AC_DEFUN(PSI_CHECK_LIBFFI, [
 	AC_REQUIRE([PSI_PKG_CONFIG])dnl
-	PHP_ARG_WITH(psi-libffi, where to find libffi,
-	[  --with-psi-libffi=DIR   PSI: path to libffi], [ ], [ ])
 
 	AC_CACHE_CHECK(for libffi through pkg-config, psi_cv_libffi, [
 	if $PKG_CONFIG --exists libffi
