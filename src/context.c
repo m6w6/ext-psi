@@ -180,6 +180,10 @@ static struct psi_predef_decl {
 	PSI_DECLS
 	{0}
 };
+static struct psi_predef_decl psi_predef_vararg_decls[] = {
+	PSI_VA_DECLS
+	{0}
+};
 
 static struct psi_predef_struct {
 	token_t type_tag;
@@ -992,6 +996,24 @@ PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErr
 		decl_args *args = init_decl_args(NULL);
 		decl *decl = init_decl(init_decl_abi("default"), func, args);
 
+		for (farg = &predef_decl[1]; farg->type_tag; ++farg) {
+			decl_type *arg_type = init_decl_type(farg->type_tag, farg->type_name);
+			decl_var *arg_var = init_decl_var(farg->var_name, farg->pointer_level, farg->array_size);
+			decl_arg *darg = init_decl_arg(arg_type, arg_var);
+			args = add_decl_arg(args, darg);
+		}
+
+		T.decls = add_decl(T.decls, decl);
+		predef_decl = farg;
+	}
+
+	for (predef_decl = &psi_predef_vararg_decls[0]; predef_decl->type_tag; ++predef_decl) {
+		struct psi_predef_decl *farg;
+		decl_type *ftype = init_decl_type(predef_decl->type_tag, predef_decl->type_name);
+		decl_var *fname = init_decl_var(predef_decl->var_name, predef_decl->pointer_level, predef_decl->array_size);
+		decl_arg *func = init_decl_arg(ftype, fname);
+		decl_args *args = init_decl_args(NULL);
+		decl *decl = init_decl(init_decl_abi("default"), func, args);
 
 		for (farg = &predef_decl[1]; farg->type_tag; ++farg) {
 			decl_type *arg_type = init_decl_type(farg->type_tag, farg->type_name);
@@ -999,6 +1021,7 @@ PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErr
 			decl_arg *darg = init_decl_arg(arg_type, arg_var);
 			args = add_decl_arg(args, darg);
 		}
+		args->varargs = 1;
 
 		T.decls = add_decl(T.decls, decl);
 		predef_decl = farg;

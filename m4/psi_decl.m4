@@ -51,7 +51,7 @@ AC_DEFUN(PSI_DECL_ARG, [
     psi_decl_args="[$psi_decl_args{]PSI_TYPE_PAIR(member_type)[, \"]member_name[\",] $pl, $as[}]"
 ])
 
-dnl PSI_DECL(type func, args)
+dnl PSI_DECL(type func, args, flags)
 AC_DEFUN(PSI_DECL, [
 	psi_decl_args=
 	PSI_DECL_ARG($1)
@@ -60,9 +60,14 @@ AC_DEFUN(PSI_DECL, [
 		[()], [],
 		[m4_map_args_sep([PSI_DECL_ARG(m4_normalize(], [))], [], m4_bregexp([$2], [(\(.*\))], [\1]))])
 	PSI_FUNC(PSI_VAR_NAME($1), [
-		PSI_DECLS="$psi_decl_args, {0}, $PSI_DECLS"
+		ifelse([$3], vararg, [
+			PSI_VA_DECLS="$psi_decl_args, {0}, $PSI_VA_DECLS"
+		], [
+			PSI_DECLS="$psi_decl_args, {0}, $PSI_DECLS"
+		])
 	], [
 		PSI_MACRO($1, $2, [
+			ifelse([$3], vararg, AC_MSG_ERROR(varargs macro support is not implemented),[])
 			PSI_DECLS="$psi_decl_args, {0}, $PSI_DECLS"
 		])
 	])

@@ -71,6 +71,8 @@ if test "$PHP_PSI" != no; then
 	AC_DEFINE_UNQUOTED([PSI_MACROS], [$PSI_MACROS], [Redirected Macros])
 	AC_DEFINE_UNQUOTED([PSI_REDIRS], [$PSI_REDIRS], [Redirected functions])
 	AC_DEFINE_UNQUOTED([PSI_DECLS], [$PSI_DECLS], [Predefined functions])
+	AC_DEFINE_UNQUOTED([PSI_VA_DECLS], [$PSI_VA_DECLS], [Predefined vararg functions])
+	
 
 	PHP_ADD_INCLUDE($PHP_PSI_SRCDIR/src)
 	PHP_ADD_BUILD_DIR($PHP_PSI_BUILDDIR/src)

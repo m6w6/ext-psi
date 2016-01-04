@@ -4,6 +4,7 @@ PSI_CONSTS=
 PSI_REDIRS=
 PSI_MACROS=
 PSI_DECLS=
+PSI_VA_DECLS=
 
 psi_includes() {
 	local have_
