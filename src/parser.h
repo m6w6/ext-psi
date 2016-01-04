@@ -503,10 +503,18 @@ static inline void free_impl_arg(impl_arg *arg) {
 	free(arg);
 }
 
+typedef struct impl_vararg {
+	impl_arg *name;
+	struct impl_args *args;
+	token_t *types;
+	impl_val *values;
+	void **free_list;
+} impl_vararg;
+
 typedef struct impl_args {
 	impl_arg **args;
 	size_t count;
-	impl_arg *vararg;
+	impl_vararg vararg;
 } impl_args;
 
 static inline impl_args *init_impl_args(impl_arg *arg) {

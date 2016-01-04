@@ -14,7 +14,7 @@ struct PSI_ContextOps {
 	void (*init)(PSI_Context *C);
 	void (*dtor)(PSI_Context *C);
 	zend_function_entry *(*compile)(PSI_Context *C);
-	void (*call)(PSI_Context *C, decl *decl);
+	void (*call)(PSI_Context *C, decl_callinfo *decl_call);
 };
 
 struct PSI_Context {

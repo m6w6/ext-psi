@@ -326,7 +326,7 @@ impl_args(args) ::= LPAREN impl_arg_list(args_) RPAREN. {
 }
 impl_args(args) ::= LPAREN impl_arg_list(args_) COMMA impl_vararg(va) RPAREN. {
 	args = args_;
-	args->vararg = va;
+	args->vararg.name = va;
 }
 
 %type impl_vararg {impl_arg*}

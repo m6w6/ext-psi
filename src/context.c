@@ -1404,8 +1404,8 @@ void PSI_ContextDump(PSI_Context *C, int fd)
 						dprintf(fd, " = %s", iarg->def->text);
 					}
 				}
-				if (impl->func->args->vararg) {
-					impl_arg *vararg = impl->func->args->vararg;
+				if (impl->func->args->vararg.name) {
+					impl_arg *vararg = impl->func->args->vararg.name;
 
 					dprintf(fd, ", %s %s...$%s",
 							vararg->type->name,
