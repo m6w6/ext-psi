@@ -29,6 +29,7 @@ if test "$PHP_PSI" != no; then
 		[sys_types.m4],
 		[sys_uio.m4],
 		[sys_utsname.m4],
+		[syslog.m4],
 		[time.m4],
 		[wchar.m4]], [
 		dnl pecl build
@@ -59,6 +60,7 @@ if test "$PHP_PSI" != no; then
 	PSI_CHECK_SYS_STAT
 	PSI_CHECK_SYS_UIO
 	PSI_CHECK_SYS_UTSNAME
+	PSI_CHECK_SYSLOG
 	PSI_CHECK_WCHAR
 
 	PHP_SUBST(PSI_SHARED_LIBADD)
@@ -72,7 +74,7 @@ if test "$PHP_PSI" != no; then
 	AC_DEFINE_UNQUOTED([PSI_REDIRS], [$PSI_REDIRS], [Redirected functions])
 	AC_DEFINE_UNQUOTED([PSI_DECLS], [$PSI_DECLS], [Predefined functions])
 	AC_DEFINE_UNQUOTED([PSI_VA_DECLS], [$PSI_VA_DECLS], [Predefined vararg functions])
-	
+
 
 	PHP_ADD_INCLUDE($PHP_PSI_SRCDIR/src)
 	PHP_ADD_BUILD_DIR($PHP_PSI_BUILDDIR/src)

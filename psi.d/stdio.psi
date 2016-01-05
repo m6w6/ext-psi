@@ -65,8 +65,8 @@ function psi\rewind(object $stream) : void {
 	return void(rewind);
 }
 
-//extern int printf(const char *fmt, ...);
+//extern int printf(const char *format, ...);
 function psi\printf(string $fmt, mixed ...$args) : int {
-	let fmt = strval($fmt);
+	let format = strval($fmt);
 	return to_int(printf);
 }

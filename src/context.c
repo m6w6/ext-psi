@@ -77,6 +77,9 @@
 #ifdef HAVE_TIME_H
 # include <time.h>
 #endif
+#ifdef HAVE_SYSLOG_H
+# include <syslog.h>
+#endif
 #ifdef HAVE_WCHAR_H
 # include <wchar.h>
 #endif
