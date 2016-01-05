@@ -356,6 +356,7 @@ static const char * const abi_ccs[] = {
 		"default", /* \                 */
 		"extern",  /*  > - all the same */
 		"cdecl",   /* /                 */
+		"mscdecl",
 		"stdcall",
 		"fastcall",
 };

@@ -1,0 +1,38 @@
+function psi\endhostent() : void {
+	return void(endhostent);
+}
+function psi\endnetend() : void {
+	return void(endnetent);
+}
+function psi\endprotoent() : void {
+	return void(endprotoent);
+}
+function psi\endservent() : void {
+	return void(endservent);
+}
+
+function psi\gai_strerror(int $errcode) : string {
+	let errcode = intval($errcode);
+	return to_string(gai_strerror);
+}
+
+function psi\getaddrinfo(string $node, string $service, array $hints, object &$res = NULL) : int {
+	let node = strval($node);
+	let service = strval($service);
+	let hints = arrval($hints);
+	let res = &NULL;
+	return to_int(getaddrinfo);
+	set $res = to_array(*res,
+		to_int(ai_flags),
+		to_int(ai_family),
+		to_int(ai_socktype),
+		to_int(ai_protocol),
+		to_int(ai_addrlen),
+		to_array(ai_addr,
+			to_int(sa_family),
+			to_string(sa_data, ai_addrlen) 
+		),
+		to_string(ai_canonname)
+		// FIXME ai_next
+	);
+}

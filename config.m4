@@ -29,6 +29,7 @@ if test "$PHP_PSI" != no; then
 		[sys_types.m4],
 		[sys_uio.m4],
 		[sys_utsname.m4],
+		[netdb.m4],
 		[syslog.m4],
 		[time.m4],
 		[wchar.m4]], [
@@ -60,6 +61,7 @@ if test "$PHP_PSI" != no; then
 	PSI_CHECK_SYS_STAT
 	PSI_CHECK_SYS_UIO
 	PSI_CHECK_SYS_UTSNAME
+	PSI_CHECK_NETDB
 	PSI_CHECK_SYSLOG
 	PSI_CHECK_WCHAR
 
