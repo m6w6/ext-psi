@@ -21,7 +21,7 @@ size_t psi_t_size(token_t);
 
 typedef struct PSI_Token {
 	token_t type;
-	size_t size, line, col;
+	unsigned size, *line;
 	char *text, *file;
 	char buf[1];
 } PSI_Token;
@@ -81,6 +81,7 @@ static inline void free_decl_type(decl_type *type) {
 }
 
 typedef struct decl_typedef {
+	PSI_Token *token;
 	char *alias;
 	decl_type *type;
 } decl_typedef;
@@ -93,6 +94,9 @@ static inline decl_typedef *init_decl_typedef(const char *name, decl_type *type)
 }
 
 static inline void free_decl_typedef(decl_typedef *t) {
+	if (t->token) {
+		free(t->token);
+	}
 	free(t->alias);
 	free_decl_type(t->type);
 	free(t);
@@ -123,6 +127,7 @@ static void free_decl_typedefs(decl_typedefs *defs) {
 }
 
 typedef struct decl_var {
+	PSI_Token *token;
 	char *name;
 	unsigned pointer_level;
 	unsigned array_size;
@@ -138,6 +143,9 @@ static inline decl_var *init_decl_var(const char *name, unsigned pl, unsigned as
 }
 
 static inline void free_decl_var(decl_var *var) {
+	if (var->token) {
+		free(var->token);
+	}
 	free(var->name);
 	free(var);
 }
@@ -160,6 +168,7 @@ static inline void free_decl_struct_layout(decl_struct_layout *l) {
 }
 
 typedef struct decl_arg {
+	PSI_Token *token;
 	decl_type *type;
 	decl_var *var;
 	decl_struct_layout *layout;
@@ -171,6 +180,7 @@ typedef struct decl_arg {
 
 static inline decl_arg *init_decl_arg(decl_type *type, decl_var *var) {
 	decl_arg *arg = calloc(1, sizeof(*arg));
+	arg->token = var->token;
 	arg->type = type;
 	arg->var = var;
 	var->arg = arg;
@@ -251,6 +261,7 @@ static inline void free_decl_args(decl_args *args) {
 }
 
 typedef struct decl_abi {
+	PSI_Token *token;
 	char *convention;
 } decl_abi;
 
@@ -261,6 +272,9 @@ static inline decl_abi *init_decl_abi(const char *convention) {
 }
 
 static inline void free_decl_abi(decl_abi *abi) {
+	if (abi->token) {
+		free(abi->token);
+	}
 	free(abi->convention);
 	free(abi);
 }
@@ -323,6 +337,7 @@ static inline void free_decls(decls *decls) {
 }
 
 typedef struct decl_struct {
+	PSI_Token *token;
 	char *name;
 	decl_args *args;
 	size_t size;
@@ -336,6 +351,9 @@ static inline decl_struct *init_decl_struct(const char *name, decl_args *args) {
 }
 
 static inline void free_decl_struct(decl_struct *s) {
+	if (s->token) {
+		free(s->token);
+	}
 	if (s->args) {
 		free_decl_args(s->args);
 	}
@@ -386,6 +404,7 @@ static inline void free_impl_type(impl_type *type) {
 }
 
 typedef struct impl_var {
+	PSI_Token *token;
 	char *name;
 	unsigned reference:1;
 } impl_var;
@@ -398,6 +417,9 @@ static inline impl_var *init_impl_var(const char *name, int is_reference) {
 }
 
 static inline void free_impl_var(impl_var *var) {
+	if (var->token) {
+		free(var->token);
+	}
 	free(var->name);
 	free(var);
 }
@@ -550,6 +572,7 @@ static inline void free_impl_args(impl_args *args) {
 }
 
 typedef struct impl_func {
+	PSI_Token *token;
 	char *name;
 	impl_args *args;
 	impl_type *return_type;
@@ -566,6 +589,9 @@ static inline impl_func *init_impl_func(char *name, impl_args *args, impl_type *
 }
 
 static inline void free_impl_func(impl_func *f) {
+	if (f->token) {
+		free(f->token);
+	}
 	free_impl_type(f->return_type);
 	free_impl_args(f->args);
 	free(f->name);
@@ -573,6 +599,7 @@ static inline void free_impl_func(impl_func *f) {
 }
 
 typedef struct num_exp {
+	PSI_Token *token;
 	token_t t;
 	union {
 		char *numb;
@@ -600,6 +627,9 @@ static inline num_exp *init_num_exp(token_t t, void *num) {
 }
 
 static inline void free_num_exp(num_exp *exp) {
+	if (exp->token) {
+		free(exp->token);
+	}
 	switch (exp->t) {
 	case PSI_T_NUMBER:
 		free(exp->u.numb);
@@ -750,6 +780,7 @@ static inline void free_let_stmt(let_stmt *stmt) {
 struct set_value;
 
 typedef struct set_func {
+	PSI_Token *token;
 	token_t type;
 	char *name;
 	void (*handler)(zval *, struct set_value *set, impl_val *ret_val);
@@ -763,6 +794,9 @@ static inline set_func *init_set_func(token_t type, const char *name) {
 }
 
 static inline void free_set_func(set_func *func) {
+	if (func->token) {
+		free(func->token);
+	}
 	free(func->name);
 	free(func);
 }
@@ -827,6 +861,7 @@ static inline void free_set_stmt(set_stmt *set) {
 }
 
 typedef struct return_stmt {
+	PSI_Token *token;
 	set_value *set;
 	decl_arg *decl;
 } return_stmt;
@@ -838,13 +873,15 @@ static inline return_stmt *init_return_stmt(set_value *val) {
 }
 
 static inline void free_return_stmt(return_stmt *ret) {
-	//free_set_func(ret->func);
-	//free_decl_var(ret->decl);
+	if (ret->token) {
+		free(ret->token);
+	}
 	free_set_value(ret->set);
 	free(ret);
 }
 
 typedef struct free_call {
+	PSI_Token *token;
 	char *func;
 	decl_vars *vars;
 	decl *decl;
@@ -858,6 +895,9 @@ static inline free_call *init_free_call(const char *func, decl_vars *vars) {
 }
 
 static inline void free_free_call(free_call *f) {
+	if (f->token) {
+		free(f->token);
+	}
 	free(f->func);
 	free_decl_vars(f->vars);
 	free(f);
@@ -1135,7 +1175,7 @@ static inline impl_val *struct_member_ref(decl_arg *set_arg, impl_val *struct_pt
 
 #define PSI_ERROR 16
 #define PSI_WARNING 32
-typedef void (*psi_error_cb)(int type, const char *msg, ...);
+typedef void (*psi_error_cb)(PSI_Token *token, int type, const char *msg, ...);
 
 #define PSI_DATA(D) ((PSI_Data *) (D))
 #define PSI_DATA_MEMBERS \
@@ -1184,11 +1224,9 @@ static inline void PSI_DataDtor(PSI_Data *data) {
 typedef struct PSI_Parser {
 	PSI_DATA_MEMBERS;
 	FILE *fp;
-	unsigned flags;
-	unsigned errors;
-	void *proc;
-	size_t line, col;
 	token_t num;
+	void *proc;
+	unsigned flags, errors, line, col;
 	char *cur, *tok, *lim, *eof, *ctx, *mrk, buf[BSIZE];
 } PSI_Parser;
 
@@ -1205,31 +1243,35 @@ static inline PSI_Token *PSI_TokenAlloc(PSI_Parser *P) {
 	token_len = P->cur - P->tok;
 	fname_len = strlen(P->psi.file.fn);
 
-	T = calloc(1, sizeof(*T) + token_len + fname_len + 1);
+	T = calloc(1, sizeof(*T) + token_len + fname_len + sizeof(unsigned) + 2);
 	T->type = token_typ;
 	T->size = token_len;
-	T->line = P->line;
-	T->col = P->col;
-	T->file = &T->buf[0];
-	T->text = &T->buf[fname_len + 1];
+	T->text = &T->buf[0];
+	T->file = &T->buf[token_len + 1];
+	T->line = (void *) &T->buf[fname_len + token_len + 2];
 
-	memcpy(T->file, P->psi.file.fn, fname_len);
 	memcpy(T->text, P->tok, token_len);
+	memcpy(T->file, P->psi.file.fn, fname_len);
+	memcpy(T->line, &P->line, sizeof(unsigned));
 
 	return T;
 }
 
 static inline PSI_Token *PSI_TokenCopy(PSI_Token *src) {
 	size_t fname_len = strlen(src->file);
-	size_t strct_len = sizeof(*src) + src->size + fname_len + 1;
+	size_t strct_len = sizeof(*src) + src->size + fname_len + sizeof(unsigned) + 2;
 	PSI_Token *ptr = malloc(strct_len);
 
 	memcpy(ptr, src, strct_len);
 
-	ptr->file = &ptr->buf[0];
-	ptr->text = &ptr->buf[fname_len + 1];
+	ptr->text = &ptr->buf[0];
+	ptr->file = &ptr->buf[ptr->size + 1];
 
 	return ptr;
+}
+
+static inline const char *PSI_TokenLocation(PSI_Token *t) {
+	return t ? t->file : "<builtin>:0:0";
 }
 
 #define PSI_PARSER_DEBUG 0x1

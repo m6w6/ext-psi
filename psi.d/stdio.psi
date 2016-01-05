@@ -70,3 +70,4 @@ function psi\printf(string $fmt, mixed ...$args) : int {
 	let format = strval($fmt);
 	return to_int(printf);
 }
+

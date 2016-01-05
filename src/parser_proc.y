@@ -5,6 +5,7 @@
 
 #include "parser.h"
 
+void psi_error(int, const char *, int, const char *, ...);
 }
 
 %name PSI_ParserProc
@@ -15,10 +16,11 @@
 %extra_argument {PSI_Parser *P}
 /* TOKEN is defined inside syntax_error */
 %syntax_error {
+	++P->errors;
 	if (TOKEN && TOKEN->type != PSI_T_EOF) {
-		PSI_ParserSyntaxError(P, P->psi.file.fn, P->line, "Unexpected token '%s'", TOKEN->text);
+		psi_error(PSI_WARNING, TOKEN->file, *TOKEN->line, "PSI syntax error: Unexpected token '%s'", TOKEN->text);
 	} else {
-		PSI_ParserSyntaxError(P, P->psi.file.fn, P->line, "Unexpected end of input");
+		psi_error(PSI_WARNING, P->psi.file.fn, P->line, "PSI syntax error: Unexpected end of input");
 	}
 }
 
@@ -36,7 +38,7 @@ block ::= EOF.
 
 block ::= LIB(T) QUOTED_STRING(libname) EOS. {
 	if (P->psi.file.ln) {
-		PSI_ParserSyntaxError(P, P->psi.file.ln, T->line, "Extra 'lib %s' statement has no effect", libname->text);
+		P->error(T, PSI_WARNING, "Extra 'lib %s' statement has no effect", libname->text);
 	} else {
 		P->psi.file.ln = strndup(libname->text + 1, libname->size - 2);
 	}
@@ -68,7 +70,7 @@ block ::= decl_struct(strct). {
 decl_struct(strct) ::= STRUCT NAME(N) struct_size(size_) LBRACE struct_args(args) RBRACE. {
 	strct = init_decl_struct(N->text, args);
 	strct->size = size_;
-	free(N);
+	strct->token = N;
 }
 
 %type struct_size {size_t}
@@ -98,34 +100,31 @@ constant(constant) ::= CONST const_type(type) NSNAME(T) EQUALS impl_def_val(val)
 %destructor decl_typedef {free_decl_typedef($$);}
 decl_typedef(def) ::= TYPEDEF decl_type(type) NAME(ALIAS) EOS. {
 	def = init_decl_typedef(ALIAS->text, type);
-	free(ALIAS);
+	def->token = ALIAS;
 }
 /* support opaque types */
 decl_typedef(def) ::= TYPEDEF VOID(V) NAME(ALIAS) EOS. {
 	def = init_decl_typedef(ALIAS->text, init_decl_type(V->type, V->text));
+	def->token = ALIAS;
 	def->type->token = V;
-	//free(V);
-	free(ALIAS);
 }
 decl_typedef(def) ::= TYPEDEF STRUCT(S) NAME(N) NAME(ALIAS) EOS. {
 	def = init_decl_typedef(ALIAS->text, init_decl_type(S->type, N->text));
+	def->token = ALIAS;
 	def->type->token = N;
-	free(ALIAS);
 	free(S);
-	//free(N);
 }
 decl_typedef(def) ::= TYPEDEF decl_struct(s) NAME(ALIAS) EOS. {
 	def = init_decl_typedef(ALIAS->text, init_decl_type(PSI_T_STRUCT, s->name));
-	def->type->token = ALIAS;
+	def->token = ALIAS;
+	def->type->token = PSI_TokenCopy(s->token);
 	def->type->strct = s;
-	//free(ALIAS);
 }
 
 %type decl {decl*}
 %destructor decl {free_decl($$);}
 decl(decl) ::= decl_abi(abi) decl_func(func) LPAREN decl_args(args) RPAREN EOS. {
 	decl = init_decl(abi, func, args);
-
 }
 
 %type decl_func {decl_arg*}
@@ -148,18 +147,18 @@ decl_func(func) ::= VOID(T) NAME(N). {
 %destructor decl_abi {free_decl_abi($$);}
 decl_abi(abi) ::= NAME(T). {
 	abi = init_decl_abi(T->text);
-	free(T);
+	abi->token = T;
 }
 
 %type decl_var {decl_var*}
 %destructor decl_var {free_decl_var($$);}
 decl_var(var) ::= indirection(p) NAME(T). {
 	var = init_decl_var(T->text, p, 0);
-	free(T);
+	var->token = T;
 }
 decl_var(var) ::= indirection(p) NAME(T) LBRACKET NUMBER(D) RBRACKET. {
 	var = init_decl_var(T->text, p+1, atol(D->text));
-	free(T);
+	var->token = T;
 	free(D);
 }
 
@@ -184,8 +183,8 @@ decl_arg(arg_) ::= VOID(T) pointers(p) NAME(N). {
 		init_decl_var(N->text, p, 0)
 	);
 	arg_->type->token = T;
-	//free(T);
-	free(N);
+	arg_->var->token = N;
+	arg_->token = N;
 }
 decl_arg(arg_) ::= CONST VOID(T) pointers(p) NAME(N). {
 	arg_ = init_decl_arg(
@@ -193,8 +192,8 @@ decl_arg(arg_) ::= CONST VOID(T) pointers(p) NAME(N). {
 		init_decl_var(N->text, p, 0)
 	);
 	arg_->type->token = T;
-	//free(T);
-	free(N);
+	arg_->var->token = N;
+	arg_->token = N;
 }
 
 %type decl_args {decl_args*}
@@ -243,7 +242,6 @@ struct_layout(layout) ::= COLON COLON LPAREN NUMBER(POS) COMMA NUMBER(SIZ) RPARE
 decl_type(type_) ::= decl_type_token(T). {
 	type_ = init_decl_type(T->type, T->text);
 	type_->token = T;
-	//free(T);
 }
 /* unsigned, urgh */
 decl_type(type_) ::= UNSIGNED NAME(T). {
@@ -254,20 +252,17 @@ decl_type(type_) ::= UNSIGNED NAME(T). {
 	memcpy(type_->name, "unsigned", sizeof("unsigned")-1);
 	type_->name[sizeof("unsigned")] = ' ';
 	type_->name[T->size + sizeof("unsigned")] = 0;
-	//free(T);
 }
 /* we have to support plain int here because we have it in our lexer rules */
 decl_type(type_) ::= INT(T). {
 	type_ = init_decl_type(PSI_T_NAME, T->text);
 	type_->token = T;
-	//free(T);
 }
 /* structs ! */
 decl_type(type_) ::= STRUCT(S) NAME(T). {
 	type_ = init_decl_type(S->type, T->text);
 	type_->token = T;
 	free(S);
-	//free(T);
 }
 
 %type const_decl_type {decl_type*}
@@ -289,7 +284,7 @@ impl(impl) ::= impl_func(func) LBRACE impl_stmts(stmts) RBRACE. {
 %destructor impl_func {free_impl_func($$);}
 impl_func(func) ::= FUNCTION reference(r) NSNAME(NAME) impl_args(args) COLON impl_type(type). {
 	func = init_impl_func(NAME->text, args, type, r);
-	free(NAME);
+	func->token = NAME;
 }
 
 %token_class impl_def_val_token NULL NUMBER TRUE FALSE QUOTED_STRING.
@@ -304,7 +299,7 @@ impl_def_val(def) ::= impl_def_val_token(T). {
 %destructor impl_var {free_impl_var($$);}
 impl_var(var) ::= reference(r) DOLLAR NAME(T). {
 	var = init_impl_var(T->text, r);
-	free(T);
+	var->token = T;
 }
 
 %type impl_arg {impl_arg*}
@@ -375,10 +370,11 @@ impl_stmt(stmt) ::= free_stmt(free). {
 %destructor num_exp {free_num_exp($$);}
 num_exp(exp) ::= num_exp_token(tok). {
 	exp = init_num_exp(tok->type, tok->text);
-	free(tok);
+	exp->token = tok;
 }
 num_exp(exp) ::= decl_var(var). {
 	exp = init_num_exp(PSI_T_NAME, var);
+	exp->token = PSI_TokenCopy(var->token);
 }
 num_exp(exp) ::= num_exp(exp_) num_exp_op_token(operator_) num_exp(operand_). {
 	exp_->operator = operator_->type;
@@ -469,13 +465,14 @@ set_vals(vals) ::= set_vals(vals_) COMMA set_value(val). {
 %destructor set_func {free_set_func($$);}
 set_func(func) ::= set_func_token(T). {
 	func = init_set_func(T->type, T->text);
-	free(T);
+	func->token = T;
 }
 
 %type return_stmt {return_stmt*}
 %destructor return_stmt {free_return_stmt($$);}
-return_stmt(ret) ::= RETURN set_value(val) EOS. {
+return_stmt(ret) ::= RETURN(T) set_value(val) EOS. {
 	ret = init_return_stmt(val);
+	ret->token = T;
 }
 
 %type free_stmt {free_stmt*}
@@ -497,7 +494,7 @@ free_calls(calls) ::= free_calls(calls_) COMMA free_call(call). {
 %destructor free_call {free_free_call($$);}
 free_call(call) ::= NAME(F) LPAREN decl_vars(vars) RPAREN. {
 	call = init_free_call(F->text, vars);
-	free(F);
+	call->token = F;
 }
 
 %token_class impl_type_token VOID MIXED BOOL INT FLOAT STRING ARRAY OBJECT.

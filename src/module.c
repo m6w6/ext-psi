@@ -33,16 +33,25 @@ PHP_INI_END();
 static zend_object_handlers psi_object_handlers;
 static zend_class_entry *psi_class_entry;
 
-void psi_error(int type, const char *msg, ...)
+void psi_error_wrapper(PSI_Token *t, int type, const char *msg, ...)
 {
-	char buf[0x1000];
 	va_list argv;
 
 	va_start(argv, msg);
-	vslprintf(buf, 0x1000, msg, argv);
+	psi_verror(type, t?t->file:"Unknown", t?*t->line:0, msg, argv);
 	va_end(argv);
+}
+void psi_error(int type, const char *fn, unsigned ln, const char *msg, ...)
+{
+	va_list argv;
 
-	php_error(type, buf);
+	va_start(argv, msg);
+	psi_verror(type, fn, ln, msg, argv);
+	va_end(argv);
+}
+void psi_verror(int type, const char *fn, unsigned ln, const char *msg, va_list argv)
+{
+	zend_error_cb(type, fn, ln, msg, argv);
 }
 
 size_t psi_t_alignment(token_t t)
@@ -1172,7 +1181,7 @@ PHP_MINIT_FUNCTION(psi)
 		return FAILURE;
 	}
 
-	PSI_ContextInit(&PSI_G(context), ops, psi_error);
+	PSI_ContextInit(&PSI_G(context), ops, psi_error_wrapper);
 	PSI_ContextBuild(&PSI_G(context), PSI_G(directory));
 
 	if (psi_check_env("PSI_DUMP")) {

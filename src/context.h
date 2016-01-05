@@ -5,7 +5,7 @@
 
 #define PSI_ERROR 16
 #define PSI_WARNING 32
-typedef void (*PSI_ContextErrorFunc)(int type, const char *msg, ...);
+typedef void (*PSI_ContextErrorFunc)(PSI_Token *token, int type, const char *msg, ...);
 
 typedef struct PSI_Context PSI_Context;
 typedef struct PSI_ContextOps PSI_ContextOps;

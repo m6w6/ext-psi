@@ -47,20 +47,6 @@ PSI_Parser *PSI_ParserInit(PSI_Parser *P, const char *filename, psi_error_cb err
 	return P;
 }
 
-void PSI_ParserSyntaxError(PSI_Parser *P, const char *fn, size_t ln, const char *msg, ...) {
-	char buf[0x1000] = {0};
-	va_list argv;
-
-	va_start(argv, msg);
-	vsnprintf(buf, 0x1000-1, msg, argv);
-	va_end(argv);
-
-	P->error(PSI_WARNING, "PSI syntax error on line %zu in '%s'%s%s",
-			ln, fn, msg ? ": ": "", buf);
-
-	++P->errors;
-}
-
 size_t PSI_ParserFill(PSI_Parser *P, size_t n)
 {
 	if (P->flags & PSI_PARSER_DEBUG) {
@@ -214,7 +200,7 @@ void PSI_ParserFree(PSI_Parser **P)
 #define RETURN(t) do { \
 	P->num = t; \
 	if (P->flags & PSI_PARSER_DEBUG) { \
-		fprintf(stderr, "PSI> TOKEN: %d %.*s (EOF=%d %s:%zu:%zu)\n", \
+		fprintf(stderr, "PSI> TOKEN: %d %.*s (EOF=%d %s:%u:%u)\n", \
 				P->num, (int) (P->cur-P->tok), P->tok, P->num == PSI_T_EOF, \
 				P->psi.file.fn, P->line, P->col); \
 	} \
