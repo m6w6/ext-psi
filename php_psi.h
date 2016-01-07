@@ -55,6 +55,7 @@ void psi_to_bool(zval *return_value, set_value *set, impl_val *ret_val);
 void psi_to_int(zval *return_value, set_value *set, impl_val *ret_val);
 void psi_to_double(zval *return_value, set_value *set, impl_val *ret_val);
 void psi_to_string(zval *return_value, set_value *set, impl_val *ret_val);
+void psi_to_recursive(zval *return_value, set_value *set, impl_val *r_val);
 void psi_to_array(zval *return_value, set_value *set, impl_val *ret_val);
 void psi_to_object(zval *return_value, set_value *set, impl_val *ret_val);
 

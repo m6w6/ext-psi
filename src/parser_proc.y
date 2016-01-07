@@ -440,6 +440,11 @@ set_value(val) ::= set_func(func) LPAREN decl_var(var) COMMA num_exp(num_) RPARE
 	val = init_set_value(func, init_decl_vars(var));
 	val->num = num_;
 }
+set_value(val) ::= set_func(func_) LPAREN decl_var(var) COMMA ELLIPSIS(T) RPAREN. {
+	free_set_func(func_);
+	val = init_set_value(init_set_func(T->type, T->text), init_decl_vars(var));
+	val->func->token = T;
+}
 set_value(val) ::= set_func(func_) LPAREN decl_var(var) COMMA set_vals(vals) RPAREN. {
 	val = vals;
 	val->func = func_;

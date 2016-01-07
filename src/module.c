@@ -297,6 +297,13 @@ void psi_to_string(zval *return_value, set_value *set, impl_val *ret_val)
 	token_t t = real_decl_type(var->arg->type)->type;
 
 	switch (t) {
+	case PSI_T_FLOAT:
+		RETVAL_DOUBLE((double) deref_impl_val(ret_val, var)->fval);
+		break;
+	case PSI_T_DOUBLE:
+		RETVAL_DOUBLE(deref_impl_val(ret_val, var)->dval);
+		break;
+	default:
 	case PSI_T_VOID:
 	case PSI_T_INT8:
 	case PSI_T_UINT8:
@@ -315,13 +322,6 @@ void psi_to_string(zval *return_value, set_value *set, impl_val *ret_val)
 			}
 		}
 		return;
-	case PSI_T_FLOAT:
-		RETVAL_DOUBLE((double) deref_impl_val(ret_val, var)->fval);
-		break;
-	case PSI_T_DOUBLE:
-		RETVAL_DOUBLE(deref_impl_val(ret_val, var)->dval);
-		break;
-	default:
 		psi_to_int(return_value, set, ret_val);
 		break;
 	}
@@ -384,6 +384,11 @@ void *psi_array_to_struct(decl_struct *s, HashTable *arr)
 		}
 	}
 	return mem;
+}
+
+void psi_to_recursive(zval *return_value, set_value *set, impl_val *r_val)
+{
+	set->outer.set->func->handler(return_value, set->outer.set, r_val->ptr);
 }
 
 void psi_to_array(zval *return_value, set_value *set, impl_val *r_val)

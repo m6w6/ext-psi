@@ -822,12 +822,17 @@ static inline set_value *init_set_value(set_func *func, decl_vars *vars) {
 static inline set_value *add_inner_set_value(set_value *val, set_value *inner) {
 	val->inner = realloc(val->inner, ++val->count * sizeof(*val->inner));
 	val->inner[val->count-1] = inner;
+	inner->outer.set = val;
 	return val;
 }
 
 static inline void free_set_value(set_value *val) {
-	free_set_func(val->func);
-	free_decl_vars(val->vars);
+	if (val->func) {
+		free_set_func(val->func);
+	}
+	if (val->vars) {
+		free_decl_vars(val->vars);
+	}
 	if (val->inner) {
 		size_t i;
 		for (i = 0; i < val->count; ++i) {

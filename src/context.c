@@ -524,6 +524,12 @@ static inline int validate_set_value_handler(set_value *set) {
 	case PSI_T_VOID:
 		set->func->handler = psi_to_void;
 		break;
+	case PSI_T_ELLIPSIS:
+		if (set->outer.set && set->outer.set->func->type == PSI_T_TO_ARRAY) {
+			set->func->handler = psi_to_recursive;
+			break;
+		}
+		/* no break */
 	default:
 		return 0;
 	}
@@ -548,14 +554,14 @@ static inline int validate_set_value_ex(PSI_Data *data, set_value *set, decl_arg
 	decl_var *set_var = set->vars->vars[0];
 
 	if (!validate_set_value_handler(set)) {
-		data->error(set->func->token, PSI_WARNING, "Invalid cast '%s'", set->func->name);
+		data->error(set->func->token, PSI_WARNING, "Invalid cast '%s' in `set` statement", set->func->name);
 		return 0;
 	}
 
 	for (i = 0; i < set->vars->count; ++i) {
 		decl_var *svar = set->vars->vars[i];
 		if (!svar->arg && !locate_decl_var_arg(svar, ref_list, NULL)) {
-			data->error(svar->token, PSI_WARNING, "Unknown variable '%s'", svar->name);
+			data->error(svar->token, PSI_WARNING, "Unknown variable '%s' in `set` statement", svar->name);
 			return 0;
 		}
 	}
@@ -587,7 +593,6 @@ static inline int validate_set_value_ex(PSI_Data *data, set_value *set, decl_arg
 			decl_var *sub_var = set->inner[i]->vars->vars[0];
 			decl_arg *sub_ref = locate_struct_member(ref_type->strct, sub_var);
 
-			set->inner[i]->outer.set = set;
 			if (sub_ref) {
 				if (!validate_set_value_ex(data, set->inner[i], sub_ref, ref_type->strct->args)) {
 					return 0;
@@ -599,7 +604,6 @@ static inline int validate_set_value_ex(PSI_Data *data, set_value *set, decl_arg
 		decl_var *sub_var = set->inner[0]->vars->vars[0];
 		decl_arg *sub_ref = locate_decl_var_arg(sub_var, ref_list, ref);
 
-		set->inner[0]->outer.set = set;
 		if (sub_ref) {
 			if (strcmp(sub_var->name, set_var->name)) {
 				data->error(sub_var->token, E_WARNING, "Inner `set` statement casts on pointers must reference the same variable");
@@ -1312,14 +1316,20 @@ static inline void dump_num_exp(int fd, num_exp *exp) {
 		exp = exp->operand;
 	}
 }
+
 static inline void dump_impl_set_value(int fd, set_value *set, unsigned level) {
-	size_t i;
+	size_t i, j;
 
 	if (level > 1) {
 		/* only if not directly after `set ...` */
 		dump_level(fd, level);
 	}
-	dprintf(fd, "%s(", set->func->name);
+
+	if (set->func->type == PSI_T_ELLIPSIS) {
+		dprintf(fd, "%s(", set->outer.set->func->name);
+	} else {
+		dprintf(fd, "%s(", set->func->name);
+	}
 
 	for (i = 0; i < set->vars->count; ++i) {
 		decl_var *svar = set->vars->vars[i];
@@ -1327,6 +1337,10 @@ static inline void dump_impl_set_value(int fd, set_value *set, unsigned level) {
 			dprintf(fd, ", ");
 		}
 		dump_decl_var(fd, svar);
+	}
+
+	if (set->func->type == PSI_T_ELLIPSIS) {
+		dprintf(fd, ", ...");
 	}
 	if (set->num) {
 		dprintf(fd, ", ");

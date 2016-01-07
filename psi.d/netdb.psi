@@ -28,11 +28,8 @@ function psi\getaddrinfo(string $node, string $service, array $hints, object &$r
 		to_int(ai_socktype),
 		to_int(ai_protocol),
 		to_int(ai_addrlen),
-		to_array(ai_addr,
-			to_int(sa_family),
-			to_string(sa_data, ai_addrlen) 
-		),
-		to_string(ai_canonname)
-		// FIXME ai_next
+		to_string(ai_addr, ai_addrlen),
+		to_string(ai_canonname),
+		to_array(ai_next, ...)
 	);
 }
