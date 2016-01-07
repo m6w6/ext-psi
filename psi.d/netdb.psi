@@ -32,4 +32,5 @@ function psi\getaddrinfo(string $node, string $service, array $hints, object &$r
 		to_string(ai_canonname),
 		to_array(ai_next, ...)
 	);
+	free freeaddrinfo(res);
 }
