@@ -833,7 +833,7 @@ static inline void free_set_value(set_value *val) {
 	if (val->vars) {
 		free_decl_vars(val->vars);
 	}
-	if (val->inner) {
+	if (val->inner && (!val->outer.set || val->outer.set->inner != val->inner)) {
 		size_t i;
 		for (i = 0; i < val->count; ++i) {
 			free_set_value(val->inner[i]);
@@ -1145,7 +1145,16 @@ static inline void add_decl_lib(decl_libs *libs, void *dlopened) {
 static inline impl_val *deref_impl_val(impl_val *ret_val, decl_var *var) {
 	unsigned i;
 
-	if (var->arg->var != var) for (i = 1; i < var->pointer_level; ++i) {
+	ZEND_ASSERT(var->arg->var != var);
+#if 0
+	fprintf(stderr, "deref: %s pl=%u:%u as=%u:%u %p\n",
+			var->name, var->pointer_level, var->arg->var->pointer_level,
+			var->array_size, var->arg->var->array_size, ret_val);
+#endif
+	for (i = 0; i < var->pointer_level; ++i) {
+#if 0
+		fprintf(stderr, "-- %p %p %p\n", ret_val, *(void**)ret_val, ret_val->ptr);
+#endif
 		ret_val = *(void **) ret_val;
 	}
 	return ret_val;
@@ -1155,11 +1164,21 @@ static inline impl_val *enref_impl_val(void *ptr, decl_var *var) {
 	impl_val *val, *val_ptr;
 	unsigned i;
 
+	ZEND_ASSERT(var->arg->var == var);
+#if 0
+	fprintf(stderr, "enref: %s pl=%u:%u as=%u:%u\n",
+			var->name, var->pointer_level, var->arg->var->pointer_level,
+			var->array_size, var->arg->var->array_size);
+#endif
 	if (!var->pointer_level && real_decl_type(var->arg->type)->type != PSI_T_STRUCT) {
 		return ptr;
 	}
+
 	val = val_ptr = calloc(var->pointer_level + 1, sizeof(void *));
-	for (i = 1; i < var->pointer_level; ++i) {
+	for (i = !var->arg->var->array_size; i < var->pointer_level; ++i) {
+#if 0
+		fprintf(stderr, "++\n");
+#endif
 		val_ptr->ptr = (void **) val_ptr + 1;
 		val_ptr = val_ptr->ptr;
 	}
@@ -1168,15 +1187,13 @@ static inline impl_val *enref_impl_val(void *ptr, decl_var *var) {
 }
 
 static inline impl_val *struct_member_ref(decl_arg *set_arg, impl_val *struct_ptr, impl_val **to_free) {
-	void *ptr = (char *) struct_ptr->ptr + set_arg->layout->pos;
-	impl_val *val = enref_impl_val(ptr, set_arg->var);
-
-	if (val != ptr) {
-		*to_free = val;
-	}
-
-	return val;
+	void *ptr = (char *) struct_ptr + set_arg->layout->pos;
+#if 0
+	fprintf(stderr, "struct member %s: %p\n", set_arg->var->name, ptr);
+#endif
+	return ptr;
 }
+
 
 #define PSI_ERROR 16
 #define PSI_WARNING 32

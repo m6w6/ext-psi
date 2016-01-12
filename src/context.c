@@ -151,6 +151,12 @@ static struct psi_predef_const {
 
 PSI_MACROS
 
+struct utsname *uname2() {
+	struct utsname *u = calloc(1, sizeof(*u));
+	uname(u);
+	return u;
+}
+
 int psi_glob(const char *pattern, int flags,
                int (*errfunc) (const char *epath, int eerrno),
                glob_t *pglob) {
@@ -169,6 +175,7 @@ static struct psi_func_redir {
 	void (*func)(void);
 } psi_func_redirs[] = {
 	{"glob", (void (*)(void)) psi_glob},
+	{"uname2", (void (*)(void)) uname2},
 	PSI_REDIRS
 	{0}
 };
@@ -527,6 +534,8 @@ static inline int validate_set_value_handler(set_value *set) {
 	case PSI_T_ELLIPSIS:
 		if (set->outer.set && set->outer.set->func->type == PSI_T_TO_ARRAY) {
 			set->func->handler = psi_to_recursive;
+			set->inner = set->outer.set->inner;
+			set->count = set->outer.set->count;
 			break;
 		}
 		/* no break */
@@ -589,13 +598,15 @@ static inline int validate_set_value_ex(PSI_Data *data, set_value *set, decl_arg
 
 	if (ref_type->type == PSI_T_STRUCT) {
 		/* to_array(struct, to_...) */
-		for (i = 0; i < set->count; ++i) {
-			decl_var *sub_var = set->inner[i]->vars->vars[0];
-			decl_arg *sub_ref = locate_struct_member(ref_type->strct, sub_var);
+		if (!set->outer.set || set->outer.set->inner != set->inner) {
+			for (i = 0; i < set->count; ++i) {
+				decl_var *sub_var = set->inner[i]->vars->vars[0];
+				decl_arg *sub_ref = locate_struct_member(ref_type->strct, sub_var);
 
-			if (sub_ref) {
-				if (!validate_set_value_ex(data, set->inner[i], sub_ref, ref_type->strct->args)) {
-					return 0;
+				if (sub_ref) {
+					if (!validate_set_value_ex(data, set->inner[i], sub_ref, ref_type->strct->args)) {
+						return 0;
+					}
 				}
 			}
 		}
@@ -886,25 +897,26 @@ static inline int validate_impl_free_stmts(PSI_Data *data, impl *impl) {
 						free_call->func, impl->func->name);
 				return 0;
 			}
-			if (!impl->decl->args) {
-				data->error(free_call->token, PSI_WARNING,
-						"Declaration '%s' of implementation '%s'"
-						" does not have any arguments to free",
-						impl->decl->func->var->name, impl->func->name);
-			}
+
+
 
 			/* now check for known vars */
 			for (l = 0; l < free_call->vars->count; ++l) {
 				int check = 0;
 				decl_var *free_var = free_call->vars->vars[l];
 
-				for (k = 0; k < impl->decl->args->count; ++k) {
-					decl_arg *free_arg = impl->decl->args->args[k];
+				if (!strcmp(free_var->name, impl->decl->func->var->name)) {
+					check = 1;
+					free_var->arg = impl->decl->func;
+				} else if (impl->decl->args) {
+					for (k = 0; k < impl->decl->args->count; ++k) {
+						decl_arg *free_arg = impl->decl->args->args[k];
 
-					if (!strcmp(free_var->name, free_arg->var->name)) {
-						check = 1;
-						free_var->arg = free_arg;
-						break;
+						if (!strcmp(free_var->name, free_arg->var->name)) {
+							check = 1;
+							free_var->arg = free_arg;
+							break;
+						}
 					}
 				}
 
@@ -1318,7 +1330,7 @@ static inline void dump_num_exp(int fd, num_exp *exp) {
 }
 
 static inline void dump_impl_set_value(int fd, set_value *set, unsigned level) {
-	size_t i, j;
+	size_t i;
 
 	if (level > 1) {
 		/* only if not directly after `set ...` */

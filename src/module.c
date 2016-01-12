@@ -293,6 +293,7 @@ void psi_to_double(zval *return_value, set_value *set, impl_val *ret_val)
 
 void psi_to_string(zval *return_value, set_value *set, impl_val *ret_val)
 {
+	char *str;
 	decl_var *var = set->vars->vars[0];
 	token_t t = real_decl_type(var->arg->type)->type;
 
@@ -304,26 +305,27 @@ void psi_to_string(zval *return_value, set_value *set, impl_val *ret_val)
 		RETVAL_DOUBLE(deref_impl_val(ret_val, var)->dval);
 		break;
 	default:
-	case PSI_T_VOID:
-	case PSI_T_INT8:
-	case PSI_T_UINT8:
 		if (!var->arg->var->pointer_level) {
 			RETVAL_STRINGL(&ret_val->cval, 1);
 		} else {
 			ret_val = deref_impl_val(ret_val, var);
-			if (ret_val && ret_val->ptr) {
+			if (var->arg->var->array_size) {
+				str = (char *) ret_val;
+			} else {
+				str = ret_val->ptr;
+			}
+			if (str) {
 				if (set->num) {
-					RETVAL_STRINGL(ret_val->ptr, psi_long_num_exp(set->num, set->outer.val));
+					zend_long n = psi_long_num_exp(set->num, set->outer.val);
+					RETVAL_STRINGL(str, n);
 				} else {
-					RETVAL_STRING(ret_val->ptr);
+					RETVAL_STRING(str);
 				}
 			} else {
 				RETVAL_EMPTY_STRING();
 			}
 		}
 		return;
-		psi_to_int(return_value, set, ret_val);
-		break;
 	}
 	convert_to_string(return_value);
 }
@@ -332,7 +334,7 @@ void psi_to_string(zval *return_value, set_value *set, impl_val *ret_val)
 static impl_val *iterate(impl_val *val, size_t size, unsigned i, impl_val *tmp)
 {
 	memset(tmp, 0, sizeof(*tmp));
-	memcpy(tmp, ((void*) val->ptr) + size * i, size);
+	memcpy(tmp, ((void*) val) + size * i, size);
 	return tmp;
 }
 
@@ -388,7 +390,7 @@ void *psi_array_to_struct(decl_struct *s, HashTable *arr)
 
 void psi_to_recursive(zval *return_value, set_value *set, impl_val *r_val)
 {
-	set->outer.set->func->handler(return_value, set->outer.set, r_val->ptr);
+	set->outer.set->func->handler(return_value, set, r_val);
 }
 
 void psi_to_array(zval *return_value, set_value *set, impl_val *r_val)
@@ -398,7 +400,7 @@ void psi_to_array(zval *return_value, set_value *set, impl_val *r_val)
 	token_t t = real_decl_type(var->arg->type)->type;
 	impl_val tmp, *ret_val = deref_impl_val(r_val, var);
 
-	if ((intptr_t) ret_val->ptr <= (intptr_t) 0) {
+	if ((intptr_t) ret_val <= (intptr_t) 0) {
 		RETURN_NULL();
 	}
 
@@ -413,13 +415,13 @@ void psi_to_array(zval *return_value, set_value *set, impl_val *r_val)
 				set_value *sub_set = set->inner[i];
 				decl_var *sub_var = sub_set->vars->vars[0];
 
-				sub_set->outer.val = r_val;
+				sub_set->outer.val = ret_val;
 
 				if (sub_var->arg) {
 					impl_val *tmp = NULL, *val;
 					zval ztmp;
 
-					val = deref_impl_val(struct_member_ref(sub_var->arg, ret_val, &tmp), sub_var);
+					val = struct_member_ref(sub_var->arg, ret_val, &tmp);
 					sub_set->func->handler(&ztmp, sub_set, val);
 					add_assoc_zval(return_value, sub_var->name, &ztmp);
 
@@ -455,20 +457,32 @@ void psi_to_array(zval *return_value, set_value *set, impl_val *r_val)
 		}
 		return;
 	} else if (set->num) {
-		/* to_array(arr_var, num_expr, to_int(*arr_var))
-		 */
+		/* to_array(arr_var, num_expr, to_int(*arr_var)) */
 		zval ele;
+		char *ptr;
 		zend_long i, n = psi_long_num_exp(set->num, set->outer.val);
+		size_t size = psi_t_size(var->arg->var->pointer_level ? PSI_T_POINTER : t);
+		set_value *sub_set = set->inner[0];
 
+		sub_set->outer.val = set->outer.val;
 		for (i = 0; i < n; ++i) {
-			size_t size = psi_t_size(var->arg->var->pointer_level ? PSI_T_POINTER : t);
-			impl_val *ptr = iterate(ret_val, size, i, &tmp);
-
-			set->inner[0]->func->handler(&ele, set->inner[0], ptr);
+			ptr = (char *) ret_val->ptr + i * size;
+			sub_set->func->handler(&ele, sub_set, (void *) ptr);
 			add_next_index_zval(return_value, &ele);
 		}
 	} else {
-		ZEND_ASSERT(0);
+		/* to_array(arr_var, to_int(*arr_var)) */
+		zval ele;
+		char *ptr = ret_val->ptr;
+		size_t size = psi_t_size(var->arg->var->pointer_level ? PSI_T_POINTER : t);
+		set_value *sub_set = set->inner[0];
+
+		sub_set->outer.val = set->outer.val;
+		while (*(void **) ptr) {
+			sub_set->func->handler(&ele, sub_set, (void *) ptr);
+			add_next_index_zval(return_value, &ele);
+			ptr += size;
+		}
 	}
 }
 
@@ -588,6 +602,9 @@ static inline void *psi_do_calloc(let_calloc *alloc)
 	zend_long n = psi_long_num_exp(alloc->nmemb, NULL), s = psi_long_num_exp(alloc->size, NULL);
 	void *mem = safe_emalloc(n, s, sizeof(void *));
 	memset(mem, 0, n * s + sizeof(void *));
+#if 0
+	fprintf(stderr, "calloc: %p\n", mem);
+#endif
 	return mem;
 }
 
@@ -681,7 +698,12 @@ static inline void *psi_do_let(let_stmt *let)
 
 	switch (let->val ? let->val->kind : PSI_LET_NULL) {
 	case PSI_LET_TMP:
-		arg_val->ptr = deref_impl_val(let->val->data.var->arg->val.ptr, let->var);
+		memcpy(arg_val, deref_impl_val(let->val->data.var->arg->let->ptr, let->val->data.var), sizeof(*arg_val));
+#if 0
+		fprintf(stderr, "LET TMP: %p -> %p\n",
+				let->val->data.var->arg->let->ptr,
+				arg_val->ptr);
+#endif
 		break;
 	case PSI_LET_NULL:
 		if (darg->var->array_size) {
@@ -715,8 +737,10 @@ static inline void *psi_do_let(let_stmt *let)
 
 static inline void psi_do_set(zval *return_value, set_value *set)
 {
+	decl_arg *set_arg = set->vars->vars[0]->arg;
+
 	zval_dtor(return_value);
-	set->func->handler(return_value, set, set->vars->vars[0]->arg->ptr);
+	set->func->handler(return_value, set, set_arg->let ? set_arg->let->ptr : set_arg->ptr);
 }
 
 static inline void psi_do_return(zval *return_value, return_stmt *ret)
@@ -830,6 +854,8 @@ static inline int psi_calc_num_exp_value(num_exp *exp, impl_val *strct, impl_val
 	case PSI_T_NAME:
 		if (strct) {
 			ref = struct_member_ref(exp->u.dvar->arg, strct, &tmp);
+		} else if (exp->u.dvar->arg->let) {
+			ref = exp->u.dvar->arg->let->ptr;
 		} else {
 			ref = exp->u.dvar->arg->ptr;
 		}

@@ -9,7 +9,7 @@ function psi\glob(string $pattern, int $flags, array &$glob = NULL) : int {
 		to_int(gl_pathc),
 		to_int(gl_offs),
 		to_int(gl_flags),
-		to_array(**gl_pathv, gl_pathc + gl_offs, to_string(*gl_pathv))
+		to_array(gl_pathv, gl_pathc + gl_offs, to_string(gl_pathv))
 	);
 	free globfree(buf);
 }

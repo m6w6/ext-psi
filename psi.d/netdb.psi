@@ -11,18 +11,46 @@ function psi\endservent() : void {
 	return void(endservent);
 }
 
+function psi\sethostent(bool $stayopen) : void {
+	let stayopen = intval($stayopen);
+	return void(sethostent);
+}
+function psi\setnetset(bool $stayopen) : void {
+	let stayopen = intval($stayopen);
+	return void(setnetent);
+}
+function psi\setprotoent(bool $stayopen) : void {
+	let stayopen = intval($stayopen);
+	return void(setprotoent);
+}
+function psi\setservent(bool $stayopen) : void {
+	let stayopen = intval($stayopen);
+	return void(setservent);
+}
+
+function psi\gethostent() : array {
+	return to_array(gethostent, 
+		to_string(h_name),
+		to_array(h_aliases, to_string(h_aliases)),
+		to_int(h_addrtype),
+		to_int(h_length),
+		to_array(h_addr_list, to_string(h_addr_list, h_length))
+	);
+}
+
 function psi\gai_strerror(int $errcode) : string {
 	let errcode = intval($errcode);
 	return to_string(gai_strerror);
 }
 
+// extern int getaddrinfo(const char *node, const char *service, const struct addrinfo *hints, struct addrinfo **res);
 function psi\getaddrinfo(string $node, string $service, array $hints, object &$res = NULL) : int {
 	let node = strval($node);
 	let service = strval($service);
 	let hints = arrval($hints);
 	let res = &NULL;
 	return to_int(getaddrinfo);
-	set $res = to_array(*res,
+	set $res = to_array(**res,
 		to_int(ai_flags),
 		to_int(ai_family),
 		to_int(ai_socktype),
@@ -30,7 +58,7 @@ function psi\getaddrinfo(string $node, string $service, array $hints, object &$r
 		to_int(ai_addrlen),
 		to_string(ai_addr, ai_addrlen),
 		to_string(ai_canonname),
-		to_array(ai_next, ...)
+		to_array(*ai_next, ...)
 	);
 	free freeaddrinfo(res);
 }

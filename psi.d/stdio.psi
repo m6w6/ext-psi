@@ -2,7 +2,7 @@
 function psi\fopen(string $path, string $mode) : object {
 	let path = pathval($path);
 	let mode = strval($mode);
-	return to_object(*fopen);
+	return to_object(fopen);
 }
 
 // extern int fclose(FILE *stream);
