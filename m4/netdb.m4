@@ -57,6 +57,9 @@ AC_DEFUN(PSI_CHECK_NETDB, [
 	PSI_CONST(NI_NUMERICSCOPE, int)
 	PSI_CONST(NI_DGRAM, int)
 	
+	PSI_CONST(NI_MAXHOST, int)
+	PSI_CONST(NI_MAXSERV, int)
+	
 	PSI_CONST(EAI_AGAIN, int)
 	PSI_CONST(EAI_BADFLAGS, int)
 	PSI_CONST(EAI_FAIL, int)
@@ -76,7 +79,7 @@ AC_DEFUN(PSI_CHECK_NETDB, [
 	PSI_DECL(char *gai_strerror, [(int errcode)])
 	PSI_DECL(int getaddrinfo, [(char *node, char *service, struct addrinfo *hints, struct addrinfo **res)])
 	PSI_DECL(struct hostent *gethostent, [(void)])
-	PSI_DECL(int getnameinfo, [(struct sockaddr *sa, socklen_t salen, char *host, socklen_t host_len, char *serv, socklen_t servlen, int flags)])
+	PSI_DECL(int getnameinfo, [(struct sockaddr *sa, socklen_t salen, char *host, socklen_t hostlen, char *serv, socklen_t servlen, int flags)])
 	PSI_DECL(struct netent *getnetbyaddr, [(uint32_t net, int type)])
 	PSI_DECL(struct netent *getnetbyname, [(char *name)])
 	PSI_DECL(struct netent *getnetent, [(void)])

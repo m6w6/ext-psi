@@ -144,6 +144,7 @@ zend_internal_arg_info *psi_internal_arginfo(impl *impl)
 		zend_internal_arg_info *ai = &aip[impl->func->args->count];
 
 		ai->name = vararg->var->name;
+		ai->allow_null = 1;
 		ai->type_hint = psi_internal_type(vararg->type);
 		if (vararg->var->reference) {
 			ai->pass_by_reference = 1;
@@ -160,9 +161,9 @@ zend_internal_arg_info *psi_internal_arginfo(impl *impl)
 		if (iarg->var->reference) {
 			ai->pass_by_reference = 1;
 		}
-		if (iarg->var->reference || (iarg->def && iarg->def->type == PSI_T_NULL)) {
+		//if (iarg->var->reference || (iarg->def && iarg->def->type == PSI_T_NULL)) {
 			ai->allow_null = 1;
-		}
+		//}
 	}
 
 	return aip;
@@ -636,7 +637,7 @@ static inline ZEND_RESULT_CODE psi_let_val(token_t let_func, impl_arg *iarg, imp
 	case PSI_T_STRVAL:
 		if (iarg->type->type == PSI_T_STRING) {
 			if (iarg->val.zend.str) {
-				arg_val->ptr = estrdup(iarg->val.zend.str->val);
+				arg_val->ptr = estrndup(iarg->val.zend.str->val, iarg->val.zend.str->len);
 				*to_free = arg_val->ptr;
 			} else {
 				arg_val->ptr = "";
@@ -767,6 +768,22 @@ static inline void psi_do_free(free_stmt *fre)
 	}
 }
 
+static inline void psi_clean_array_struct(decl_arg *darg) {
+	if (darg->let
+	&&	darg->let->val->kind == PSI_LET_FUNC
+	&&	darg->let->val->data.func->type == PSI_T_ARRVAL) {
+		decl_type *type = real_decl_type(darg->type);
+
+		if (type->type == PSI_T_STRUCT) {
+			void **ptr = (void **) ((char *) darg->mem + type->strct->size);
+
+			while (*ptr) {
+				efree(*ptr++);
+			}
+		}
+	}
+}
+
 static inline void psi_do_clean(impl *impl)
 {
 	size_t i;
@@ -787,15 +804,7 @@ static inline void psi_do_clean(impl *impl)
 		decl_arg *darg = impl->decl->args->args[i];
 
 		if (darg->mem) {
-			decl_type *type = real_decl_type(darg->type);
-
-			if (type->type == PSI_T_STRUCT) {
-				void **ptr = (void **) ((char *) darg->mem + type->strct->size);
-
-				while (*ptr) {
-					efree(*ptr++);
-				}
-			}
+			psi_clean_array_struct(darg);
 			efree(darg->mem);
 			darg->mem = NULL;
 		}

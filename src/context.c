@@ -957,6 +957,33 @@ static inline int validate_impl_stmts(PSI_Data *data, impl *impl) {
 	return 1;
 }
 
+static inline int validate_impl_args(PSI_Data *data, impl *impl) {
+	int def = 0;
+	size_t i;
+
+	for (i = 0; i < impl->func->args->count; ++i) {
+		impl_arg *iarg = impl->func->args->args[i];
+
+		if (iarg->def) {
+			def = 1;
+		} else if (def) {
+			data->error(impl->func->token, PSI_WARNING,
+					"Non-optional argument %zu '$%s' of implementation '%s'"
+					" follows optional argument",
+					i+1, iarg->var->name, impl->func->name);
+			return 0;
+		}
+	}
+
+	return 1;
+}
+static inline int validate_impl(PSI_Data *data, impl *impl) {
+	if (!validate_impl_args(data, impl)) {
+		return 0;
+	}
+	return validate_impl_stmts(data, impl);
+}
+
 PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErrorFunc error)
 {
 	size_t i;
@@ -1153,7 +1180,7 @@ int PSI_ContextValidate(PSI_Context *C, PSI_Parser *P)
 		size_t i;
 
 		for (i = 0; i < D->impls->count; ++i) {
-			if (validate_impl_stmts(PSI_DATA(C), D->impls->list[i])) {
+			if (validate_impl(PSI_DATA(C), D->impls->list[i])) {
 				C->impls = add_impl(C->impls, D->impls->list[i]);
 			}
 		}

@@ -43,7 +43,7 @@ function psi\gai_strerror(int $errcode) : string {
 	return to_string(gai_strerror);
 }
 
-// extern int getaddrinfo(const char *node, const char *service, const struct addrinfo *hints, struct addrinfo **res);
+// extern int getaddrinfo(const char *node, const char *service, const struct addrinfo *hints, struct addrinfo **res)
 function psi\getaddrinfo(string $node, string $service, array $hints, object &$res = NULL) : int {
 	let node = strval($node);
 	let service = strval($service);
@@ -61,4 +61,18 @@ function psi\getaddrinfo(string $node, string $service, array $hints, object &$r
 		to_array(*ai_next, ...)
 	);
 	free freeaddrinfo(res);
+}
+
+// extern int getnameinfo(struct sockaddr *sa, socklen_t salen, char *host, socklen_t hostlen, char *serv, socklen_t servlen, int flags)
+function psi\getnameinfo(string $addr, string &$host = NULL, string &$service = NULL, int $flags = 0) : int {
+	let sa = strval($addr);
+	let salen = strlen($addr);
+	let hostlen = psi\NI_MAXHOST;
+	let host = calloc(hostlen, psi\SIZEOF_CHAR);
+	let servlen = psi\NI_MAXSERV;
+	let serv = calloc(servlen, psi\SIZEOF_CHAR);
+	let flags = intval($flags);
+	return to_int(getnameinfo);
+	set $host = to_string(host);
+	set $service = to_string(serv);
 }
