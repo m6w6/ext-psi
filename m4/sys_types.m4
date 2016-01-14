@@ -1,4 +1,4 @@
-AC_DEFUN(PSI_CHECK_SYS_TYPES, [
+PSI_CHECK_SYS_TYPES() {
 	AC_CHECK_HEADERS(sys/types.h)
 
 	PSI_TYPE(blkcnt_t, int)
@@ -21,4 +21,4 @@ AC_DEFUN(PSI_CHECK_SYS_TYPES, [
 	PSI_TYPE(time_t, int)
 	PSI_TYPE(timer_t, int)
 	PSI_TYPE(uid_t, int)
-])
+}

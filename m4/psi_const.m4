@@ -1,10 +1,10 @@
 # add_str_const(name, value)
 add_str_const() {
-	PSI_CONSTS="{PSI_T_STRING, \"string\", \"psi\\\\$1\", $2, PSI_T_QUOTED_STRING}, $PSI_CONSTS"
+	cat >>$PSI_CONSTS <<<"	{PSI_T_STRING, \"string\", \"psi\\\\$1\", $2, PSI_T_QUOTED_STRING}, "
 }
 # add_int_const(name, value)
 add_int_const() {
-	PSI_CONSTS="{PSI_T_INT, \"int\", \"psi\\\\$1\", \"$2\", PSI_T_NUMBER}, $PSI_CONSTS"
+	cat >>$PSI_CONSTS <<<"	{PSI_T_INT, \"int\", \"psi\\\\$1\", \"$2\", PSI_T_NUMBER}, "
 }
 dnl PSI_CONST(const name, type)
 AC_DEFUN(PSI_CONST, [

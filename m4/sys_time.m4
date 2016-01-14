@@ -1,4 +1,4 @@
-AC_DEFUN(PSI_CHECK_SYS_TIME, [
+PSI_CHECK_SYS_TIME() {
 	AC_CHECK_HEADERS(sys/time.h)
 
 	PSI_CONST(ITIMER_REAL, int)
@@ -23,4 +23,4 @@ AC_DEFUN(PSI_CHECK_SYS_TIME, [
 	PSI_DECL(int gettimeofday, [(struct timeval *tp, struct timezone *tz)])
 	PSI_DECL(int utimes, [(char *path, struct timeval times@<:@2@:>@)])
 	PSI_DECL(int utimensat, [(int fd, char *path, struct timespec times@<:@2@:>@)])
-])
+}

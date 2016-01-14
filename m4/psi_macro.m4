@@ -28,7 +28,7 @@ AC_DEFUN(PSI_MACRO, [
 			macro_body="return $macro_name$macro_call;"
 		])
 		psi_macro="$macro_type psi_macro_$macro_name$macro_decl { $macro_body }"
-		PSI_MACROS="$PSI_MACROS $psi_macro"
+		cat >>$PSI_MACROS <<<"$psi_macro"
 		PSI_REDIR($macro_name, psi_macro_$macro_name)
 	], [], PSI_INCLUDES)
 ])

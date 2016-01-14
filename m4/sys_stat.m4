@@ -1,4 +1,4 @@
-AC_DEFUN(PSI_CHECK_SYS_STAT, [
+PSI_CHECK_SYS_STAT() {
 	AC_CHECK_HEADERS([sys/stat.h])
 
 	PSI_STRUCT(struct stat, [
@@ -81,4 +81,4 @@ AC_DEFUN(PSI_CHECK_SYS_STAT, [
 	PSI_DECL(int stat, [(char *path, struct stat *buf)])
 	PSI_DECL(mode_t umask, [(mode_t mode)])
 	PSI_DECL(int utimensat, [(int fd, char *path, struct timespec times@<:@2@:>@, int flag)])
-])
+}

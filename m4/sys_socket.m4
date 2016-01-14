@@ -1,9 +1,9 @@
-AC_DEFUN(PSI_CHECK_SYS_SOCKET, [
+PSI_CHECK_SYS_SOCKET() {
 	AC_CHECK_HEADERS(sys/socket.h)
-	
+
 	PSI_TYPE(socklen_t, int)
 	PSI_TYPE(sa_family_t, uint)
-	
+
 	PSI_STRUCT(struct sockaddr, [
 		sa_family_t sa_family,
 		char sa_data@<:@0@:>@]
@@ -29,7 +29,7 @@ AC_DEFUN(PSI_CHECK_SYS_SOCKET, [
 		int l_onoff,
 		int l_linger]
 	)
-	
+
 	PSI_CONST(AF_INET, int)
 	PSI_CONST(AF_INET6, int)
     PSI_CONST(AF_UNIX, int)
@@ -67,11 +67,11 @@ AC_DEFUN(PSI_CHECK_SYS_SOCKET, [
     PSI_CONST(SO_SNDLOWAT, int)
     PSI_CONST(SO_SNDTIMEO, int)
     PSI_CONST(SO_TYPE, int)
-    
+
     PSI_MACRO(unsigned char *CMSG_DATA, [(struct cmsghdr *m)])
 	PSI_MACRO(struct cmsghdr *CMSG_NXTHDR, [(struct msghdr *m, struct cmsghdr *c)])
 	PSI_MACRO(struct cmsghdr *CMSG_FIRSTHDR, [(struct msghdr *m)])
-	
+
 	PSI_DECL(int accept, [(int socket, struct sockaddr *address, socklen_t *address_len)])
 	PSI_DECL(int bind, [(int socket, struct sockaddr *address, socklen_t address_len)])
 	PSI_DECL(int connect, [(int socket, struct sockaddr *address, socklen_t address_len)])
@@ -90,5 +90,4 @@ AC_DEFUN(PSI_CHECK_SYS_SOCKET, [
 	PSI_DECL(int sockatmark, [(int socket)])
 	PSI_DECL(int socket, [(int domain, int type, int protocol)])
 	PSI_DECL(int socketpair, [(int domain, int type, int protocol, int socket_vector@<:@2@:>@)])
-	
-])
+}

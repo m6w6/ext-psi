@@ -1,6 +1,6 @@
-AC_DEFUN(PSI_CHECK_NETDB, [
+PSI_CHECK_NETDB() {
 	AC_CHECK_HEADERS(netdb.h)
-	
+
 	PSI_STRUCT(struct hostent, [
 		char *h_name,
 		char **h_aliases,
@@ -8,29 +8,29 @@ AC_DEFUN(PSI_CHECK_NETDB, [
 		int h_length,
 		char **h_addr_list]
 	)
-	
+
 	PSI_STRUCT(struct netent, [
 		char *n_name,
 		char **n_aliases,
 		int n_addrtype,
 		uint32_t n_net]
 	)
-	
+
 	PSI_STRUCT(struct protoent, [
 		char *p_name,
 		char **p_aliases,
 		int p_proto]
 	)
-	
+
 	PSI_STRUCT(struct servent, [
 		char *s_name,
 		char **s_aliases,
 		int s_port,
 		char *s_proto]
 	)
-	
+
 	PSI_CONST(IPPORT_RESERVED, int)
-	
+
 	PSI_STRUCT(struct addrinfo, [
 		int ai_flags,
 		int ai_family,
@@ -41,7 +41,7 @@ AC_DEFUN(PSI_CHECK_NETDB, [
 		char *ai_canonname,
 		struct addrinfo *ai_next]
 	)
-	
+
 	PSI_CONST(AI_PASSIVE, int)
 	PSI_CONST(AI_CANONNAME, int)
 	PSI_CONST(AI_NUMERICHOST, int)
@@ -49,17 +49,17 @@ AC_DEFUN(PSI_CHECK_NETDB, [
 	PSI_CONST(AI_V4MAPPED, int)
 	PSI_CONST(AI_ALL, int)
 	PSI_CONST(AI_ADDRCONFIG, int)
-	
+
 	PSI_CONST(NI_NOFQDN, int)
 	PSI_CONST(NI_NUMERICHOST, int)
 	PSI_CONST(NI_NAMEREQD, int)
 	PSI_CONST(NI_NUMERICSERV, int)
 	PSI_CONST(NI_NUMERICSCOPE, int)
 	PSI_CONST(NI_DGRAM, int)
-	
+
 	PSI_CONST(NI_MAXHOST, int)
 	PSI_CONST(NI_MAXSERV, int)
-	
+
 	PSI_CONST(EAI_AGAIN, int)
 	PSI_CONST(EAI_BADFLAGS, int)
 	PSI_CONST(EAI_FAIL, int)
@@ -70,7 +70,7 @@ AC_DEFUN(PSI_CHECK_NETDB, [
 	PSI_CONST(EAI_SOCKTYPE, int)
 	PSI_CONST(EAI_SYSTEM, int)
 	PSI_CONST(EAI_OVERFLOW, int)
-	
+
 	PSI_DECL(void endhostent, [(void)])
 	PSI_DECL(void endnetent, [(void)])
 	PSI_DECL(void endprotoent, [(void)])
@@ -93,5 +93,4 @@ AC_DEFUN(PSI_CHECK_NETDB, [
 	PSI_DECL(void setnetent, [(int stayopen)])
 	PSI_DECL(void setprotoent, [(int stayopen)])
 	PSI_DECL(void setservent, [(int stayopen)])
-
-])
+}

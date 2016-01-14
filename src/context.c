@@ -129,6 +129,15 @@ static struct psi_std_type {
 	{0}
 };
 
+#include "php_psi_types.h"
+#include "php_psi_consts.h"
+#include "php_psi_macros.h"
+#include "php_psi_redirs.h"
+#include "php_psi_decls.h"
+#include "php_psi_va_decls.h"
+#include "php_psi_structs.h"
+
+/*
 static struct psi_predef_type {
 	token_t type_tag;
 	const char *type_name;
@@ -207,7 +216,7 @@ static struct psi_predef_struct {
 	PSI_STRUCTS
 	{0}
 };
-
+*/
 static int validate_lib(PSI_Data *data, void **dlopened) {
 	char lib[MAXPATHLEN];
 	const char *ptr = data->psi.file.ln;

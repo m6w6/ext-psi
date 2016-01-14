@@ -1,4 +1,4 @@
-AC_DEFUN(PSI_CHECK_STDIO, [
+PSI_CHECK_STDIO() {
     AC_CHECK_HEADER(stdio.h)
 
     PSI_STRUCT(FILE)
@@ -80,4 +80,4 @@ AC_DEFUN(PSI_CHECK_STDIO, [
 	PSI_DECL(int snprintf, [(char *str, size_t size, char *format)], vararg)
 	PSI_DECL(int sprintf, [(char *str, char *format)], vararg)
 	PSI_DECL(int sscanf, [(char *str, char *format)], vararg)
-])
+}

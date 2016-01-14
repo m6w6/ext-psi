@@ -7,7 +7,7 @@ psi_type_pair() {
 		local psi_type_upper=`tr a-z A-Z <<<$psi_type_name`
 		local psi_type_bits=`expr $2 \* 8`
 		echo "PSI_T_${psi_type_upper}${psi_type_bits}, \"${psi_type_lower}${psi_type_bits}_t\""
-		eval AS_TR_SH([psi_standard_type_]$1)="${psi_type_lower}${psi_type_bits}_t"
+		#eval AS_TR_SH([psi_standard_type_]$1)="${psi_type_lower}${psi_type_bits}_t"
 		;;
 	struct*)
 		echo "PSI_T_STRUCT, \"$2\""
@@ -30,7 +30,7 @@ AC_DEFUN(PSI_TYPE, [
 	int)
 		AX_CHECK_SIGN($1, :, [
 			psi_basic_type=uint
-		], $psi_header)
+		], PSI_INCLUDES)
 		;;
 	sint)
 		psi_basic_type=int
@@ -38,7 +38,7 @@ AC_DEFUN(PSI_TYPE, [
 	esac
 	if test "$2" && test "$AS_TR_SH([ac_cv_sizeof_]$1)" -gt 0; then
 		AS_TR_SH(psi_basic_type_$1)=$psi_basic_type
-		PSI_TYPES="{`psi_type_pair $psi_basic_type $AS_TR_SH([ac_cv_sizeof_]$1)`, \"$1\"}, $PSI_TYPES"
+		cat >>$PSI_TYPES <<<"	{`psi_type_pair $psi_basic_type $AS_TR_SH([ac_cv_sizeof_]$1)`, \"$1\"}, "
 	fi
 ])
 
@@ -58,32 +58,32 @@ AC_DEFUN(PSI_TYPE_BITS, [`expr 8 \* $AS_TR_SH([ac_cv_sizeof_]$1)`])
 
 dnl PSI_TYPE_INDIRECTION(type, size, pointer_level_var, array_size_var)
 AC_DEFUN(PSI_TYPE_INDIRECTION, [
-	AC_MSG_CHECKING(indirection of $1)
-	m4_define([pointer_level], m4_len(m4_bpatsubst([PSI_VAR_TYPE($1)], [[^*]])))
-	m4_define([array_size], [m4_bregexp([PSI_VAR_TYPE($1)], [@<:@\([0-9]+\)@:>@], [\1])])
-	
-	ifelse(array_size.$2,0., [
+	dnl AC_MSG_CHECKING(indirection of $1)
+	m4_define([psi_pointer_level], m4_len(m4_bpatsubst([PSI_VAR_TYPE($1)], [[^*]])))
+	m4_define([psi_array_size], [m4_bregexp([PSI_VAR_TYPE($1)], [@<:@\([0-9]+\)@:>@], [\1])])
+
+	ifelse(psi_array_size.$2,0., [
 		AC_MSG_ERROR([cannot compute dynamic array size of a non-struct member])
 	], [
-		ifelse(pointer_level,0,[
-			m4_define([type_size],[$]AS_TR_SH([ac_cv_sizeof_]m4_bregexp(PSI_VAR_TYPE([$1]), [^\( \|\w\)+], [\&])))
+		ifelse(psi_pointer_level,0,[
+			m4_define([psi_type_size],[$]AS_TR_SH([ac_cv_sizeof_]m4_bregexp(PSI_VAR_TYPE([$1]), [^\( \|\w\)+], [\&])))
 		],[
-			m4_define([type_size],$ac_cv_sizeof_void_p)
+			m4_define([psi_type_size],$ac_cv_sizeof_void_p)
 		])
 	])
-	
-	m4_case(array_size,,[
-		$3=pointer_level
+
+	m4_case(psi_array_size,,[
+		$3=psi_pointer_level
 		$4=0]
 	,0,[
-		$3=m4_incr(pointer_level)
-		$4="`expr $2 / type_size`"
+		$3=m4_incr(psi_pointer_level)
+		$4="`expr $2 / psi_type_size`"
 	], [
-		$3=m4_incr(pointer_level)
-		$4=array_size
+		$3=m4_incr(psi_pointer_level)
+		$4=psi_array_size
 	])
-	
-	AC_MSG_RESULT([[$]$3, [$]$4])
+
+	dnl AC_MSG_RESULT([[$]$3, [$]$4])
 ])
 
 AC_DEFUN(PSI_TYPE_PAIR, [m4_case(m4_bregexp([$1], [^\w+], [\&]),

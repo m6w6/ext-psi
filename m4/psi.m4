@@ -1,10 +1,68 @@
-PSI_TYPES=
-PSI_STRUCTS=
-PSI_CONSTS=
-PSI_REDIRS=
-PSI_MACROS=
-PSI_DECLS=
-PSI_VA_DECLS=
+PSI_TYPES=$PHP_PSI_SRCDIR/php_psi_types.h
+PSI_STRUCTS=$PHP_PSI_SRCDIR/php_psi_structs.h
+PSI_CONSTS=$PHP_PSI_SRCDIR/php_psi_consts.h
+PSI_REDIRS=$PHP_PSI_SRCDIR/php_psi_redirs.h
+PSI_MACROS=$PHP_PSI_SRCDIR/php_psi_macros.h
+PSI_DECLS=$PHP_PSI_SRCDIR/php_psi_decls.h
+PSI_VA_DECLS=$PHP_PSI_SRCDIR/php_psi_va_decls.h
+
+AC_DEFUN(PSI_CONFIG_INIT, [
+	cat >$PSI_TYPES <<EOF
+static struct psi_predef_type {
+	token_t type_tag;
+	const char *type_name;
+	const char *alias;
+} psi_predef_types@<:@@:>@ = {
+EOF
+	cat >$PSI_STRUCTS <<EOF
+static struct psi_predef_struct {
+	token_t type_tag;
+	const char *type_name;
+	const char *var_name;
+	size_t offset;
+	size_t size;
+	size_t pointer_level;
+	size_t array_size;
+} psi_predef_structs@<:@@:>@ = {
+EOF
+	cat >$PSI_CONSTS <<EOF
+static struct psi_predef_const {
+	token_t type_tag;
+	const char *type_name;
+	const char *var_name;
+	const char *val_text;
+	token_t val_type_tag;
+} psi_predef_consts@<:@@:>@ = {
+EOF
+	cat >$PSI_REDIRS <<EOF
+static struct psi_func_redir {
+	const char *name;
+	void (*func)(void);
+} psi_func_redirs@<:@@:>@ = {
+EOF
+	cat >$PSI_MACROS </dev/null
+	cat >$PSI_DECLS <<EOF
+static struct psi_predef_decl {
+	token_t type_tag;
+	const char *type_name;
+	const char *var_name;
+	size_t pointer_level;
+	size_t array_size;
+} psi_predef_decls@<:@@:>@ = {
+EOF
+	cat >$PSI_VA_DECLS <<EOF
+static struct psi_predef_decl psi_predef_vararg_decls@<:@@:>@ = {
+EOF
+])
+
+AC_DEFUN(PSI_CONFIG_DONE, [
+	for i in $PSI_TYPES $PSI_STRUCTS $PSI_CONSTS $PSI_REDIRS $PSI_DECLS $PSI_VA_DECLS; do
+		cat >>$i <<EOF
+	{0}
+};
+EOF
+	done
+])
 
 psi_includes() {
 	local have_

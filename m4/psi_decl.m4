@@ -1,5 +1,5 @@
 AC_DEFUN(PSI_REDIR, [psi_symbol=ifelse([$2],[],[$1],[$2])
-	PSI_REDIRS="{\"$1\", (void(*)(void))$psi_symbol}, $PSI_REDIRS"])
+	cat >>$PSI_REDIRS <<<"	{\"$1\", (void(*)(void))$psi_symbol}, "])
 
 AC_DEFUN(PSI_FUNC_LIBC_MAIN, [
 	AC_REQUIRE([AC_PROG_NM])
@@ -61,14 +61,14 @@ AC_DEFUN(PSI_DECL, [
 		[m4_map_args_sep([PSI_DECL_ARG(m4_normalize(], [))], [], m4_bregexp([$2], [(\(.*\))], [\1]))])
 	PSI_FUNC(PSI_VAR_NAME($1), [
 		ifelse([$3], vararg, [
-			PSI_VA_DECLS="$psi_decl_args, {0}, $PSI_VA_DECLS"
+			cat >>$PSI_VA_DECLS <<<"	$psi_decl_args, {0}, "
 		], [
-			PSI_DECLS="$psi_decl_args, {0}, $PSI_DECLS"
+			cat >>$PSI_DECLS <<<"	$psi_decl_args, {0}, "
 		])
 	], [
 		PSI_MACRO($1, $2, [
 			ifelse([$3], vararg, AC_MSG_ERROR(varargs macro support is not implemented),[])
-			PSI_DECLS="$psi_decl_args, {0}, $PSI_DECLS"
+			cat >>$PSI_DECLS <<<"	$psi_decl_args, {0}, "
 		])
 	])
 ])

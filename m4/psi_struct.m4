@@ -17,8 +17,8 @@ AC_DEFUN(PSI_STRUCT, [
 	psi_struct_name=m4_bregexp([$1], [^\(struct \)?\(\w+\)], [\2])
 	psi_struct_members="{PSI_T_STRUCT, \"struct\", \"$psi_struct_name\", 0, $AS_TR_SH([ac_cv_sizeof_]$1), 0, 0}"
 	ifelse([$2],,,[m4_map_args_sep([PSI_STRUCT_MEMBER($1, m4_normalize(], [))], [], $2)])
-	PSI_STRUCTS="$psi_struct_members, {0}, $PSI_STRUCTS"
+	cat >>$PSI_STRUCTS <<<"	$psi_struct_members, {0}, "
 	if test "$1" = "$psi_struct_name"; then
-		PSI_TYPES="{PSI_T_STRUCT, \"$1\", \"$1\"}, $PSI_TYPES"
+		cat >>$PSI_TYPES <<<"	{PSI_T_STRUCT, \"$1\", \"$1\"}, "
 	fi
 ])

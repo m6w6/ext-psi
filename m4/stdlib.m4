@@ -1,6 +1,6 @@
-AC_DEFUN(PSI_CHECK_STDLIB, [
+PSI_CHECK_STDLIB() {
 	AC_CHECK_HEADERS(stdlib.h)
-	
+
 	PSI_STRUCT(div_t, [
 		int quot,
 		int rem
@@ -65,5 +65,4 @@ AC_DEFUN(PSI_CHECK_STDLIB, [
 	PSI_DECL(int unsetenv, [(char *var)])
 	PSI_DECL(size_t wcstombs, [(char *dest, wchar_t *src, size_t n)])
 	PSI_DECL(int wctomb, [(char *s, wchar_t wc)])
-])
-
+}
