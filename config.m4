@@ -14,6 +14,7 @@ m4_foreach(incfile, [
 	[psi_struct.m4],
 	[errno.m4],
 	[glob.m4],
+	[locale.m4],
 	[stddef.m4],
 	[stdio.m4],
 	[stdint.m4],
@@ -29,7 +30,8 @@ m4_foreach(incfile, [
 	[netdb.m4],
 	[syslog.m4],
 	[time.m4],
-	[wchar.m4]], [
+	[wchar.m4],
+	[wctype.m4]], [
 	dnl pecl build
 	sinclude([m4/]incfile)
 	dnl php-src build
@@ -53,6 +55,7 @@ if test "$PHP_PSI" != no; then
 	PSI_CHECK_SYS_TYPES
 	PSI_CHECK_ERRNO
 	PSI_CHECK_GLOB
+	PSI_CHECK_LOCALE
 	PSI_CHECK_STDIO
 	PSI_CHECK_STDLIB
 	PSI_CHECK_TIME
@@ -66,12 +69,14 @@ if test "$PHP_PSI" != no; then
 	PSI_CHECK_NETDB
 	PSI_CHECK_SYSLOG
 	PSI_CHECK_WCHAR
+	PSI_CHECK_WCTYPE
 	PSI_CONFIG_DONE
 
 	PHP_SUBST(PSI_SHARED_LIBADD)
 
 	AC_DEFINE_UNQUOTED(PHP_PSI_SHLIB_SUFFIX, ["$SHLIB_SUFFIX_NAME"], DL suffix)
 
+	AC_DEFINE_UNQUOTED([PSI_STDINC], [$PSI_STDINC], [Standard includes])
 	AC_DEFINE_UNQUOTED([PSI_TYPES], [$PSI_TYPES], [Predefined types])
 	AC_DEFINE_UNQUOTED([PSI_STRUCTS], [$PSI_STRUCTS], [Predefined structs])
 	AC_DEFINE_UNQUOTED([PSI_CONSTS], [$PSI_CONSTS], [Predefined constants])

@@ -1,3 +1,4 @@
+PSI_STDINC=$PHP_PSI_SRCDIR/php_psi_stdinc.h
 PSI_TYPES=$PHP_PSI_SRCDIR/php_psi_types.h
 PSI_STRUCTS=$PHP_PSI_SRCDIR/php_psi_structs.h
 PSI_CONSTS=$PHP_PSI_SRCDIR/php_psi_consts.h
@@ -56,6 +57,9 @@ EOF
 ])
 
 AC_DEFUN(PSI_CONFIG_DONE, [
+	cat >$PSI_STDINC <<EOF
+PSI_INCLUDES
+EOF
 	for i in $PSI_TYPES $PSI_STRUCTS $PSI_CONSTS $PSI_REDIRS $PSI_DECLS $PSI_VA_DECLS; do
 		cat >>$i <<EOF
 	{0}
@@ -75,7 +79,61 @@ EOF
 }
 
 AC_DEFUN(PSI_INCLUDES, [AC_INCLUDES_DEFAULT()
-`psi_includes`])
+#ifdef HAVE_ERRNO_H
+# include <errno.h>
+#endif
+#ifdef HAVE_GLOB_H
+# include <glob.h>
+#endif
+#ifdef HAVE_LOCALE_H
+# include <locale.h>
+#endif
+#ifdef HAVE_XLOCALE_H
+# include <xlocale.h>
+#endif
+#ifdef HAVE_NETINET_IN_H
+# include <netinet/in.h>
+#endif
+#ifdef HAVE_ARPA_NAMESER_H
+# include <arpa/nameser.h>
+#endif
+#ifdef HAVE_NETDB_H
+# include <netdb.h>
+#endif
+#ifdef HAVE_RESOLV_H
+# include <resolv.h>
+#endif
+#ifdef HAVE_SYS_SELECT_H
+# include <sys/select.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+# include <sys/socket.h>
+#endif
+#ifdef HAVE_SYS_TIME_H
+# include <sys/time.h>
+#endif
+#ifdef HAVE_SYS_TIMES_H
+# include <sys/times.h>
+#endif
+#ifdef HAVE_SYS_UIO_H
+# include <sys/uio.h>
+#endif
+#ifdef HAVE_SYS_UTSNAME_H
+# include <sys/utsname.h>
+#endif
+#ifdef HAVE_TIME_H
+# include <time.h>
+#endif
+#ifdef HAVE_SYSLOG_H
+# include <syslog.h>
+#endif
+#ifdef HAVE_WCHAR_H
+# include <wchar.h>
+#endif
+#ifdef HAVE_WCTYPE_H
+# include <wctype.h>
+#endif
+])
 
 AC_DEFUN(PSI_LEMON, [
 	AC_ARG_VAR(LEMON, The lemon parser generator of the SQLite project)

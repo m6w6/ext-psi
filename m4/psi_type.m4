@@ -21,11 +21,11 @@ psi_type_pair() {
 	esac
 }
 
-dnl PSI_TYPE(type name, basic type, includes)
+dnl PSI_TYPE(type name, basic type)
 AC_DEFUN(PSI_TYPE, [
 	ifdef(AS_TR_CPP(AC_TYPE_$1), AS_TR_CPP(AC_TYPE_$1))
 	PSI_CHECK_SIZEOF($1, PSI_INCLUDES)
-	psi_basic_type=$2
+	psi_basic_type=AS_TR_SH($2)
 	case $psi_basic_type in
 	int)
 		AX_CHECK_SIGN($1, :, [
@@ -39,6 +39,44 @@ AC_DEFUN(PSI_TYPE, [
 	if test "$2" && test "$AS_TR_SH([ac_cv_sizeof_]$1)" -gt 0; then
 		AS_TR_SH(psi_basic_type_$1)=$psi_basic_type
 		cat >>$PSI_TYPES <<<"	{`psi_type_pair $psi_basic_type $AS_TR_SH([ac_cv_sizeof_]$1)`, \"$1\"}, "
+	fi
+])
+
+AC_DEFUN(PSI_OPAQUE_TYPE, [
+	ifdef(AS_TR_CPP(AC_TYPE_$1), AS_TR_CPP(AC_TYPE_$1))
+	PSI_CHECK_SIZEOF($1, PSI_INCLUDES)
+	if test "$AS_TR_SH([ac_cv_sizeof_]$1)" -gt 0; then
+		psi_type_class=
+		AC_CACHE_CHECK(type class of $1, AS_TR_SH([psi_cv_type_class_]$1), [
+			AC_TRY_COMPILE(PSI_INCLUDES, [char test@<:@($1)1@:>@;], [
+				psi_type_class=scalar
+			], [
+				AC_TRY_COMPILE(PSI_INCLUDES, [$1 test = 0;], [
+					AC_TRY_COMPILE(PSI_INCLUDES, [$1 test = (($1)0)+1;], [
+						psi_type_class="pointer of known type"
+					], [
+						psi_type_class="pointer of opaque type"
+					])
+				], [
+					psi_type_class=struct
+				])
+			])
+			AS_TR_SH([psi_cv_type_class_]$1)="$psi_type_class"
+		])
+		case "$AS_TR_SH([psi_cv_type_class_]$1)" in
+		scalar)
+			PSI_TYPE($1, int)
+			;;
+		struct)
+			PSI_STRUCT($1)
+			;;
+		pointer*)
+			cat >>$PSI_TYPES <<<"	{PSI_T_POINTER, \"void\", \"$1\"}, "
+			;;
+		*)
+			AC_MSG_WARN(could not detect type class of $1)
+			;;
+		esac
 	fi
 ])
 

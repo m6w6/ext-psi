@@ -91,6 +91,8 @@ static inline ffi_type *psi_ffi_token_type(token_t t) {
 		return &ffi_type_float;
 	case PSI_T_DOUBLE:
 		return &ffi_type_double;
+	case PSI_T_POINTER:
+		return &ffi_type_pointer;
 	}
 }
 static inline ffi_type *psi_ffi_impl_type(token_t impl_type) {
