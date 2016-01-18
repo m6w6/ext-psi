@@ -173,6 +173,35 @@ static inline int validate_decl_arg(PSI_Data *data, decl_arg *arg) {
 	return 1;
 }
 
+static int psi_sort_struct_arg_cmp(const void *_a, const void *_b) {
+	decl_arg *a = *(decl_arg **)_a, *b = *(decl_arg **)_b;
+
+	if (a->layout->pos == b->layout->pos) {
+		if (a->layout->len == b->layout->len) {
+			return 0;
+		} else if (a->layout->len > b->layout->len) {
+			return -1;
+		} else {
+			return 1;
+		}
+	} else if (a->layout->pos > b->layout->pos) {
+		return 1;
+	} else {
+		return -1;
+	}
+}
+static void psi_sort_struct_arg_swp(void *a, void *b) {
+	decl_arg **_a = a, **_b = b, *_c;
+
+	_c = *_b;
+	*_b = *_a;
+	*_a = _c;
+}
+static inline void psi_sort_struct_args(decl_struct *s) {
+	zend_insert_sort(s->args->args, s->args->count, sizeof(*s->args->args),
+			psi_sort_struct_arg_cmp, psi_sort_struct_arg_swp);
+}
+
 static inline int validate_decl_struct(PSI_Data *data, decl_struct *s) {
 	size_t i;
 
@@ -214,6 +243,9 @@ static inline int validate_decl_struct(PSI_Data *data, decl_struct *s) {
 			s->size = darg->layout->pos + darg->layout->len;
 		}
 	}
+
+	psi_sort_struct_args(s);
+
 	return 1;
 }
 
