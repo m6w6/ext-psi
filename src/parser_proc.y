@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include "parser.h"
 
@@ -27,7 +28,7 @@ void psi_error(int, const char *, int, const char *, ...);
 %nonassoc NAME.
 %left PLUS MINUS.
 %left SLASH ASTERISK.
-%fallback NAME TEMP FREE SET LET RETURN LIB INT UNSIGNED.
+%fallback NAME TEMP FREE SET LET RETURN LIB INT LONG SIGNED UNSIGNED.
 
 file ::= blocks.
 
@@ -244,17 +245,28 @@ decl_type(type_) ::= decl_type_token(T). {
 	type_->token = T;
 }
 /* unsigned, urgh */
-decl_type(type_) ::= UNSIGNED NAME(T). {
+decl_type(type_) ::= UNSIGNED(U) NAME(N). {
+	PSI_Token *T = PSI_TokenCat(2, U, N);
 	type_ = init_decl_type(T->type, T->text);
 	type_->token = T;
-	type_->name = realloc(type_->name, T->size + sizeof("unsigned"));
-	memmove(type_->name + sizeof("unsigned"), type_->name, T->size);
-	memcpy(type_->name, "unsigned", sizeof("unsigned")-1);
-	type_->name[sizeof("unsigned")] = ' ';
-	type_->name[T->size + sizeof("unsigned")] = 0;
+	free(U);
+	free(N);
 }
-/* we have to support plain int here because we have it in our lexer rules */
+decl_type(type_) ::= SIGNED NAME(T). {
+	type_ = init_decl_type(T->type, T->text);
+	type_->token = T;
+	type_->name = realloc(type_->name, T->size + sizeof("signed"));
+	memmove(type_->name + sizeof("signed"), type_->name, T->size);
+	memcpy(type_->name, "signed", sizeof("signed")-1);
+	type_->name[sizeof("signed")] = ' ';
+	type_->name[T->size + sizeof("signed")] = 0;
+}
+/* we have to support plain int, long here because we have it in our lexer rules */
 decl_type(type_) ::= INT(T). {
+	type_ = init_decl_type(PSI_T_NAME, T->text);
+	type_->token = T;
+}
+decl_type(type_) ::= LONG INT(T). {
 	type_ = init_decl_type(PSI_T_NAME, T->text);
 	type_->token = T;
 }

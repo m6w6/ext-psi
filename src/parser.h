@@ -65,6 +65,40 @@ static inline decl_type *init_decl_type(token_t type, const char *name) {
 	return t;
 }
 
+static inline decl_type *init_decl_type_ex(token_t type, int argc, ...) {
+	va_list argv;
+	char *ptr, *arg;
+	unsigned i;
+	size_t len, pos = 0, all = 0;
+	decl_type *t = calloc(1, sizeof(*t));
+
+	va_start(argv, argc);
+	for (i = 0; i < argc; ++i) {
+		arg = va_arg(argv, char *);
+		len = va_arg(argv, size_t);
+
+		if (len) {
+			if (all) {
+				pos = all;
+				ptr = realloc(ptr, 1 + (all += len));
+			} else {
+				ptr = malloc(ptr, 1 + (all = len));
+			}
+			memcpy(ptr + pos, arg, len);
+		}
+	}
+	va_end(argv);
+
+	if (!all) {
+		ptr = calloc(1, 1);
+	} else {
+		ptr[all] = 0;
+	}
+	t->type = type;
+	t->name = ptr;
+	return t;
+}
+
 static inline decl_type *real_decl_type(decl_type *type) {
 	while (type->real) {
 		type = type->real;
@@ -1252,6 +1286,10 @@ typedef struct PSI_Parser {
 	char *cur, *tok, *lim, *eof, *ctx, *mrk, buf[BSIZE];
 } PSI_Parser;
 
+static inline size_t PSI_TokenAllocSize(size_t token_len, size_t fname_len) {
+	return sizeof(PSI_Token) + token_len + fname_len + sizeof(unsigned) + 2;
+}
+
 static inline PSI_Token *PSI_TokenAlloc(PSI_Parser *P) {
 	PSI_Token *T;
 	size_t token_len, fname_len;
@@ -1265,7 +1303,7 @@ static inline PSI_Token *PSI_TokenAlloc(PSI_Parser *P) {
 	token_len = P->cur - P->tok;
 	fname_len = strlen(P->psi.file.fn);
 
-	T = calloc(1, sizeof(*T) + token_len + fname_len + sizeof(unsigned) + 2);
+	T = calloc(1, PSI_TokenAllocSize(token_len, fname_len);
 	T->type = token_typ;
 	T->size = token_len;
 	T->text = &T->buf[0];
@@ -1280,8 +1318,7 @@ static inline PSI_Token *PSI_TokenAlloc(PSI_Parser *P) {
 }
 
 static inline PSI_Token *PSI_TokenCopy(PSI_Token *src) {
-	size_t fname_len = strlen(src->file);
-	size_t strct_len = sizeof(*src) + src->size + fname_len + sizeof(unsigned) + 2;
+	size_t strct_len = PSI_TokenAllocSize(src->size, strlen(src->file));
 	PSI_Token *ptr = malloc(strct_len);
 
 	memcpy(ptr, src, strct_len);
@@ -1290,6 +1327,32 @@ static inline PSI_Token *PSI_TokenCopy(PSI_Token *src) {
 	ptr->file = &ptr->buf[ptr->size + 1];
 
 	return ptr;
+}
+
+static inline PSI_Token *PSI_TokenCat(unsigned argc, ...) {
+	va_list argv;
+	unsigned i;
+	PSI_Token *T = NULL;
+
+	va_start(argv, argc);
+	for (i = 0; i < argc; ++i) {
+		PSI_Token *arg = va_arg(argv, PSI_Token *);
+
+		if (T) {
+			size_t fname_len = strlen(T->file);
+
+			T = realloc(T, PSI_TokenAllocSize(T->size + arg->size, fname_len));
+			memmove(&T->buf[T->size + 1], T->file, fname_len + 1);
+			memcpy(T->file - 1, arg->text, arg->size + 1)
+			T->file = &T->buf[T->size + 1];
+		} else {
+			T = PSI_TokenCopy(arg);
+			T->type = PSI_T_NAME;
+		}
+	}
+	va_end(argv);
+
+	return T;
 }
 
 static inline const char *PSI_TokenLocation(PSI_Token *t) {
