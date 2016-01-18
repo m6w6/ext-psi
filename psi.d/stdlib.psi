@@ -2,3 +2,9 @@ function psi\abs(int $i) : int {
 	let n = intval($i);
 	return to_int(abs);
 }
+
+function psi\div(int $numerator, int $denominator) : array {
+	let numerator = intval($numerator);
+	let denominator = intval($denominator);
+	return to_array(div, to_int(quot), to_int(rem));
+}

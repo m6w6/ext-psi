@@ -109,8 +109,45 @@ static inline ffi_type *psi_ffi_impl_type(token_t impl_type) {
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}
 }
+static void psi_ffi_struct_type_dtor(void *type) {
+	ffi_type *strct = type;
+
+	if (strct->elements) {
+		free(strct->elements);
+	}
+	free(strct);
+}
+static inline ffi_type *psi_ffi_decl_arg_type(decl_arg *darg);
+static ffi_type **psi_ffi_struct_type_elements(decl_struct *strct) {
+	ffi_type **els = calloc(strct->args->count + 1, sizeof(*els));
+	size_t i;
+
+	for (i = 0; i < strct->args->count; ++i) {
+		els[i] = psi_ffi_decl_arg_type(strct->args->args[i]);
+	}
+	els[i] = NULL;
+
+	return els;
+}
 static inline ffi_type *psi_ffi_decl_type(decl_type *type) {
-	return psi_ffi_token_type(real_decl_type(type)->type);
+	decl_type *real = real_decl_type(type);
+
+	if (real->type == PSI_T_STRUCT) {
+		if (!real->strct->engine.type) {
+			ffi_type *strct = calloc(1, sizeof(ffi_type));
+
+			strct->type = FFI_TYPE_STRUCT;
+			strct->size = real->strct->size;
+			strct->alignment = 0;
+			strct->elements = psi_ffi_struct_type_elements(real->strct);
+
+			real->strct->engine.type = strct;
+			real->strct->engine.dtor = psi_ffi_struct_type_dtor;
+		}
+
+		return real->strct->engine.type;
+	}
+	return psi_ffi_token_type(real->type);
 }
 static inline ffi_type *psi_ffi_decl_arg_type(decl_arg *darg) {
 	if (darg->var->pointer_level) {

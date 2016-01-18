@@ -377,6 +377,10 @@ typedef struct decl_struct {
 	char *name;
 	decl_args *args;
 	size_t size;
+	struct {
+		void *type;
+		void (*dtor)(void *type);
+	} engine;
 } decl_struct;
 
 static inline decl_struct *init_decl_struct(const char *name, decl_args *args) {

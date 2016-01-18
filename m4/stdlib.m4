@@ -22,7 +22,7 @@ PSI_CHECK_STDLIB() {
 	PSI_DECL(double atof, [(char *str)])
 	PSI_DECL(int atoi, [(char *str)])
 	PSI_DECL(long atol, [(char *str)])
-	dnl PSI_DECL(div_t div, [(int numerator, int denominator)])
+	PSI_DECL(div_t div, [(int numerator, int denominator)])
 	PSI_DECL(double drand48, [()])
 	PSI_DECL(double erand48, [(unsigned short xsubi@<:@3@:>@)])
 	PSI_DECL(void exit, [(int status)])
