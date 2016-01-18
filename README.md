@@ -1,4 +1,4 @@
-# psi
+# ext-psi
 
 [![Build Status](https://travis-ci.org/m6w6/psi.svg?branch=master)](https://travis-ci.org/m6w6/psi)
 
@@ -23,8 +23,8 @@ and pharext packages attached to [releases](./releases).
 
 ### Checkout
 
-	git clone github.com:m6w6/psi
-	cd psi
+	git clone github.com:m6w6/ext-psi
+	cd ext-psi
 	/path/to/phpize
 	./configure --with-php-config=/path/to/php-config
 	make
@@ -37,7 +37,7 @@ A comprehensive list of changes can be obtained from the
 
 ## License
 
-psi is licensed under the 2-Clause-BSD license, which can be found in
+ext-psi is licensed under the 2-Clause-BSD license, which can be found in
 the accompanying [LICENSE](./LICENSE) file.
 
 ## Contributing
