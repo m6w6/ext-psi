@@ -13,6 +13,8 @@
 #define BSIZE 256
 
 #define PSI_T_POINTER PSI_T_ASTERISK
+#define PSI_T_LONG_DOUBLE (PSI_T_DOUBLE << 16)
+
 typedef int token_t;
 
 /* in php_psi.h */
@@ -82,7 +84,7 @@ static inline decl_type *init_decl_type_ex(token_t type, int argc, ...) {
 				pos = all;
 				ptr = realloc(ptr, 1 + (all += len));
 			} else {
-				ptr = malloc(ptr, 1 + (all = len));
+				ptr = malloc(1 + (all = len));
 			}
 			memcpy(ptr + pos, arg, len);
 		}
@@ -1303,7 +1305,7 @@ static inline PSI_Token *PSI_TokenAlloc(PSI_Parser *P) {
 	token_len = P->cur - P->tok;
 	fname_len = strlen(P->psi.file.fn);
 
-	T = calloc(1, PSI_TokenAllocSize(token_len, fname_len);
+	T = calloc(1, PSI_TokenAllocSize(token_len, fname_len));
 	T->type = token_typ;
 	T->size = token_len;
 	T->text = &T->buf[0];
@@ -1343,7 +1345,7 @@ static inline PSI_Token *PSI_TokenCat(unsigned argc, ...) {
 
 			T = realloc(T, PSI_TokenAllocSize(T->size + arg->size, fname_len));
 			memmove(&T->buf[T->size + 1], T->file, fname_len + 1);
-			memcpy(T->file - 1, arg->text, arg->size + 1)
+			memcpy(T->file - 1, arg->text, arg->size + 1);
 			T->file = &T->buf[T->size + 1];
 		} else {
 			T = PSI_TokenCopy(arg);

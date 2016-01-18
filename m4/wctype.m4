@@ -1,6 +1,7 @@
 PSI_CHECK_WCTYPE() {
 	AC_CHECK_HEADERS(wctype.h)
 
+	PSI_TYPE(wctype_t, int)
 	PSI_TYPE(wctrans_t, int)
 
 	PSI_DECL(int iswalnum, [(wint_t wc)])

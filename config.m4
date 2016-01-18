@@ -1,6 +1,12 @@
 PHP_ARG_ENABLE(psi, whether to enable PHP System Interface support,
 [  --enable-psi            Enable PHP System Interface support])
 
+PHP_ARG_WITH(psi-libjit, where to find libjit,
+[  --with-psi-libjit=DIR   PSI: path to libjit], [ ], [ ])
+
+PHP_ARG_WITH(psi-libffi, where to find libffi,
+[  --with-psi-libffi=DIR   PSI: path to libffi], [ ], [ ])
+
 PHP_PSI_SRCDIR=PHP_EXT_SRCDIR(psi)
 PHP_PSI_BUILDDIR=PHP_EXT_BUILDDIR(psi)
 

@@ -4,3 +4,5 @@
 * check out jit-dynamic
 * fix arginfo with nullable types
 * pemalloc
+* unions
+* callbacks and function pointers

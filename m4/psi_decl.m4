@@ -1,6 +1,30 @@
-AC_DEFUN(PSI_REDIR, [psi_symbol=ifelse([$2],[],[$1],[$2])
-	cat >>$PSI_REDIRS <<<"	{\"$1\", (void(*)(void))$psi_symbol}, "])
+# psi_add_redir(name, symbol)
+# Add a function redirection to $PSI_REDIRS.
+psi_add_redir() {
+	cat >>$PSI_REDIRS <<<"	{\"$1\", (void(*)(void))$2}, "
+}
 
+# psi_add_decl(decl, options)
+# Add a pre-defined decl to $PSI_VA_DECLS/$PSI_DECLS.
+psi_add_decl() {
+	case "$2" in
+	*vararg*)
+		cat >>$PSI_VA_DECLS <<<"	$1, {0}, "
+		;;
+	*)
+		cat >>$PSI_DECLS <<<"	$1, {0}, "
+		;;
+	esac
+}
+
+dnl PSI_REDIR(name, custom symbol)
+dnl Create a function redirection to an optional custom symbol.
+AC_DEFUN(PSI_REDIR, [
+	psi_add_redir $1 ifelse([$2],[],[$1],[$2])
+])
+
+dnl PSI_FUNC_LIBC_MAIN()
+dnl Check for the platforms default stub in executables.
 AC_DEFUN(PSI_FUNC_LIBC_MAIN, [
 	AC_REQUIRE([AC_PROG_NM])
 	AC_REQUIRE([AC_PROG_AWK])
@@ -14,6 +38,7 @@ AC_DEFUN(PSI_FUNC_LIBC_MAIN, [
 ])
 
 dnl PSI_FUNC(fn, action-if-yes, action-if-no)
+dnl Check for a possible function redirection.
 AC_DEFUN(PSI_FUNC, [
 	AC_REQUIRE([PSI_FUNC_LIBC_MAIN])
 	psi_symbol=$1
@@ -40,6 +65,8 @@ AC_DEFUN(PSI_FUNC, [
 	esac
 ])
 
+dnl PSI_DECL_ARG(decl arg)
+dnl INTERNAL: build psi_decl_args
 AC_DEFUN(PSI_DECL_ARG, [
     m4_define([member_name], PSI_VAR_NAME($1))
     m4_define([member_type], PSI_VAR_TYPE($1))
@@ -52,6 +79,9 @@ AC_DEFUN(PSI_DECL_ARG, [
 ])
 
 dnl PSI_DECL(type func, args, flags)
+dnl Check for a function or macro declaration.
+dnl Adds a pre-defined (vararg) decl to $PSI_VA_DECLS/$PSI_DECLS.
+dnl Calls PSI_MACRO if PSI_FUNC fails. 
 AC_DEFUN(PSI_DECL, [
 	psi_decl_args=
 	PSI_DECL_ARG($1)
@@ -60,15 +90,14 @@ AC_DEFUN(PSI_DECL, [
 		[()], [],
 		[m4_map_args_sep([PSI_DECL_ARG(m4_normalize(], [))], [], m4_bregexp([$2], [(\(.*\))], [\1]))])
 	PSI_FUNC(PSI_VAR_NAME($1), [
-		ifelse([$3], vararg, [
-			cat >>$PSI_VA_DECLS <<<"	$psi_decl_args, {0}, "
-		], [
-			cat >>$PSI_DECLS <<<"	$psi_decl_args, {0}, "
-		])
+		psi_add_decl "$psi_decl_args" $3
 	], [
 		PSI_MACRO($1, $2, [
-			ifelse([$3], vararg, AC_MSG_ERROR(varargs macro support is not implemented),[])
-			cat >>$PSI_DECLS <<<"	$psi_decl_args, {0}, "
+			ifelse([$3], vararg, [
+				AC_MSG_ERROR(varargs macro support is not implemented)
+			],[
+				psi_add_decl "$psi_decl_args"
+			])
 		])
 	])
 ])

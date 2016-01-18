@@ -1,3 +1,9 @@
+# psi_add_macro(macro)
+# Add a pre-defined macro function to $PSI_MACROS.
+psi_add_macro() {
+	cat >>$PSI_MACROS <<<"$1"
+}
+
 dnl PSI_MACRO(macro, decl args, action-if-true)
 AC_DEFUN(PSI_MACRO, [
 	AC_CHECK_DECL(PSI_VAR_NAME($1)$2, [
@@ -27,8 +33,7 @@ AC_DEFUN(PSI_MACRO, [
 		], [
 			macro_body="return $macro_name$macro_call;"
 		])
-		psi_macro="$macro_type psi_macro_$macro_name$macro_decl { $macro_body }"
-		cat >>$PSI_MACROS <<<"$psi_macro"
+		psi_add_macro "$macro_type psi_macro_$macro_name$macro_decl { $macro_body }"
 		PSI_REDIR($macro_name, psi_macro_$macro_name)
 	], [], PSI_INCLUDES)
 ])

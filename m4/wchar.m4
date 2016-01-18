@@ -2,7 +2,6 @@ PSI_CHECK_WCHAR() {
 	AC_CHECK_HEADERS(wchar.h)
 
 	PSI_TYPE(wint_t, int)
-	PSI_TYPE(wctype_t, int)
 	PSI_STRUCT(mbstate_t)
 
 	PSI_CONST(WINT_MIN, int)

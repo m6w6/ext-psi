@@ -40,6 +40,9 @@ static struct psi_std_type {
 } psi_std_types[] = {
 	{PSI_T_FLOAT, "float"},
 	{PSI_T_DOUBLE, "double"},
+#ifdef HAVE_LONG_DOUBLE
+	{PSI_T_LONG_DOUBLE, "long double"},
+#endif
 	{PSI_T_INT8, "int8_t"},
 	{PSI_T_INT16, "int16_t"},
 	{PSI_T_INT32, "int32_t"},
@@ -124,6 +127,10 @@ static inline int locate_decl_type_struct(decl_structs *structs, decl_type *type
 
 static inline int validate_decl_type(PSI_Data *data, decl_type *type) {
 	switch (type->type) {
+	case PSI_T_CHAR:
+	case PSI_T_SHORT:
+	case PSI_T_INT:
+	case PSI_T_LONG:
 	case PSI_T_NAME:
 		if (!data->defs || !locate_decl_type_alias(data->defs, type)) {
 			return 0;
@@ -1272,7 +1279,8 @@ void PSI_ContextDump(PSI_Context *C, int fd)
 
 			dprintf(fd, "typedef ");
 			dump_decl_type(fd, tdef->type);
-			dprintf(fd, " %s;\n", tdef->alias);
+			dprintf(fd, " %s%s;\n", tdef->type->type == PSI_T_POINTER ? "*":"",
+					tdef->alias);
 		}
 		dprintf(fd, "\n");
 	}
