@@ -42,6 +42,8 @@ static inline jit_type_t psi_jit_token_type(token_t t) {
 		return jit_type_sys_float;
 	case PSI_T_DOUBLE:
 		return jit_type_sys_double;
+	case PSI_T_POINTER:
+		return jit_type_void_ptr;
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}
 }
