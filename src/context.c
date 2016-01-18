@@ -1243,7 +1243,7 @@ static inline void dump_impl_set_value(int fd, set_value *set, unsigned level) {
 		dprintf(fd, ", ");
 		dump_num_exp(fd, set->num);
 	}
-	if (set->inner) {
+	if (set->inner && set->func->type != PSI_T_ELLIPSIS) {
 		dprintf(fd, ",\n");
 		for (i = 0; i < set->count; ++i) {
 			dump_impl_set_value(fd, set->inner[i], level+1);
@@ -1390,6 +1390,9 @@ void PSI_ContextDump(PSI_Context *C, int fd)
 						case PSI_LET_FUNC:
 							dprintf(fd, "%s($%s)", let->val->data.func->name,
 									let->val->data.func->var->name);
+							break;
+						case PSI_LET_NUMEXP:
+							dump_num_exp(fd, let->val->data.num);
 							break;
 
 						EMPTY_SWITCH_DEFAULT_CASE();
