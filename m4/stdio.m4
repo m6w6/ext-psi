@@ -19,6 +19,10 @@ PSI_CHECK_STDIO() {
     PSI_CONST(L_ctermid, int)
     PSI_CONST(L_tmpnam, int)
 
+    PSI_MACRO(FILE *stderr)
+    PSI_MACRO(FILE *stdout)
+    PSI_MACRO(FILE *stdin)
+
     PSI_DECL(void clearerr, [(FILE *stream)])
     PSI_DECL(char *ctermid, [(char *s)])
     PSI_DECL(int fclose, [(FILE *stream)])

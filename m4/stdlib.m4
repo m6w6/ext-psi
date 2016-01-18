@@ -13,7 +13,8 @@ PSI_CHECK_STDLIB() {
 	PSI_CONST(EXIT_FAILURE, int)
 	PSI_CONST(EXIT_SUCCESS, int)
 	PSI_CONST(RAND_MAX, int)
-	PSI_CONST(MB_CUR_MAX, int)
+	
+	PSI_MACRO(int MB_CUR_MAX)
 
 	PSI_DECL(void _Exit, [(int status)])
 	PSI_DECL(void abort, [()])

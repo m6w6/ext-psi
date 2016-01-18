@@ -53,3 +53,11 @@ tests/*/*.sh
 /config.cache
 *~
 *.swp
+php_psi_consts.h
+php_psi_decls.h
+php_psi_macros.h
+php_psi_redirs.h
+php_psi_stdinc.h
+php_psi_structs.h
+php_psi_types.h
+php_psi_va_decls.h

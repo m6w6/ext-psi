@@ -1,4 +1,12 @@
+# psi_add_type(type triplet)
+# Add a pre-defined type to $PSI_TYPES.
+psi_add_type() {
+	cat >>$PSI_TYPES <<<"	$1, "
+}
+
 # psi_type_pair(type, size)
+# Output a PSI_T_<TYPE>, \"<TYPENAME>\" tuple.
+# Uses stdint types when possible.
 psi_type_pair() {
 	local psi_type_name=`tr -cd A-Za-z0-9_ <<<$1`
 	local psi_type_lower=`tr A-Z a-z <<<$psi_type_name`
@@ -7,7 +15,6 @@ psi_type_pair() {
 		local psi_type_upper=`tr a-z A-Z <<<$psi_type_name`
 		local psi_type_bits=`expr $2 \* 8`
 		echo "PSI_T_${psi_type_upper}${psi_type_bits}, \"${psi_type_lower}${psi_type_bits}_t\""
-		#eval AS_TR_SH([psi_standard_type_]$1)="${psi_type_lower}${psi_type_bits}_t"
 		;;
 	struct*)
 		echo "PSI_T_STRUCT, \"$2\""
@@ -21,44 +28,88 @@ psi_type_pair() {
 	esac
 }
 
-dnl PSI_TYPE(type name, basic type, includes)
+dnl PSI_TYPE(type name, basic type)
+dnl Check for a specific type, optionally referring to a basic type.
+dnl Calls AC_TYPE_<TYPE> (if defined) and PSI_CHECK_SIZEOF.
+dnl If the basic type is just specified as "int" (in contrast to "sint" or 
+dnl "uint"), AX_CHECK_SIGN is used to discover signedness of the type.
+dnl Defines a pre-defined type in $PSI_TYPES.
 AC_DEFUN(PSI_TYPE, [
 	ifdef(AS_TR_CPP(AC_TYPE_$1), AS_TR_CPP(AC_TYPE_$1))
 	PSI_CHECK_SIZEOF($1, PSI_INCLUDES)
-	psi_basic_type=$2
+	psi_basic_type=AS_TR_SH($2)
 	case $psi_basic_type in
 	int)
-		AX_CHECK_SIGN($1, :, [
-			psi_basic_type=uint
-		], PSI_INCLUDES)
+		AX_CHECK_SIGN($1, :, [psi_basic_type=uint], PSI_INCLUDES)
 		;;
 	sint)
 		psi_basic_type=int
 		;;
 	esac
-	if test "$2" && test "$AS_TR_SH([ac_cv_sizeof_]$1)" -gt 0; then
+	if test "$2" && PSI_SH_TEST_SIZEOF($1); then
 		AS_TR_SH(psi_basic_type_$1)=$psi_basic_type
-		cat >>$PSI_TYPES <<<"	{`psi_type_pair $psi_basic_type $AS_TR_SH([ac_cv_sizeof_]$1)`, \"$1\"}, "
+		psi_add_type "{`psi_type_pair $psi_basic_type $AS_TR_SH([ac_cv_sizeof_]$1)`, \"$1\"}"
+		#cat >>$PSI_TYPES <<<"{`psi_type_pair $psi_basic_type $AS_TR_SH([ac_cv_sizeof_]$1)`, \"$1\"}, "
 	fi
 ])
 
-dnl unsigned char* buf[16] -> unsigned char*
-dnl AC_DEFUN(PSI_VAR_TYPE, [m4_bregexp([$1], [\(\(struct \)?[^ ]+\)[ *]+[^ ]+$], [\1])])
-AC_DEFUN(PSI_VAR_TYPE, [m4_bregexp([$1], [^\(const \)?\(.*\) \([*]*\)[^ ]+$], [\2\3])])
-dnl unsigned char* buf[16] -> buf
-AC_DEFUN(PSI_VAR_NAME, [m4_bregexp(m4_bregexp([$1], [\([^ ]+\)$], [\1]), [\w+], [\&])])
-dnl PSI_TYPE_SIZE(type, pointer level, array size)
-AC_DEFUN(PSI_TYPE_SIZE, [ifelse(
-	[$3], 0,
-		[ifelse([$2], 0, $AS_TR_SH([ac_cv_sizeof_]$1), $ac_cv_sizeof_void_p)],
-		[ifelse([$2], 1, [`expr $3 \* $AS_TR_SH([ac_cv_sizeof_]$1)`], $ac_cv_sizeof_void_p)]
-)])
-dnl PSI_TYPE_BITS(type)
-AC_DEFUN(PSI_TYPE_BITS, [`expr 8 \* $AS_TR_SH([ac_cv_sizeof_]$1)`])
+dnl PSI_OPAQUE_TYPE(type name)
+dnl Checks a type for being a scalar, a struct or a pointer type.
+dnl Calls AC_TYPE_<TYPE> (if defined) and PSI_CHECK_SIZEOF.
+dnl Defines a pre-defined type in $PSI_TYPES and a pre-defined struct in
+dnl $PSI_STRUCTS if the type is a struct.
+AC_DEFUN(PSI_OPAQUE_TYPE, [
+	ifdef(AS_TR_CPP(AC_TYPE_$1), AS_TR_CPP(AC_TYPE_$1))
+	PSI_CHECK_SIZEOF($1, PSI_INCLUDES)
+	if PSI_SH_TEST_SIZEOF($1); then
+		psi_type_class=
+		AC_CACHE_CHECK(type class of $1, AS_TR_SH([psi_cv_type_class_]$1), [
+			AC_TRY_COMPILE(PSI_INCLUDES, [char test@<:@($1)1@:>@;], [
+				psi_type_class=scalar
+			], [
+				AC_TRY_COMPILE(PSI_INCLUDES, [$1 test = 0;], [
+					AC_TRY_COMPILE(PSI_INCLUDES, [$1 test = (($1)0)+1;], [
+						psi_type_class="pointer of known type"
+					], [
+						psi_type_class="pointer of opaque type"
+					])
+				], [
+					psi_type_class=struct
+				])
+			])
+			AS_TR_SH([psi_cv_type_class_]$1)="$psi_type_class"
+		])
+		case "$AS_TR_SH([psi_cv_type_class_]$1)" in
+		scalar)
+			AX_CHECK_SIGN($1, [psi_basic_type=int], [psi_basic_type=uint], PSI_INCLUDES)
+			psi_add_type "{`psi_type_pair $psi_basic_type $AS_TR_SH([ac_cv_sizeof_]$1)`, \"$1\"}"
+			#cat >>$PSI_TYPES <<<"	{`psi_type_pair $psi_basic_type $AS_TR_SH([ac_cv_sizeof_]$1)`, \"$1\"}, "
+			;;
+		struct)
+			PSI_STRUCT($1)
+			;;
+		pointer*)
+			psi_add_type "{PSI_T_POINTER, \"void\", \"$1\"}"
+			#cat >>$PSI_TYPES <<<"	{PSI_T_POINTER, \"void\", \"$1\"}, "
+			;;
+		*)
+			AC_MSG_WARN(could not detect type class of $1)
+			;;
+		esac
+	fi
+])
 
-dnl PSI_TYPE_INDIRECTION(type, size, pointer_level_var, array_size_var)
+dnl PSI_VAR_TYPE(decl arg)
+dnl Extracts the type of a decl arg, e.g. dnl unsigned char* buf[16] -> unsigned char*.
+AC_DEFUN(PSI_VAR_TYPE, [m4_bregexp([$1], [^\(const \)?\(.*\) \([*]*\)[^ ]+$], [\2\3])])
+
+dnl PSI_VAR_NAME(decl arg)
+dnl Extracts the var name of a decl arg, e.g. unsigned char* buf[16] -> buf.
+AC_DEFUN(PSI_VAR_NAME, [m4_bregexp(m4_bregexp([$1], [\([^ ]+\)$], [\1]), [\w+], [\&])])
+
+dnl PSI_TYPE_INDIRECTION(decl arg, size, pointer_level_var, array_size_var)
+dnl Calculates and assigns pointer_level and array_size of a decl arg to sh vars.
 AC_DEFUN(PSI_TYPE_INDIRECTION, [
-	dnl AC_MSG_CHECKING(indirection of $1)
 	m4_define([psi_pointer_level], m4_len(m4_bpatsubst([PSI_VAR_TYPE($1)], [[^*]])))
 	m4_define([psi_array_size], [m4_bregexp([PSI_VAR_TYPE($1)], [@<:@\([0-9]+\)@:>@], [\1])])
 
@@ -82,15 +133,18 @@ AC_DEFUN(PSI_TYPE_INDIRECTION, [
 		$3=m4_incr(psi_pointer_level)
 		$4=psi_array_size
 	])
-
-	dnl AC_MSG_RESULT([[$]$3, [$]$4])
 ])
 
+dnl PSI_TYPE_PAIR(type)
+dnl Expand to a PSI_T_<TYPE>, \\"<TYPENAME>\\" tuple.
+dnl FIXME: There is also psi_type_pair()?
 AC_DEFUN(PSI_TYPE_PAIR, [m4_case(m4_bregexp([$1], [^\w+], [\&]),
 	[void], [PSI_T_VOID, \"void\"],
 	[struct], [PSI_T_STRUCT, \"m4_bregexp([$1], [^struct \(\w+\)], [\1])\"],
 	[PSI_T_NAME, \"m4_bregexp([$1], [^\(\w+ \)*\w+], [\&])\"])])
 
+dnl PSI_CHECK_STD_TYPES()
+dnl Checks for standard ANSI-C and stdint types.
 AC_DEFUN(PSI_CHECK_STD_TYPES, [
 	AC_CHECK_HEADERS(stdint.h)
 
@@ -123,16 +177,35 @@ AC_DEFUN(PSI_CHECK_STD_TYPES, [
 	AC_CHECK_ALIGNOF(float)
 	PSI_TYPE(double)
 	AC_CHECK_ALIGNOF(double)
+	PSI_TYPE(long double)
+	AC_CHECK_ALIGNOF(long double)
 	PSI_TYPE(void *)
 	AC_CHECK_ALIGNOF(void *)
 
 	PSI_TYPE(char, int)
+	PSI_TYPE(signed char, int)
 	PSI_TYPE(unsigned char, uint)
 	PSI_TYPE(short, int)
+	PSI_TYPE(short int, int)
+	PSI_TYPE(signed short, int)
+	PSI_TYPE(signed short int, int)
 	PSI_TYPE(unsigned short, uint)
+	PSI_TYPE(unsigned short int, uint)
 	PSI_TYPE(int, int)
+	PSI_TYPE(signed int, int)
+	PSI_TYPE(signed, int)
 	PSI_TYPE(unsigned int, uint)
 	PSI_TYPE(unsigned, uint)
 	PSI_TYPE(long, int)
+	PSI_TYPE(long int, int)
+	PSI_TYPE(signed long int, int)
 	PSI_TYPE(unsigned long, uint)
+	PSI_TYPE(unsigned long int, uint)
+	PSI_TYPE(long long, int)
+	PSI_TYPE(signed long long, int)
+	PSI_TYPE(signed long long int, int)
+	PSI_TYPE(unsigned long long, uint)
+	PSI_TYPE(unsigned long long int, uint)
+	dnl this must come after the check fo "unsigned long long int"; autoconf, wth?
+	PSI_TYPE(long long int, int)
 ])

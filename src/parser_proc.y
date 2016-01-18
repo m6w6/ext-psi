@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include "parser.h"
 
@@ -27,7 +28,7 @@ void psi_error(int, const char *, int, const char *, ...);
 %nonassoc NAME.
 %left PLUS MINUS.
 %left SLASH ASTERISK.
-%fallback NAME TEMP FREE SET LET RETURN LIB INT UNSIGNED.
+%fallback NAME TEMP FREE SET LET RETURN LIB CHAR SHORT INT LONG SIGNED UNSIGNED.
 
 file ::= blocks.
 
@@ -103,8 +104,8 @@ decl_typedef(def) ::= TYPEDEF decl_type(type) NAME(ALIAS) EOS. {
 	def->token = ALIAS;
 }
 /* support opaque types */
-decl_typedef(def) ::= TYPEDEF VOID(V) NAME(ALIAS) EOS. {
-	def = init_decl_typedef(ALIAS->text, init_decl_type(V->type, V->text));
+decl_typedef(def) ::= TYPEDEF VOID(V) indirection(i) NAME(ALIAS) EOS. {
+	def = init_decl_typedef(ALIAS->text, init_decl_type(i?PSI_T_POINTER:V->type, V->text));
 	def->token = ALIAS;
 	def->type->token = V;
 }
@@ -236,27 +237,47 @@ struct_layout(layout) ::= COLON COLON LPAREN NUMBER(POS) COMMA NUMBER(SIZ) RPARE
 	free(SIZ);
 }
 
-%token_class decl_type_token FLOAT DOUBLE INT8 UINT8 INT16 UINT16 INT32 UINT32 INT64 UINT64 NAME.
-%type decl_type {decl_type*}
-%destructor decl_type {free_decl_type($$);}
-decl_type(type_) ::= decl_type_token(T). {
+/* un/signed, urgh */
+decl_scalar_type(type_) ::= CHAR(C). {
+	type_ = C;
+}
+decl_scalar_type(type_) ::= SHORT(S) INT(I). {
+	type_ = PSI_TokenCat(2, S, I);
+	free(S);
+	free(I);
+}
+decl_scalar_type(type_) ::= SHORT(S). {
+	type_ = S;
+}
+decl_scalar_type(type_) ::= LONG(L) INT(I). {
+	type_ = PSI_TokenCat(2, L, I);
+	free(L);
+	free(I);
+}
+decl_scalar_type(type_) ::= LONG(L1) LONG(L2) INT(I). {
+	type_ = PSI_TokenCat(3, L1, L2, I);
+	free(L1);
+	free(L2);
+	free(I);
+}
+decl_scalar_type(type_) ::= LONG(L1) LONG(L2). {
+	type_ = PSI_TokenCat(2, L1, L2);
+	free(L1);
+	free(L2);
+}
+decl_type(type_) ::= UNSIGNED(U) decl_scalar_type(N). {
+	PSI_Token *T = PSI_TokenCat(2, U, N);
 	type_ = init_decl_type(T->type, T->text);
 	type_->token = T;
+	free(U);
+	free(N);
 }
-/* unsigned, urgh */
-decl_type(type_) ::= UNSIGNED NAME(T). {
+decl_type(type_) ::= SIGNED(S) decl_scalar_type(N). {
+	PSI_Token *T = PSI_TokenCat(2, S, N);
 	type_ = init_decl_type(T->type, T->text);
 	type_->token = T;
-	type_->name = realloc(type_->name, T->size + sizeof("unsigned"));
-	memmove(type_->name + sizeof("unsigned"), type_->name, T->size);
-	memcpy(type_->name, "unsigned", sizeof("unsigned")-1);
-	type_->name[sizeof("unsigned")] = ' ';
-	type_->name[T->size + sizeof("unsigned")] = 0;
-}
-/* we have to support plain int here because we have it in our lexer rules */
-decl_type(type_) ::= INT(T). {
-	type_ = init_decl_type(PSI_T_NAME, T->text);
-	type_->token = T;
+	free(S);
+	free(N);
 }
 /* structs ! */
 decl_type(type_) ::= STRUCT(S) NAME(T). {
@@ -264,6 +285,21 @@ decl_type(type_) ::= STRUCT(S) NAME(T). {
 	type_->token = T;
 	free(S);
 }
+decl_type(type_) ::= LONG(L) DOUBLE(D). {
+	PSI_Token *T = PSI_TokenCat(2, L, D);
+	type_ = init_decl_type(T->type, T->text);
+	type_->token = T;
+	free(L);
+	free(D);
+}
+%token_class decl_type_token FLOAT DOUBLE INT8 UINT8 INT16 UINT16 INT32 UINT32 INT64 UINT64 NAME.
+%type decl_type {decl_type*}
+%destructor decl_type {free_decl_type($$);}
+decl_type(type_) ::= decl_type_token(T). {
+	type_ = init_decl_type(T->type, T->text);
+	type_->token = T;
+}
+
 
 %type const_decl_type {decl_type*}
 %destructor const_decl_type {free_decl_type($$);}
