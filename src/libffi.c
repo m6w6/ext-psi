@@ -56,6 +56,7 @@ static void psi_ffi_closure_free(void *c)
 }
 
 static void psi_ffi_handler(ffi_cif *signature, void *_result, void **_args, void *_data);
+static inline ffi_type *psi_ffi_decl_arg_type(decl_arg *darg);
 
 static inline ffi_abi psi_ffi_abi(const char *convention) {
 	return FFI_DEFAULT_ABI;
@@ -87,6 +88,8 @@ static inline ffi_type *psi_ffi_token_type(token_t t) {
 		return &ffi_type_uchar;
 	case PSI_T_INT:
 		return &ffi_type_sint;
+	case PSI_T_LONG:
+		return &ffi_type_slong;
 	case PSI_T_FLOAT:
 		return &ffi_type_float;
 	case PSI_T_DOUBLE:
@@ -108,24 +111,70 @@ static inline ffi_type *psi_ffi_impl_type(token_t impl_type) {
 		return &ffi_type_double;
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}
+	return NULL;
 }
 static void psi_ffi_struct_type_dtor(void *type) {
 	ffi_type *strct = type;
 
 	if (strct->elements) {
+		ffi_type **ptr;
+
+		for (ptr = strct->elements; *ptr; ++ptr) {
+			free(*ptr);
+		}
 		free(strct->elements);
 	}
 	free(strct);
 }
-static inline ffi_type *psi_ffi_decl_arg_type(decl_arg *darg);
+
 static ffi_type **psi_ffi_struct_type_elements(decl_struct *strct) {
-	ffi_type **els = calloc(strct->args->count + 1, sizeof(*els));
-	size_t i;
+	size_t i, j, argc = strct->args->count << 2, nels = 0, offset = 0, align, padding;
+	ffi_type **els = calloc(argc + 1, sizeof(*els));
 
 	for (i = 0; i < strct->args->count; ++i) {
-		els[i] = psi_ffi_decl_arg_type(strct->args->args[i]);
+		decl_arg *darg = strct->args->args[i];
+		ffi_type *type = malloc(sizeof(*type));
+
+		memcpy(type, psi_ffi_decl_arg_type(darg), sizeof(*type));
+
+		if (darg->layout->pos > offset) {
+			padding = darg->layout->pos - offset;
+			align = ((padding - 1) | (type->alignment - 1)) + 1;
+			if (align >= padding) {
+				padding = 0;
+			}
+		} else {
+			align = 0;
+			padding = 0;
+		}
+
+		if (padding) {
+			for (j = 0; j < padding; ++j) {
+				ffi_type *pad = malloc(sizeof(*pad));
+
+				ZEND_ASSERT(nels + 1 < argc);
+				memcpy(pad, &ffi_type_schar, sizeof(*pad));
+				els[nels++] = pad;
+			}
+		}
+
+		ZEND_ASSERT(nels + 1 < argc);
+		els[nels++] = type;
+
+		offset += MAX(align, padding) + darg->layout->len;
 	}
-	els[i] = NULL;
+
+	ZEND_ASSERT(offset <= strct->size);
+	if (offset < strct->size) {
+		padding = strct->size - offset;
+		for (j = 0; j < padding; ++j) {
+			ffi_type *pad = malloc(sizeof(*pad));
+
+			ZEND_ASSERT(nels + 1 < argc);
+			memcpy(pad, &ffi_type_schar, sizeof(*pad));
+			els[nels++] = pad;
+		}
+	}
 
 	return els;
 }
@@ -138,7 +187,6 @@ static inline ffi_type *psi_ffi_decl_type(decl_type *type) {
 
 			strct->type = FFI_TYPE_STRUCT;
 			strct->size = real->strct->size;
-			strct->alignment = 0;
 			strct->elements = psi_ffi_struct_type_elements(real->strct);
 
 			real->strct->engine.type = strct;
@@ -180,7 +228,7 @@ static inline PSI_LibffiCall *PSI_LibffiCallAlloc(PSI_Context *C, decl *decl) {
 	call->params[c] = NULL;
 
 	decl->call.info = call;
-	decl->call.rval = decl->func->ptr;
+	decl->call.rval = &decl->func->ptr;
 	decl->call.argc = c;
 	decl->call.args = (void **) &call->params[c+1];
 
@@ -332,10 +380,10 @@ static void psi_ffi_call(PSI_Context *C, decl_callinfo *decl_call, impl_vararg *
 				call->signature.rtype, (ffi_type **) params);
 #endif
 		ZEND_ASSERT(FFI_OK == rc);
-		ffi_call(&signature, FFI_FN(decl_call->sym), decl_call->rval, &params[ntotalargs + 1]);
+		ffi_call(&signature, FFI_FN(decl_call->sym), *decl_call->rval, &params[ntotalargs + 1]);
 		free(params);
 	} else {
-		ffi_call(&call->signature, FFI_FN(decl_call->sym), decl_call->rval, decl_call->args);
+		ffi_call(&call->signature, FFI_FN(decl_call->sym), *decl_call->rval, decl_call->args);
 	}
 }
 

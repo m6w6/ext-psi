@@ -320,7 +320,7 @@ typedef struct decl_callinfo {
 	void *info;
 	size_t argc;
 	void **args;
-	void *rval;
+	void **rval;
 } decl_callinfo;
 
 typedef struct decl {
@@ -396,6 +396,9 @@ static inline void free_decl_struct(decl_struct *s) {
 	}
 	if (s->args) {
 		free_decl_args(s->args);
+	}
+	if (s->engine.type && s->engine.dtor) {
+		s->engine.dtor(s->engine.type);
 	}
 	free(s->name);
 	free(s);

@@ -788,6 +788,10 @@ static inline void psi_do_clean(impl *impl)
 {
 	size_t i;
 
+	if (impl->decl->func->ptr != &impl->decl->func->val) {
+		efree(impl->decl->func->ptr);
+		impl->decl->func->ptr = &impl->decl->func->val;
+	}
 	for (i = 0; i < impl->func->args->count; ++i ) {
 		impl_arg *iarg = impl->func->args->args[i];
 
@@ -1067,6 +1071,16 @@ static inline void psi_do_args(impl *impl) {
 
 	for (i = 0; i < impl->decl->args->count; ++i) {
 		impl->decl->call.args[i] = impl->decl->args->args[i]->let->ptr;
+	}
+
+	if (!impl->decl->func->var->pointer_level) {
+		decl_type *real = real_decl_type(impl->decl->func->type);
+
+		switch (real->type) {
+		case PSI_T_STRUCT:
+			impl->decl->func->ptr = psi_array_to_struct(real->strct, NULL);
+			break;
+		}
 	}
 }
 

@@ -12,12 +12,16 @@
 #include <jit/jit.h>
 
 static void psi_jit_handler(jit_type_t _sig, void *result, void **_args, void *_data);
+static inline jit_type_t psi_jit_decl_arg_type(decl_arg *darg);
 
 static inline jit_abi_t psi_jit_abi(const char *convention) {
 	return jit_abi_cdecl;
 }
 static inline jit_type_t psi_jit_token_type(token_t t) {
 	switch (t) {
+	default:
+		ZEND_ASSERT(0);
+		/* no break */
 	case PSI_T_VOID:
 		return jit_type_void;
 	case PSI_T_INT8:
@@ -38,13 +42,16 @@ static inline jit_type_t psi_jit_token_type(token_t t) {
 		return jit_type_ulong;
 	case PSI_T_BOOL:
 		return jit_type_sys_bool;
+	case PSI_T_INT:
+		return jit_type_sys_int;
+	case PSI_T_LONG:
+		return jit_type_sys_long;
 	case PSI_T_FLOAT:
 		return jit_type_sys_float;
 	case PSI_T_DOUBLE:
 		return jit_type_sys_double;
 	case PSI_T_POINTER:
 		return jit_type_void_ptr;
-	EMPTY_SWITCH_DEFAULT_CASE();
 	}
 }
 static inline jit_type_t psi_jit_impl_type(token_t impl_type) {
@@ -60,9 +67,78 @@ static inline jit_type_t psi_jit_impl_type(token_t impl_type) {
 		return jit_type_sys_double;
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}
+	return NULL;
+}
+static void psi_jit_struct_type_dtor(void *type) {
+	jit_type_t strct = type;
+
+	jit_type_free(strct);
+}
+static unsigned psi_jit_struct_type_elements(decl_struct *strct, jit_type_t **fields) {
+	size_t i, j, argc = strct->args->count << 2, nels = 0, offset = 0, align, padding;
+	*fields = calloc(argc, sizeof(*fields));
+
+	for (i = 0; i < strct->args->count; ++i) {
+		decl_arg *darg = strct->args->args[i];
+		jit_type_t type = jit_type_copy(psi_jit_decl_arg_type(darg));
+
+		if (darg->layout->pos > offset) {
+			padding = darg->layout->pos - offset;
+			align = ((padding - 1) | (jit_type_get_alignment(type) - 1)) + 1;
+			if (align >= padding) {
+				padding = 0;
+			}
+		} else {
+			align = 0;
+			padding = 0;
+		}
+
+		if (padding) {
+			for (j = 0; j < padding; ++j) {
+				jit_type_t pad = jit_type_copy(jit_type_sys_char);
+
+				ZEND_ASSERT(nels + 1 < argc);
+				(*fields)[nels++] = pad;
+			}
+		}
+
+		ZEND_ASSERT(nels + 1 < argc);
+		(*fields)[nels++] = type;
+
+		offset += MAX(align, padding) + darg->layout->len;
+	}
+
+	ZEND_ASSERT(offset <= strct->size);
+	if (offset < strct->size) {
+		padding = strct->size - offset;
+		for (j = 0; j < padding; ++j) {
+			jit_type_t pad = jit_type_copy(jit_type_sys_char);
+
+			ZEND_ASSERT(nels + 1 < argc);
+			(*fields)[nels++] = pad;
+		}
+	}
+
+	return nels;
 }
 static inline jit_type_t psi_jit_decl_type(decl_type *type) {
-	return psi_jit_token_type(real_decl_type(type)->type);
+	decl_type *real = real_decl_type(type);
+
+	if (real->type == PSI_T_STRUCT) {
+		if (!real->strct->engine.type) {
+			unsigned count;
+			jit_type_t strct, *fields = NULL;
+
+			count = psi_jit_struct_type_elements(real->strct, &fields);
+			strct = jit_type_create_struct(fields, count, 0);
+
+			real->strct->engine.type = strct;
+			real->strct->engine.dtor = psi_jit_struct_type_dtor;
+		}
+
+		return real->strct->engine.type;
+	}
+	return psi_jit_token_type(real->type);
 }
 static inline jit_type_t psi_jit_decl_arg_type(decl_arg *darg) {
 	if (darg->var->pointer_level) {
@@ -103,7 +179,7 @@ static inline PSI_LibjitCall *PSI_LibjitCallAlloc(PSI_Context *C, decl *decl) {
 	call->params[c] = NULL;
 
 	decl->call.info = call;
-	decl->call.rval = decl->func->ptr;
+	decl->call.rval = &decl->func->ptr;
 	decl->call.argc = c;
 	decl->call.args = (void **) &call->params[c+1];
 
@@ -251,12 +327,12 @@ static void psi_jit_call(PSI_Context *C, decl_callinfo *decl_call, impl_vararg *
 		ZEND_ASSERT(signature);
 
 		jit_apply(signature, decl_call->sym, &params[ntotalargs + 1],
-						nfixedargs, decl_call->rval);
+						nfixedargs, *decl_call->rval);
 		jit_type_free(signature);
 		free(params);
 	} else {
 		jit_apply(call->signature, decl_call->sym, decl_call->args,
-				decl_call->argc, decl_call->rval);
+				decl_call->argc, *decl_call->rval);
 	}
 }
 

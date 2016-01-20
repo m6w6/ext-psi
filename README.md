@@ -1,6 +1,8 @@
 # ext-psi
 
-[![Build Status](https://travis-ci.org/m6w6/psi.svg?branch=master)](https://travis-ci.org/m6w6/psi)
+THIS README IS JUST A STUB YET
+
+[![Build Status](https://travis-ci.org/m6w6/ext-psi.svg?branch=master)](https://travis-ci.org/m6w6/ext-psi)
 
 ...
 

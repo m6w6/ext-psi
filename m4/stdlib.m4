@@ -9,6 +9,10 @@ PSI_CHECK_STDLIB() {
 		long quot,
 		long rem
 	])
+	PSI_STRUCT(lldiv_t, [
+		long long quot,
+		long long rem
+	])
 
 	PSI_CONST(EXIT_FAILURE, int)
 	PSI_CONST(EXIT_SUCCESS, int)
@@ -33,7 +37,8 @@ PSI_CHECK_STDLIB() {
 	PSI_DECL(long jrand48, [(unsigned short xsubi@<:@3@:>@)])
 	PSI_DECL(long labs, [(long l)])
 	PSI_DECL(void lcong48, [(unsigned short param@<:@7@:>@)])
-	dnl PSI_DECL(ldiv_t ldiv, [(long numerator, long denominator)])
+	PSI_DECL(ldiv_t ldiv, [(long numerator, long denominator)])
+	PSI_DECL(lldiv_t lldiv, [(long long numerator, long long denominator)])
 	PSI_DECL(long lrand48, [()])
 	PSI_DECL(int mblen, [(const char *s, size_t n)])
 	PSI_DECL(size_t mbstowcs, [(wchar_t *dest, char *src, size_t n)])
