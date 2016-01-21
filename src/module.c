@@ -23,6 +23,8 @@
 # define PSI_ENGINE "ffi"
 #endif
 
+#include <ndbm.h>
+
 ZEND_DECLARE_MODULE_GLOBALS(psi);
 
 PHP_INI_BEGIN()
@@ -350,6 +352,7 @@ void psi_from_zval(impl_val *mem, decl_arg *spec, zval *zv, void **tmp)
 	case PSI_T_DOUBLE:
 		mem->dval = zval_get_double(zv);
 		break;
+	case PSI_T_VOID:
 	case PSI_T_INT8:
 	case PSI_T_UINT8:
 		if (spec->var->pointer_level) {
@@ -609,7 +612,7 @@ static inline void *psi_do_calloc(let_calloc *alloc)
 	return mem;
 }
 
-static inline ZEND_RESULT_CODE psi_let_val(token_t let_func, impl_arg *iarg, impl_val *arg_val, decl_struct *strct, void **to_free)
+static inline impl_val *psi_let_val(token_t let_func, impl_arg *iarg, impl_val *arg_val, decl_struct *strct, void **to_free)
 {
 	switch (let_func) {
 	case PSI_T_BOOLVAL:
@@ -651,7 +654,7 @@ static inline ZEND_RESULT_CODE psi_let_val(token_t let_func, impl_arg *iarg, imp
 		if (PSI_T_PATHVAL == let_func) {
 			if (SUCCESS != php_check_open_basedir(arg_val->ptr)) {
 				efree(arg_val->ptr);
-				return FAILURE;
+				return NULL;
 			}
 		}
 		break;
@@ -670,8 +673,8 @@ static inline ZEND_RESULT_CODE psi_let_val(token_t let_func, impl_arg *iarg, imp
 		break;
 	case PSI_T_ARRVAL:
 		if (iarg->type->type == PSI_T_ARRAY) {
-			arg_val->ptr = psi_array_to_struct(strct, HASH_OF(iarg->_zv));
-			*to_free = arg_val->ptr;
+			arg_val = psi_array_to_struct(strct, HASH_OF(iarg->_zv));
+			*to_free = arg_val;
 		}
 		break;
 	case PSI_T_OBJVAL:
@@ -679,7 +682,7 @@ static inline ZEND_RESULT_CODE psi_let_val(token_t let_func, impl_arg *iarg, imp
 			psi_object *obj;
 
 			if (!instanceof_function(Z_OBJCE_P(iarg->_zv), psi_class_entry)) {
-				return FAILURE;
+				return NULL;
 			}
 
 			obj = PSI_OBJ(iarg->_zv, NULL);
@@ -688,7 +691,7 @@ static inline ZEND_RESULT_CODE psi_let_val(token_t let_func, impl_arg *iarg, imp
 		break;
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}
-	return SUCCESS;
+	return arg_val;
 }
 
 static inline void *psi_do_let(let_stmt *let)
@@ -724,7 +727,7 @@ static inline void *psi_do_let(let_stmt *let)
 	case PSI_LET_FUNC:
 		iarg = let->val->data.func->arg;
 
-		if (SUCCESS != psi_let_val(let->val->data.func->type, iarg, darg->ptr, real_decl_type(darg->type)->strct, &darg->mem)) {
+		if (!(darg->ptr = psi_let_val(let->val->data.func->type, iarg, darg->ptr, real_decl_type(darg->type)->strct, &darg->mem))) {
 			return NULL;
 		}
 	}
@@ -759,8 +762,9 @@ static inline void psi_do_free(free_stmt *fre)
 		for (j = 0; j < f->vars->count; ++j) {
 			decl_var *dvar = f->vars->vars[j];
 			decl_arg *darg = dvar->arg;
+			impl_val *fval = darg->let ? darg->let->ptr : darg->ptr;
 
-			f->decl->call.args[j] = &darg->val;
+			f->decl->call.args[j] = deref_impl_val(fval, dvar);
 		}
 
 		/* FIXME: check in validate_* that free functions return scalar */
@@ -812,6 +816,7 @@ static inline void psi_do_clean(impl *impl)
 			efree(darg->mem);
 			darg->mem = NULL;
 		}
+		darg->ptr = &darg->val;
 	}
 
 	if (impl->func->args->vararg.args) {
@@ -1123,7 +1128,10 @@ static inline impl_vararg *psi_do_varargs(impl *impl) {
 		}
 
 		va->types[i] = vatype;
-		psi_let_val(let_fn, vaarg, &va->values[i], NULL, &to_free);
+		/* FIXME: varargs with struct-by-value :) */
+		if (!psi_let_val(let_fn, vaarg, &va->values[i], NULL, &to_free)) {
+			return NULL;
+		}
 
 		if (to_free) {
 			if (!va->free_list) {

@@ -18,13 +18,13 @@ function psi\gettimeofday(array &$tv = NULL, array &$tz = NULL) : int {
 
 // extern char *asctime(struct tm *tm);
 function psi\asctime(array $tm = NULL) : string {
-	let tm = arrval($tm);
+	let tm = &arrval($tm);
 	return to_string(asctime);
 }
 
 // extern char *asctime_r(struct tm *tm, char *buf);
 function psi\asctime_r(array $tm = NULL) : string {
-	let tm = arrval($tm);
+	let tm = &arrval($tm);
 	let buf = calloc(32, psi\SIZEOF_CHAR);
 	return to_string(asctime_r);
 }
@@ -64,7 +64,7 @@ function psi\gmtime_r(int $ts) : array {
 
 // extern int nanosleep(struct timespec *rqts, struct timespec *rmts);
 function psi\nanosleep(array $rq = NULL, array &$rm = NULL) : int {
-	let rqts = arrval($rq);
+	let rqts = &arrval($rq);
 	let rmts = calloc(1, psi\SIZEOF_STRUCT_TIMESPEC);
 	return to_int(nanosleep);
 	set $rm = to_array(*rmts,

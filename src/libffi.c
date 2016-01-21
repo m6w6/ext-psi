@@ -160,10 +160,10 @@ static ffi_type **psi_ffi_struct_type_elements(decl_struct *strct) {
 
 		ZEND_ASSERT(nels + 1 < argc);
 		els[nels++] = type;
-
+//fprintf(stderr, "%s o:%d, a:%d, p:%d l:%d\n", darg->var->name, offset, align, padding, darg->layout->len);
 		offset += MAX(align, padding) + darg->layout->len;
 	}
-
+//fprintf(stderr, "%s s:%d o=%d\n", strct->name, strct->size, offset);
 	ZEND_ASSERT(offset <= strct->size);
 	if (offset < strct->size) {
 		padding = strct->size - offset;
@@ -186,7 +186,7 @@ static inline ffi_type *psi_ffi_decl_type(decl_type *type) {
 			ffi_type *strct = calloc(1, sizeof(ffi_type));
 
 			strct->type = FFI_TYPE_STRUCT;
-			strct->size = real->strct->size;
+			strct->size = 0;//real->strct->size;
 			strct->elements = psi_ffi_struct_type_elements(real->strct);
 
 			real->strct->engine.type = strct;

@@ -1,0 +1,28 @@
+function psi\dbm_open(string $file, int $open_flags, int $file_mode) : object {
+	let file = pathval($file);
+	let open_flags = intval($open_flags);
+	let file_mode = intval($file_mode);
+	return to_object(dbm_open);
+}
+
+function psi\dbm_store(object $db, array $key, array $data, int $mode) : int {
+	let db = objval($db);
+	let key = arrval($key);
+	let content = arrval($data);
+	let store_mode = intval($mode);
+	return to_int(dbm_store);
+}
+
+function psi\dbm_fetch(object $db, array $key) : array {
+	let db = objval($db);
+	let key = arrval($key);
+	return to_array(dbm_fetch,
+		to_string(dptr, dsize),
+		to_int(dsize)
+	);
+}
+
+function psi\dbm_close(object $db) : void {
+	let db = objval($db);
+	return void(dbm_close);
+}

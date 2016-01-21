@@ -1213,7 +1213,7 @@ static inline impl_val *enref_impl_val(void *ptr, decl_var *var) {
 			var->name, var->pointer_level, var->arg->var->pointer_level,
 			var->array_size, var->arg->var->array_size);
 #endif
-	if (!var->pointer_level && real_decl_type(var->arg->type)->type != PSI_T_STRUCT) {
+	if (!var->pointer_level ){//&& real_decl_type(var->arg->type)->type != PSI_T_STRUCT) {
 		return ptr;
 	}
 

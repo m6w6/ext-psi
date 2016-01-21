@@ -100,6 +100,9 @@ AC_DEFUN(PSI_INCLUDES, [AC_INCLUDES_DEFAULT()
 #ifdef HAVE_ARPA_NAMESER_H
 # include <arpa/nameser.h>
 #endif
+#ifdef HAVE_NDBM_H
+# include <ndbm.h>
+#endif
 #ifdef HAVE_NETDB_H
 # include <netdb.h>
 #endif

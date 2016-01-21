@@ -47,7 +47,7 @@ function psi\gai_strerror(int $errcode) : string {
 function psi\getaddrinfo(string $node, string $service, array $hints, object &$res = NULL) : int {
 	let node = strval($node);
 	let service = strval($service);
-	let hints = arrval($hints);
+	let hints = &arrval($hints);
 	let res = &NULL;
 	return to_int(getaddrinfo);
 	set $res = to_array(**res,
@@ -60,7 +60,7 @@ function psi\getaddrinfo(string $node, string $service, array $hints, object &$r
 		to_string(ai_canonname),
 		to_array(*ai_next, ...)
 	);
-	free freeaddrinfo(res);
+	free freeaddrinfo(*res);
 }
 
 // extern int getnameinfo(struct sockaddr *sa, socklen_t salen, char *host, socklen_t hostlen, char *serv, socklen_t servlen, int flags)

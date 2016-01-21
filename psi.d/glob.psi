@@ -2,7 +2,7 @@ function psi\glob(string $pattern, int $flags, array &$glob = NULL) : int {
 	let path = strval($pattern);
 	let flags = intval($flags);
 	let err = NULL;
-	let buf = arrval($glob);
+	let buf = &arrval($glob);
 	return to_int(glob);
 	set $glob = to_array(*buf,
 		to_int(gl_matchc),

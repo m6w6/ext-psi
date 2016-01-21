@@ -33,6 +33,7 @@ m4_foreach(incfile, [
 	[sys_types.m4],
 	[sys_uio.m4],
 	[sys_utsname.m4],
+	[ndbm.m4],
 	[netdb.m4],
 	[netinet_in.m4],
 	[netinet_tcp.m4],
@@ -75,6 +76,7 @@ if test "$PHP_PSI" != no; then
 	PSI_CHECK_SYS_STAT
 	PSI_CHECK_SYS_UIO
 	PSI_CHECK_SYS_UTSNAME
+	PSI_CHECK_NDBM
 	PSI_CHECK_NETDB
 	PSI_CHECK_NETINET_IN
 	PSI_CHECK_NETINET_TCP

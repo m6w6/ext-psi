@@ -36,7 +36,7 @@ dnl "uint"), AX_CHECK_SIGN is used to discover signedness of the type.
 dnl Defines a pre-defined type in $PSI_TYPES.
 AC_DEFUN(PSI_TYPE, [
 	ifdef(AS_TR_CPP(AC_TYPE_$1), AS_TR_CPP(AC_TYPE_$1))
-	PSI_CHECK_SIZEOF($1, PSI_INCLUDES)
+	PSI_CHECK_SIZEOF($1)
 	psi_basic_type=AS_TR_SH($2)
 	case $psi_basic_type in
 	int)
@@ -60,7 +60,7 @@ dnl Defines a pre-defined type in $PSI_TYPES and a pre-defined struct in
 dnl $PSI_STRUCTS if the type is a struct.
 AC_DEFUN(PSI_OPAQUE_TYPE, [
 	ifdef(AS_TR_CPP(AC_TYPE_$1), AS_TR_CPP(AC_TYPE_$1))
-	PSI_CHECK_SIZEOF($1, PSI_INCLUDES)
+	PSI_CHECK_SIZEOF($1)
 	if PSI_SH_TEST_SIZEOF($1); then
 		psi_type_class=
 		AC_CACHE_CHECK(type class of $1, AS_TR_SH([psi_cv_type_class_]$1), [
