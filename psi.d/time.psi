@@ -77,7 +77,7 @@ function psi\nanosleep(array $rq = NULL, array &$rm = NULL) : int {
 function psi\times(array &$tms = NULL) : int {
 	let buf = calloc(1, psi\SIZEOF_STRUCT_TMS);
 	return to_int(times);
-	set $tms = to_array(buf,
+	set $tms = to_array(*buf,
 		to_int(tms_utime),
 		to_int(tms_stime),
 		to_int(tms_cutime),
