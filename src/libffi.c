@@ -94,6 +94,10 @@ static inline ffi_type *psi_ffi_token_type(token_t t) {
 		return &ffi_type_float;
 	case PSI_T_DOUBLE:
 		return &ffi_type_double;
+#ifdef HAVE_LONG_DOUBLE
+	case PSI_T_LONG_DOUBLE:
+		return &ffi_type_longdouble;
+#endif
 	case PSI_T_POINTER:
 		return &ffi_type_pointer;
 	}

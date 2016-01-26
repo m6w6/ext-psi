@@ -65,6 +65,7 @@ PSI_CHECK_STDLIB() {
 	PSI_DECL(double strtod, [(char *nptr, char **endptr)])
 	PSI_DECL(float strtof, [(char *nptr, char **endptr)])
 	PSI_DECL(long strtol, [(char *nptr, char **endptr)])
+	PSI_DECL(long double strtold, [(const char *nptr, char **endptr)])
 	PSI_DECL(unsigned long strtoul, [(char *nptr, char **endptr)])
 	PSI_DECL(int system, [(char *command)])
 	PSI_DECL(int unlockpt, [(int fd)])

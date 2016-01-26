@@ -50,6 +50,10 @@ static inline jit_type_t psi_jit_token_type(token_t t) {
 		return jit_type_sys_float;
 	case PSI_T_DOUBLE:
 		return jit_type_sys_double;
+#ifdef HAVE_LONG_DOUBLE
+	case PSI_T_LONG_DOUBLE:
+		return jit_type_sys_long_double;
+#endif
 	case PSI_T_POINTER:
 		return jit_type_void_ptr;
 	}
