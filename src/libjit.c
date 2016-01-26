@@ -73,13 +73,14 @@ static inline jit_type_t psi_jit_impl_type(token_t impl_type) {
 	}
 	return NULL;
 }
+
 static void psi_jit_struct_type_dtor(void *type) {
 	jit_type_t strct = type;
 
 	jit_type_free(strct);
 }
 
-static size_t psi_jit_struct_type_pad(jit_type_t **els, size_t padding) {
+static size_t psi_jit_struct_type_pad(jit_type_t *els, size_t padding) {
 	size_t i;
 
 	for (i = 0; i < padding; ++i) {
@@ -90,7 +91,7 @@ static size_t psi_jit_struct_type_pad(jit_type_t **els, size_t padding) {
 }
 
 static unsigned psi_jit_struct_type_elements(decl_struct *strct, jit_type_t **fields) {
-	size_t i, j, argc = strct->args->count, nels = 0, offset = 0, maxalign;
+	size_t i, argc = strct->args->count, nels = 0, offset = 0, maxalign;
 	*fields = calloc(argc + 1, sizeof(*fields));
 
 	for (i = 0; i < strct->args->count; ++i) {
