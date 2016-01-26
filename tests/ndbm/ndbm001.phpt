@@ -13,7 +13,7 @@ function_exists("psi\\dbm_open") or die("skip - need nbdm support");
 class db {
 	private $db;
 	
-	function __construct($file = "ndbm001.db", $o = 0102, $m = 0640) {
+	function __construct($file = "ndbm001.db", $o = psi\O_CREAT|psi\O_RDWR, $m = 0640) {
 		if (!$this->db = psi\dbm_open($file, $o, $m)) {
 			throw new Exception(psi\strerror(psi\errno()));
 		}
