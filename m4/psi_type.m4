@@ -4,6 +4,10 @@ psi_add_type() {
 	cat >>$PSI_TYPES <<<"	$1, "
 }
 
+psi_add_stdtype() {
+	cat >>$PSI_STDTYPES <<<"	$1, "
+}
+
 # psi_type_pair(type, size)
 # Output a PSI_T_<TYPE>, \"<TYPENAME>\" tuple.
 # Uses stdint types when possible.
@@ -48,7 +52,23 @@ AC_DEFUN(PSI_TYPE, [
 	esac
 	if test "$2" && PSI_SH_TEST_SIZEOF($1); then
 		AS_TR_SH(psi_basic_type_$1)=$psi_basic_type
-		psi_add_type "{`psi_type_pair $psi_basic_type $AS_TR_SH([ac_cv_sizeof_]$1)`, \"$1\"}"
+		psi_add_type "{`psi_type_pair $psi_basic_type PSI_SH_SIZEOF($1)`, \"$1\"}"
+	fi
+])
+
+AC_DEFUN(PSI_STDTYPE, [
+	ifdef(AS_TR_CPP(AC_TYPE_$1), AS_TR_CPP(AC_TYPE_$1))
+	PSI_CHECK_SIZEOF($1)
+	if PSI_SH_TEST_SIZEOF($1); then
+		m4_case([$1],
+		[float],[psi_add_stdtype "{PSI_T_FLOAT, \"float\", NULL}"],
+		[double],[psi_add_stdtype "{PSI_T_DOUBLE, \"double\", NULL}"],
+		[long double],[psi_add_stdtype "{PSI_T_LONG_DOUBLE, \"long double\", NULL}"],
+		[
+			AX_CHECK_SIGN($1, psi_basic_type=int, psi_basic_type=uint, PSI_INCLUDES)
+			AS_TR_SH(psi_basic_type_$1)=$psi_basic_type
+			psi_add_stdtype "{`psi_type_pair $psi_basic_type PSI_SH_SIZEOF($1)`, \"$1\"}"
+		])
 	fi
 ])
 
@@ -85,7 +105,7 @@ AC_DEFUN(PSI_OPAQUE_TYPE, [
 		case "$AS_TR_SH([psi_cv_type_class_]$1)" in
 		scalar)
 			AX_CHECK_SIGN($1, [psi_basic_type=int], [psi_basic_type=uint], PSI_INCLUDES)
-			psi_add_type "{`psi_type_pair $psi_basic_type $AS_TR_SH([ac_cv_sizeof_]$1)`, \"$1\"}"
+			psi_add_type "{`psi_type_pair $psi_basic_type PSI_SH_SIZEOF($1)`, \"$1\"}"
 			;;
 		struct)
 			PSI_STRUCT($1)
@@ -173,40 +193,41 @@ AC_DEFUN(PSI_CHECK_STD_TYPES, [
 	AC_TYPE_UINT64_T
 	PSI_CHECK_SIZEOF(uint64_t)
 	AC_CHECK_ALIGNOF(uint64_t)
-
-	PSI_TYPE(float)
-	AC_CHECK_ALIGNOF(float)
-	PSI_TYPE(double)
-	AC_CHECK_ALIGNOF(double)
-	PSI_TYPE(long double)
-	AC_CHECK_ALIGNOF(long double)
-	PSI_TYPE(void *)
+	
+	PSI_CHECK_SIZEOF(void *)
 	AC_CHECK_ALIGNOF(void *)
 
-	PSI_TYPE(char, int)
-	PSI_TYPE(signed char, int)
-	PSI_TYPE(unsigned char, uint)
-	PSI_TYPE(short, int)
-	PSI_TYPE(short int, int)
-	PSI_TYPE(signed short, int)
-	PSI_TYPE(signed short int, int)
-	PSI_TYPE(unsigned short, uint)
-	PSI_TYPE(unsigned short int, uint)
-	PSI_TYPE(int, int)
-	PSI_TYPE(signed int, int)
-	PSI_TYPE(signed, int)
-	PSI_TYPE(unsigned int, uint)
-	PSI_TYPE(unsigned, uint)
-	PSI_TYPE(long, int)
-	PSI_TYPE(long int, int)
-	PSI_TYPE(signed long int, int)
-	PSI_TYPE(unsigned long, uint)
-	PSI_TYPE(unsigned long int, uint)
-	PSI_TYPE(long long, int)
-	PSI_TYPE(signed long long, int)
-	PSI_TYPE(signed long long int, int)
-	PSI_TYPE(unsigned long long, uint)
-	PSI_TYPE(unsigned long long int, uint)
+	PSI_STDTYPE(float)
+	AC_CHECK_ALIGNOF(float)
+	PSI_STDTYPE(double)
+	AC_CHECK_ALIGNOF(double)
+	PSI_STDTYPE(long double)
+	AC_CHECK_ALIGNOF(long double)
+
+	PSI_STDTYPE(char, int)
+	PSI_STDTYPE(signed char, int)
+	PSI_STDTYPE(unsigned char, uint)
+	PSI_STDTYPE(short, int)
+	PSI_STDTYPE(short int, int)
+	PSI_STDTYPE(signed short, int)
+	PSI_STDTYPE(signed short int, int)
+	PSI_STDTYPE(unsigned short, uint)
+	PSI_STDTYPE(unsigned short int, uint)
+	PSI_STDTYPE(int, int)
+	PSI_STDTYPE(signed int, int)
+	PSI_STDTYPE(signed, int)
+	PSI_STDTYPE(unsigned int, uint)
+	PSI_STDTYPE(unsigned, uint)
+	PSI_STDTYPE(long, int)
+	PSI_STDTYPE(long int, int)
+	PSI_STDTYPE(signed long int, int)
+	PSI_STDTYPE(unsigned long, uint)
+	PSI_STDTYPE(unsigned long int, uint)
+	PSI_STDTYPE(long long, int)
+	PSI_STDTYPE(signed long long, int)
+	PSI_STDTYPE(signed long long int, int)
+	PSI_STDTYPE(unsigned long long, uint)
+	PSI_STDTYPE(unsigned long long int, uint)
 	dnl this must come after the check fo "unsigned long long int"; autoconf, wth?
-	PSI_TYPE(long long int, int)
+	PSI_STDTYPE(long long int, int)
 ])

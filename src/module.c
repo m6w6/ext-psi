@@ -40,7 +40,7 @@ void psi_error_wrapper(PSI_Token *t, int type, const char *msg, ...)
 	va_list argv;
 
 	va_start(argv, msg);
-	psi_verror(type, t?t->file:"Unknown", t?*t->line:0, msg, argv);
+	psi_verror(type, t?t->file:"Unknown", t?t->line:0, msg, argv);
 	va_end(argv);
 }
 void psi_error(int type, const char *fn, unsigned ln, const char *msg, ...)

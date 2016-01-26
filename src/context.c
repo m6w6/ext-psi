@@ -34,26 +34,7 @@
 #include "libjit.h"
 #include "libffi.h"
 
-static struct psi_std_type {
-	token_t type_tag;
-	const char *type_name;
-} psi_std_types[] = {
-	{PSI_T_FLOAT, "float"},
-	{PSI_T_DOUBLE, "double"},
-#ifdef HAVE_LONG_DOUBLE
-	{PSI_T_LONG_DOUBLE, "long double"},
-#endif
-	{PSI_T_INT8, "int8_t"},
-	{PSI_T_INT16, "int16_t"},
-	{PSI_T_INT32, "int32_t"},
-	{PSI_T_INT64, "int64_t"},
-	{PSI_T_UINT8, "uint8_t"},
-	{PSI_T_UINT16, "uint16_t"},
-	{PSI_T_UINT32, "uint32_t"},
-	{PSI_T_UINT64, "uint64_t"},
-	{0}
-};
-
+#include "php_psi_stdtypes.h"
 #include "php_psi_types.h"
 #include "php_psi_consts.h"
 #include "php_psi_macros.h"
@@ -88,7 +69,7 @@ static int validate_lib(PSI_Data *data, void **dlopened) {
 
 static inline int locate_decl_type_alias(decl_typedefs *defs, decl_type *type) {
 	size_t i;
-	struct psi_std_type *stdtyp;
+	struct psi_predef_type *stdtyp;
 
 	if (type->real) {
 		return 1;
@@ -102,7 +83,7 @@ static inline int locate_decl_type_alias(decl_typedefs *defs, decl_type *type) {
 		}
 	}
 	for (stdtyp = &psi_std_types[0]; stdtyp->type_tag; ++stdtyp) {
-		if (!strcmp(type->name, stdtyp->type_name)) {
+		if (!strcmp(type->name, stdtyp->alias ?: stdtyp->type_name)) {
 			type->type = stdtyp->type_tag;
 			return 1;
 		}
@@ -1270,7 +1251,7 @@ static inline void dump_num_exp(int fd, num_exp *exp) {
 	}
 }
 
-static inline void dump_impl_set_value(int fd, set_value *set, unsigned level) {
+static inline void dump_impl_set_value(int fd, set_value *set, unsigned level, int last) {
 	size_t i;
 
 	if (level > 1) {
@@ -1302,13 +1283,13 @@ static inline void dump_impl_set_value(int fd, set_value *set, unsigned level) {
 	if (set->inner && set->func->type != PSI_T_ELLIPSIS) {
 		dprintf(fd, ",\n");
 		for (i = 0; i < set->count; ++i) {
-			dump_impl_set_value(fd, set->inner[i], level+1);
+			dump_impl_set_value(fd, set->inner[i], level+1, i == (set->count - 1));
 		}
 		/* only if inner stmts, i.e. with new lines, were dumped */
 		dump_level(fd, level);
 	}
 	if (level > 1) {
-		dprintf(fd, "),\n");
+		dprintf(fd, ")%s\n", last ? "" : ",");
 	} else {
 		dprintf(fd, ");\n");
 	}
@@ -1345,15 +1326,22 @@ void PSI_ContextDump(PSI_Context *C, int fd)
 		for (i = 0; i < C->structs->count; ++i) {
 			decl_struct *strct = C->structs->list[i];
 
-			dprintf(fd, "struct %s::(%zu) {\n", strct->name, strct->size);
-			if (strct->args) for (j = 0; j < strct->args->count; ++j) {
-				decl_arg *sarg = strct->args->args[j];
+			dprintf(fd, "struct %s::(%zu)", strct->name, strct->size);
+			if (strct->args && strct->args->count) {
+				dprintf(fd, " {\n");
+				for (j = 0; j < strct->args->count; ++j) {
+					decl_arg *sarg = strct->args->args[j];
 
-				dprintf(fd, "\t");
-				dump_decl_arg(fd, sarg);
-				dprintf(fd, "::(%zu, %zu);\n", sarg->layout->pos, sarg->layout->len);
+					dprintf(fd, "\t");
+					dump_decl_arg(fd, sarg);
+					dprintf(fd, "::(%zu, %zu);\n", sarg->layout->pos, sarg->layout->len);
+				}
+				dprintf(fd, "}");
+			} else {
+				dprintf(fd, ";");
 			}
-			dprintf(fd, "}\n");
+			dprintf(fd, "\n");
+
 		}
 		dprintf(fd, "\n");
 	}
@@ -1460,13 +1448,13 @@ void PSI_ContextDump(PSI_Context *C, int fd)
 					return_stmt *ret = impl->stmts->ret.list[j];
 
 					dprintf(fd, "\treturn ");
-					dump_impl_set_value(fd, ret->set, 1);
+					dump_impl_set_value(fd, ret->set, 1, 0);
 				}
 				for (j = 0; j < impl->stmts->set.count; ++j) {
 					set_stmt *set = impl->stmts->set.list[j];
 
 					dprintf(fd, "\tset $%s = ", set->var->name);
-					dump_impl_set_value(fd, set->val, 1);
+					dump_impl_set_value(fd, set->val, 1, 0);
 				}
 				for (j = 0; j < impl->stmts->fre.count; ++j) {
 					free_stmt *fre = impl->stmts->fre.list[j];

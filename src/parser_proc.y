@@ -1,4 +1,5 @@
 %include {
+#include <stddef.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,7 +20,7 @@ void psi_error(int, const char *, int, const char *, ...);
 %syntax_error {
 	++P->errors;
 	if (TOKEN && TOKEN->type != PSI_T_EOF) {
-		psi_error(PSI_WARNING, TOKEN->file, *TOKEN->line, "PSI syntax error: Unexpected token '%s'", TOKEN->text);
+		psi_error(PSI_WARNING, TOKEN->file, TOKEN->line, "PSI syntax error: Unexpected token '%s'", TOKEN->text);
 	} else {
 		psi_error(PSI_WARNING, P->psi.file.fn, P->line, "PSI syntax error: Unexpected end of input");
 	}
@@ -28,7 +29,7 @@ void psi_error(int, const char *, int, const char *, ...);
 %nonassoc NAME.
 %left PLUS MINUS.
 %left SLASH ASTERISK.
-%fallback NAME TEMP FREE SET LET RETURN LIB CHAR SHORT INT LONG SIGNED UNSIGNED.
+%fallback NAME TEMP FREE SET LET RETURN LIB STRING.
 
 file ::= blocks.
 
@@ -36,6 +37,7 @@ blocks ::= block.
 blocks ::= blocks block.
 
 block ::= EOF.
+block ::= EOS.
 
 block ::= LIB(T) QUOTED_STRING(libname) EOS. {
 	if (P->psi.file.ln) {
@@ -66,9 +68,23 @@ block ::= decl_struct(strct). {
 	P->structs = add_decl_struct(P->structs, strct);
 }
 
+struct_name(n) ::= STRUCT NAME(N). {
+	n = N;
+}
+
+%type decl_struct_args {decl_args*}
+%destructor decl_struct_args {free_decl_args($$);}
+decl_struct_args(args_) ::= LBRACE struct_args(args) RBRACE. {
+	args_ = args;
+}
+decl_struct_args(args_) ::= EOS. {
+	args_ = init_decl_args(NULL);
+}
+
+
 %type decl_struct {decl_struct*}
 %destructor decl_struct {free_decl_struct($$);}
-decl_struct(strct) ::= STRUCT NAME(N) struct_size(size_) LBRACE struct_args(args) RBRACE. {
+decl_struct(strct) ::= struct_name(N) struct_size(size_) decl_struct_args(args). {
 	strct = init_decl_struct(N->text, args);
 	strct->size = size_;
 	strct->token = N;
@@ -99,27 +115,21 @@ constant(constant) ::= CONST const_type(type) NSNAME(T) EQUALS impl_def_val(val)
 
 %type decl_typedef {decl_typedef*}
 %destructor decl_typedef {free_decl_typedef($$);}
-decl_typedef(def) ::= TYPEDEF decl_type(type) NAME(ALIAS) EOS. {
+decl_typedef(def) ::= TYPEDEF decl_typedef_body(def_) EOS. {
+	def = def_;
+}
+%type decl_typedef_body {decl_typedef*}
+%destructor decl_typedef_body {free_decl_typedef($$);}
+decl_typedef_body(def) ::= decl_type(type) NAME(ALIAS). {
 	def = init_decl_typedef(ALIAS->text, type);
 	def->token = ALIAS;
 }
+
 /* support opaque types */
-decl_typedef(def) ::= TYPEDEF VOID(V) indirection(i) NAME(ALIAS) EOS. {
+decl_typedef_body(def) ::= VOID(V) indirection(i) NAME(ALIAS). {
 	def = init_decl_typedef(ALIAS->text, init_decl_type(i?PSI_T_POINTER:V->type, V->text));
 	def->token = ALIAS;
 	def->type->token = V;
-}
-decl_typedef(def) ::= TYPEDEF STRUCT(S) NAME(N) NAME(ALIAS) EOS. {
-	def = init_decl_typedef(ALIAS->text, init_decl_type(S->type, N->text));
-	def->token = ALIAS;
-	def->type->token = N;
-	free(S);
-}
-decl_typedef(def) ::= TYPEDEF decl_struct(s) NAME(ALIAS) EOS. {
-	def = init_decl_typedef(ALIAS->text, init_decl_type(PSI_T_STRUCT, s->name));
-	def->token = ALIAS;
-	def->type->token = PSI_TokenCopy(s->token);
-	def->type->strct = s;
 }
 
 %type decl {decl*}
@@ -241,29 +251,54 @@ struct_layout(layout) ::= COLON COLON LPAREN NUMBER(POS) COMMA NUMBER(SIZ) RPARE
 decl_scalar_type(type_) ::= CHAR(C). {
 	type_ = C;
 }
-decl_scalar_type(type_) ::= SHORT(S) INT(I). {
-	type_ = PSI_TokenCat(2, S, I);
-	free(S);
-	free(I);
+decl_scalar_type(type_) ::= SHORT(S) decl_scalar_type_short(s). {
+	if (s) {
+		type_ = PSI_TokenCat(2, S, s);
+		free(S);
+		free(s);
+	} else {
+		type_ = S;
+	}
 }
-decl_scalar_type(type_) ::= SHORT(S). {
-	type_ = S;
+decl_scalar_type_short(s) ::= . {
+	s = NULL;
 }
-decl_scalar_type(type_) ::= LONG(L) INT(I). {
-	type_ = PSI_TokenCat(2, L, I);
-	free(L);
-	free(I);
+
+decl_scalar_type_short(s) ::= INT(I). {
+	s = I;
 }
-decl_scalar_type(type_) ::= LONG(L1) LONG(L2) INT(I). {
-	type_ = PSI_TokenCat(3, L1, L2, I);
-	free(L1);
-	free(L2);
-	free(I);
+decl_scalar_type(type_) ::= INT(I). {
+	type_ = I;
 }
-decl_scalar_type(type_) ::= LONG(L1) LONG(L2). {
-	type_ = PSI_TokenCat(2, L1, L2);
-	free(L1);
-	free(L2);
+decl_scalar_type(type_) ::= LONG(L) decl_scalar_type_long(l). {
+	if (l) {
+		type_ = PSI_TokenCat(2, L, l);
+		free(L);
+		free(l);
+	} else {
+		type_ = L;
+	}
+}
+decl_scalar_type_long(l) ::= . {
+	l = NULL;
+}
+decl_scalar_type_long(l) ::= DOUBLE(D). {
+	l = D;
+}
+decl_scalar_type_long(l) ::= LONG(L) decl_scalar_type_long_long(ll). {
+	if (ll) {
+		l = PSI_TokenCat(2, L, ll);
+		free(L);
+		free(ll);
+	} else {
+		l = L;
+	}
+}
+decl_scalar_type_long_long(ll) ::= . {
+	ll = NULL;
+}
+decl_scalar_type_long_long(ll) ::= INT(I). {
+	ll = I;
 }
 decl_type(type_) ::= UNSIGNED(U) decl_scalar_type(N). {
 	PSI_Token *T = PSI_TokenCat(2, U, N);
@@ -279,18 +314,23 @@ decl_type(type_) ::= SIGNED(S) decl_scalar_type(N). {
 	free(S);
 	free(N);
 }
+decl_type(type_) ::= UNSIGNED(U). {
+	type_ = init_decl_type(PSI_T_NAME, U->text);
+	type_->token = U;
+}
+decl_type(type_) ::= SIGNED(S). {
+	type_ = init_decl_type(PSI_T_NAME, S->text);
+	type_->token = S;
+}
+decl_type(type_) ::= decl_scalar_type(N). {
+	type_ = init_decl_type(N->type, N->text);
+	type_->token = N;
+}
 /* structs ! */
 decl_type(type_) ::= STRUCT(S) NAME(T). {
 	type_ = init_decl_type(S->type, T->text);
 	type_->token = T;
 	free(S);
-}
-decl_type(type_) ::= LONG(L) DOUBLE(D). {
-	PSI_Token *T = PSI_TokenCat(2, L, D);
-	type_ = init_decl_type(T->type, T->text);
-	type_->token = T;
-	free(L);
-	free(D);
 }
 %token_class decl_type_token FLOAT DOUBLE INT8 UINT8 INT16 UINT16 INT32 UINT32 INT64 UINT64 NAME.
 %type decl_type {decl_type*}

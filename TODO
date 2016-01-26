@@ -6,3 +6,4 @@
 * pemalloc
 * unions
 * callbacks and function pointers
+* full struct typedefs
