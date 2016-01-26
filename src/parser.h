@@ -43,6 +43,9 @@ typedef union impl_val {
 	uint64_t u64;
 	float fval;
 	double dval;
+#ifdef HAVE_LONG_DOUBLE
+	long double ldval;
+#endif
 	union {
 		zend_bool bval;
 		zend_long lval;

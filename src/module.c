@@ -275,6 +275,11 @@ void psi_to_double(zval *return_value, set_value *set, impl_val *ret_val)
 	case PSI_T_DOUBLE:
 		RETVAL_DOUBLE(v->dval);
 		break;
+#ifdef HAVE_LONG_DOUBLE
+	case PSI_T_LONG_DOUBLE:
+		RETVAL_DOUBLE((double) v->ldval);
+		break;
+#endif
 	case PSI_T_INT8:
 		RETVAL_DOUBLE((double) v->i8);
 		break;
@@ -316,6 +321,11 @@ void psi_to_string(zval *return_value, set_value *set, impl_val *ret_val)
 	case PSI_T_DOUBLE:
 		RETVAL_DOUBLE(deref_impl_val(ret_val, var)->dval);
 		break;
+#ifdef HAVE_LONG_DOUBLE
+	case PSI_T_LONG_DOUBLE:
+		RETVAL_DOUBLE((double) deref_impl_val(ret_val, var)->ldval);
+		break;
+#endif
 	default:
 		if (!var->arg->var->pointer_level) {
 			RETVAL_STRINGL(&ret_val->cval, 1);
@@ -935,6 +945,7 @@ int psi_calc_num_exp(num_exp *exp, impl_val *strct, impl_val *res) {
 
 #define PRIfval "f"
 #define PRIdval "lf"
+#define PRIldval "Lf"
 
 #define PSI_CALC_OP(var) do { \
 	const char *fmt = "calc %" PRI##var ", %" PRI##var ": %" PRI##var "\n"; \
@@ -946,12 +957,26 @@ int psi_calc_num_exp(num_exp *exp, impl_val *strct, impl_val *res) {
 	res->vres = PSI_CALC(v1->var1, v2->var2); \
 	if (!res->vres) fprintf(stderr, fmt, v1->var1, v2->var2, res->vres); \
 } while(0)
+
+#ifdef HAVE_LONG_DOUBLE
+#define PSI_CALC_NO_LD
+#define PSI_CALC_OP_LD PSI_CALC_OP(ldval)
+#define PSI_CALC_OP2_LD2(var1) PSI_CALC_OP2(ldval, var1, ldval)
+#define PSI_CALC_OP2_LD1(var2) PSI_CALC_OP2(ldval, ldval, var2)
+#else
+#define PSI_CALC_NO_LD abort()
+#define PSI_CALC_OP_LD PSI_CALC_NO_LD
+#define PSI_CALC_OP2_LD2(var) PSI_CALC_NO_LD
+#define PSI_CALC_OP2_LD1(var) PSI_CALC_NO_LD
+#endif
+
 #define PSI_CALC_FN(op) int psi_calc_##op(int t1, impl_val *v1, int t2, impl_val *v2, impl_val *res) \
 { \
 	if (t1 == t2) { \
 		switch (t1) { \
 		case PSI_T_FLOAT:	PSI_CALC_OP(fval);	break; \
 		case PSI_T_DOUBLE:	PSI_CALC_OP(dval);	break; \
+		case PSI_T_LONG_DOUBLE: PSI_CALC_OP_LD;	break; \
 		case PSI_T_INT8:	PSI_CALC_OP(i8);	break; \
 		case PSI_T_UINT8:	PSI_CALC_OP(u8);	break; \
 		case PSI_T_INT16:	PSI_CALC_OP(i16);	break; \
@@ -965,6 +990,7 @@ int psi_calc_num_exp(num_exp *exp, impl_val *strct, impl_val *res) {
 		return t1; \
 	} else if (t1 == PSI_T_DOUBLE) { \
 		switch (t2) { \
+		case PSI_T_LONG_DOUBLE: PSI_CALC_OP2_LD2(dval);		return t2; \
 		case PSI_T_FLOAT:	PSI_CALC_OP2(dval, dval, fval);	break; \
 		case PSI_T_INT8:	PSI_CALC_OP2(dval, dval, i8);	break; \
 		case PSI_T_UINT8:	PSI_CALC_OP2(dval, dval, u8);	break; \
@@ -979,6 +1005,7 @@ int psi_calc_num_exp(num_exp *exp, impl_val *strct, impl_val *res) {
 		return t1; \
 	} else if (t2 == PSI_T_DOUBLE) { \
 		switch (t1) { \
+		case PSI_T_LONG_DOUBLE: PSI_CALC_OP2_LD1(dval);		return t1; \
 		case PSI_T_FLOAT:	PSI_CALC_OP2(dval, fval, dval);	break; \
 		case PSI_T_INT8:	PSI_CALC_OP2(dval, i8, dval);	break; \
 		case PSI_T_UINT8:	PSI_CALC_OP2(dval, u8, dval);	break; \
@@ -991,8 +1018,41 @@ int psi_calc_num_exp(num_exp *exp, impl_val *strct, impl_val *res) {
 		EMPTY_SWITCH_DEFAULT_CASE(); \
 		} \
 		return t2; \
+	} else if (t1 == PSI_T_LONG_DOUBLE) { \
+		PSI_CALC_NO_LD; \
+		switch (t2) { \
+		case PSI_T_DOUBLE:	PSI_CALC_OP2_LD1(dval);	break; \
+		case PSI_T_FLOAT:	PSI_CALC_OP2_LD1(fval);	break; \
+		case PSI_T_INT8:	PSI_CALC_OP2_LD1(i8);	break; \
+		case PSI_T_UINT8:	PSI_CALC_OP2_LD1(u8);	break; \
+		case PSI_T_INT16:	PSI_CALC_OP2_LD1(i16);	break; \
+		case PSI_T_UINT16:	PSI_CALC_OP2_LD1(u16);	break; \
+		case PSI_T_INT32:	PSI_CALC_OP2_LD1(i32);	break; \
+		case PSI_T_UINT32:	PSI_CALC_OP2_LD1(u32);	break; \
+		case PSI_T_INT64:	PSI_CALC_OP2_LD1(i64);	break; \
+		case PSI_T_UINT64:	PSI_CALC_OP2_LD1(u64);	break; \
+		EMPTY_SWITCH_DEFAULT_CASE(); \
+		} \
+		return t1; \
+	} else if (t2 == PSI_T_LONG_DOUBLE) { \
+		PSI_CALC_NO_LD; \
+		switch (t1) { \
+		case PSI_T_DOUBLE:	PSI_CALC_OP2_LD2(dval);	break; \
+		case PSI_T_FLOAT:	PSI_CALC_OP2_LD2(fval);	break; \
+		case PSI_T_INT8:	PSI_CALC_OP2_LD2(i8);	break; \
+		case PSI_T_UINT8:	PSI_CALC_OP2_LD2(u8);	break; \
+		case PSI_T_INT16:	PSI_CALC_OP2_LD2(i16);	break; \
+		case PSI_T_UINT16:	PSI_CALC_OP2_LD2(u16);	break; \
+		case PSI_T_INT32:	PSI_CALC_OP2_LD2(i32);	break; \
+		case PSI_T_UINT32:	PSI_CALC_OP2_LD2(u32);	break; \
+		case PSI_T_INT64:	PSI_CALC_OP2_LD2(i64);	break; \
+		case PSI_T_UINT64:	PSI_CALC_OP2_LD2(u64);	break; \
+		EMPTY_SWITCH_DEFAULT_CASE(); \
+		} \
+		return t2; \
 	} else if (t1 == PSI_T_FLOAT) { \
 		switch (t2) { \
+		case PSI_T_LONG_DOUBLE: PSI_CALC_OP2_LD2(fval);		return t2; \
 		case PSI_T_DOUBLE:	PSI_CALC_OP2(dval, fval, dval);	return t2; \
 		case PSI_T_INT8:	PSI_CALC_OP2(fval, fval, i8);	break; \
 		case PSI_T_UINT8:	PSI_CALC_OP2(fval, fval, u8);	break; \
@@ -1007,6 +1067,7 @@ int psi_calc_num_exp(num_exp *exp, impl_val *strct, impl_val *res) {
 		return t1; \
 	} else if (t2 == PSI_T_FLOAT) { \
 		switch (t1) { \
+		case PSI_T_LONG_DOUBLE: PSI_CALC_OP2_LD1(fval);		return t1; \
 		case PSI_T_DOUBLE:	PSI_CALC_OP2(dval, dval, fval);	return t1; \
 		case PSI_T_INT8:	PSI_CALC_OP2(fval, i8, fval);	break; \
 		case PSI_T_UINT8:	PSI_CALC_OP2(fval, u8, fval);	break; \

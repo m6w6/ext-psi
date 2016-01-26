@@ -20,3 +20,10 @@ function psi\lldiv(int $numerator, int $denominator) : array {
 	let denominator = intval($denominator);
 	return to_array(lldiv, to_int(quot), to_int(rem));
 }
+
+function psi\strtold(string $str, string &$end = null) : float {
+	let nptr = strval($str);
+	let endptr = &NULL;
+	return to_float(strtold);
+	set $end = to_string(*endptr);
+}
