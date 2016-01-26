@@ -19,6 +19,7 @@ m4_foreach(incfile, [
 	[psi_macro.m4],
 	[psi_struct.m4],
 	[errno.m4],
+	[fcntl.m4],
 	[glob.m4],
 	[locale.m4],
 	[stddef.m4],
@@ -64,6 +65,7 @@ if test "$PHP_PSI" != no; then
 	PSI_CHECK_STDDEF
 	PSI_CHECK_SYS_TYPES
 	PSI_CHECK_ERRNO
+	PSI_CHECK_FCNTL
 	PSI_CHECK_GLOB
 	PSI_CHECK_LOCALE
 	PSI_CHECK_STDIO
