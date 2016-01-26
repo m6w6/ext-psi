@@ -49,9 +49,12 @@ AC_DEFUN(PSI_TYPE, [
 	if test "$2" && PSI_SH_TEST_SIZEOF($1); then
 		AS_TR_SH(psi_basic_type_$1)=$psi_basic_type
 		psi_add_type "{`psi_type_pair $psi_basic_type $AS_TR_SH([ac_cv_sizeof_]$1)`, \"$1\"}"
-		#cat >>$PSI_TYPES <<<"{`psi_type_pair $psi_basic_type $AS_TR_SH([ac_cv_sizeof_]$1)`, \"$1\"}, "
 	fi
 ])
+
+dnl PSI_SH_BASIC_TYPE(type)
+dnl Expand to the basic type (int/uint) of a distinct type
+AC_DEFUN(PSI_SH_BASIC_TYPE, [$AS_TR_SH([psi_basic_type_]$1)])
 
 dnl PSI_OPAQUE_TYPE(type name)
 dnl Checks a type for being a scalar, a struct or a pointer type.
@@ -83,14 +86,12 @@ AC_DEFUN(PSI_OPAQUE_TYPE, [
 		scalar)
 			AX_CHECK_SIGN($1, [psi_basic_type=int], [psi_basic_type=uint], PSI_INCLUDES)
 			psi_add_type "{`psi_type_pair $psi_basic_type $AS_TR_SH([ac_cv_sizeof_]$1)`, \"$1\"}"
-			#cat >>$PSI_TYPES <<<"	{`psi_type_pair $psi_basic_type $AS_TR_SH([ac_cv_sizeof_]$1)`, \"$1\"}, "
 			;;
 		struct)
 			PSI_STRUCT($1)
 			;;
 		pointer*)
 			psi_add_type "{PSI_T_POINTER, \"void\", \"$1\"}"
-			#cat >>$PSI_TYPES <<<"	{PSI_T_POINTER, \"void\", \"$1\"}, "
 			;;
 		*)
 			AC_MSG_WARN(could not detect type class of $1)

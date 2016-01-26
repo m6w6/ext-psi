@@ -108,6 +108,15 @@ size_t psi_t_align(token_t t, size_t s)
 	return ((s - 1) | (a - 1)) + 1;
 }
 
+size_t psi_offset_padding(size_t diff, size_t alignment)
+{
+	if (diff && diff <= ((diff - 1) | (alignment -1)) + 1) {
+		diff = 0;
+	}
+
+	return diff;
+}
+
 int psi_internal_type(impl_type *type)
 {
 	switch (type->type) {

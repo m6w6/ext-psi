@@ -127,53 +127,58 @@ static void psi_ffi_struct_type_dtor(void *type) {
 	free(strct);
 }
 
+static size_t psi_ffi_struct_type_pad(ffi_type **els, size_t padding) {
+	size_t i;
+
+	for (i = 0; i < padding; ++i) {
+		ffi_type *pad = malloc(sizeof(*pad));
+
+		memcpy(pad, &ffi_type_schar, sizeof(*pad));
+		*els++ = pad;
+	}
+
+	return padding;
+}
+
 static ffi_type **psi_ffi_struct_type_elements(decl_struct *strct) {
-	size_t i, j, argc = strct->args->count << 2, nels = 0, offset = 0, align, padding;
+	size_t i, argc = strct->args->count, nels = 0, offset = 0, maxalign = 0;
 	ffi_type **els = calloc(argc + 1, sizeof(*els));
 
 	for (i = 0; i < strct->args->count; ++i) {
 		decl_arg *darg = strct->args->args[i];
 		ffi_type *type = malloc(sizeof(*type));
+		size_t padding;
 
 		memcpy(type, psi_ffi_decl_arg_type(darg), sizeof(*type));
 
-		if (darg->layout->pos > offset) {
-			padding = darg->layout->pos - offset;
-			align = ((padding - 1) | (type->alignment - 1)) + 1;
-			if (align >= padding) {
-				padding = 0;
-			}
-		} else {
-			align = 0;
-			padding = 0;
+		ZEND_ASSERT(type->size == darg->layout->len);
+
+		if (type->alignment > maxalign) {
+			maxalign = type->alignment;
 		}
 
-		if (padding) {
-			for (j = 0; j < padding; ++j) {
-				ffi_type *pad = malloc(sizeof(*pad));
-
-				ZEND_ASSERT(nels + 1 < argc);
-				memcpy(pad, &ffi_type_schar, sizeof(*pad));
-				els[nels++] = pad;
+		if ((padding = psi_offset_padding(darg->layout->pos - offset, type->alignment))) {
+			if (nels + padding + 1 > argc) {
+				argc += padding;
+				els = realloc(els, (argc + 1) * sizeof(*els));
+				els[argc] = NULL;
 			}
+			psi_ffi_struct_type_pad(&els[nels], padding);
+			nels += padding;
+			offset += padding;
 		}
+		ZEND_ASSERT(offset == darg->layout->pos);
 
-		ZEND_ASSERT(nels + 1 < argc);
+		offset = (offset + darg->layout->len + type->alignment - 1) & ~(type->alignment - 1);
 		els[nels++] = type;
-//fprintf(stderr, "%s o:%d, a:%d, p:%d l:%d\n", darg->var->name, offset, align, padding, darg->layout->len);
-		offset += MAX(align, padding) + darg->layout->len;
 	}
-//fprintf(stderr, "%s s:%d o=%d\n", strct->name, strct->size, offset);
+
+	/* apply struct alignment padding */
+	offset = (offset + maxalign - 1) & ~(maxalign - 1);
+
 	ZEND_ASSERT(offset <= strct->size);
 	if (offset < strct->size) {
-		padding = strct->size - offset;
-		for (j = 0; j < padding; ++j) {
-			ffi_type *pad = malloc(sizeof(*pad));
-
-			ZEND_ASSERT(nels + 1 < argc);
-			memcpy(pad, &ffi_type_schar, sizeof(*pad));
-			els[nels++] = pad;
-		}
+		psi_ffi_struct_type_pad(&els[nels], strct->size - offset);
 	}
 
 	return els;
@@ -186,7 +191,7 @@ static inline ffi_type *psi_ffi_decl_type(decl_type *type) {
 			ffi_type *strct = calloc(1, sizeof(ffi_type));
 
 			strct->type = FFI_TYPE_STRUCT;
-			strct->size = 0;//real->strct->size;
+			strct->size = 0;
 			strct->elements = psi_ffi_struct_type_elements(real->strct);
 
 			real->strct->engine.type = strct;

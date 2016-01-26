@@ -14,8 +14,26 @@ AC_DEFUN(PSI_STRUCT_MEMBER, [
 	)
 	if PSI_SH_TEST_SIZEOF($1 member_name); then
 		PSI_CHECK_OFFSETOF($1, member_name)
-		PSI_TYPE_INDIRECTION($2, [$AS_TR_SH([ac_cv_sizeof_]$1[_]member_name)], pl, as)
-		psi_struct_members="[$psi_struct_members, {]PSI_TYPE_PAIR(member_type)[, \"]member_name[\", $]AS_TR_SH([ac_cv_offsetof_]$1[_]member_name)[, $]AS_TR_SH([ac_cv_sizeof_]$1[_]member_name), $pl, $as[}]"
+		PSI_TYPE_INDIRECTION($2, [PSI_SH_SIZEOF([$1 member_name])], pl, as)
+		
+		psi_member_sizeof=PSI_SH_SIZEOF($1 member_name)
+		psi_member_offsetof=PSI_SH_OFFSETOF($1 member_name)
+		
+		if test $pl -gt 0 && test $as -eq 0; then
+			check_size=PSI_SH_SIZEOF(void *)
+		elif test $pl -eq 1 && test $as -gt 0; then
+			check_size=`expr PSI_SH_SIZEOF(member_type) \* $as`
+		else
+			check_size=PSI_SH_SIZEOF(member_type)
+		fi
+		if test $psi_member_sizeof != "$check_size"; then
+			psi_member_basic_type=PSI_SH_BASIC_TYPE(member_type)
+			psi_member_type_pair="`psi_type_pair $psi_member_basic_type $psi_member_sizeof`"
+			psi_struct_members="$psi_struct_members, {$psi_member_type_pair, \"[]member_name[]\", $psi_member_offsetof, $psi_member_sizeof, $pl, $as}"
+			AC_MSG_WARN(pre-defined size $check_size of $2 in $1 does not match computed size $psi_member_sizeof; adjusting to $psi_member_type_pair)
+		else
+			psi_struct_members="[$psi_struct_members, {]PSI_TYPE_PAIR(member_type)[, \"]member_name[\", $psi_member_offsetof, $psi_member_sizeof, $pl, $as}]"
+		fi
 	fi
 ])
 

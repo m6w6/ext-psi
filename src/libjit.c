@@ -74,49 +74,53 @@ static void psi_jit_struct_type_dtor(void *type) {
 
 	jit_type_free(strct);
 }
+
+static size_t psi_jit_struct_type_pad(jit_type_t **els, size_t padding) {
+	size_t i;
+
+	for (i = 0; i < padding; ++i) {
+		*els++ = jit_type_copy(jit_type_sys_char);
+	}
+
+	return padding;
+}
+
 static unsigned psi_jit_struct_type_elements(decl_struct *strct, jit_type_t **fields) {
-	size_t i, j, argc = strct->args->count << 2, nels = 0, offset = 0, align, padding;
-	*fields = calloc(argc, sizeof(*fields));
+	size_t i, j, argc = strct->args->count, nels = 0, offset = 0, maxalign;
+	*fields = calloc(argc + 1, sizeof(*fields));
 
 	for (i = 0; i < strct->args->count; ++i) {
 		decl_arg *darg = strct->args->args[i];
 		jit_type_t type = jit_type_copy(psi_jit_decl_arg_type(darg));
+		size_t padding, alignment;
 
-		if (darg->layout->pos > offset) {
-			padding = darg->layout->pos - offset;
-			align = ((padding - 1) | (jit_type_get_alignment(type) - 1)) + 1;
-			if (align >= padding) {
-				padding = 0;
-			}
-		} else {
-			align = 0;
-			padding = 0;
+		ZEND_ASSERT(jit_type_get_size(type) == darg->layout->len);
+
+		if ((alignment = jit_type_get_alignment(type)) > maxalign) {
+			maxalign = alignment;
 		}
 
-		if (padding) {
-			for (j = 0; j < padding; ++j) {
-				jit_type_t pad = jit_type_copy(jit_type_sys_char);
-
-				ZEND_ASSERT(nels + 1 < argc);
-				(*fields)[nels++] = pad;
+		if ((padding = psi_offset_padding(darg->layout->pos - offset, alignment))) {
+			if (nels + padding > argc) {
+				argc += padding;
+				*fields = realloc(*fields, (argc + 1) * sizeof(*fields));
 			}
+			psi_jit_struct_type_pad(&(*fields)[nels], padding);
+			nels += padding;
+			offset += padding;
 		}
+		ZEND_ASSERT(offset == darg->layout->pos);
 
-		ZEND_ASSERT(nels + 1 < argc);
+		offset = (offset + darg->layout->len + alignment - 1) & ~(alignment - 1);
 		(*fields)[nels++] = type;
-
-		offset += MAX(align, padding) + darg->layout->len;
 	}
+
+	/* apply struct alignment padding */
+	offset = (offset + maxalign - 1) & ~(maxalign - 1);
 
 	ZEND_ASSERT(offset <= strct->size);
 	if (offset < strct->size) {
-		padding = strct->size - offset;
-		for (j = 0; j < padding; ++j) {
-			jit_type_t pad = jit_type_copy(jit_type_sys_char);
-
-			ZEND_ASSERT(nels + 1 < argc);
-			(*fields)[nels++] = pad;
-		}
+		nels += psi_jit_struct_type_pad(&(*fields)[nels], strct->size - offset);
 	}
 
 	return nels;

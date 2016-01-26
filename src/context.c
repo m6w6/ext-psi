@@ -221,7 +221,31 @@ static inline int validate_decl_struct(PSI_Data *data, decl_struct *s) {
 		ZEND_ASSERT(!darg->var->arg || darg->var->arg == darg);
 		darg->var->arg = darg;
 
-		if (!darg->layout) {
+		if (darg->layout) {
+			size_t size;
+
+			if (darg->var->array_size) {
+				size = psi_t_size(real_decl_type(darg->type)->type) * darg->var->array_size;
+			} else if (darg->var->pointer_level) {
+				size = psi_t_size(PSI_T_POINTER);
+			} else {
+				decl_type *real = real_decl_type(darg->type);
+
+				if (real->type == PSI_T_STRUCT) {
+					size = real->strct->size;
+				} else {
+					size = psi_t_size(real->type);
+				}
+			}
+			if (darg->layout->len != size) {
+				data->error(darg->token, PSI_WARNING,
+						"Computed length %zu of %s.%s does not match"
+						" pre-defined length %zu of type '%s'",
+						darg->layout->len, s->name, darg->var->name, size,
+						darg->type->name);
+				return 0;
+			}
+		} else {
 			token_t t;
 
 			if (darg->var->pointer_level && (!darg->var->array_size || darg->var->pointer_level == 1)) {

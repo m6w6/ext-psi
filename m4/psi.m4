@@ -164,6 +164,10 @@ AC_DEFUN([PSI_PKG_CONFIG], [
 	export PKG_CONFIG_PATH="$PHP_PSI_LIBFFI/lib/pkgconfig:$PHP_PSI_LIBJIT/lib/pkgconfig:$PKG_CONFIG_PATH"
 ])
 
+dnl PSI_SH_SIZEOF(type)
+dnl expand to shell variable $ac_cv_sizeof_<TYPE>
+AC_DEFUN([PSI_SH_SIZEOF], [$AS_TR_SH([ac_cv_sizeof_]$1)])
+
 dnl PSI_SH_TEST_SIZEOF(type)
 dnl `if` condition to test if $ac_cv_sizeof_$1 is greater than 0.
 AC_DEFUN([PSI_SH_TEST_SIZEOF], [test -n "$AS_TR_SH([ac_cv_sizeof_]$1)" && test "$AS_TR_SH([ac_cv_sizeof_]$1)" -gt 0])
@@ -197,6 +201,11 @@ AC_DEFUN(PSI_CHECK_OFFSETOF, [
 		[The offset of `$2' in `$1', as computed by offsetof.]
 	)
 ])
+
+dnl PSI_SH_OFFSETOF(type)
+dnl Expand to shell variable $ac_cv_offsetof_<TYPE>
+AC_DEFUN([PSI_SH_OFFSETOF], [$AS_TR_SH([ac_cv_offsetof_]$1)])
+
 
 dnl PSI_COMPUTE_STR(variable, string or expression)
 dnl Compute a string constant value in a similar manner like AC_COMPUTE_INT.
