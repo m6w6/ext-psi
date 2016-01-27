@@ -46,6 +46,9 @@ static inline void dump_num_exp(int fd, num_exp *exp) {
 		case PSI_T_NAME:
 			dump_decl_var(fd, exp->u.dvar);
 			break;
+		case PSI_T_ENUM:
+			dprintf(fd, "%s", exp->u.enm->name);
+			break;
 		EMPTY_SWITCH_DEFAULT_CASE();
 		}
 		if (exp->operand) {
@@ -144,6 +147,7 @@ static inline void dump_struct(int fd, decl_struct *strct) {
 		dprintf(fd, ";");
 	}
 }
+
 static inline void dump_structs(int fd, decl_structs *structs) {
 	size_t i;
 
@@ -155,6 +159,35 @@ static inline void dump_structs(int fd, decl_structs *structs) {
 	}
 }
 
+static inline void dump_enum(int fd, decl_enum *e) {
+	size_t j;
+
+	dprintf(fd, "enum %s {\n", e->name);
+	for (j = 0; j < e->items->count; ++j) {
+		decl_enum_item *i = e->items->list[j];
+
+		if (j) {
+			dprintf(fd, ",\n");
+		}
+		dprintf(fd, "\t%s", i->name);
+		if (i->num && i->num != &i->inc) {
+			dprintf(fd, " = ");
+			dump_num_exp(fd, i->num);
+		}
+	}
+	dprintf(fd, "\n}");
+}
+
+static inline void dump_enums(int fd, decl_enums *enums) {
+	size_t i;
+
+	for (i = 0; i < enums->count; ++i) {
+		decl_enum *e = enums->list[i];
+
+		dump_enum(fd, e);
+		dprintf(fd, "\n");
+	}
+}
 static inline void dump_constant(int fd, constant *cnst) {
 	dprintf(fd, "const %s %s = ", cnst->type->name, cnst->name);
 	if (cnst->val->type == PSI_T_QUOTED_STRING) {
@@ -374,6 +407,10 @@ void PSI_ContextDump(PSI_Context *C, int fd)
 
 	if (C->structs) {
 		dump_structs(fd, C->structs);
+		dprintf(fd, "\n");
+	}
+	if (C->enums) {
+		dump_enums(fd, C->enums);
 		dprintf(fd, "\n");
 	}
 	if (C->consts) {

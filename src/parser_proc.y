@@ -67,6 +67,40 @@ block ::= constant(constant). {
 block ::= decl_struct(strct). {
 	P->structs = add_decl_struct(P->structs, strct);
 }
+block ::= decl_enum(e). {
+	P->enums = add_decl_enum(P->enums, e);
+}
+
+enum_name(n) ::= ENUM NAME(N). {
+	n = N;
+}
+
+%type decl_enum {decl_enum *}
+%destructor decl_enum {free_decl_enum($$);}
+decl_enum(e) ::= enum_name(N) LBRACE decl_enum_items(list) RBRACE. {
+	e = init_decl_enum(N->text, list);
+	e->token = N;
+}
+
+%type decl_enum_items {decl_enum_items*}
+%destructor decl_enum_items {free_decl_enum_items($$);}
+decl_enum_items(l) ::= decl_enum_item(i). {
+	l = init_decl_enum_items(i);
+}
+decl_enum_items(l) ::= decl_enum_items(l_) COMMA decl_enum_item(i). {
+	l = add_decl_enum_item(l_, i);
+}
+
+%type decl_enum_item {decl_enum_item*}
+%destructor decl_enum_item {free_decl_enum_item($$);}
+decl_enum_item(i) ::= NAME(N) EQUALS num_exp(num). {
+	i = init_decl_enum_item(N->text, num);
+	i->token = N;
+}
+decl_enum_item(i) ::= NAME(N). {
+	i = init_decl_enum_item(N->text, NULL);
+	i->token = N;
+}
 
 struct_name(n) ::= STRUCT NAME(N). {
 	n = N;
@@ -331,6 +365,11 @@ decl_type(type_) ::= STRUCT(S) NAME(T). {
 	type_ = init_decl_type(S->type, T->text);
 	type_->token = T;
 	free(S);
+}
+decl_type(type_) ::= ENUM(E) NAME(T). {
+	type_ = init_decl_type(E->type, T->text);
+	type_->token = T;
+	free(E);
 }
 %token_class decl_type_token FLOAT DOUBLE INT8 UINT8 INT16 UINT16 INT32 UINT32 INT64 UINT64 NAME.
 %type decl_type {decl_type*}

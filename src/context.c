@@ -26,7 +26,7 @@
 #include "php.h"
 #include "php_scandir.h"
 #include "php_psi.h"
-
+#include "calc.h"
 #include "libjit.h"
 #include "libffi.h"
 
@@ -220,13 +220,12 @@ void PSI_ContextBuild(PSI_Context *C, const char *paths)
 zend_function_entry *PSI_ContextCompile(PSI_Context *C)
 {
 	size_t i;
+	zend_constant zc;
+
+	zc.flags = CONST_PERSISTENT|CONST_CS;
+	zc.module_number = EG(current_module)->module_number;
 
 	if (C->consts) {
-		zend_constant zc;
-
-		zc.flags = CONST_PERSISTENT|CONST_CS;
-		zc.module_number = EG(current_module)->module_number;
-
 		for (i = 0; i < C->consts->count; ++i) {
 			constant *c = C->consts->list[i];
 
@@ -245,6 +244,22 @@ zend_function_entry *PSI_ContextCompile(PSI_Context *C)
 				break;
 			}
 			zend_register_constant(&zc);
+		}
+	}
+	if (C->enums) {
+		for (i = 0; i < C->enums->count; ++i) {
+			decl_enum *e = C->enums->list[i];
+			size_t j;
+
+			for (j = 0; j < e->items->count; ++j) {
+				decl_enum_item *i = e->items->list[j];
+				zend_string *name = strpprintf(0, "psi\\%s\\%s", e->name, i->name);
+
+				zc.name = zend_string_dup(name, 1);
+				ZVAL_LONG(&zc.value, psi_long_num_exp(i->num, NULL));
+				zend_register_constant(&zc);
+				zend_string_release(name);
+			}
 		}
 	}
 
@@ -300,6 +315,12 @@ void PSI_ContextDtor(PSI_Context *C)
 			free(C->structs->list);
 		}
 		free(C->structs);
+	}
+	if (C->enums) {
+		if (C->enums->list) {
+			free(C->enums->list);
+		}
+		free(C->enums);
 	}
 	if (C->decls) {
 		if (C->decls->list) {

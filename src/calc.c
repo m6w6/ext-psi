@@ -4,6 +4,7 @@
 
 #include "php.h"
 #include "php_psi.h"
+#include "calc.h"
 
 static inline int psi_calc_num_exp_value(num_exp *exp, impl_val *strct, impl_val *res) {
 	impl_val *ref, *tmp = NULL;
@@ -29,6 +30,10 @@ static inline int psi_calc_num_exp_value(num_exp *exp, impl_val *strct, impl_val
 		default:
 			return 0;
 		}
+		break;
+
+	case PSI_T_ENUM:
+		return psi_calc_num_exp(exp->u.enm->num ?: &exp->u.enm->inc, NULL, res);
 		break;
 
 	case PSI_T_NAME:

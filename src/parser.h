@@ -17,7 +17,6 @@
 
 typedef int token_t;
 
-/* in php_psi.h */
 size_t psi_t_alignment(token_t);
 size_t psi_t_size(token_t);
 
@@ -61,46 +60,13 @@ typedef struct decl_type {
 	token_t type;
 	struct decl_type *real;
 	struct decl_struct *strct;
+	struct decl_enum *enm;
 } decl_type;
 
 static inline decl_type *init_decl_type(token_t type, const char *name) {
 	decl_type *t = calloc(1, sizeof(*t));
 	t->type = type;
 	t->name = strdup(name);
-	return t;
-}
-
-static inline decl_type *init_decl_type_ex(token_t type, int argc, ...) {
-	va_list argv;
-	char *ptr, *arg;
-	unsigned i;
-	size_t len, pos = 0, all = 0;
-	decl_type *t = calloc(1, sizeof(*t));
-
-	va_start(argv, argc);
-	for (i = 0; i < argc; ++i) {
-		arg = va_arg(argv, char *);
-		len = va_arg(argv, size_t);
-
-		if (len) {
-			if (all) {
-				pos = all;
-				ptr = realloc(ptr, 1 + (all += len));
-			} else {
-				ptr = malloc(1 + (all = len));
-			}
-			memcpy(ptr + pos, arg, len);
-		}
-	}
-	va_end(argv);
-
-	if (!all) {
-		ptr = calloc(1, 1);
-	} else {
-		ptr[all] = 0;
-	}
-	t->type = type;
-	t->name = ptr;
 	return t;
 }
 
@@ -374,6 +340,7 @@ static inline void free_decls(decls *decls) {
 	free(decls->list);
 	free(decls);
 }
+
 
 typedef struct decl_struct {
 	PSI_Token *token;
@@ -651,6 +618,7 @@ typedef struct num_exp {
 		char *numb;
 		constant *cnst;
 		decl_var *dvar;
+		struct decl_enum_item *enm;
 	} u;
 	token_t operator;
 	int (*calculator)(int t1, impl_val *v1, int t2, impl_val *v2, impl_val *res);
@@ -672,6 +640,36 @@ static inline num_exp *init_num_exp(token_t t, void *num) {
 	return exp;
 }
 
+static inline PSI_Token *PSI_TokenCopy(PSI_Token *src);
+static inline num_exp *copy_num_exp(num_exp *exp) {
+	decl_var *dvar;
+	num_exp *num = calloc(1, sizeof(*num));
+
+	memcpy(num, exp, sizeof(*num));
+
+	if (num->token) {
+		num->token = PSI_TokenCopy(num->token);
+	}
+	if (num->operand) {
+		num->operand = copy_num_exp(num->operand);
+	}
+	switch (num->t) {
+	case PSI_T_NUMBER:
+	case PSI_T_NSNAME:
+		num->u.numb = strdup(num->u.numb);
+		break;
+	case PSI_T_NAME:
+		dvar = init_decl_var(num->u.dvar->name, num->u.dvar->pointer_level, num->u.dvar->array_size);
+		dvar->arg = num->u.dvar->arg;
+		if (num->u.dvar->token) {
+			dvar->token = PSI_TokenCopy(num->u.dvar->token);
+		}
+		num->u.dvar = dvar;
+		break;
+	}
+	return num;
+}
+
 static inline void free_num_exp(num_exp *exp) {
 	if (exp->token) {
 		free(exp->token);
@@ -685,12 +683,130 @@ static inline void free_num_exp(num_exp *exp) {
 	case PSI_T_NAME:
 		free_decl_var(exp->u.dvar);
 		break;
+	case PSI_T_ENUM:
+		break;
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}
 	if (exp->operand) {
 		free_num_exp(exp->operand);
 	}
 	free(exp);
+}
+
+typedef struct decl_enum_item {
+	PSI_Token *token;
+	char *name;
+	num_exp *num;
+	num_exp inc;
+	struct decl_enum_item *prev;
+} decl_enum_item;
+
+static inline decl_enum_item *init_decl_enum_item(const char *name, num_exp *num) {
+	decl_enum_item *i = calloc(1, sizeof(*i));
+
+	i->name = strdup(name);
+	i->num = num;
+	return i;
+}
+
+static inline void free_decl_enum_item(decl_enum_item *i) {
+	if (i->token) {
+		free(i->token);
+	}
+	if (i->num && i->num != &i->inc) {
+		free_num_exp(i->num);
+	}
+	free(i->name);
+	free(i);
+}
+
+typedef struct decl_enum_items {
+	decl_enum_item **list;
+	size_t count;
+} decl_enum_items;
+
+static inline decl_enum_items *init_decl_enum_items(decl_enum_item *i) {
+	decl_enum_items *l = calloc(1, sizeof(*l));
+
+	if (i) {
+		l->count = 1;
+		l->list = calloc(1, sizeof(*l->list));
+		l->list[0] = i;
+	}
+	return l;
+}
+
+static inline decl_enum_items *add_decl_enum_item(decl_enum_items *l, decl_enum_item *i) {
+	l->list = realloc(l->list, sizeof(*l->list) * (l->count + 1));
+	l->list[l->count] = i;
+	if (l->count) {
+		i->prev = l->list[l->count - 1];
+	}
+	++l->count;
+	return l;
+}
+
+static inline void free_decl_enum_items(decl_enum_items *l) {
+	if (l->list) {
+		size_t j;
+
+		for (j = 0; j < l->count; ++j) {
+			free_decl_enum_item(l->list[j]);
+		}
+		free(l->list);
+	}
+	free(l);
+}
+
+typedef struct decl_enum {
+	PSI_Token *token;
+	char *name;
+	decl_enum_items *items;
+} decl_enum;
+
+static inline decl_enum *init_decl_enum(const char *name, decl_enum_items *l) {
+	decl_enum *e = calloc(1, sizeof(*e));
+
+	e->name = strdup(name);
+	e->items = l;
+	return e;
+}
+
+static inline void free_decl_enum(decl_enum *e) {
+	if (e->token) {
+		free(e->token);
+	}
+	if (e->items) {
+		free_decl_enum_items(e->items);
+	}
+	free(e->name);
+	free(e);
+}
+
+typedef struct decl_enums {
+	decl_enum **list;
+	size_t count;
+} decl_enums;
+
+static inline decl_enums* add_decl_enum(decl_enums *es, decl_enum *e) {
+	if (!es) {
+		es = calloc(1, sizeof(*es));
+	}
+	es->list = realloc(es->list, ++es->count * sizeof(*es->list));
+	es->list[es->count-1] = e;
+	return es;
+}
+
+static inline void free_decl_enums(decl_enums *es) {
+	if (es->list) {
+		size_t j;
+
+		for (j = 0; j < es->count; ++j) {
+			free_decl_enum(es->list[j]);
+		}
+	}
+	free(es->list);
+	free(es);
 }
 
 typedef struct let_calloc {
@@ -1250,6 +1366,7 @@ typedef void (*psi_error_cb)(PSI_Token *token, int type, const char *msg, ...);
 	constants *consts; \
 	decl_typedefs *defs; \
 	decl_structs *structs; \
+	decl_enums *enums; \
 	decls *decls; \
 	impls *impls; \
 	union { \
@@ -1279,6 +1396,9 @@ static inline void PSI_DataDtor(PSI_Data *data) {
 	}
 	if (data->structs) {
 		free_decl_structs(data->structs);
+	}
+	if (data->enums) {
+		free_decl_enums(data->enums);
 	}
 	if (data->decls) {
 		free_decls(data->decls);

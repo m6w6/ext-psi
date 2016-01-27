@@ -1,4 +1,4 @@
-#ifdef HAVE_CONFIG_H
+	#ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
 
@@ -65,6 +65,7 @@ static inline int locate_decl_type_alias(decl_typedefs *defs, decl_type *type) {
 
 	return 0;
 }
+
 static inline int locate_decl_type_struct(decl_structs *structs, decl_type *type) {
 	size_t i;
 
@@ -74,6 +75,21 @@ static inline int locate_decl_type_struct(decl_structs *structs, decl_type *type
 	for (i = 0; i < structs->count; ++i) {
 		if (!strcmp(structs->list[i]->name, type->name)) {
 			type->strct = structs->list[i];
+			return 1;
+		}
+	}
+	return 0;
+}
+
+static inline int locate_decl_type_enum(decl_enums *enums, decl_type *type) {
+	size_t i;
+
+	if (type->enm) {
+		return 1;
+	}
+	for (i = 0; i < enums->count; ++i) {
+		if (!strcmp(enums->list[i]->name, type->name)) {
+			type->enm = enums->list[i];
 			return 1;
 		}
 	}
@@ -99,6 +115,10 @@ static inline int validate_decl_type(PSI_Data *data, decl_type *type) {
 			return 0;
 		}
 		break;
+	case PSI_T_ENUM:
+		if (!data->enums || !locate_decl_type_enum(data->enums, type)) {
+			return 0;
+		}
 	}
 	return 1;
 }
@@ -300,7 +320,7 @@ static inline int validate_decl(PSI_Data *data, void *dl, decl *decl) {
 static inline decl_arg *locate_decl_var_arg(decl_var *var, decl_args *args, decl_arg *func) {
 	size_t i;
 
-	for (i = 0; i < args->count; ++i) {
+	if (args) for (i = 0; i < args->count; ++i) {
 		decl_arg *arg = args->args[i];
 
 		if (!strcmp(var->name, arg->var->name)) {
@@ -335,7 +355,35 @@ static inline constant *locate_num_exp_constant(num_exp *exp, constants *consts)
 
 	return NULL;
 }
-static inline int validate_num_exp(PSI_Data *data, decl_args *dargs, decl_arg *func, num_exp *exp) {
+static inline decl_enum_item *locate_num_exp_enum_item_ex(num_exp *exp, decl_enum *e) {
+	size_t k;
+
+	if (e) for (k = 0; k < e->items->count; ++k) {
+		decl_enum_item *i = e->items->list[k];
+
+		if (!strcmp(i->name, exp->u.dvar->name)) {
+			free_decl_var(exp->u.dvar);
+			exp->t = PSI_T_ENUM;
+			exp->u.enm = i;
+			return i;
+		}
+	}
+	return NULL;
+}
+static inline decl_enum_item *locate_num_exp_enum_item(num_exp *exp, decl_enums *enums) {
+	size_t j;
+
+	if (enums) for (j = 0; j < enums->count; ++j) {
+		decl_enum *e = enums->list[j];
+		decl_enum_item *i = locate_num_exp_enum_item_ex(exp, e);
+
+		if (i) {
+			return i;
+		}
+	}
+	return NULL;
+}
+static inline int validate_num_exp(PSI_Data *data, num_exp *exp, decl_args *dargs, decl_arg *func, decl_enum *enm) {
 	if (exp->operand) {
 		switch (exp->operator) {
 		case PSI_T_PLUS:
@@ -352,16 +400,18 @@ static inline int validate_num_exp(PSI_Data *data, decl_args *dargs, decl_arg *f
 			break;
 		EMPTY_SWITCH_DEFAULT_CASE();
 		}
-		if (!validate_num_exp(data, dargs, func, exp->operand)) {
+		if (!validate_num_exp(data, exp->operand, dargs, func, enm)) {
 			return 0;
 		}
 	}
 	switch (exp->t) {
 	case PSI_T_NAME:
 		if (!locate_decl_var_arg(exp->u.dvar, dargs, func)) {
-			data->error(exp->token, PSI_WARNING, "Unknown variable '%s' in numeric expression",
-					exp->u.dvar->name);
-			return 0;
+			if (!locate_num_exp_enum_item(exp, data->enums) && !locate_num_exp_enum_item_ex(exp, enm)) {
+				data->error(exp->token, PSI_WARNING, "Unknown variable '%s' in numeric expression",
+						exp->u.dvar->name);
+				return 0;
+			}
 		}
 		return 1;
 	case PSI_T_NSNAME:
@@ -372,11 +422,45 @@ static inline int validate_num_exp(PSI_Data *data, decl_args *dargs, decl_arg *f
 		}
 		return 1;
 	case PSI_T_NUMBER:
+	case PSI_T_ENUM:
 		return 1;
 	default:
 		return 0;
 	}
 }
+
+static inline int validate_decl_enum(PSI_Data *data, decl_enum *e) {
+	size_t j;
+
+	if (!e->items || !e->items->count) {
+		data->error(e->token, PSI_WARNING, "Empty enum '%s'", e->name);
+		return 0;
+	}
+
+	for (j = 0; j < e->items->count; ++j) {
+		decl_enum_item *i = e->items->list[j];
+
+		if (!i->num) {
+			if (j) {
+				i->inc.t = PSI_T_NUMBER;
+				i->inc.u.numb = "1";
+				i->inc.operator = PSI_T_PLUS;
+				i->inc.operand = i->prev->num ?: &i->prev->inc;
+				i->num = &i->inc;
+			} else {
+				i->inc.t = PSI_T_NUMBER;
+				i->inc.u.numb = "0";
+				i->num = &i->inc;
+			}
+		}
+		if (!validate_num_exp(data, i->num, NULL, NULL, e)) {
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
 static inline int validate_set_value_handler(set_value *set) {
 	switch (set->func->type) {
 	case PSI_T_TO_BOOL:
@@ -460,7 +544,7 @@ static inline int validate_set_value_ex(PSI_Data *data, set_value *set, decl_arg
 		}
 	}
 	if (set->num) {
-		if (!validate_num_exp(data, ref_list, ref, set->num)) {
+		if (!validate_num_exp(data, set->num, ref_list, ref, NULL)) {
 			return 0;
 		}
 	}
@@ -605,15 +689,15 @@ static inline int validate_impl_let_stmts(PSI_Data *data, impl *impl) {
 							let->var->array_size));
 			break;
 		case PSI_LET_NUMEXP:
-			if (!validate_num_exp(data, impl->decl->args, impl->decl->func, let->val->data.num)) {
+			if (!validate_num_exp(data, let->val->data.num, impl->decl->args, impl->decl->func, NULL)) {
 				return 0;
 			}
 			break;
 		case PSI_LET_CALLOC:
-			if (!validate_num_exp(data, impl->decl->args, impl->decl->func, let->val->data.alloc->nmemb)) {
+			if (!validate_num_exp(data, let->val->data.alloc->nmemb, impl->decl->args, impl->decl->func, NULL)) {
 				return 0;
 			}
-			if (!validate_num_exp(data, impl->decl->args, impl->decl->func, let->val->data.alloc->size)) {
+			if (!validate_num_exp(data, let->val->data.alloc->size, impl->decl->args, impl->decl->func, NULL)) {
 				return 0;
 			}
 			break;
@@ -881,6 +965,15 @@ int PSI_ContextValidate(PSI_Context *C, PSI_Parser *P)
 			}
 		}
 	}
+	if (D->enums) {
+		size_t i;
+
+		for (i = 0; i < D->enums->count; ++i) {
+			if (validate_decl_enum(PSI_DATA(C), D->enums->list[i])) {
+				C->enums = add_decl_enum(C->enums, D->enums->list[i]);
+			}
+		}
+	}
 	if (D->consts) {
 		size_t i;
 
@@ -954,6 +1047,18 @@ int PSI_ContextValidateData(PSI_Data *dest, PSI_Data *source)
 		if (validate_decl_struct(source, dstruct)) {
 			if (dest) {
 				dest->structs = add_decl_struct(dest->structs, dstruct);
+			}
+		} else {
+			++errors;
+		}
+	}
+
+	if (source->enums) for (i = 0; i < source->enums->count; ++i) {
+		decl_enum *denum = source->enums->list[i];
+
+		if (validate_decl_enum(source, denum)) {
+			if (dest) {
+				dest->enums = add_decl_enum(dest->enums, denum);
 			}
 		} else {
 			++errors;

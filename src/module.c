@@ -50,7 +50,7 @@ void psi_error_wrapper(PSI_Token *t, int type, const char *msg, ...)
 		fn = zend_get_executed_filename();
 		ln = zend_get_executed_lineno();
 	} else if (zend_is_compiling()) {
-		fn = zend_get_compiled_filename();
+		fn = zend_get_compiled_filename()->val;
 		ln = zend_get_compiled_lineno();
 	}
 
