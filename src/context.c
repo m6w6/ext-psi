@@ -137,7 +137,7 @@ PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErr
 		predef_decl = farg;
 	}
 
-	PSI_ContextValidatePredef(C, &T);
+	PSI_ContextValidateData(PSI_DATA(C), &T);
 
 	C->count = 1;
 	C->data = malloc(sizeof(*C->data));

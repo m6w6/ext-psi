@@ -40,11 +40,25 @@ zend_class_entry *psi_object_get_class_entry()
 void psi_error_wrapper(PSI_Token *t, int type, const char *msg, ...)
 {
 	va_list argv;
+	const char *fn = NULL;
+	unsigned ln = 0;
+
+	if (t) {
+		fn = t->file;
+		ln = t->line;
+	} else if (zend_is_executing()) {
+		fn = zend_get_executed_filename();
+		ln = zend_get_executed_lineno();
+	} else if (zend_is_compiling()) {
+		fn = zend_get_compiled_filename();
+		ln = zend_get_compiled_lineno();
+	}
 
 	va_start(argv, msg);
-	psi_verror(type, t?t->file:"Unknown", t?t->line:0, msg, argv);
+	psi_verror(type, fn, ln, msg, argv);
 	va_end(argv);
 }
+
 void psi_error(int type, const char *fn, unsigned ln, const char *msg, ...)
 {
 	va_list argv;
@@ -53,6 +67,7 @@ void psi_error(int type, const char *fn, unsigned ln, const char *msg, ...)
 	psi_verror(type, fn, ln, msg, argv);
 	va_end(argv);
 }
+
 void psi_verror(int type, const char *fn, unsigned ln, const char *msg, va_list argv)
 {
 	zend_error_cb(type, fn, ln, msg, argv);
@@ -80,7 +95,59 @@ static zend_object *psi_object_init(zend_class_entry *ce)
 	return &o->std;
 }
 
-PHP_MINIT_FUNCTION(psi)
+ZEND_BEGIN_ARG_INFO_EX(ai_psi_dump, 0, 0, 0)
+	ZEND_ARG_INFO(0, stream)
+ZEND_END_ARG_INFO();
+static PHP_FUNCTION(psi_dump) {
+	php_stream *s;
+	zval *r = NULL;
+	int fd = STDOUT_FILENO;
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "|r!", &r)) {
+		return;
+	}
+	if (r) {
+		php_stream_from_zval(s, r);
+
+		if (SUCCESS != php_stream_cast(s, PHP_STREAM_AS_FD | PHP_STREAM_CAST_INTERNAL, (void **)&fd, 1)) {
+			RETURN_FALSE;
+		}
+	}
+	PSI_ContextDump(&PSI_G(context), fd);
+}
+
+ZEND_BEGIN_ARG_INFO_EX(ai_psi_validate, 0, 0, 1)
+	ZEND_ARG_INFO(0, file)
+ZEND_END_ARG_INFO();
+static PHP_FUNCTION(psi_validate) {
+	zend_string *file;
+	PSI_Parser P;
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "P", &file)) {
+		return;
+	}
+
+	if (!PSI_ParserInit(&P, file->val, psi_error_wrapper, 0)) {
+		RETURN_FALSE;
+	}
+
+	while (0 < PSI_ParserScan(&P)) {
+		PSI_ParserParse(&P, PSI_TokenAlloc(&P));
+		if (P.num == PSI_T_EOF) {
+			break;
+		}
+	}
+	PSI_ParserParse(&P, NULL);
+
+	if (0 == PSI_ContextValidateData(NULL, PSI_DATA(&P)) && !P.errors) {
+		RETVAL_TRUE;
+	} else {
+		RETVAL_FALSE;
+	}
+	PSI_ParserDtor(&P);
+}
+
+static PHP_MINIT_FUNCTION(psi)
 {
 	PSI_ContextOps *ops = NULL;
 	zend_class_entry ce = {0};
@@ -120,7 +187,7 @@ PHP_MINIT_FUNCTION(psi)
 	return SUCCESS;
 }
 
-PHP_MSHUTDOWN_FUNCTION(psi)
+static PHP_MSHUTDOWN_FUNCTION(psi)
 {
 	PSI_ContextDtor(&PSI_G(context));
 
@@ -130,14 +197,14 @@ PHP_MSHUTDOWN_FUNCTION(psi)
 }
 
 #if defined(COMPILE_DL_PSI) && defined(ZTS)
-PHP_RINIT_FUNCTION(psi)
+static PHP_RINIT_FUNCTION(psi)
 {
 	ZEND_TSRMLS_CACHE_UPDATE();
 	return SUCCESS;
 }
 #endif
 
-PHP_MINFO_FUNCTION(psi)
+static PHP_MINFO_FUNCTION(psi)
 {
 	php_info_print_table_start();
 	php_info_print_table_header(2, "psi support", "enabled");
@@ -145,7 +212,10 @@ PHP_MINFO_FUNCTION(psi)
 
 	DISPLAY_INI_ENTRIES();
 }
-const zend_function_entry psi_functions[] = {
+
+static const zend_function_entry psi_functions[] = {
+	PHP_FE(psi_dump, ai_psi_dump)
+	PHP_FE(psi_validate, ai_psi_validate)
 	PHP_FE_END
 };
 

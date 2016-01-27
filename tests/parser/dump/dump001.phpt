@@ -7,13 +7,19 @@ extension_loaded("psi") or die("skip - need ext/psi");
 --FILE--
 ===TEST===
 <?php 
-echo shell_exec("PSI_DUMP=1 ".PHP_BINARY." -r '' > ".__DIR__."/dump.psi");
-var_dump(file_exists(__DIR__."/dump.psi"));
-echo shell_exec(PHP_BINARY." -d psi.directory=".__DIR__." -r ''");
+$fn = __DIR__."/dump.psi";
+$fd = fopen($fn, "w");
+psi_dump($fd);
+fclose($fd);
+
+var_dump(file_exists($fn));
+var_dump(psi_validate($fn));
+
 ?>
 ===DONE===
 --EXPECT--
 ===TEST===
+bool(true)
 bool(true)
 ===DONE===
 --CLEAN--

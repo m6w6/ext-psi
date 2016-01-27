@@ -1,6 +1,8 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <assert.h>
+#include <errno.h>
+#include <string.h>
 
 #include "parser.h"
 #include "parser_proc.h"
@@ -14,15 +16,11 @@ PSI_Parser *PSI_ParserInit(PSI_Parser *P, const char *filename, psi_error_cb err
 {
 	FILE *fp;
 
-	if (!P) {
-		P = malloc(sizeof(*P));
-	}
-	memset(P, 0, sizeof(*P));
-
 	fp = fopen(filename, "r");
 
 	if (!fp) {
-		perror(filename);
+		error(NULL, PSI_WARNING, "Could not open '%s' for reading: %s",
+				filename, strerror(errno));
 		return NULL;
 	}
 

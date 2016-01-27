@@ -919,39 +919,70 @@ int PSI_ContextValidate(PSI_Context *C, PSI_Parser *P)
 	return 1;
 }
 
-void PSI_ContextValidatePredef(PSI_Context *C, PSI_Data *D)
+int PSI_ContextValidateData(PSI_Data *dest, PSI_Data *source)
 {
 	size_t i;
+	int errors = 0;
 
-	for (i = 0; i < D->defs->count; ++i) {
-		decl_typedef *def = D->defs->list[i];
+	if (source->defs) for (i = 0; i < source->defs->count; ++i) {
+		decl_typedef *def = source->defs->list[i];
 
-		if (validate_decl_typedef(D, def)) {
-			C->defs = add_decl_typedef(C->defs, def);
+		if (validate_decl_typedef(source, def)) {
+			if (dest) {
+				dest->defs = add_decl_typedef(dest->defs, def);
+			}
+		} else {
+			++errors;
 		}
 	}
 
-	for (i = 0; i < D->consts->count; ++i) {
-		constant *constant = D->consts->list[i];
+	if (source->consts) for (i = 0; i < source->consts->count; ++i) {
+		constant *constant = source->consts->list[i];
 
-		if (validate_constant(D, constant)) {
-			C->consts = add_constant(C->consts, constant);
+		if (validate_constant(source, constant)) {
+			if (dest) {
+				dest->consts = add_constant(dest->consts, constant);
+			}
+		} else {
+			++errors;
 		}
 	}
 
-	for (i = 0; i < D->structs->count; ++i) {
-		decl_struct *dstruct = D->structs->list[i];
+	if (source->structs) for (i = 0; i < source->structs->count; ++i) {
+		decl_struct *dstruct = source->structs->list[i];
 
-		if (validate_decl_struct(D, dstruct)) {
-			C->structs = add_decl_struct(C->structs, dstruct);
+		if (validate_decl_struct(source, dstruct)) {
+			if (dest) {
+				dest->structs = add_decl_struct(dest->structs, dstruct);
+			}
+		} else {
+			++errors;
 		}
 	}
 
-	for (i = 0; i < D->decls->count; ++i) {
-		decl *decl = D->decls->list[i];
+	if (source->decls) for (i = 0; i < source->decls->count; ++i) {
+		decl *decl = source->decls->list[i];
 
-		if (validate_decl(D, NULL, decl)) {
-			C->decls = add_decl(C->decls, decl);
+		if (validate_decl(source, NULL, decl)) {
+			if (dest) {
+				dest->decls = add_decl(dest->decls, decl);
+			}
+		} else {
+			++errors;
 		}
 	}
+
+	if (source->impls) for (i = 0; i < source->impls->count; ++i) {
+		impl *impl = source->impls->list[i];
+
+		if (validate_impl(source, impl)) {
+			if (dest) {
+				dest->impls = add_impl(dest->impls, impl);
+			}
+		} else {
+			++errors;
+		}
+	}
+
+	return errors;
 }
