@@ -29,6 +29,7 @@ struct PSI_Context {
 PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErrorFunc error);
 void PSI_ContextBuild(PSI_Context *C, const char *path);
 int PSI_ContextValidate(PSI_Context *C, PSI_Parser *P);
+void PSI_ContextValidatePredef(PSI_Context *C, PSI_Data *D);
 zend_function_entry *PSI_ContextCompile(PSI_Context *C);
 void PSI_ContextCall(PSI_Context *C, decl_callinfo *decl_call, impl_vararg *va);
 void PSI_ContextDump(PSI_Context *C, int fd);

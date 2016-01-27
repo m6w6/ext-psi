@@ -8,6 +8,7 @@
 
 #include "php_psi.h"
 #include "libffi.h"
+#include "engine.h"
 
 #undef PACKAGE
 #undef PACKAGE_BUGREPORT

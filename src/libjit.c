@@ -8,6 +8,7 @@
 
 #include "php_psi.h"
 #include "libjit.h"
+#include "engine.h"
 
 #include <jit/jit.h>
 

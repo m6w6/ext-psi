@@ -105,8 +105,10 @@ if test "$PHP_PSI" != no; then
 	PHP_ADD_BUILD_DIR($PHP_PSI_BUILDDIR/src)
 
 	PHP_PSI_HEADERS=`(cd $PHP_PSI_SRCDIR/src && echo *.h)`
-	PHP_PSI_SOURCES="src/parser_proc.c src/parser.c src/module.c src/context.c"
-	PHP_PSI_SOURCES="$PHP_PSI_SOURCES src/libjit.c src/libffi.c"
+	PHP_PSI_SOURCES=`(cd $PHP_PSI_SRCDIR && echo src/context*.c)`
+	PHP_PSI_SOURCES="$PHP_PSI_SOURCES src/parser_proc.c src/parser.c"
+	PHP_PSI_SOURCES="$PHP_PSI_SOURCES src/libjit.c src/libffi.c src/engine.c"
+	PHP_PSI_SOURCES="$PHP_PSI_SOURCES src/marshal.c src/calc.c src/module.c"
 
 	PHP_NEW_EXTENSION(psi, $PHP_PSI_SOURCES, $ext_shared)
 	PHP_INSTALL_HEADERS(ext/psi, php_psi.h $PHP_PSI_HEADERS)
