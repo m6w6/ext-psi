@@ -66,7 +66,8 @@ PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErr
 
 	for (predef_type = &psi_predef_types[0]; predef_type->type_tag; ++predef_type) {
 		decl_type *type = init_decl_type(predef_type->type_tag, predef_type->type_name);
-		decl_typedef *def = init_decl_typedef(predef_type->alias, type);
+		decl_var *var = init_decl_var(predef_type->alias, 0, 0); /* FIXME: indirection */
+		decl_arg *def = init_decl_arg(type, var);
 
 		T.defs = add_decl_typedef(T.defs, def);
 	}

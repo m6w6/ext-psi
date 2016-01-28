@@ -28,7 +28,11 @@ size_t psi_t_alignment(token_t t)
 	case PSI_T_DOUBLE:
 		return ALIGNOF_DOUBLE;
 	case PSI_T_POINTER:
+	case PSI_T_FUNCTION:
+	case PSI_T_STRUCT:
 		return ALIGNOF_VOID_P;
+	case PSI_T_ENUM:
+		return ALIGNOF_INT;
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}
 	return 0;
@@ -51,7 +55,10 @@ size_t psi_t_size(token_t t)
 	case PSI_T_DOUBLE:
 		return SIZEOF_DOUBLE;
 	case PSI_T_POINTER:
+	case PSI_T_FUNCTION:
 		return SIZEOF_VOID_P;
+	case PSI_T_ENUM:
+		return SIZEOF_INT;
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}
 	return 0;

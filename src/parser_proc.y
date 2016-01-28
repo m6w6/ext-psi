@@ -61,6 +61,9 @@ block ::= decl_typedef(def). {
 	if (def->type->strct) {
 		P->structs = add_decl_struct(P->structs, def->type->strct);
 	}
+	if (def->type->enm) {
+		P->enums = add_decl_enum(P->enums, def->type->enm);
+	}
 }
 block ::= constant(constant). {
 	P->consts = add_constant(P->consts, constant);
@@ -89,7 +92,6 @@ enum_name(n) ::= ENUM(E) optional_name(N). {
 		n = PSI_TokenTranslit(PSI_TokenAppend(E, 1, digest), " ", "@");
 	}
 }
-
 
 %type decl_enum {decl_enum *}
 %destructor decl_enum {free_decl_enum($$);}
@@ -176,47 +178,72 @@ constant(constant) ::= CONST const_type(type) NSNAME(T) EQUALS impl_def_val(val)
 	free(T);
 }
 
-%type decl_typedef {decl_typedef*}
-%destructor decl_typedef {free_decl_typedef($$);}
-decl_typedef(def) ::= TYPEDEF decl_typedef_body(def_) EOS. {
-	def = def_;
+%type decl_typedef {decl_arg*}
+%destructor decl_typedef {
+	free_decl_arg($$);
+	if ($$->type->strct) {
+		free_decl_struct($$->type->strct);
+	}
+	if ($$->type->enm) {
+		free_decl_enum($$->type->enm);
+	}
+	if ($$->type->func) {
+		free_decl($$->type->func);
+	}
 }
-%type decl_typedef_body_ex {decl_typedef*}
-%destructor decl_typedef_body_ex {free_decl_typedef($$);}
-decl_typedef_body_ex(def) ::= struct_name(N) struct_size(size_) decl_struct_args_block(args) NAME(ALIAS). {
-	def = init_decl_typedef(ALIAS->text, init_decl_type(PSI_T_STRUCT, N->text));
-	def->token = ALIAS;
+decl_typedef(def) ::= TYPEDEF(T) decl_typedef_body(def_) EOS. {
+	def = def_;
+	def->token = T;
+}
+%type decl_typedef_body_ex {decl_arg*}
+%destructor decl_typedef_body_ex {
+	free_decl_arg($$);
+	if ($$->type->strct) {
+		free_decl_struct($$->type->strct);
+	}
+	if ($$->type->enm) {
+		free_decl_enum($$->type->enm);
+	}
+	if ($$->type->func) {
+		free_decl($$->type->func);
+	}
+}
+decl_typedef_body_ex(def) ::= struct_name(N) struct_size(size_) decl_struct_args_block(args) decl_var(var). {
+	def = init_decl_arg(init_decl_type(PSI_T_STRUCT, N->text), var);
 	def->type->token = PSI_TokenCopy(N);
 	def->type->strct = init_decl_struct(N->text, args);
 	def->type->strct->token = N;
 	def->type->strct->size = size_;
 }
 decl_typedef_body_ex(def) ::= decl_enum(e) NAME(ALIAS). {
-	def = init_decl_typedef(ALIAS->text, init_decl_type(PSI_T_ENUM, e->name));
+	def = init_decl_arg(init_decl_type(PSI_T_ENUM, e->name), init_decl_var(ALIAS->text, 0, 0));
+	def->var->token = ALIAS;
 	def->type->token = PSI_TokenCopy(e->token);
-	def->token = ALIAS;
 	def->type->enm = e;
 }
-%type decl_typedef_body {decl_typedef*}
-%destructor decl_typedef_body {free_decl_typedef($$);}
+%type decl_typedef_body {decl_arg*}
+%destructor decl_typedef_body {
+	free_decl_arg($$);
+	if ($$->type->strct) {
+		free_decl_struct($$->type->strct);
+	}
+	if ($$->type->enm) {
+		free_decl_enum($$->type->enm);
+	}
+	if ($$->type->func) {
+		free_decl($$->type->func);
+	}
+}
 decl_typedef_body(def) ::= decl_typedef_body_ex(def_). {
 	def = def_;
 }
-decl_typedef_body(def) ::= decl_type(type) NAME(ALIAS). {
-	def = init_decl_typedef(ALIAS->text, type);
-	def->token = ALIAS;
+decl_typedef_body(def) ::= decl_func(func_) LPAREN decl_args(args) RPAREN. {
+	def = init_decl_arg(init_decl_type(PSI_T_FUNCTION, func_->var->name), copy_decl_var(func_->var));
+	def->type->token = PSI_TokenCopy(func_->token);
+	def->type->func = init_decl(init_decl_abi("default"), func_, args);
 }
-/* support opaque types */
-decl_typedef_body(def) ::= VOID(V) indirection(i) NAME(ALIAS). {
-	def = init_decl_typedef(ALIAS->text, init_decl_type(i?PSI_T_POINTER:V->type, V->text));
-	def->token = ALIAS;
-	def->type->token = V;
-}
-decl_typedef_body(def) ::= decl_func(func) LPAREN decl_args(args) RPAREN. {
-	def = init_decl_typedef(func->var->name, init_decl_type(PSI_T_FUNCTION, func->var->name));
-	def->type->token = PSI_TokenCopy(func->token);
-	def->type->func = init_decl(init_decl_abi("default"), func, args);
-	def->token = PSI_TokenCopy(func->token);
+decl_typedef_body(def) ::= decl_arg(arg). {
+	def = arg;
 }
 
 %type decl {decl*}
@@ -237,7 +264,6 @@ decl_func(func) ::= VOID(T) NAME(N). {
 		init_decl_var(N->text, 0, 0)
 	);
 	func->type->token = T;
-	//free(T);
 	free(N);
 }
 
@@ -319,12 +345,7 @@ struct_args(args) ::= struct_args(args_) struct_arg(arg). {
 %type struct_arg {decl_arg*}
 %destructor struct_arg {free_decl_arg($$);}
 struct_arg(arg_) ::= decl_typedef_body_ex(def) EOS. {
-	arg_ = init_decl_arg(def->type, init_decl_var(def->alias, 0, 0));
-	arg_->var->arg = arg_;
-	arg_->token = PSI_TokenCopy(def->type->token);
-	arg_->var->token = def->token;
-	free(def->alias);
-	free(def);
+	arg_ = def;
 }
 struct_arg(arg) ::= decl_arg(arg_) struct_layout(layout_) EOS. {
 	arg_->layout = layout_;

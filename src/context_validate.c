@@ -48,10 +48,10 @@ static inline int locate_decl_type_alias(decl_typedefs *defs, decl_type *type) {
 	if (type->real) {
 		return 1;
 	}
-	for (i = 0; i < defs->count; ++i) {
-		decl_typedef *def = defs->list[i];
+	if (defs) for (i = 0; i < defs->count; ++i) {
+		decl_arg *def = defs->list[i];
 
-		if (def->type->type != type->type && !strcmp(def->alias, type->name)) {
+		if (def->type->type != type->type && !strcmp(def->var->name, type->name)) {
 			type->real = def->type;
 			return 1;
 		}
@@ -72,7 +72,7 @@ static inline int locate_decl_type_struct(decl_structs *structs, decl_type *type
 	if (type->strct) {
 		return 1;
 	}
-	for (i = 0; i < structs->count; ++i) {
+	if (structs) for (i = 0; i < structs->count; ++i) {
 		if (!strcmp(structs->list[i]->name, type->name)) {
 			type->strct = structs->list[i];
 			return 1;
@@ -87,7 +87,7 @@ static inline int locate_decl_type_enum(decl_enums *enums, decl_type *type) {
 	if (type->enm) {
 		return 1;
 	}
-	for (i = 0; i < enums->count; ++i) {
+	if (enums) for (i = 0; i < enums->count; ++i) {
 		if (!strcmp(enums->list[i]->name, type->name)) {
 			type->enm = enums->list[i];
 			return 1;
@@ -103,7 +103,7 @@ static inline int validate_decl_type(PSI_Data *data, decl_type *type) {
 	case PSI_T_INT:
 	case PSI_T_LONG:
 	case PSI_T_NAME:
-		if (!data->defs || !locate_decl_type_alias(data->defs, type)) {
+		if (!locate_decl_type_alias(data->defs, type)) {
 			return 0;
 		}
 		if (type->real) {
@@ -111,25 +111,25 @@ static inline int validate_decl_type(PSI_Data *data, decl_type *type) {
 		}
 		return 1;
 	case PSI_T_STRUCT:
-		if (!data->structs || !locate_decl_type_struct(data->structs, type)) {
+		if (!locate_decl_type_struct(data->structs, type)) {
 			return 0;
 		}
 		break;
 	case PSI_T_ENUM:
-		if (!data->enums || !locate_decl_type_enum(data->enums, type)) {
+		if (!locate_decl_type_enum(data->enums, type)) {
 			return 0;
 		}
 	}
 	return 1;
 }
-static inline int validate_decl_typedef(PSI_Data *data, decl_typedef *def) {
+static inline int validate_decl_typedef(PSI_Data *data, decl_arg *def) {
 	if (!validate_decl_type(data, def->type)) {
 		data->error(def->token, PSI_WARNING,
 			"Type '%s' cannot be aliased to %s'%s'",
-			def->type->name, def->type->type == PSI_T_STRUCT?"struct ":"",def->alias);
+			def->type->name, def->type->type == PSI_T_STRUCT?"struct ":"",
+			def->var->name);
 		return 0;
 	}
-	/* FIXME: check def->alias */
 	return 1;
 }
 
@@ -230,7 +230,17 @@ static inline int validate_decl_struct(PSI_Data *data, decl_struct *s) {
 				t = real_decl_type(darg->type)->type;
 			}
 
-			size = psi_t_size(t) * (darg->var->array_size ?: 1);
+			switch (t) {
+			case PSI_T_STRUCT:
+				if (!validate_decl_struct(data, real_decl_type(darg->type)->strct)) {
+					return 0;
+				}
+				size = real_decl_type(darg->type)->strct->size;
+				break;
+			default:
+				size = psi_t_size(t) * (darg->var->array_size ?: 1);
+				break;
+			}
 
 			if (i) {
 				decl_arg *last = s->args->args[i-1];
@@ -935,6 +945,7 @@ static inline int validate_impl_args(PSI_Data *data, impl *impl) {
 
 	return 1;
 }
+
 static inline int validate_impl(PSI_Data *data, impl *impl) {
 	if (!validate_impl_args(data, impl)) {
 		return 0;
@@ -947,41 +958,89 @@ int PSI_ContextValidate(PSI_Context *C, PSI_Parser *P)
 {
 	PSI_Data *D;
 	void *dlopened = NULL;
-	size_t count = C->count++;
+	size_t i, count = C->count++, check_round, check_count;
+	decl_typedefs *check_defs = P->defs;
+	decl_structs *check_structs = P->structs;
+	decl_enums *check_enums = P->enums;
 
 	C->data = realloc(C->data, C->count * sizeof(*C->data));
 	D = PSI_DataExchange(&C->data[count], PSI_DATA(P));
-
+/*
 	if (D->defs) {
-		size_t i;
-
 		for (i = 0; i < D->defs->count; ++i) {
 			if (validate_decl_typedef(PSI_DATA(C), D->defs->list[i])) {
 				C->defs = add_decl_typedef(C->defs, D->defs->list[i]);
+			} else {
+				check_defs = add_decl_typedef(check_defs, D->defs->list[i]);
 			}
 		}
 	}
 	if (D->structs) {
-		size_t i;
-
 		for (i = 0; i < D->structs->count; ++i) {
 			if (validate_decl_struct(PSI_DATA(C), D->structs->list[i])) {
 				C->structs = add_decl_struct(C->structs, D->structs->list[i]);
+			} else {
+				check_structs = add_decl_struct(check_structs, D->structs->list[i]);
 			}
 		}
 	}
 	if (D->enums) {
-		size_t i;
-
 		for (i = 0; i < D->enums->count; ++i) {
 			if (validate_decl_enum(PSI_DATA(C), D->enums->list[i])) {
 				C->enums = add_decl_enum(C->enums, D->enums->list[i]);
+			} else {
+				check_enums = add_decl_enum(check_enums, D->enums->list[i]);
 			}
 		}
 	}
-	if (D->consts) {
-		size_t i;
+*/
+#define REVALIDATE(what) do { \
+		if (check_round && check_ ##what) { \
+			free(check_ ##what->list); \
+			free(check_ ##what); \
+		} \
+		check_ ##what = recheck_ ##what; \
+} while (0)
+#define CHECK_TOTAL (CHECK_COUNT(defs) + CHECK_COUNT(structs) + CHECK_COUNT(enums))
+#define CHECK_COUNT(of) (check_ ##of ? check_ ##of->count : 0)
 
+	for (check_round = 0, check_count = 0; CHECK_TOTAL && check_count != CHECK_TOTAL; ++check_round) {
+		decl_typedefs *recheck_defs = NULL;
+		decl_structs *recheck_structs = NULL;
+		decl_enums *recheck_enums = NULL;
+
+		check_count = CHECK_TOTAL;
+		fprintf(stderr, "### Validation round %zu with %zu checks\n", check_round, check_count);
+
+		for (i = 0; i < CHECK_COUNT(defs); ++i) {
+			if (validate_decl_typedef(PSI_DATA(C), check_defs->list[i])) {
+				C->defs = add_decl_typedef(C->defs, check_defs->list[i]);
+			} else {
+				recheck_defs = add_decl_typedef(recheck_defs, check_defs->list[i]);
+			}
+		}
+		for (i = 0; i < CHECK_COUNT(structs); ++i) {
+			if (validate_decl_struct(PSI_DATA(C), check_structs->list[i])) {
+				C->structs = add_decl_struct(C->structs, check_structs->list[i]);
+			} else {
+				recheck_structs = add_decl_struct(recheck_structs, check_structs->list[i]);
+			}
+		}
+		for (i = 0; i < CHECK_COUNT(enums); ++i) {
+			if (validate_decl_enum(PSI_DATA(C), check_enums->list[i])) {
+				C->enums = add_decl_enum(C->enums, check_enums->list[i]);
+			} else {
+				recheck_enums = add_decl_enum(recheck_enums, check_enums->list[i]);
+			}
+		}
+
+		REVALIDATE(defs);
+		REVALIDATE(structs);
+		REVALIDATE(enums);
+	}
+
+
+	if (D->consts) {
 		for (i = 0; i < D->consts->count; ++i) {
 			if (validate_constant(PSI_DATA(C), D->consts->list[i])) {
 				C->consts = add_constant(C->consts, D->consts->list[i]);
@@ -996,8 +1055,6 @@ int PSI_ContextValidate(PSI_Context *C, PSI_Parser *P)
 	add_decl_lib(&C->psi.libs, dlopened);
 
 	if (D->decls) {
-		size_t i;
-
 		for (i = 0; i < D->decls->count; ++i) {
 			if (validate_decl(PSI_DATA(C), dlopened, D->decls->list[i])) {
 				C->decls = add_decl(C->decls, D->decls->list[i]);
@@ -1005,8 +1062,6 @@ int PSI_ContextValidate(PSI_Context *C, PSI_Parser *P)
 		}
 	}
 	if (D->impls) {
-		size_t i;
-
 		for (i = 0; i < D->impls->count; ++i) {
 			if (validate_impl(PSI_DATA(C), D->impls->list[i])) {
 				C->impls = add_impl(C->impls, D->impls->list[i]);
@@ -1023,7 +1078,7 @@ int PSI_ContextValidateData(PSI_Data *dest, PSI_Data *source)
 	int errors = 0;
 
 	if (source->defs) for (i = 0; i < source->defs->count; ++i) {
-		decl_typedef *def = source->defs->list[i];
+		decl_arg *def = source->defs->list[i];
 
 		if (validate_decl_typedef(source, def)) {
 			if (dest) {

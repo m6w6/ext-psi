@@ -27,6 +27,8 @@ typedef struct PSI_Token {
 	char buf[1];
 } PSI_Token;
 
+static inline PSI_Token *PSI_TokenCopy(PSI_Token *src);
+
 typedef union impl_val {
 	char cval;
 	int8_t i8;
@@ -78,58 +80,16 @@ static inline decl_type *real_decl_type(decl_type *type) {
 	return type;
 }
 
+static inline void free_decl(struct decl *decl);
 static inline void free_decl_type(decl_type *type) {
 	if (type->token) {
 		free(type->token);
 	}
+	if (type->type == PSI_T_FUNCTION) {
+		free_decl(type->func);
+	}
 	free(type->name);
 	free(type);
-}
-
-typedef struct decl_typedef {
-	PSI_Token *token;
-	char *alias;
-	decl_type *type;
-} decl_typedef;
-
-static inline decl_typedef *init_decl_typedef(const char *name, decl_type *type) {
-	decl_typedef *t = calloc(1, sizeof(*t));
-	t->alias = strdup(name);
-	t->type = type;
-	return t;
-}
-
-static inline void free_decl_typedef(decl_typedef *t) {
-	if (t->token) {
-		free(t->token);
-	}
-	free(t->alias);
-	free_decl_type(t->type);
-	free(t);
-}
-
-typedef struct decl_typedefs {
-	size_t count;
-	decl_typedef **list;
-} decl_typedefs;
-
-static inline decl_typedefs *add_decl_typedef(decl_typedefs *defs, decl_typedef *def) {
-	if (!defs) {
-		defs = calloc(1, sizeof(*defs));
-	}
-	defs->list = realloc(defs->list, ++defs->count * sizeof(*defs->list));
-	defs->list[defs->count-1] = def;
-	return defs;
-}
-
-static void free_decl_typedefs(decl_typedefs *defs) {
-	size_t i;
-
-	for (i = 0; i < defs->count; ++i) {
-		free_decl_typedef(defs->list[i]);
-	}
-	free(defs->list);
-	free(defs);
 }
 
 typedef struct decl_var {
@@ -146,6 +106,17 @@ static inline decl_var *init_decl_var(const char *name, unsigned pl, unsigned as
 	v->pointer_level = pl;
 	v->array_size = as;
 	return v;
+}
+
+static inline decl_var *copy_decl_var(decl_var *src) {
+	decl_var *dest = calloc(1, sizeof(*dest));
+
+	memcpy(dest, src, sizeof(*dest));
+	dest->name = strdup(dest->name);
+	if (dest->token) {
+		dest->token = PSI_TokenCopy(dest->token);
+	}
+	return dest;
 }
 
 static inline void free_decl_var(decl_var *var) {
@@ -201,6 +172,30 @@ static inline void free_decl_arg(decl_arg *arg) {
 		free_decl_struct_layout(arg->layout);
 	}
 	free(arg);
+}
+
+typedef struct decl_typedefs {
+	size_t count;
+	decl_arg **list;
+} decl_typedefs;
+
+static inline decl_typedefs *add_decl_typedef(decl_typedefs *defs, decl_arg *def) {
+	if (!defs) {
+		defs = calloc(1, sizeof(*defs));
+	}
+	defs->list = realloc(defs->list, ++defs->count * sizeof(*defs->list));
+	defs->list[defs->count-1] = def;
+	return defs;
+}
+
+static void free_decl_typedefs(decl_typedefs *defs) {
+	size_t i;
+
+	for (i = 0; i < defs->count; ++i) {
+		free_decl_arg(defs->list[i]);
+	}
+	free(defs->list);
+	free(defs);
 }
 
 typedef struct decl_vars {
@@ -641,7 +636,6 @@ static inline num_exp *init_num_exp(token_t t, void *num) {
 	return exp;
 }
 
-static inline PSI_Token *PSI_TokenCopy(PSI_Token *src);
 static inline num_exp *copy_num_exp(num_exp *exp) {
 	decl_var *dvar;
 	num_exp *num = calloc(1, sizeof(*num));
@@ -1511,6 +1505,7 @@ static inline PSI_Token *PSI_TokenAppend(PSI_Token *T, unsigned argc, ...) {
 	return T;
 }
 
+char *php_strtr(char *str, size_t len, char *str_from, char *str_to, size_t trlen);
 static inline PSI_Token *PSI_TokenTranslit(PSI_Token *T, char *from, char *to) {
 	php_strtr(T->text, T->size, from, to, MIN(strlen(from), strlen(to)));
 	return T;

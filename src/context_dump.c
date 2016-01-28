@@ -111,18 +111,21 @@ static inline void dump_impl_set_value(int fd, set_value *set, unsigned level, i
 	}
 }
 
-static inline void dump_typedef(int fd, decl_typedef *tdef) {
+static inline void dump_typedef(int fd, decl_arg *tdef) {
 	dprintf(fd, "typedef ");
+	dump_decl_arg(fd, tdef);
+	/*
 	dump_decl_type(fd, tdef->type);
 	dprintf(fd, " %s%s;", tdef->type->type == PSI_T_POINTER ? "*":"",
 			tdef->alias);
+	*/
 }
 
 static inline void dump_typedefs(int fd, decl_typedefs *defs) {
 	size_t i;
 
 	for (i = 0; i < defs->count; ++i) {
-		decl_typedef *tdef = defs->list[i];
+		decl_arg *tdef = defs->list[i];
 
 		dump_typedef(fd, tdef);
 		dprintf(fd, "\n");
