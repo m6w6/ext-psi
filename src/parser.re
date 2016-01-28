@@ -209,10 +209,10 @@ void PSI_ParserFree(PSI_Parser **P)
 #define ADDCOLS \
 	P->col += P->cur - P->tok
 
-#define NEWLINE \
+#define NEWLINE(label) \
 	P->col = 1; \
 	++P->line; \
-	goto nextline
+	goto label
 
 token_t PSI_ParserScan(PSI_Parser *P)
 {
@@ -236,7 +236,8 @@ token_t PSI_ParserScan(PSI_Parser *P)
 		QUOTED_STRING = "\"" ([^\"])+ "\"";
 		NUMBER = [+-]? [0-9]* "."? [0-9]+ ([eE] [+-]? [0-9]+)?;
 
-		("#"|"//") .* "\n" { NEWLINE; }
+		"/*" { goto comment; }
+		("#"|"//") .* "\n" { NEWLINE(nextline); }
 		"(" {RETURN(PSI_T_LPAREN);}
 		")" {RETURN(PSI_T_RPAREN);}
 		";" {RETURN(PSI_T_EOS);}
@@ -254,7 +255,7 @@ token_t PSI_ParserScan(PSI_Parser *P)
 		"-" {RETURN(PSI_T_MINUS);}
 		"/" {RETURN(PSI_T_SLASH);}
 		"..." {RETURN(PSI_T_ELLIPSIS);}
-		[\r\n] { NEWLINE; }
+		[\r\n] { NEWLINE(nextline); }
 		[\t ]+ { continue; }
 		'TRUE' {RETURN(PSI_T_TRUE);}
 		'FALSE' {RETURN(PSI_T_FALSE);}
@@ -284,6 +285,7 @@ token_t PSI_ParserScan(PSI_Parser *P)
 		'FUNCTION' {RETURN(PSI_T_FUNCTION);}
 		'TYPEDEF' {RETURN(PSI_T_TYPEDEF);}
 		'STRUCT' {RETURN(PSI_T_STRUCT);}
+		'UNION' {RETURN(PSI_T_UNION);}
 		'ENUM' {RETURN(PSI_T_ENUM);}
 		'CONST' {RETURN(PSI_T_CONST);}
 		'LIB' {RETURN(PSI_T_LIB);}
@@ -312,6 +314,14 @@ token_t PSI_ParserScan(PSI_Parser *P)
 		NSNAME {RETURN(PSI_T_NSNAME);}
 		QUOTED_STRING {RETURN(PSI_T_QUOTED_STRING);}
 		[^] {break;}
+		*/
+
+	comment:
+		P->tok = P->cur;
+		/*!re2c
+		"\n" { NEWLINE(comment); }
+		"*" "/" { continue; }
+		[^] { goto comment; }
 		*/
 	}
 	return -1;

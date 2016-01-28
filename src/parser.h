@@ -22,7 +22,7 @@ size_t psi_t_size(token_t);
 
 typedef struct PSI_Token {
 	token_t type;
-	unsigned size, line;
+	unsigned size, line, col;
 	char *text, *file;
 	char buf[1];
 } PSI_Token;
@@ -61,6 +61,7 @@ typedef struct decl_type {
 	struct decl_type *real;
 	struct decl_struct *strct;
 	struct decl_enum *enm;
+	struct decl *func;
 } decl_type;
 
 static inline decl_type *init_decl_type(token_t type, const char *name) {
@@ -1441,6 +1442,7 @@ static inline PSI_Token *PSI_TokenAlloc(PSI_Parser *P) {
 	T->text = &T->buf[0];
 	T->file = &T->buf[token_len + 1];
 	T->line = P->line;
+	T->col = P->col;
 
 	memcpy(T->text, P->tok, token_len);
 	memcpy(T->file, P->psi.file.fn, fname_len);
@@ -1488,8 +1490,59 @@ static inline PSI_Token *PSI_TokenCat(unsigned argc, ...) {
 	return T;
 }
 
-static inline const char *PSI_TokenLocation(PSI_Token *t) {
-	return t ? t->file : "<builtin>:0:0";
+static inline PSI_Token *PSI_TokenAppend(PSI_Token *T, unsigned argc, ...) {
+	va_list argv;
+	unsigned i;
+
+	va_start(argv, argc);
+	for (i = 0; i < argc; ++i) {
+		char *str = va_arg(argv, char *);
+		size_t str_len = strlen(str), token_len = T->size, fname_len = strlen(T->file);
+
+		T = realloc(T, PSI_TokenAllocSize(T->size += str_len + 1, fname_len));
+		T->text = &T->buf[0];
+		T->file = &T->buf[T->size + 1];
+		T->buf[token_len] = ' ';
+		memmove(&T->buf[T->size + 1], &T->buf[token_len + 1], fname_len + 1);
+		memcpy(&T->buf[token_len + 1], str, str_len + 1);
+	}
+	va_end(argv);
+
+	return T;
+}
+
+static inline PSI_Token *PSI_TokenTranslit(PSI_Token *T, char *from, char *to) {
+	php_strtr(T->text, T->size, from, to, MIN(strlen(from), strlen(to)));
+	return T;
+}
+
+static inline uint64_t psi_hash(char *digest_buf, ...)
+{
+    uint64_t hash = 5381;
+    uint8_t c;
+    const uint8_t *ptr;
+    va_list argv;
+
+    va_start(argv, digest_buf);
+    while ((ptr = va_arg(argv, const uint8_t *))) {
+		while ((c = *ptr++)) {
+			hash = ((hash << 5) + hash) + c;
+		}
+    }
+    va_end(argv);
+
+    if (digest_buf) {
+    	sprintf(digest_buf, "%" PRIx64, hash);
+    }
+
+    return hash;
+}
+
+static inline uint64_t PSI_TokenHash(PSI_Token *t, char *digest_buf) {
+	char loc_buf[48];
+
+	sprintf(loc_buf, "%u%u", t->line, t->col);
+	return psi_hash(digest_buf, t->file, loc_buf, NULL);
 }
 
 #define PSI_PARSER_DEBUG 0x1
