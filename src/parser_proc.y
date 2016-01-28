@@ -106,9 +106,14 @@ struct_name(n) ::= STRUCT NAME(N). {
 	n = N;
 }
 
+%type decl_struct_args_block {decl_args*}
+%destructor decl_struct_args_block {free_decl_args($$);}
+decl_struct_args_block(args_) ::= LBRACE struct_args(args) RBRACE. {
+	args_ = args;
+}
 %type decl_struct_args {decl_args*}
 %destructor decl_struct_args {free_decl_args($$);}
-decl_struct_args(args_) ::= LBRACE struct_args(args) RBRACE. {
+decl_struct_args(args_) ::= decl_struct_args_block(args). {
 	args_ = args;
 }
 decl_struct_args(args_) ::= EOS. {
@@ -154,11 +159,17 @@ decl_typedef(def) ::= TYPEDEF decl_typedef_body(def_) EOS. {
 }
 %type decl_typedef_body {decl_typedef*}
 %destructor decl_typedef_body {free_decl_typedef($$);}
+decl_typedef_body(def) ::= struct_name(N) struct_size(size_) decl_struct_args_block(args) NAME(ALIAS). {
+	def = init_decl_typedef(ALIAS->text, init_decl_type(PSI_T_STRUCT, N->text));
+	def->token = ALIAS;
+	def->type->strct = init_decl_struct(N->text, args);
+	def->type->strct->token = N;
+	def->type->strct->size = size_;
+}
 decl_typedef_body(def) ::= decl_type(type) NAME(ALIAS). {
 	def = init_decl_typedef(ALIAS->text, type);
 	def->token = ALIAS;
 }
-
 /* support opaque types */
 decl_typedef_body(def) ::= VOID(V) indirection(i) NAME(ALIAS). {
 	def = init_decl_typedef(ALIAS->text, init_decl_type(i?PSI_T_POINTER:V->type, V->text));

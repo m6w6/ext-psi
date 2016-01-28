@@ -222,6 +222,7 @@ static inline int validate_decl_struct(PSI_Data *data, decl_struct *s) {
 			}
 		} else {
 			token_t t;
+			size_t size, align;
 
 			if (darg->var->pointer_level && (!darg->var->array_size || darg->var->pointer_level == 1)) {
 				t = PSI_T_POINTER;
@@ -229,17 +230,21 @@ static inline int validate_decl_struct(PSI_Data *data, decl_struct *s) {
 				t = real_decl_type(darg->type)->type;
 			}
 
+			size = psi_t_size(t) * (darg->var->array_size ?: 1);
+
 			if (i) {
 				decl_arg *last = s->args->args[i-1];
-				darg->layout = init_decl_struct_layout(
-						psi_t_align(t, last->layout->pos + last->layout->len),
-						psi_t_size(t) * darg->var->array_size);
+
+				align = psi_t_align(t, last->layout->pos + last->layout->len);
 			} else {
-				darg->layout = init_decl_struct_layout(0, psi_t_size(t));
+				align = 0;
 			}
+
+			darg->layout = init_decl_struct_layout(align, size);
 		}
 		if (s->size < darg->layout->pos + darg->layout->len) {
 			s->size = darg->layout->pos + darg->layout->len;
+			/* FIXME: align struct */
 		}
 	}
 
