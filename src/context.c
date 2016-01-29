@@ -37,7 +37,7 @@
 #include "php_psi_structs.h"
 
 
-PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErrorFunc error)
+PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErrorFunc error, unsigned flags)
 {
 	PSI_Data T;
 	struct psi_predef_type *predef_type;
@@ -51,6 +51,7 @@ PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErr
 	memset(C, 0, sizeof(*C));
 
 	C->error = error;
+	C->flags = flags;
 	C->ops = ops;
 
 	if (ops->init) {
@@ -157,10 +158,9 @@ static int psi_select_dirent(const struct dirent *entry)
 
 void PSI_ContextBuild(PSI_Context *C, const char *paths)
 {
-	int i, n, flags = psi_check_env("PSI_DEBUG") ? PSI_PARSER_DEBUG : 0;
+	int i, n;
 	char *sep = NULL, *cpy = strdup(paths), *ptr = cpy;
 	struct dirent **entries = NULL;
-
 
 	do {
 		sep = strchr(ptr, ':');
@@ -177,11 +177,11 @@ void PSI_ContextBuild(PSI_Context *C, const char *paths)
 				PSI_Parser P;
 
 				if (MAXPATHLEN <= slprintf(psi, MAXPATHLEN, "%s/%s", ptr, entries[i]->d_name)) {
-					C->error(NULL, PSI_WARNING, "Path to PSI file too long: %s/%s",
+					C->error(C, NULL, PSI_WARNING, "Path to PSI file too long: %s/%s",
 						ptr, entries[i]->d_name);
 				}
-				if (!PSI_ParserInit(&P, psi, C->error, flags)) {
-					C->error(NULL, PSI_WARNING, "Failed to init PSI parser (%s): %s",
+				if (!PSI_ParserInit(&P, psi, C->error, C->flags)) {
+					C->error(C, NULL, PSI_WARNING, "Failed to init PSI parser (%s): %s",
 						psi, strerror(errno));
 					continue;
 				}
@@ -211,7 +211,7 @@ void PSI_ContextBuild(PSI_Context *C, const char *paths)
 
 
 	if (PSI_ContextCompile(C) && SUCCESS != zend_register_functions(NULL, C->closures, NULL, MODULE_PERSISTENT)) {
-		C->error(NULL, PSI_WARNING, "Failed to register functions!");
+		C->error(C, NULL, PSI_WARNING, "Failed to register functions!");
 	}
 
 	free(cpy);

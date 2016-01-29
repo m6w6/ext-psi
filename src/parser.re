@@ -19,8 +19,10 @@ PSI_Parser *PSI_ParserInit(PSI_Parser *P, const char *filename, psi_error_cb err
 	fp = fopen(filename, "r");
 
 	if (!fp) {
-		error(NULL, PSI_WARNING, "Could not open '%s' for reading: %s",
-				filename, strerror(errno));
+		if (!(flags & PSI_PARSER_SILENT)) {
+			error(NULL, NULL, PSI_WARNING, "Could not open '%s' for reading: %s",
+					filename, strerror(errno));
+		}
 		return NULL;
 	}
 

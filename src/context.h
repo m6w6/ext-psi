@@ -5,7 +5,7 @@
 
 #define PSI_ERROR 16
 #define PSI_WARNING 32
-typedef void (*PSI_ContextErrorFunc)(PSI_Token *token, int type, const char *msg, ...);
+typedef void (*PSI_ContextErrorFunc)(void *context, PSI_Token *token, int type, const char *msg, ...);
 
 typedef struct PSI_Context PSI_Context;
 typedef struct PSI_ContextOps PSI_ContextOps;
@@ -26,7 +26,7 @@ struct PSI_Context {
 	size_t count;
 };
 
-PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErrorFunc error);
+PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErrorFunc error, unsigned flags);
 void PSI_ContextBuild(PSI_Context *C, const char *path);
 int PSI_ContextValidate(PSI_Context *C, PSI_Parser *P);
 int PSI_ContextValidateData(PSI_Data *C, PSI_Data *D);

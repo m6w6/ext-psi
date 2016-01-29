@@ -41,7 +41,7 @@ block ::= EOS.
 
 block ::= LIB(T) QUOTED_STRING(libname) EOS. {
 	if (P->psi.file.ln) {
-		P->error(T, PSI_WARNING, "Extra 'lib %s' statement has no effect", libname->text);
+		P->error(P, T, PSI_WARNING, "Extra 'lib %s' statement has no effect", libname->text);
 	} else {
 		P->psi.file.ln = strndup(libname->text + 1, libname->size - 2);
 	}

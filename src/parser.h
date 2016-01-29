@@ -1409,7 +1409,7 @@ static inline impl_val *struct_member_ref(decl_arg *set_arg, impl_val *struct_pt
 
 #define PSI_ERROR 16
 #define PSI_WARNING 32
-typedef void (*psi_error_cb)(PSI_Token *token, int type, const char *msg, ...);
+typedef void (*psi_error_cb)(void *context, PSI_Token *token, int type, const char *msg, ...);
 
 #define PSI_DATA(D) ((PSI_Data *) (D))
 #define PSI_DATA_MEMBERS \
@@ -1424,7 +1424,9 @@ typedef void (*psi_error_cb)(PSI_Token *token, int type, const char *msg, ...);
 		decl_file file; \
 		decl_libs libs; \
 	} psi; \
-	psi_error_cb error
+	psi_error_cb error; \
+	unsigned errors; \
+	unsigned flags
 typedef struct PSI_Data {
 	PSI_DATA_MEMBERS;
 } PSI_Data;
@@ -1468,7 +1470,7 @@ typedef struct PSI_Parser {
 	FILE *fp;
 	token_t num;
 	void *proc;
-	unsigned flags, errors, line, col;
+	unsigned line, col;
 	char *cur, *tok, *lim, *eof, *ctx, *mrk, buf[BSIZE];
 } PSI_Parser;
 
@@ -1600,6 +1602,7 @@ static inline uint64_t PSI_TokenHash(PSI_Token *t, char *digest_buf) {
 }
 
 #define PSI_PARSER_DEBUG 0x1
+#define PSI_PARSER_SILENT 0x2
 
 PSI_Parser *PSI_ParserInit(PSI_Parser *P, const char *filename, psi_error_cb error, unsigned flags);
 void PSI_ParserSyntaxError(PSI_Parser *P, const char *fn, size_t ln, const char *msg, ...);

@@ -20,7 +20,7 @@ extern zend_module_entry psi_module_entry;
 
 #include "context.h"
 
-void psi_error_wrapper(PSI_Token *t, int type, const char *msg, ...);
+void psi_error_wrapper(void *context, PSI_Token *t, int type, const char *msg, ...);
 void psi_error(int type, const char *fn, unsigned ln, const char *msg, ...);
 void psi_verror(int type, const char *fn, unsigned ln, const char *msg, va_list argv);
 

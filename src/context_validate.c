@@ -28,13 +28,13 @@ static int validate_lib(PSI_Data *data, void **dlopened) {
 	} else if (!strchr(ptr, '/')) {
 		len = snprintf(lib, MAXPATHLEN, "lib%s.%s", ptr, PHP_PSI_SHLIB_SUFFIX);
 		if (MAXPATHLEN == len) {
-			data->error(NULL, PSI_WARNING, "Library name too long: '%s'", ptr);
+			data->error(data, NULL, PSI_WARNING, "Library name too long: '%s'", ptr);
 		}
 		lib[len] = 0;
 		ptr = lib;
 	}
 	if (!(*dlopened = dlopen(ptr, RTLD_LAZY|RTLD_LOCAL))) {
-		data->error(NULL, PSI_WARNING, "Could not open library '%s': %s.",
+		data->error(data, NULL, PSI_WARNING, "Could not open library '%s': %s.",
 				data->psi.file.ln, dlerror());
 		return 0;
 	}
@@ -148,7 +148,7 @@ static inline int validate_decl_type(PSI_Data *data, decl_type *type) {
 }
 static inline int validate_decl_typedef(PSI_Data *data, decl_arg *def) {
 	if (!validate_decl_type(data, def->type)) {
-		data->error(def->token, PSI_WARNING,
+		data->error(data, def->token, PSI_WARNING,
 			"Type '%s' cannot be aliased to %s'%s'",
 			def->type->name, def->type->type == PSI_T_STRUCT?"struct ":"",
 			def->var->name);
@@ -164,7 +164,7 @@ static inline int validate_constant(PSI_Data *data, constant *c) {
 
 static inline int validate_decl_arg(PSI_Data *data, decl_arg *arg) {
 	if (!validate_decl_type(data, arg->type)) {
-		data->error(arg->type->token, PSI_WARNING,
+		data->error(data, arg->type->token, PSI_WARNING,
 			"Cannot use '%s' as type for '%s'",
 			arg->type->name, arg->var->name);
 		return 0;
@@ -287,7 +287,7 @@ static inline int validate_decl_struct(PSI_Data *data, decl_struct *s) {
 	size_t i, pos, len, size, align;
 
 	if (!s->size && !s->args->count) {
-		data->error(s->token, PSI_WARNING,
+		data->error(data, s->token, PSI_WARNING,
 				"Cannot compute size of empty struct %s",
 				s->name);
 		return 0;
@@ -309,7 +309,7 @@ static inline int validate_decl_struct(PSI_Data *data, decl_struct *s) {
 			align = align_decl_arg(darg, &pos, &len);
 
 			if (darg->layout->len != len) {
-				data->error(darg->token, PSI_WARNING,
+				data->error(data, darg->token, PSI_WARNING,
 						"Computed size %zu of %s.%s does not match"
 						" pre-defined size %zu of type '%s'",
 						darg->layout->len, s->name, darg->var->name, len,
@@ -317,7 +317,7 @@ static inline int validate_decl_struct(PSI_Data *data, decl_struct *s) {
 				return 0;
 			}
 			if (darg->layout->pos != pos) {
-				data->error(darg->token, PSI_WARNING,
+				data->error(data, darg->token, PSI_WARNING,
 						"Computed offset %zu of %s.%s does not match"
 						" pre-defined offset %zu",
 						darg->layout->len, s->name, darg->var->name, len);
@@ -360,7 +360,7 @@ static inline int validate_decl_union(PSI_Data *data, decl_union *u) {
 	size_t i, pos, len, size, align;
 
 	if (!u->size && !u->args->count) {
-		data->error(u->token, PSI_WARNING,
+		data->error(data, u->token, PSI_WARNING,
 				"Cannot compute size of empty union %s",
 				u->name);
 		return 0;
@@ -382,13 +382,13 @@ static inline int validate_decl_union(PSI_Data *data, decl_union *u) {
 			align = align_decl_arg(darg, &pos, &len);
 
 			if (darg->layout->pos != 0) {
-				data->error(darg->token, PSI_WARNING,
+				data->error(data, darg->token, PSI_WARNING,
 						"Offset of %s.%s must be 0",
 						u->name, darg->var->name);
 				return 0;
 			}
 			if (darg->layout->len != len) {
-				data->error(darg->token, PSI_WARNING,
+				data->error(data, darg->token, PSI_WARNING,
 						"Computed size %zu of %s.%s does not match"
 						" pre-defined size %zu of type '%s'",
 						darg->layout->len, u->name, darg->var->name, size,
@@ -444,7 +444,7 @@ static inline int validate_decl_func(PSI_Data *data, void *dl, decl *decl, decl_
 	struct psi_func_redir *redir;
 
 	if (!strcmp(func->var->name, "dlsym")) {
-		data->error(func->token, PSI_WARNING, "Cannot dlsym dlsym (sic!)");
+		data->error(data, func->token, PSI_WARNING, "Cannot dlsym dlsym (sic!)");
 		return 0;
 	}
 
@@ -462,7 +462,7 @@ static inline int validate_decl_func(PSI_Data *data, void *dl, decl *decl, decl_
 #endif
 		decl->call.sym = dlsym(dl ?: RTLD_NEXT, func->var->name);
 		if (!decl->call.sym) {
-			data->error(func->token, PSI_WARNING,
+			data->error(data, func->token, PSI_WARNING,
 				"Failed to locate symbol '%s': %s",
 				func->var->name, dlerror() ?: "not found");
 		}
@@ -472,7 +472,7 @@ static inline int validate_decl_func(PSI_Data *data, void *dl, decl *decl, decl_
 
 static inline int validate_decl(PSI_Data *data, void *dl, decl *decl) {
 	if (!validate_decl_abi(data, decl->abi)) {
-		data->error(decl->abi->token, PSI_WARNING,
+		data->error(data, decl->abi->token, PSI_WARNING,
 				"Invalid calling convention: '%s'", decl->abi->token->text);
 		return 0;
 	}
@@ -581,7 +581,7 @@ static inline int validate_num_exp(PSI_Data *data, num_exp *exp, decl_args *darg
 	case PSI_T_NAME:
 		if (!locate_decl_var_arg(exp->u.dvar, dargs, func)) {
 			if (!locate_num_exp_enum_item(exp, data->enums) && !locate_num_exp_enum_item_ex(exp, enm)) {
-				data->error(exp->token, PSI_WARNING, "Unknown variable '%s' in numeric expression",
+				data->error(data, exp->token, PSI_WARNING, "Unknown variable '%s' in numeric expression",
 						exp->u.dvar->name);
 				return 0;
 			}
@@ -589,7 +589,7 @@ static inline int validate_num_exp(PSI_Data *data, num_exp *exp, decl_args *darg
 		return 1;
 	case PSI_T_NSNAME:
 		if (!locate_num_exp_constant(exp, data->consts)) {
-			data->error(exp->token, PSI_WARNING, "Unknown constant '%s' in numeric expression",
+			data->error(data, exp->token, PSI_WARNING, "Unknown constant '%s' in numeric expression",
 					exp->u.numb);
 			return 0;
 		}
@@ -606,7 +606,7 @@ static inline int validate_decl_enum(PSI_Data *data, decl_enum *e) {
 	size_t j;
 
 	if (!e->items || !e->items->count) {
-		data->error(e->token, PSI_WARNING, "Empty enum '%s'", e->name);
+		data->error(data, e->token, PSI_WARNING, "Empty enum '%s'", e->name);
 		return 0;
 	}
 
@@ -689,14 +689,14 @@ static inline int validate_set_value_ex(PSI_Data *data, set_value *set, decl_arg
 	decl_var *set_var = set->vars->vars[0];
 
 	if (!validate_set_value_handler(set)) {
-		data->error(set->func->token, PSI_WARNING, "Invalid cast '%s' in `set` statement", set->func->name);
+		data->error(data, set->func->token, PSI_WARNING, "Invalid cast '%s' in `set` statement", set->func->name);
 		return 0;
 	}
 
 	for (i = 0; i < set->vars->count; ++i) {
 		decl_var *svar = set->vars->vars[i];
 		if (!svar->arg && !locate_decl_var_arg(svar, ref_list, NULL)) {
-			data->error(svar->token, PSI_WARNING, "Unknown variable '%s' in `set` statement", svar->name);
+			data->error(data, svar->token, PSI_WARNING, "Unknown variable '%s' in `set` statement", svar->name);
 			return 0;
 		}
 	}
@@ -711,7 +711,7 @@ static inline int validate_set_value_ex(PSI_Data *data, set_value *set, decl_arg
 		int is_pointer_to_struct = (ref_type->type == PSI_T_STRUCT && ref->var->pointer_level);
 
 		if (!is_to_array && !is_pointer_to_struct) {
-			data->error(set->func->token, E_WARNING, "Inner `set` statement casts only work with "
+			data->error(data, set->func->token, E_WARNING, "Inner `set` statement casts only work with "
 					"to_array() casts on structs or pointers: %s(%s...", set->func->name, set->vars->vars[0]->name);
 			return 0;
 		}
@@ -743,7 +743,7 @@ static inline int validate_set_value_ex(PSI_Data *data, set_value *set, decl_arg
 
 		if (sub_ref) {
 			if (strcmp(sub_var->name, set_var->name)) {
-				data->error(sub_var->token, E_WARNING, "Inner `set` statement casts on pointers must reference the same variable");
+				data->error(data, sub_var->token, E_WARNING, "Inner `set` statement casts on pointers must reference the same variable");
 				return 0;
 			}
 			if (!validate_set_value_ex(data, set->inner[0], sub_ref, ref_list)) {
@@ -751,7 +751,7 @@ static inline int validate_set_value_ex(PSI_Data *data, set_value *set, decl_arg
 			}
 		}
 	} else if (set->count > 1) {
-		data->error(set->func->token, E_WARNING, "Inner `set` statement casts on pointers may only occur once");
+		data->error(data, set->func->token, E_WARNING, "Inner `set` statement casts on pointers may only occur once");
 		return 0;
 	}
 
@@ -793,12 +793,12 @@ static inline int validate_impl_ret_stmt(PSI_Data *data, impl *impl) {
 	/* and which type cast to apply */
 	if (impl->stmts->ret.count != 1) {
 		if (impl->stmts->ret.count > 1) {
-			data->error(impl->stmts->ret.list[1]->token, PSI_WARNING,
+			data->error(data, impl->stmts->ret.list[1]->token, PSI_WARNING,
 					"Too many `return` statements for implmentation %s;"
 					" found %zu, exactly one is needed",
 					impl->func->name, impl->stmts->ret.count);
 		} else {
-			data->error(impl->func->token, PSI_WARNING,
+			data->error(data, impl->func->token, PSI_WARNING,
 					"Missing `return` statement for implementation %s",
 					impl->func->name);
 		}
@@ -808,7 +808,7 @@ static inline int validate_impl_ret_stmt(PSI_Data *data, impl *impl) {
 	ret = impl->stmts->ret.list[0];
 
 	if (!(impl->decl = locate_impl_decl(data->decls, ret))) {
-		data->error(ret->token, PSI_WARNING,
+		data->error(data, ret->token, PSI_WARNING,
 				"Missing declaration '%s' for `return` statment for implementation %s",
 				ret->set->vars->vars[0]->name, impl->func->name);
 		return 0;
@@ -840,7 +840,7 @@ static inline int validate_impl_let_stmts(PSI_Data *data, impl *impl) {
 		}
 
 		if (!locate_decl_var_arg(let_var, impl->decl->args, impl->decl->func)) {
-			data->error(let_var->token, PSI_WARNING, "Unknown variable '%s' in `let` statement"
+			data->error(data, let_var->token, PSI_WARNING, "Unknown variable '%s' in `let` statement"
 					" of implementation '%s'", let_var->name, impl->func->name);
 			return 0;
 		}
@@ -887,7 +887,7 @@ static inline int validate_impl_let_stmts(PSI_Data *data, impl *impl) {
 				}
 			}
 			if (!check) {
-				data->error(let->var->token, PSI_WARNING, "Unknown value '$%s' of `let` statement"
+				data->error(data, let->var->token, PSI_WARNING, "Unknown value '$%s' of `let` statement"
 						" for variable '%s' of implementation '%s'",
 						let->val->data.func->var->name, let->var->name, impl->func->name);
 				return 0;
@@ -911,7 +911,7 @@ static inline int validate_impl_let_stmts(PSI_Data *data, impl *impl) {
 			}
 		}
 		if (!check) {
-			data->error(impl->func->token, PSI_WARNING,
+			data->error(data, impl->func->token, PSI_WARNING,
 					"Missing `let` statement for arg '%s %.*s%s'"
 					" of declaration '%s' for implementation '%s'",
 					darg->type->name, (int) darg->var->pointer_level, "*****",
@@ -940,7 +940,7 @@ static inline int validate_impl_set_stmts(PSI_Data *data, impl *impl) {
 			}
 		}
 		if (!check) {
-			data->error(set->var->token, PSI_WARNING, "Unknown variable '$%s' of `set` statement"
+			data->error(data, set->var->token, PSI_WARNING, "Unknown variable '$%s' of `set` statement"
 					" of implementation '%s'",
 					set->var->name, impl->func->name);
 			return 0;
@@ -983,7 +983,7 @@ static inline int validate_impl_set_stmts(PSI_Data *data, impl *impl) {
 			}
 
 			if (!check) {
-				data->error(set_var->token, PSI_WARNING, "Unknown value '%s' of `set` statement"
+				data->error(data, set_var->token, PSI_WARNING, "Unknown value '%s' of `set` statement"
 						" for variable '$%s' of implementation '%s'",
 						set_var->name, set->arg->var->name, impl->func->name);
 				return 0;
@@ -1017,7 +1017,7 @@ static inline int validate_impl_free_stmts(PSI_Data *data, impl *impl) {
 
 			/* first find the decl of the free func */
 			if (!locate_free_decl(data->decls, free_call)) {
-				data->error(free_call->token, PSI_WARNING,
+				data->error(data, free_call->token, PSI_WARNING,
 						"Missing declaration '%s' in `free` statement"
 						" of implementation '%s'",
 						free_call->func, impl->func->name);
@@ -1047,7 +1047,7 @@ static inline int validate_impl_free_stmts(PSI_Data *data, impl *impl) {
 				}
 
 				if (!check) {
-					data->error(free_var->token, PSI_WARNING,
+					data->error(data, free_var->token, PSI_WARNING,
 							"Unknown variable '%s' of `free` statement"
 							" of implementation '%s'",
 							free_var->name, impl->func->name);
@@ -1060,7 +1060,7 @@ static inline int validate_impl_free_stmts(PSI_Data *data, impl *impl) {
 }
 static inline int validate_impl_stmts(PSI_Data *data, impl *impl) {
 	if (!impl->stmts) {
- 		data->error(impl->func->token, PSI_WARNING,
+ 		data->error(data, impl->func->token, PSI_WARNING,
  				"Missing body for implementation %s!",
  				impl->func->name);
  		return 0;
@@ -1093,7 +1093,7 @@ static inline int validate_impl_args(PSI_Data *data, impl *impl) {
 		if (iarg->def) {
 			def = 1;
 		} else if (def) {
-			data->error(impl->func->token, PSI_WARNING,
+			data->error(data, impl->func->token, PSI_WARNING,
 					"Non-optional argument %zu '$%s' of implementation '%s'"
 					" follows optional argument",
 					i+1, iarg->var->name, impl->func->name);
@@ -1120,38 +1120,11 @@ int PSI_ContextValidate(PSI_Context *C, PSI_Parser *P)
 	decl_typedefs *check_defs = P->defs;
 	decl_structs *check_structs = P->structs;
 	decl_enums *check_enums = P->enums;
+	unsigned silent = C->flags & PSI_PARSER_SILENT;
 
 	C->data = realloc(C->data, C->count * sizeof(*C->data));
 	D = PSI_DataExchange(&C->data[count], PSI_DATA(P));
-/*
-	if (D->defs) {
-		for (i = 0; i < D->defs->count; ++i) {
-			if (validate_decl_typedef(PSI_DATA(C), D->defs->list[i])) {
-				C->defs = add_decl_typedef(C->defs, D->defs->list[i]);
-			} else {
-				check_defs = add_decl_typedef(check_defs, D->defs->list[i]);
-			}
-		}
-	}
-	if (D->structs) {
-		for (i = 0; i < D->structs->count; ++i) {
-			if (validate_decl_struct(PSI_DATA(C), D->structs->list[i])) {
-				C->structs = add_decl_struct(C->structs, D->structs->list[i]);
-			} else {
-				check_structs = add_decl_struct(check_structs, D->structs->list[i]);
-			}
-		}
-	}
-	if (D->enums) {
-		for (i = 0; i < D->enums->count; ++i) {
-			if (validate_decl_enum(PSI_DATA(C), D->enums->list[i])) {
-				C->enums = add_decl_enum(C->enums, D->enums->list[i]);
-			} else {
-				check_enums = add_decl_enum(check_enums, D->enums->list[i]);
-			}
-		}
-	}
-*/
+
 #define REVALIDATE(what) do { \
 		if (check_round && check_ ##what) { \
 			free(check_ ##what->list); \
@@ -1162,13 +1135,16 @@ int PSI_ContextValidate(PSI_Context *C, PSI_Parser *P)
 #define CHECK_TOTAL (CHECK_COUNT(defs) + CHECK_COUNT(structs) + CHECK_COUNT(enums))
 #define CHECK_COUNT(of) (check_ ##of ? check_ ##of->count : 0)
 
+	if (!silent) {
+		/* no warnings on first round */
+		C->flags |= PSI_PARSER_SILENT;
+	}
 	for (check_round = 0, check_count = 0; CHECK_TOTAL && check_count != CHECK_TOTAL; ++check_round) {
 		decl_typedefs *recheck_defs = NULL;
 		decl_structs *recheck_structs = NULL;
 		decl_enums *recheck_enums = NULL;
 
 		check_count = CHECK_TOTAL;
-		fprintf(stderr, "### Validation round %zu with %zu checks\n", check_round, check_count);
 
 		for (i = 0; i < CHECK_COUNT(defs); ++i) {
 			if (validate_decl_typedef(PSI_DATA(C), check_defs->list[i])) {
@@ -1195,6 +1171,10 @@ int PSI_ContextValidate(PSI_Context *C, PSI_Parser *P)
 		REVALIDATE(defs);
 		REVALIDATE(structs);
 		REVALIDATE(enums);
+
+		if (check_round == 0 && !silent) {
+			C->flags &= ~PSI_PARSER_SILENT;
+		}
 	}
 
 

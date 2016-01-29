@@ -37,11 +37,17 @@ zend_class_entry *psi_object_get_class_entry()
 	return psi_class_entry;
 }
 
-void psi_error_wrapper(PSI_Token *t, int type, const char *msg, ...)
+void psi_error_wrapper(void *context, PSI_Token *t, int type, const char *msg, ...)
 {
 	va_list argv;
 	const char *fn = NULL;
 	unsigned ln = 0;
+
+	if (context) {
+		if (PSI_DATA(context)->flags & PSI_PARSER_SILENT) {
+			return;
+		}
+	}
 
 	if (t) {
 		fn = t->file;
@@ -151,6 +157,8 @@ static PHP_MINIT_FUNCTION(psi)
 {
 	PSI_ContextOps *ops = NULL;
 	zend_class_entry ce = {0};
+	unsigned flags = psi_check_env("PSI_DEBUG") ? PSI_PARSER_DEBUG : (
+			psi_check_env("PSI_SILENT") ? PSI_PARSER_SILENT : 0);
 
 	REGISTER_INI_ENTRIES();
 
@@ -177,7 +185,7 @@ static PHP_MINIT_FUNCTION(psi)
 		return FAILURE;
 	}
 
-	PSI_ContextInit(&PSI_G(context), ops, psi_error_wrapper);
+	PSI_ContextInit(&PSI_G(context), ops, psi_error_wrapper, flags);
 	PSI_ContextBuild(&PSI_G(context), PSI_G(directory));
 
 	if (psi_check_env("PSI_DUMP")) {
