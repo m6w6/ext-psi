@@ -1,5 +1,5 @@
 PSI_CHECK_SYSLOG() {
-	AC_CHECK_HEADERS(syslog.h)
+	PSI_CONFIG_POSIX(syslog, syslog.h)
 
 	PSI_CONST(LOG_PID, int)
 	PSI_CONST(LOG_CONS, int)

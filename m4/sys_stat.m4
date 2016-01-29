@@ -1,5 +1,5 @@
 PSI_CHECK_SYS_STAT() {
-	AC_CHECK_HEADERS([sys/stat.h])
+	PSI_CONFIG_POSIX(sys/stat, sys/stat.h)
 
 	PSI_STRUCT(struct stat, [
 		dev_t st_dev,

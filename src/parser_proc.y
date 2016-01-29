@@ -30,7 +30,6 @@ void psi_error(int, const char *, int, const char *, ...);
 %left PLUS MINUS.
 %left SLASH ASTERISK.
 %fallback NAME TEMP FREE SET LET RETURN LIB STRING.
-%fallback STRUCT UNION.
 
 file ::= blocks.
 
@@ -71,6 +70,9 @@ block ::= constant(constant). {
 block ::= decl_struct(strct). {
 	P->structs = add_decl_struct(P->structs, strct);
 }
+block ::= decl_union(u). {
+	P->unions = add_decl_union(P->unions, u);
+}
 block ::= decl_enum(e). {
 	P->enums = add_decl_enum(P->enums, e);
 }
@@ -81,6 +83,7 @@ optional_name(n) ::= .{
 optional_name(n) ::= NAME(N). {
 	n = N;
 }
+
 enum_name(n) ::= ENUM(E) optional_name(N). {
 	if (N) {
 		n = N;
@@ -120,6 +123,18 @@ decl_enum_item(i) ::= NAME(N). {
 	i->token = N;
 }
 
+union_name(n) ::= UNION(U) optional_name(N). {
+	if (N) {
+		n = N;
+		free(U);
+	} else {
+		char digest[17];
+
+		PSI_TokenHash(U, digest);
+		n = PSI_TokenTranslit(PSI_TokenAppend(U, 1, digest), " ", "@");
+	}
+}
+
 struct_name(n) ::= STRUCT(S) optional_name(N). {
 	if (N) {
 		n = N;
@@ -149,7 +164,7 @@ decl_struct_args(args_) ::= EOS. {
 
 %type decl_struct {decl_struct*}
 %destructor decl_struct {free_decl_struct($$);}
-decl_struct(strct) ::= struct_name(N) struct_size(size_) decl_struct_args(args). {
+decl_struct(strct) ::= STRUCT NAME(N) struct_size(size_) decl_struct_args(args). {
 	strct = init_decl_struct(N->text, args);
 	strct->size = size_;
 	strct->token = N;
@@ -162,6 +177,14 @@ struct_size(size) ::= . {
 struct_size(size) ::= COLON COLON LPAREN NUMBER(SIZ) RPAREN. {
 	size = atol(SIZ->text);
 	free(SIZ);
+}
+
+%type decl_union {decl_union*}
+%destructor decl_union {free_decl_union($$);}
+decl_union(u) ::= UNION NAME(N) struct_size(size_) decl_struct_args(args). {
+	u = init_decl_union(N->text, args);
+	u->size = size_;
+	u->token = N;
 }
 
 %token_class const_type_token BOOL INT FLOAT STRING.
@@ -204,6 +227,9 @@ decl_typedef(def) ::= TYPEDEF(T) decl_typedef_body(def_) EOS. {
 	if ($$->type->enm) {
 		free_decl_enum($$->type->enm);
 	}
+	if ($$->type->unn) {
+		free_decl_union($$->type->unn);
+	}
 	if ($$->type->func) {
 		free_decl($$->type->func);
 	}
@@ -214,6 +240,13 @@ decl_typedef_body_ex(def) ::= struct_name(N) struct_size(size_) decl_struct_args
 	def->type->strct = init_decl_struct(N->text, args);
 	def->type->strct->token = N;
 	def->type->strct->size = size_;
+}
+decl_typedef_body_ex(def) ::= union_name(N) struct_size(size_) decl_struct_args_block(args) decl_var(var). {
+	def = init_decl_arg(init_decl_type(PSI_T_UNION, N->text), var);
+	def->type->token = PSI_TokenCopy(N);
+	def->type->unn = init_decl_union(N->text, args);
+	def->type->unn->token = N;
+	def->type->unn->size = size_;
 }
 decl_typedef_body_ex(def) ::= decl_enum(e) NAME(ALIAS). {
 	def = init_decl_arg(init_decl_type(PSI_T_ENUM, e->name), init_decl_var(ALIAS->text, 0, 0));
@@ -229,6 +262,9 @@ decl_typedef_body_ex(def) ::= decl_enum(e) NAME(ALIAS). {
 	}
 	if ($$->type->enm) {
 		free_decl_enum($$->type->enm);
+	}
+	if ($$->type->unn) {
+		free_decl_union($$->type->unn);
 	}
 	if ($$->type->func) {
 		free_decl($$->type->func);
@@ -264,7 +300,8 @@ decl_func(func) ::= VOID(T) NAME(N). {
 		init_decl_var(N->text, 0, 0)
 	);
 	func->type->token = T;
-	free(N);
+	func->var->token = N;
+	func->token = N;
 }
 
 %type decl_abi {decl_abi*}
@@ -343,9 +380,26 @@ struct_args(args) ::= struct_args(args_) struct_arg(arg). {
 	args = add_decl_arg(args_, arg);
 }
 %type struct_arg {decl_arg*}
-%destructor struct_arg {free_decl_arg($$);}
+%destructor struct_arg {
+	free_decl_arg($$);
+	if ($$->type->strct) {
+		free_decl_struct($$->type->strct);
+	}
+	if ($$->type->enm) {
+		free_decl_enum($$->type->enm);
+	}
+	if ($$->type->func) {
+		free_decl($$->type->func);
+	}
+}
 struct_arg(arg_) ::= decl_typedef_body_ex(def) EOS. {
 	arg_ = def;
+	if (def->type->strct) {
+		P->structs = add_decl_struct(P->structs, def->type->strct);
+	}
+	if (def->type->enm) {
+		P->enums = add_decl_enum(P->enums, def->type->enm);
+	}
 }
 struct_arg(arg) ::= decl_arg(arg_) struct_layout(layout_) EOS. {
 	arg_->layout = layout_;
@@ -447,6 +501,11 @@ decl_type(type_) ::= STRUCT(S) NAME(T). {
 	type_ = init_decl_type(S->type, T->text);
 	type_->token = T;
 	free(S);
+}
+decl_type(type_) ::= UNION(U) NAME(T). {
+	type_ = init_decl_type(U->type, T->text);
+	type_->token = T;
+	free(U);
 }
 decl_type(type_) ::= ENUM(E) NAME(T). {
 	type_ = init_decl_type(E->type, T->text);

@@ -29,7 +29,6 @@ size_t psi_t_alignment(token_t t)
 		return ALIGNOF_DOUBLE;
 	case PSI_T_POINTER:
 	case PSI_T_FUNCTION:
-	case PSI_T_STRUCT:
 		return ALIGNOF_VOID_P;
 	case PSI_T_ENUM:
 		return ALIGNOF_INT;
@@ -62,21 +61,6 @@ size_t psi_t_size(token_t t)
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}
 	return 0;
-}
-
-size_t psi_t_align(token_t t, size_t s)
-{
-	size_t a = psi_t_alignment(t);
-	return ((s - 1) | (a - 1)) + 1;
-}
-
-size_t psi_offset_padding(size_t diff, size_t alignment)
-{
-	if (diff && diff <= ((diff - 1) | (alignment -1)) + 1) {
-		diff = 0;
-	}
-
-	return diff;
 }
 
 int psi_internal_type(impl_type *type)

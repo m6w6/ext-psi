@@ -1,5 +1,5 @@
 PSI_CHECK_SYS_SOCKET() {
-	AC_CHECK_HEADERS(sys/socket.h)
+	PSI_CONFIG_POSIX(sys/socket, sys/socket.h)
 
 	PSI_TYPE(socklen_t, int)
 	PSI_TYPE(sa_family_t, uint)

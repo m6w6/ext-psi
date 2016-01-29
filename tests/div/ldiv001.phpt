@@ -5,6 +5,7 @@ psi.directory={PWD}:{PWD}/../../psi.d
 --SKIPIF--
 <?php 
 extension_loaded("psi") or die("skip - need ext/psi");
+function_exists("psi\\ldiv") or die("skip - need psi\\ldiv()");
 ?>
 --FILE--
 ===TEST===

@@ -1,5 +1,5 @@
 PSI_CHECK_NDBM() {
-	AC_CHECK_HEADERS(ndbm.h)
+	PSI_CONFIG_POSIX(ndbm, ndbm.h)
 	
 	PHP_CHECK_FUNC_LIB(dbm_open, gdbm_compat)
 	

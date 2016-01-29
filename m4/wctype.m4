@@ -1,5 +1,5 @@
 PSI_CHECK_WCTYPE() {
-	AC_CHECK_HEADERS(wctype.h)
+	PSI_CONFIG_POSIX(wctype, wctype.h)
 
 	PSI_TYPE(wctype_t, int)
 	PSI_TYPE(wctrans_t, int)

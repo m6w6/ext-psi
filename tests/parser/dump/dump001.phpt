@@ -15,6 +15,8 @@ fclose($fd);
 var_dump(file_exists($fn));
 var_dump(psi_validate($fn));
 
+@unlink(__DIR__."/dump.psi");
+
 ?>
 ===DONE===
 --EXPECT--
@@ -22,7 +24,3 @@ var_dump(psi_validate($fn));
 bool(true)
 bool(true)
 ===DONE===
---CLEAN--
-<?php 
-@unlink(__DIR__."/dump.psi");
-?>

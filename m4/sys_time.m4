@@ -1,5 +1,5 @@
 PSI_CHECK_SYS_TIME() {
-	AC_CHECK_HEADERS(sys/time.h)
+	PSI_CONFIG_POSIX(sys/time, sys/time.h)
 
 	PSI_CONST(ITIMER_REAL, int)
 	PSI_CONST(ITIMER_VIRTUAL, int)

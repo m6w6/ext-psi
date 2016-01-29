@@ -88,6 +88,7 @@ static inline ffi_type *psi_ffi_token_type(token_t t) {
 	case PSI_T_BOOL:
 		return &ffi_type_uchar;
 	case PSI_T_INT:
+	case PSI_T_ENUM:
 		return &ffi_type_sint;
 	case PSI_T_LONG:
 		return &ffi_type_slong;

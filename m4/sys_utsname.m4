@@ -1,5 +1,5 @@
 PSI_CHECK_SYS_UTSNAME() {
-	AC_CHECK_HEADERS(sys/utsname.h)
+	PSI_CONFIG_POSIX(sys/utsname, sys/utsname.h)
 
 	PSI_STRUCT(struct utsname, [
 		char sysname@<:@0@:>@,

@@ -62,6 +62,7 @@ typedef struct decl_type {
 	token_t type;
 	struct decl_type *real;
 	struct decl_struct *strct;
+	struct decl_union *unn;
 	struct decl_enum *enm;
 	struct decl *func;
 } decl_type;
@@ -166,6 +167,9 @@ static inline decl_arg *init_decl_arg(decl_type *type, decl_var *var) {
 }
 
 static inline void free_decl_arg(decl_arg *arg) {
+	if (arg->token && arg->token != arg->var->token) {
+		free(arg->token);
+	}
 	free_decl_type(arg->type);
 	free_decl_var(arg->var);
 	if (arg->layout) {
@@ -343,6 +347,7 @@ typedef struct decl_struct {
 	char *name;
 	decl_args *args;
 	size_t size;
+	size_t align;
 	struct {
 		void *type;
 		void (*dtor)(void *type);
@@ -392,6 +397,56 @@ static inline void free_decl_structs(decl_structs *ss) {
 	}
 	free(ss->list);
 	free(ss);
+}
+
+typedef struct decl_union {
+	PSI_Token *token;
+	char *name;
+	decl_args *args;
+	size_t size;
+	size_t align;
+} decl_union;
+
+static inline decl_union *init_decl_union(const char *name, decl_args *args) {
+	decl_union *u = calloc(1, sizeof(*u));
+	u->name = strdup(name);
+	u->args = args;
+	return u;
+}
+
+static inline void free_decl_union(decl_union *u) {
+	if (u->token) {
+		free(u->token);
+	}
+	if (u->args) {
+		free_decl_args(u->args);
+	}
+	free(u->name);
+	free(u);
+}
+
+typedef struct decl_unions {
+	decl_union **list;
+	size_t count;
+} decl_unions;
+
+static inline decl_unions *add_decl_union(decl_unions *uu, decl_union *u) {
+	if (!uu) {
+		uu = calloc(1, sizeof(*uu));
+	}
+	uu->list = realloc(uu->list, ++uu->count * sizeof(*uu->list));
+	uu->list[uu->count-1] = u;
+	return uu;
+}
+
+static inline void free_decl_unions(decl_unions *uu) {
+	size_t i;
+
+	for (i = 0; i < uu->count; ++i) {
+		free_decl_union(uu->list[i]);
+	}
+	free(uu->list);
+	free(uu);
 }
 
 typedef struct impl_type {
@@ -1361,6 +1416,7 @@ typedef void (*psi_error_cb)(PSI_Token *token, int type, const char *msg, ...);
 	constants *consts; \
 	decl_typedefs *defs; \
 	decl_structs *structs; \
+	decl_unions *unions; \
 	decl_enums *enums; \
 	decls *decls; \
 	impls *impls; \
@@ -1391,6 +1447,9 @@ static inline void PSI_DataDtor(PSI_Data *data) {
 	}
 	if (data->structs) {
 		free_decl_structs(data->structs);
+	}
+	if (data->unions) {
+		free_decl_unions(data->unions);
 	}
 	if (data->enums) {
 		free_decl_enums(data->enums);

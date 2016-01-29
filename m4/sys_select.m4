@@ -1,5 +1,5 @@
 PSI_CHECK_SYS_SELECT() {
-	AC_CHECK_HEADERS(sys/select.h)
+	PSI_CONFIG_POSIX(sys/select, sys/select.h)
 
 	PSI_STRUCT(fd_set, [])
 

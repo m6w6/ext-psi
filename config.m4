@@ -1,12 +1,3 @@
-PHP_ARG_ENABLE(psi, whether to enable PHP System Interface support,
-[  --enable-psi            Enable PHP System Interface support])
-
-PHP_ARG_WITH(psi-libjit, where to find libjit,
-[  --with-psi-libjit=DIR   PSI: path to libjit], [ ], [ ])
-
-PHP_ARG_WITH(psi-libffi, where to find libffi,
-[  --with-psi-libffi=DIR   PSI: path to libffi], [ ], [ ])
-
 PHP_PSI_SRCDIR=PHP_EXT_SRCDIR(psi)
 PHP_PSI_BUILDDIR=PHP_EXT_BUILDDIR(psi)
 
@@ -49,6 +40,18 @@ m4_foreach(incfile, [
 	sinclude([ext/psi/m4/]incfile)
 ])
 
+PHP_ARG_ENABLE(psi, whether to enable PHP System Interface support,
+[  --enable-psi            Enable PHP System Interface support])
+
+PHP_ARG_ENABLE(psi-posix, whether to pre-define POSIX decls,
+[  --ebable-psi-posix      PSI: pre-define POSIX decls], [ ], [ ])
+
+PHP_ARG_WITH(psi-libjit, where to find libjit,
+[  --with-psi-libjit=DIR   PSI: path to libjit], [ ], [ ])
+
+PHP_ARG_WITH(psi-libffi, where to find libffi,
+[  --with-psi-libffi=DIR   PSI: path to libffi], [ ], [ ])
+
 if test "$PHP_PSI" != no; then
 	PHP_CONFIGURE_PART(Configuring PSI)
 
@@ -62,8 +65,8 @@ if test "$PHP_PSI" != no; then
 	PSI_CONFIG_INIT
 	PSI_CHECK_STD_TYPES
 	PSI_CHECK_STDINT
-	PSI_CHECK_STDDEF
 	PSI_CHECK_SYS_TYPES
+	PSI_CHECK_STDDEF
 	PSI_CHECK_ERRNO
 	PSI_CHECK_FCNTL
 	PSI_CHECK_GLOB

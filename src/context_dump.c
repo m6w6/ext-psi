@@ -4,15 +4,46 @@
 #include "libjit.h"
 #include "libffi.h"
 
+static inline void dump_decl_arg(int fd, decl_arg *darg);
+
 static inline void dump_decl_type(int fd, decl_type *t) {
 	const char *pre;
+	size_t j;
 
 	switch (t->type) {
+	case PSI_T_POINTER:
+		dprintf(fd, "%s *", t->name);
+		return;
+
+	case PSI_T_FUNCTION:
+		dump_decl_arg(fd, t->func->func);
+		dprintf(fd, "(");
+		if (t->func->args) {
+			for (j = 0; j < t->func->args->count; ++j) {
+				if (j) {
+					dprintf(fd, ", ");
+				}
+				dump_decl_arg(fd, t->func->args->args[j]);
+			}
+			if (t->func->args->varargs) {
+				dprintf(fd, ", ...");
+			}
+		}
+		dprintf(fd, ")");
+		return;
+
 	case PSI_T_STRUCT:
 		pre = "struct ";
 		break;
+	case PSI_T_ENUM:
+		pre = "enum ";
+		break;
+	case PSI_T_UNION:
+		pre = "union ";
+		break;
 	default:
 		pre = "";
+		break;
 	}
 	dprintf(fd, "%s%s", pre, t->name);
 }
@@ -114,6 +145,7 @@ static inline void dump_impl_set_value(int fd, set_value *set, unsigned level, i
 static inline void dump_typedef(int fd, decl_arg *tdef) {
 	dprintf(fd, "typedef ");
 	dump_decl_arg(fd, tdef);
+	dprintf(fd, ";");
 	/*
 	dump_decl_type(fd, tdef->type);
 	dprintf(fd, " %s%s;", tdef->type->type == PSI_T_POINTER ? "*":"",
@@ -156,6 +188,7 @@ static inline void dump_structs(int fd, decl_structs *structs) {
 
 	for (i = 0; i < structs->count; ++i) {
 		decl_struct *strct = structs->list[i];
+
 
 		dump_struct(fd, strct);
 		dprintf(fd, "\n");

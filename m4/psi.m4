@@ -99,6 +99,15 @@ EOF
 	done
 ])
 
+dnl PSI_CONFIG_POSIX(section, headers)
+AC_DEFUN(PSI_CONFIG_POSIX, [
+	case "$PHP_PSI_POSIX" in
+	yes|all) ;;
+	*) expr "$PHP_PSI_POSIX" : '\b$1\b' >/dev/null || return 0 ;;
+	esac
+	ifelse($2,,,AC_CHECK_HEADERS($2))
+])
+
 dnl PSI_INCLUDES()
 dnl Expands to a complete list of include statements including
 dnl AC_INCLUDES_DEFAULT().

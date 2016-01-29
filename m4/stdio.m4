@@ -1,5 +1,5 @@
 PSI_CHECK_STDIO() {
-    AC_CHECK_HEADER(stdio.h)
+    PSI_CONFIG_POSIX(stdio, stdio.h)
 
     PSI_STRUCT(FILE)
     PSI_STRUCT(fpos_t)

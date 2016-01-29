@@ -1,5 +1,5 @@
 PSI_CHECK_ERRNO() {
-    AC_CHECK_HEADERS(errno.h)
+    PSI_CONFIG_POSIX(errno, errno.h)
 
     PSI_EXTVAR(int errno)
 

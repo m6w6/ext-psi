@@ -1,5 +1,5 @@
 PSI_CHECK_POLL() {
-	AC_CHECK_HEADERS(poll.h)
+	PSI_CONFIG_POSIX(poll, poll.h)
 
 	PSI_STRUCT(struct pollfd, [
 		int fd,

@@ -81,6 +81,21 @@ static inline int locate_decl_type_struct(decl_structs *structs, decl_type *type
 	return 0;
 }
 
+static inline int locate_decl_type_union(decl_unions *unions, decl_type *type) {
+	size_t i;
+
+	if (type->unn) {
+		return 1;
+	}
+	if (unions) for (i = 0; i < unions->count; ++i) {
+		if (!strcmp(unions->list[i]->name, type->name)) {
+			type->unn = unions->list[i];
+			return 1;
+		}
+	}
+	return 0;
+}
+
 static inline int locate_decl_type_enum(decl_enums *enums, decl_type *type) {
 	size_t i;
 
@@ -95,6 +110,10 @@ static inline int locate_decl_type_enum(decl_enums *enums, decl_type *type) {
 	}
 	return 0;
 }
+
+static inline int validate_decl_struct(PSI_Data *data, decl_struct *s);
+static inline int validate_decl_union(PSI_Data *data, decl_union *u);
+static inline int validate_decl_enum(PSI_Data *data, decl_enum *e);
 
 static inline int validate_decl_type(PSI_Data *data, decl_type *type) {
 	switch (type->type) {
@@ -112,6 +131,11 @@ static inline int validate_decl_type(PSI_Data *data, decl_type *type) {
 		return 1;
 	case PSI_T_STRUCT:
 		if (!locate_decl_type_struct(data->structs, type)) {
+			return 0;
+		}
+		break;
+	case PSI_T_UNION:
+		if (!locate_decl_type_union(data->unions, type)) {
 			return 0;
 		}
 		break;
@@ -141,8 +165,8 @@ static inline int validate_constant(PSI_Data *data, constant *c) {
 static inline int validate_decl_arg(PSI_Data *data, decl_arg *arg) {
 	if (!validate_decl_type(data, arg->type)) {
 		data->error(arg->type->token, PSI_WARNING,
-			"Cannot use '%s'(%d) as type for decl var '%s'",
-			arg->type->name, arg->type->type, arg->var->name);
+			"Cannot use '%s' as type for '%s'",
+			arg->type->name, arg->var->name);
 		return 0;
 	}
 	return 1;
@@ -172,18 +196,101 @@ static void psi_sort_struct_arg_swp(void *a, void *b) {
 	*_b = *_a;
 	*_a = _c;
 }
-static inline void psi_sort_struct_args(decl_struct *s) {
-	zend_insert_sort(s->args->args, s->args->count, sizeof(*s->args->args),
+static inline void psi_sort_struct_args(void **args, size_t count) {
+	zend_insert_sort(args, count, sizeof(*args),
 			psi_sort_struct_arg_cmp, psi_sort_struct_arg_swp);
 }
 
-static inline int validate_decl_struct(PSI_Data *data, decl_struct *s) {
-	size_t i;
+static inline int validate_decl_struct_darg(PSI_Data *data, decl_arg *darg) {
+	decl_type *real = real_decl_type(darg->type);
 
-	for (i = 0; i < s->args->count; ++i) {
-		if (!validate_decl_arg(data, s->args->args[i])) {
+	/* pre-validate any structs/unions/enums */
+	switch (real->type) {
+	case PSI_T_STRUCT:
+		if (!validate_decl_struct(data, real->strct)) {
 			return 0;
 		}
+		break;
+	case PSI_T_UNION:
+		if (!validate_decl_union(data, real->unn)) {
+			return 0;
+		}
+		break;
+	case PSI_T_ENUM:
+		if (!validate_decl_enum(data, real->enm)) {
+			return 0;
+		}
+		break;
+	}
+
+	return 1;
+}
+
+static inline size_t sizeof_decl_arg(decl_arg *darg) {
+	size_t size;
+	decl_type *real = real_decl_type(darg->type);
+
+	if (darg->var->array_size) {
+		if (darg->var->pointer_level > 2) {
+			size = psi_t_size(PSI_T_POINTER) * darg->var->array_size;
+		} else {
+			size = psi_t_size(real->type) * darg->var->array_size;
+		}
+	} else if (darg->var->pointer_level) {
+		size = psi_t_size(PSI_T_POINTER);
+	} else {
+		switch (real->type) {
+		case PSI_T_UNION:
+			size = real->unn->size;
+			break;
+		case PSI_T_STRUCT:
+			size = real->strct->size;
+			break;
+		case PSI_T_ENUM:
+		default:
+			size = psi_t_size(real->type);
+			break;
+		}
+	}
+
+	return size;
+}
+
+static inline size_t align_decl_arg(decl_arg *darg, size_t *pos, size_t *len) {
+	size_t align;
+
+	if (darg->var->pointer_level && (!darg->var->array_size || darg->var->pointer_level > 2)) {
+		align = psi_t_alignment(PSI_T_POINTER);
+	} else {
+		decl_type *real = real_decl_type(darg->type);
+
+		switch (real->type) {
+		case PSI_T_STRUCT:
+			align = real->strct->align;
+			break;
+		case PSI_T_UNION:
+			align = real->unn->align;
+			break;
+		default:
+			align = psi_t_alignment(real->type);
+			break;
+		}
+	}
+
+	*len = sizeof_decl_arg(darg);
+	*pos = psi_align(align, *pos);
+
+	return align;
+}
+
+static inline int validate_decl_struct(PSI_Data *data, decl_struct *s) {
+	size_t i, pos, len, size, align;
+
+	if (!s->size && !s->args->count) {
+		data->error(s->token, PSI_WARNING,
+				"Cannot compute size of empty struct %s",
+				s->name);
+		return 0;
 	}
 
 	for (i = 0; i < s->args->count; ++i) {
@@ -197,68 +304,119 @@ static inline int validate_decl_struct(PSI_Data *data, decl_struct *s) {
 		darg->var->arg = darg;
 
 		if (darg->layout) {
-			size_t size;
+			pos = darg->layout->pos;
 
-			if (darg->var->array_size) {
-				size = psi_t_size(real_decl_type(darg->type)->type) * darg->var->array_size;
-			} else if (darg->var->pointer_level) {
-				size = psi_t_size(PSI_T_POINTER);
-			} else {
-				decl_type *real = real_decl_type(darg->type);
+			align = align_decl_arg(darg, &pos, &len);
 
-				if (real->type == PSI_T_STRUCT) {
-					size = real->strct->size;
-				} else {
-					size = psi_t_size(real->type);
-				}
-			}
-			if (darg->layout->len != size) {
+			if (darg->layout->len != len) {
 				data->error(darg->token, PSI_WARNING,
-						"Computed length %zu of %s.%s does not match"
-						" pre-defined length %zu of type '%s'",
-						darg->layout->len, s->name, darg->var->name, size,
+						"Computed size %zu of %s.%s does not match"
+						" pre-defined size %zu of type '%s'",
+						darg->layout->len, s->name, darg->var->name, len,
 						darg->type->name);
 				return 0;
 			}
+			if (darg->layout->pos != pos) {
+				data->error(darg->token, PSI_WARNING,
+						"Computed offset %zu of %s.%s does not match"
+						" pre-defined offset %zu",
+						darg->layout->len, s->name, darg->var->name, len);
+				return 0;
+			}
+		} else if (!validate_decl_struct_darg(data, darg)) {
+			return 0;
 		} else {
-			token_t t;
-			size_t size, align;
-
-			if (darg->var->pointer_level && (!darg->var->array_size || darg->var->pointer_level == 1)) {
-				t = PSI_T_POINTER;
-			} else {
-				t = real_decl_type(darg->type)->type;
-			}
-
-			switch (t) {
-			case PSI_T_STRUCT:
-				if (!validate_decl_struct(data, real_decl_type(darg->type)->strct)) {
-					return 0;
-				}
-				size = real_decl_type(darg->type)->strct->size;
-				break;
-			default:
-				size = psi_t_size(t) * (darg->var->array_size ?: 1);
-				break;
-			}
-
 			if (i) {
-				decl_arg *last = s->args->args[i-1];
-
-				align = psi_t_align(t, last->layout->pos + last->layout->len);
+				pos = s->args->args[i-1]->layout->pos +
+						s->args->args[i-1]->layout->len;
 			} else {
-				align = 0;
+				pos = 0;
 			}
 
-			darg->layout = init_decl_struct_layout(align, size);
+			align = align_decl_arg(darg, &pos, &len);
+			darg->layout = init_decl_struct_layout(pos, len);
 		}
-		if (s->size < darg->layout->pos + darg->layout->len) {
-			s->size = darg->layout->pos + darg->layout->len;
-			/* FIXME: align struct */
+
+		if (align > s->align) {
+			s->align = align;
 		}
 	}
 
-	psi_sort_struct_args(s);
+	psi_sort_struct_args((void **) s->args->args, s->args->count);
+
+	if (s->args->count) {
+		decl_arg *darg = s->args->args[s->args->count-1];
+
+		size = darg->layout->pos + darg->layout->len;
+		if (s->size < size) {
+			s->size = psi_align(size, s->align);
+		}
+	}
+
+	return 1;
+}
+
+static inline int validate_decl_union(PSI_Data *data, decl_union *u) {
+	size_t i, pos, len, size, align;
+
+	if (!u->size && !u->args->count) {
+		data->error(u->token, PSI_WARNING,
+				"Cannot compute size of empty union %s",
+				u->name);
+		return 0;
+	}
+
+	for (i = 0; i < u->args->count; ++i) {
+		decl_arg *darg = u->args->args[i];
+
+		if (!validate_decl_arg(data, darg)) {
+			return 0;
+		}
+
+		ZEND_ASSERT(!darg->var->arg || darg->var->arg == darg);
+		darg->var->arg = darg;
+
+		if (darg->layout) {
+			pos = darg->layout->pos;
+
+			align = align_decl_arg(darg, &pos, &len);
+
+			if (darg->layout->pos != 0) {
+				data->error(darg->token, PSI_WARNING,
+						"Offset of %s.%s must be 0",
+						u->name, darg->var->name);
+				return 0;
+			}
+			if (darg->layout->len != len) {
+				data->error(darg->token, PSI_WARNING,
+						"Computed size %zu of %s.%s does not match"
+						" pre-defined size %zu of type '%s'",
+						darg->layout->len, u->name, darg->var->name, size,
+						darg->type->name);
+				return 0;
+			}
+		} else if (!validate_decl_struct_darg(data, darg)) {
+			return 0;
+		} else {
+			pos = 0;
+
+			align = align_decl_arg(darg, &pos, &len);
+			darg->layout = init_decl_struct_layout(pos, len);
+
+		}
+		if (len > size) {
+			size = len;
+		}
+		if (align > u->align) {
+			u->align = align;
+		}
+	}
+
+	psi_sort_struct_args((void **) u->args->args, u->args->count);
+
+	if (u->size < size) {
+		u->size = psi_align(size, u->align);
+	}
 
 	return 1;
 }
@@ -306,7 +464,7 @@ static inline int validate_decl_func(PSI_Data *data, void *dl, decl *decl, decl_
 		if (!decl->call.sym) {
 			data->error(func->token, PSI_WARNING,
 				"Failed to locate symbol '%s': %s",
-				func->var->name, dlerror());
+				func->var->name, dlerror() ?: "not found");
 		}
 	}
 	return 1;
@@ -1107,6 +1265,18 @@ int PSI_ContextValidateData(PSI_Data *dest, PSI_Data *source)
 		if (validate_decl_struct(source, dstruct)) {
 			if (dest) {
 				dest->structs = add_decl_struct(dest->structs, dstruct);
+			}
+		} else {
+			++errors;
+		}
+	}
+
+	if (source->unions) for (i = 0; i < source->unions->count; ++i) {
+		decl_union *dunion = source->unions->list[i];
+
+		if (validate_decl_union(source, dunion)) {
+			if (dest) {
+				dest->unions = add_decl_union(dest->unions, dunion);
 			}
 		} else {
 			++errors;

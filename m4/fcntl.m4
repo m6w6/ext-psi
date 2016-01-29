@@ -1,5 +1,5 @@
 PSI_CHECK_FCNTL() {
-	AC_CHECK_HEADERS(fcntl.h)
+	PSI_CONFIG_POSIX(fcntl, fcntl.h)
 
 	PSI_CONST(F_DUPFD, int)
 	PSI_CONST(F_DUPFD_CLOEXEC, int)
