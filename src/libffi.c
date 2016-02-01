@@ -192,7 +192,8 @@ static ffi_type **psi_ffi_struct_type_elements(decl_struct *strct) {
 static inline ffi_type *psi_ffi_decl_type(decl_type *type) {
 	decl_type *real = real_decl_type(type);
 
-	if (real->type == PSI_T_STRUCT) {
+	switch (real->type) {
+	case PSI_T_STRUCT:
 		if (!real->strct->engine.type) {
 			ffi_type *strct = calloc(1, sizeof(ffi_type));
 
@@ -205,8 +206,13 @@ static inline ffi_type *psi_ffi_decl_type(decl_type *type) {
 		}
 
 		return real->strct->engine.type;
+
+	case PSI_T_UNION:
+		return psi_ffi_decl_arg_type(real->unn->args->args[0]);
+
+	default:
+		return psi_ffi_token_type(real->type);
 	}
-	return psi_ffi_token_type(real->type);
 }
 static inline ffi_type *psi_ffi_decl_arg_type(decl_arg *darg) {
 	if (darg->var->pointer_level) {

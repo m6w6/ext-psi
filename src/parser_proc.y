@@ -164,26 +164,31 @@ decl_struct_args(args_) ::= EOS. {
 
 %type decl_struct {decl_struct*}
 %destructor decl_struct {free_decl_struct($$);}
-decl_struct(strct) ::= STRUCT NAME(N) struct_size(size_) decl_struct_args(args). {
+decl_struct(strct) ::= STRUCT NAME(N) align_and_size(as) decl_struct_args(args). {
 	strct = init_decl_struct(N->text, args);
-	strct->size = size_;
+	strct->align = as.a;
+	strct->size = as.s;
 	strct->token = N;
 }
 
-%type struct_size {size_t}
-struct_size(size) ::= . {
-	size = 0;
+%type align_and_size { struct {size_t a; size_t s; } }
+align_and_size(as) ::= . {
+	as.a = 0;
+	as.s = 0;
 }
-struct_size(size) ::= COLON COLON LPAREN NUMBER(SIZ) RPAREN. {
-	size = atol(SIZ->text);
-	free(SIZ);
+align_and_size(as) ::= COLON COLON LPAREN NUMBER(A) COMMA NUMBER(S) RPAREN. {
+	as.a = atol(A->text);
+	as.s = atol(S->text);
+	free(A);
+	free(S);
 }
 
 %type decl_union {decl_union*}
 %destructor decl_union {free_decl_union($$);}
-decl_union(u) ::= UNION NAME(N) struct_size(size_) decl_struct_args(args). {
+decl_union(u) ::= UNION NAME(N) align_and_size(as) decl_struct_args(args). {
 	u = init_decl_union(N->text, args);
-	u->size = size_;
+	u->align = as.a;
+	u->size = as.s;
 	u->token = N;
 }
 
@@ -234,19 +239,21 @@ decl_typedef(def) ::= TYPEDEF(T) decl_typedef_body(def_) EOS. {
 		free_decl($$->type->func);
 	}
 }
-decl_typedef_body_ex(def) ::= struct_name(N) struct_size(size_) decl_struct_args_block(args) decl_var(var). {
+decl_typedef_body_ex(def) ::= struct_name(N) align_and_size(as) decl_struct_args_block(args) decl_var(var). {
 	def = init_decl_arg(init_decl_type(PSI_T_STRUCT, N->text), var);
 	def->type->token = PSI_TokenCopy(N);
 	def->type->strct = init_decl_struct(N->text, args);
 	def->type->strct->token = N;
-	def->type->strct->size = size_;
+	def->type->strct->align = as.a;
+	def->type->strct->size = as.s;
 }
-decl_typedef_body_ex(def) ::= union_name(N) struct_size(size_) decl_struct_args_block(args) decl_var(var). {
+decl_typedef_body_ex(def) ::= union_name(N) align_and_size(as) decl_struct_args_block(args) decl_var(var). {
 	def = init_decl_arg(init_decl_type(PSI_T_UNION, N->text), var);
 	def->type->token = PSI_TokenCopy(N);
 	def->type->unn = init_decl_union(N->text, args);
 	def->type->unn->token = N;
-	def->type->unn->size = size_;
+	def->type->unn->align = as.a;
+	def->type->unn->size = as.s;
 }
 decl_typedef_body_ex(def) ::= decl_enum(e) NAME(ALIAS). {
 	def = init_decl_arg(init_decl_type(PSI_T_ENUM, e->name), init_decl_var(ALIAS->text, 0, 0));

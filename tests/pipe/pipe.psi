@@ -1,8 +1,8 @@
 
-extern int pipe(int fds[2]);
+//extern int pipe(int fildes[2]);
 
 function \pipe(array &$fds = null) : int {
 	return to_int(pipe);
-	let fds = calloc(2, psi\SIZEOF_INT);
-	set $fds = to_array(fds[2]);
+	let fildes = calloc(2, psi\SIZEOF_INT);
+	set $fds = to_array(fildes[2]);
 }

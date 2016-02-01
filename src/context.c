@@ -108,7 +108,7 @@ PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErr
 		decl_union *dunion = init_decl_union(predef_union->var_name, dargs);
 
 		dunion->size = predef_union->size;
-		dunion->align = dunion->offset;
+		dunion->align = predef_union->offset;
 		for (member = &predef_union[1]; member->type_tag; ++member) {
 			decl_type *type;
 			decl_var *dvar;

@@ -1,4 +1,4 @@
-	#ifdef HAVE_CONFIG_H
+#ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
 
@@ -207,17 +207,26 @@ static inline int validate_decl_struct_darg(PSI_Data *data, decl_arg *darg, void
 	/* pre-validate any structs/unions/enums */
 	switch (real->type) {
 	case PSI_T_STRUCT:
-		if ((current && current == real->strct) || !validate_decl_struct(data, real->strct)) {
+		if (current && current == real->strct) {
+			return 1;
+		}
+		if (!validate_decl_struct(data, real->strct)) {
 			return 0;
 		}
 		break;
 	case PSI_T_UNION:
-		if ((current && current == real->unn) || !validate_decl_union(data, real->unn)) {
+		if (current && current == real->unn) {
+			return 1;
+		}
+		if (!validate_decl_union(data, real->unn)) {
 			return 0;
 		}
 		break;
 	case PSI_T_ENUM:
-		if ((current && current == real->enm) || !validate_decl_enum(data, real->enm)) {
+		if (current && current == real->enm) {
+			return 1;
+		}
+		if (!validate_decl_enum(data, real->enm)) {
 			return 0;
 		}
 		break;
@@ -1167,6 +1176,7 @@ int PSI_ContextValidate(PSI_Context *C, PSI_Parser *P)
 	size_t i, count = C->count++, check_round, check_count;
 	decl_typedefs *check_defs = P->defs;
 	decl_structs *check_structs = P->structs;
+	decl_unions *check_unions = P->unions;
 	decl_enums *check_enums = P->enums;
 	unsigned silent = C->flags & PSI_PARSER_SILENT;
 
@@ -1190,6 +1200,7 @@ int PSI_ContextValidate(PSI_Context *C, PSI_Parser *P)
 	for (check_round = 0, check_count = 0; CHECK_TOTAL && check_count != CHECK_TOTAL; ++check_round) {
 		decl_typedefs *recheck_defs = NULL;
 		decl_structs *recheck_structs = NULL;
+		decl_unions *recheck_unions = NULL;
 		decl_enums *recheck_enums = NULL;
 
 		check_count = CHECK_TOTAL;
@@ -1208,6 +1219,13 @@ int PSI_ContextValidate(PSI_Context *C, PSI_Parser *P)
 				recheck_structs = add_decl_struct(recheck_structs, check_structs->list[i]);
 			}
 		}
+		for (i = 0; i < CHECK_COUNT(unions); ++i) {
+			if (validate_decl_union(PSI_DATA(C), check_unions->list[i])) {
+				C->unions = add_decl_union(C->unions, check_unions->list[i]);
+			} else {
+				recheck_unions = add_decl_union(recheck_unions, check_unions->list[i]);
+			}
+		}
 		for (i = 0; i < CHECK_COUNT(enums); ++i) {
 			if (validate_decl_enum(PSI_DATA(C), check_enums->list[i])) {
 				C->enums = add_decl_enum(C->enums, check_enums->list[i]);
@@ -1218,6 +1236,7 @@ int PSI_ContextValidate(PSI_Context *C, PSI_Parser *P)
 
 		REVALIDATE(defs);
 		REVALIDATE(structs);
+		REVALIDATE(unions);
 		REVALIDATE(enums);
 
 		if (check_round == 0 && !silent) {

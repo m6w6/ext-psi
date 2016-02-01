@@ -167,7 +167,7 @@ static inline void dump_typedefs(int fd, decl_typedefs *defs) {
 static inline void dump_struct(int fd, decl_struct *strct) {
 	size_t j;
 
-	dprintf(fd, "struct %s::(%zu)", strct->name, strct->size);
+	dprintf(fd, "struct %s::(%zu, %zu)", strct->name, strct->align, strct->size);
 	if (strct->args && strct->args->count) {
 		dprintf(fd, " {\n");
 		for (j = 0; j < strct->args->count; ++j) {
@@ -189,8 +189,32 @@ static inline void dump_structs(int fd, decl_structs *structs) {
 	for (i = 0; i < structs->count; ++i) {
 		decl_struct *strct = structs->list[i];
 
-
 		dump_struct(fd, strct);
+		dprintf(fd, "\n");
+	}
+}
+
+static inline void dump_union(int fd, decl_union *unn) {
+	size_t j;
+
+	dprintf(fd, "union %s::(%zu, %zu) {\n", unn->name, unn->align, unn->size);
+	for (j = 0; j < unn->args->count; ++j) {
+		decl_arg *uarg = unn->args->args[j];
+
+		dprintf(fd, "\t");
+		dump_decl_arg(fd, uarg);
+		dprintf(fd, "::(%zu, %zu);\n", uarg->layout->pos, uarg->layout->len);
+	}
+	dprintf(fd, "}");
+}
+
+static inline void dump_unions(int fd, decl_unions *unions) {
+	size_t i;
+
+	for (i = 0; i < unions->count; ++i) {
+		decl_union *unn = unions->list[i];
+
+		dump_union(fd, unn);
 		dprintf(fd, "\n");
 	}
 }
@@ -440,7 +464,10 @@ void PSI_ContextDump(PSI_Context *C, int fd)
 		dump_typedefs(fd, C->defs);
 		dprintf(fd, "\n");
 	}
-
+	if (C->unions) {
+		dump_unions(fd, C->unions);
+		dprintf(fd, "\n");
+	}
 	if (C->structs) {
 		dump_structs(fd, C->structs);
 		dprintf(fd, "\n");
