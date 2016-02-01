@@ -4,6 +4,12 @@ psi_add_struct() {
 	cat >>$PSI_STRUCTS <<<"	$1, {0}, "
 }
 
+# psi_add_union(union/struct members)
+# Add a pre-defined union to $PSI_UNIONS.
+psi_add_union() {
+	cat >>$PSI_UNIONS <<<"	$1, {0}, "
+}
+
 dnl PSI_STRUCT_MEMBER(struct name, decl member)
 dnl INTERNAL: build $psi_struct_members
 AC_DEFUN(PSI_STRUCT_MEMBER, [
@@ -40,15 +46,33 @@ AC_DEFUN(PSI_STRUCT_MEMBER, [
 dnl PSI_STRUCT(struct name, struct members)
 dnl Check a struct and its members and add a pre-defined struct and possibly a
 dnl pre-defined type for this struct.
-dnl Calls PSI_CHECK_SIZEOF for the struct and each member.
-dnl Calls PSI_CHECK_OFFSETOF and PSI_TYPE_INDIRECTON for each member.
+dnl Calls PSI_CHECK_SIZEOF and PSI_CHECK_ALIGNOF for the struct.
+dnl Calls PSI_CHECK_SIZEOF, PSI_CHECK_OFFSETOF and PSI_TYPE_INDIRECTON for each member.
 AC_DEFUN(PSI_STRUCT, [
 	PSI_CHECK_SIZEOF($1)
+	PSI_CHECK_ALIGNOF($1)
 	psi_struct_name=m4_bregexp([$1], [^\(struct \)?\(\w+\)], [\2])
-	psi_struct_members="{PSI_T_STRUCT, \"struct\", \"$psi_struct_name\", 0, $AS_TR_SH([ac_cv_sizeof_]$1), 0, 0}"
+	psi_struct_members="{PSI_T_STRUCT, \"struct\", \"$psi_struct_name\", PSI_SH_ALIGNOF($1), PSI_SH_SIZEOF($1), 0, 0}"
 	ifelse([$2],,,[m4_map_args_sep([PSI_STRUCT_MEMBER($1, m4_normalize(], [))], [], $2)])
 	psi_add_struct "$psi_struct_members"
 	if test "$1" = "$psi_struct_name"; then
 		psi_add_type "{PSI_T_STRUCT, \"$1\", \"$1\"}"
+	fi
+])
+
+dnl PSI_UNION(union name, union/struct members)
+dnl Check a union and its members and add a pre-defined union and possibly a
+dnl pre-defined type for this union.
+dnl Calls PSI_CHECK_SIZEOF for the union and each member.
+dnl Calls PSI_CHECK_OFFSETOF and PSI_TYPE_INDIRECTON for each member.
+AC_DEFUN(PSI_UNION, [
+	PSI_CHECK_SIZEOF($1)
+	PSI_CHECK_ALIGNOF($1)
+	psi_struct_name=m4_bregexp([$1], [^\(union \)?\(\w+\)], [\2])
+	psi_struct_members="{PSI_T_UNION, \"union\", \"$psi_struct_name\", PSI_SH_ALIGNOF($1), PSI_SH_SIZEOF($1), 0, 0}"
+	ifelse([$2],,,[m4_map_args_sep([PSI_STRUCT_MEMBER($1, m4_normalize(], [))], [], $2)])
+	psi_add_union "$psi_struct_members"
+	if test "$1" = "$psi_struct_name"; then
+		psi_add_type "{PSI_T_UNION, \"$1\", \"$1\"}"
 	fi
 ])

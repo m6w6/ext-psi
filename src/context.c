@@ -35,7 +35,7 @@
 #include "php_psi_decls.h"
 #include "php_psi_va_decls.h"
 #include "php_psi_structs.h"
-
+#include "php_psi_unions.h"
 
 PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErrorFunc error, unsigned flags)
 {
@@ -43,6 +43,7 @@ PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErr
 	struct psi_predef_type *predef_type;
 	struct psi_predef_const *predef_const;
 	struct psi_predef_struct *predef_struct;
+	struct psi_predef_union *predef_union;
 	struct psi_predef_decl *predef_decl;
 
 	if (!C) {
@@ -85,6 +86,7 @@ PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErr
 		decl_struct *dstruct = init_decl_struct(predef_struct->var_name, dargs);
 
 		dstruct->size = predef_struct->size;
+		dstruct->align = predef_struct->offset;
 		for (member = &predef_struct[1]; member->type_tag; ++member) {
 			decl_type *type;
 			decl_var *dvar;
@@ -99,6 +101,28 @@ PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErr
 
 		T.structs = add_decl_struct(T.structs, dstruct);
 		predef_struct = member;
+	}
+	for (predef_union = &psi_predef_unions[0]; predef_union->type_tag; ++predef_union) {
+		struct psi_predef_union *member;
+		decl_args *dargs = init_decl_args(NULL);
+		decl_union *dunion = init_decl_union(predef_union->var_name, dargs);
+
+		dunion->size = predef_union->size;
+		dunion->align = dunion->offset;
+		for (member = &predef_union[1]; member->type_tag; ++member) {
+			decl_type *type;
+			decl_var *dvar;
+			decl_arg *darg;
+
+			type = init_decl_type(member->type_tag, member->type_name);
+			dvar = init_decl_var(member->var_name, member->pointer_level, member->array_size);
+			darg = init_decl_arg(type, dvar);
+			darg->layout = init_decl_struct_layout(member->offset, member->size);
+			dargs = add_decl_arg(dargs, darg);
+		}
+
+		T.unions = add_decl_union(T.unions, dunion);
+		predef_union = member;
 	}
 	for (predef_decl = &psi_predef_decls[0]; predef_decl->type_tag; ++predef_decl) {
 		struct psi_predef_decl *farg;

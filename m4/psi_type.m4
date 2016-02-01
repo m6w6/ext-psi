@@ -23,6 +23,9 @@ psi_type_pair() {
 	struct*)
 		echo "PSI_T_STRUCT, \"$2\""
 		;;
+	union*)
+		echo "PSI_T_UNION, \"$2\""
+		;;
 	void)
 		echo "PSI_T_VOID, \"void\""
 		;;
@@ -86,7 +89,7 @@ AC_DEFUN(PSI_OPAQUE_TYPE, [
 	PSI_CHECK_SIZEOF($1)
 	if PSI_SH_TEST_SIZEOF($1); then
 		psi_type_class=
-		AC_CACHE_CHECK(type class of $1, AS_TR_SH([psi_cv_type_class_]$1), [
+		AC_CACHE_CHECK(kind of $1, AS_TR_SH([psi_cv_type_class_]$1), [
 			AC_TRY_COMPILE(PSI_INCLUDES, [char test@<:@($1)1@:>@;], [
 				psi_type_class=scalar
 			], [
@@ -114,7 +117,7 @@ AC_DEFUN(PSI_OPAQUE_TYPE, [
 			psi_add_type "{PSI_T_POINTER, \"void\", \"$1\"}"
 			;;
 		*)
-			AC_MSG_WARN(could not detect type class of $1)
+			AC_MSG_WARN(could not detect kind of $1)
 			;;
 		esac
 	fi
@@ -162,6 +165,7 @@ dnl FIXME: There is also psi_type_pair()?
 AC_DEFUN(PSI_TYPE_PAIR, [m4_case(m4_bregexp([$1], [^\w+], [\&]),
 	[void], [PSI_T_VOID, \"void\"],
 	[struct], [PSI_T_STRUCT, \"m4_bregexp([$1], [^struct \(\w+\)], [\1])\"],
+	[union], [PSI_T_UNION, \"m4_bregexp([$1], [^union \(\w+\)], [\1])\"],
 	[PSI_T_NAME, \"m4_bregexp([$1], [^\(\w+ \)*\w+], [\&])\"])])
 
 dnl PSI_CHECK_STD_TYPES()

@@ -3,6 +3,7 @@ PHP_PSI_BUILDDIR=PHP_EXT_BUILDDIR(psi)
 
 m4_foreach(incfile, [
 	[ax_check_sign.m4],
+	[ax_pthread.m4],
 	[psi.m4],
 	[psi_type.m4],
 	[psi_const.m4],
@@ -30,8 +31,10 @@ m4_foreach(incfile, [
 	[netinet_in.m4],
 	[netinet_tcp.m4],
 	[poll.m4],
+	[signal.m4],
 	[syslog.m4],
 	[time.m4],
+	[unistd.m4],
 	[wchar.m4],
 	[wctype.m4]], [
 	dnl pecl build
@@ -54,6 +57,8 @@ PHP_ARG_WITH(psi-libffi, where to find libffi,
 
 if test "$PHP_PSI" != no; then
 	PHP_CONFIGURE_PART(Configuring PSI)
+	
+	ifdef([AC_USE_SYSTEM_EXTENSIONS],AC_USE_SYSTEM_EXTENSIONS)
 
 	PSI_LEMON
 	PSI_CHECK_LIBJIT
@@ -73,6 +78,7 @@ if test "$PHP_PSI" != no; then
 	PSI_CHECK_LOCALE
 	PSI_CHECK_STDIO
 	PSI_CHECK_STDLIB
+	PSI_CHECK_UNISTD
 	PSI_CHECK_TIME
 	PSI_CHECK_SYS_SELECT
 	PSI_CHECK_SYS_SOCKET
@@ -86,6 +92,7 @@ if test "$PHP_PSI" != no; then
 	PSI_CHECK_NETINET_IN
 	PSI_CHECK_NETINET_TCP
 	PSI_CHECK_POLL
+	PSI_CHECK_SIGNAL
 	PSI_CHECK_SYSLOG
 	PSI_CHECK_WCHAR
 	PSI_CHECK_WCTYPE
@@ -98,6 +105,7 @@ if test "$PHP_PSI" != no; then
 	AC_DEFINE_UNQUOTED([PSI_STDINC], [$PSI_STDINC], [Standard includes])
 	AC_DEFINE_UNQUOTED([PSI_TYPES], [$PSI_TYPES], [Predefined types])
 	AC_DEFINE_UNQUOTED([PSI_STRUCTS], [$PSI_STRUCTS], [Predefined structs])
+	AC_DEFINE_UNQUOTED([PSI_UNIONS], [$PSI_UNIONS], [Predefined structs])
 	AC_DEFINE_UNQUOTED([PSI_CONSTS], [$PSI_CONSTS], [Predefined constants])
 	AC_DEFINE_UNQUOTED([PSI_MACROS], [$PSI_MACROS], [Redirected Macros])
 	AC_DEFINE_UNQUOTED([PSI_REDIRS], [$PSI_REDIRS], [Redirected functions])

@@ -201,23 +201,23 @@ static inline void psi_sort_struct_args(void **args, size_t count) {
 			psi_sort_struct_arg_cmp, psi_sort_struct_arg_swp);
 }
 
-static inline int validate_decl_struct_darg(PSI_Data *data, decl_arg *darg) {
+static inline int validate_decl_struct_darg(PSI_Data *data, decl_arg *darg, void *current) {
 	decl_type *real = real_decl_type(darg->type);
 
 	/* pre-validate any structs/unions/enums */
 	switch (real->type) {
 	case PSI_T_STRUCT:
-		if (!validate_decl_struct(data, real->strct)) {
+		if ((current && current == real->strct) || !validate_decl_struct(data, real->strct)) {
 			return 0;
 		}
 		break;
 	case PSI_T_UNION:
-		if (!validate_decl_union(data, real->unn)) {
+		if ((current && current == real->unn) || !validate_decl_union(data, real->unn)) {
 			return 0;
 		}
 		break;
 	case PSI_T_ENUM:
-		if (!validate_decl_enum(data, real->enm)) {
+		if ((current && current == real->enm) || !validate_decl_enum(data, real->enm)) {
 			return 0;
 		}
 		break;
@@ -253,29 +253,80 @@ static inline size_t sizeof_decl_arg(decl_arg *darg) {
 		}
 	}
 
+	ZEND_ASSERT(size);
+
 	return size;
 }
 
-static inline size_t align_decl_arg(decl_arg *darg, size_t *pos, size_t *len) {
+static inline size_t alignof_decl_type(decl_type *t);
+static inline size_t alignof_decl_arg(decl_arg *darg);
+static inline size_t alignof_decl_union(decl_union *u);
+static inline size_t alignof_decl_struct(decl_struct *s);
+
+static inline size_t alignof_decl_args(decl_args *args) {
+	size_t i, maxalign = 0;
+
+	for (i = 0; i < args->count; ++i) {
+		decl_arg *darg = args->args[i];
+		size_t align = alignof_decl_arg(darg);
+
+		if (align > maxalign) {
+			maxalign = align;
+		}
+	}
+
+	return maxalign;
+}
+
+static inline size_t alignof_decl_struct(decl_struct *s) {
+	if (!s->align) {
+		s->align = alignof_decl_args(s->args);
+	}
+	return s->align;
+}
+
+static inline size_t alignof_decl_union(decl_union *u) {
+	if (!u->align) {
+		u->align = alignof_decl_args(u->args);
+	}
+	return u->align;
+}
+
+static inline size_t alignof_decl_type(decl_type *t) {
+	decl_type *real = real_decl_type(t);
+	size_t align;
+
+	switch (real->type) {
+	case PSI_T_STRUCT:
+		align = alignof_decl_struct(real->strct);
+		break;
+	case PSI_T_UNION:
+		align = alignof_decl_union(real->unn);
+		break;
+	case PSI_T_ENUM:
+	default:
+		align = psi_t_alignment(real->type);
+	}
+
+	return align;
+}
+
+static inline size_t alignof_decl_arg(decl_arg *darg) {
 	size_t align;
 
 	if (darg->var->pointer_level && (!darg->var->array_size || darg->var->pointer_level > 2)) {
 		align = psi_t_alignment(PSI_T_POINTER);
 	} else {
-		decl_type *real = real_decl_type(darg->type);
-
-		switch (real->type) {
-		case PSI_T_STRUCT:
-			align = real->strct->align;
-			break;
-		case PSI_T_UNION:
-			align = real->unn->align;
-			break;
-		default:
-			align = psi_t_alignment(real->type);
-			break;
-		}
+		align = alignof_decl_type(darg->type);
 	}
+
+	return align;
+}
+
+static inline size_t align_decl_arg(decl_arg *darg, size_t *pos, size_t *len) {
+	size_t align = alignof_decl_arg(darg);
+
+	ZEND_ASSERT(align);
 
 	*len = sizeof_decl_arg(darg);
 	*pos = psi_align(align, *pos);
@@ -303,7 +354,9 @@ static inline int validate_decl_struct(PSI_Data *data, decl_struct *s) {
 		ZEND_ASSERT(!darg->var->arg || darg->var->arg == darg);
 		darg->var->arg = darg;
 
-		if (darg->layout) {
+		if (!validate_decl_struct_darg(data, darg, s)) {
+			return 0;
+		} else if (darg->layout) {
 			pos = darg->layout->pos;
 
 			align = align_decl_arg(darg, &pos, &len);
@@ -312,20 +365,16 @@ static inline int validate_decl_struct(PSI_Data *data, decl_struct *s) {
 				data->error(data, darg->token, PSI_WARNING,
 						"Computed size %zu of %s.%s does not match"
 						" pre-defined size %zu of type '%s'",
-						darg->layout->len, s->name, darg->var->name, len,
+						len, s->name, darg->var->name, darg->layout->len,
 						darg->type->name);
-				return 0;
 			}
 			if (darg->layout->pos != pos) {
 				data->error(data, darg->token, PSI_WARNING,
 						"Computed offset %zu of %s.%s does not match"
 						" pre-defined offset %zu",
-						darg->layout->len, s->name, darg->var->name, len);
-				return 0;
+						pos, s->name, darg->var->name, darg->layout->pos);
 			}
-		} else if (!validate_decl_struct_darg(data, darg)) {
-			return 0;
-		} else {
+		} else  {
 			if (i) {
 				pos = s->args->args[i-1]->layout->pos +
 						s->args->args[i-1]->layout->len;
@@ -357,7 +406,7 @@ static inline int validate_decl_struct(PSI_Data *data, decl_struct *s) {
 }
 
 static inline int validate_decl_union(PSI_Data *data, decl_union *u) {
-	size_t i, pos, len, size, align;
+	size_t i, pos, len, size = 0, align;
 
 	if (!u->size && !u->args->count) {
 		data->error(data, u->token, PSI_WARNING,
@@ -376,27 +425,26 @@ static inline int validate_decl_union(PSI_Data *data, decl_union *u) {
 		ZEND_ASSERT(!darg->var->arg || darg->var->arg == darg);
 		darg->var->arg = darg;
 
-		if (darg->layout) {
+		if (!validate_decl_struct_darg(data, darg, u)) {
+			return 0;
+		} else if (darg->layout) {
 			pos = darg->layout->pos;
 
 			align = align_decl_arg(darg, &pos, &len);
 
 			if (darg->layout->pos != 0) {
 				data->error(data, darg->token, PSI_WARNING,
-						"Offset of %s.%s must be 0",
+						"Offset of %s.%s should be 0",
 						u->name, darg->var->name);
-				return 0;
+				darg->layout->pos = 0;
 			}
 			if (darg->layout->len != len) {
 				data->error(data, darg->token, PSI_WARNING,
 						"Computed size %zu of %s.%s does not match"
 						" pre-defined size %zu of type '%s'",
-						darg->layout->len, u->name, darg->var->name, size,
+						len, u->name, darg->var->name, darg->layout->len,
 						darg->type->name);
-				return 0;
 			}
-		} else if (!validate_decl_struct_darg(data, darg)) {
-			return 0;
 		} else {
 			pos = 0;
 
