@@ -64,3 +64,4 @@ php_psi_types.h
 php_psi_va_decls.h
 /tmp/
 *.loT
+php_psi_unions.h

@@ -1,5 +1,5 @@
 
-//extern int pipe(int fildes[2]);
+// extern int pipe(int fildes[2]);
 
 function \pipe(array &$fds = null) : int {
 	return to_int(pipe);
