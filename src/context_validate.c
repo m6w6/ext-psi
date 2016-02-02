@@ -154,6 +154,9 @@ static inline int validate_decl_typedef(PSI_Data *data, decl_arg *def) {
 			def->var->name);
 		return 0;
 	}
+	if (def->type->type == PSI_T_VOID && def->var->pointer_level) {
+		def->type->type = PSI_T_POINTER;
+	}
 	return 1;
 }
 

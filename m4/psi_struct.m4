@@ -21,10 +21,10 @@ AC_DEFUN(PSI_STRUCT_MEMBER, [
 	if PSI_SH_TEST_SIZEOF($1 member_name); then
 		PSI_CHECK_OFFSETOF($1, member_name)
 		PSI_TYPE_INDIRECTION($2, [PSI_SH_SIZEOF([$1 member_name])], pl, as)
-		
+
 		psi_member_sizeof=PSI_SH_SIZEOF($1 member_name)
 		psi_member_offsetof=PSI_SH_OFFSETOF($1 member_name)
-		
+
 		if test $pl -gt 0 && test $as -eq 0; then
 			check_size=PSI_SH_SIZEOF(void *)
 		elif test $pl -eq 1 && test $as -gt 0; then
@@ -50,13 +50,15 @@ dnl Calls PSI_CHECK_SIZEOF and PSI_CHECK_ALIGNOF for the struct.
 dnl Calls PSI_CHECK_SIZEOF, PSI_CHECK_OFFSETOF and PSI_TYPE_INDIRECTON for each member.
 AC_DEFUN(PSI_STRUCT, [
 	PSI_CHECK_SIZEOF($1)
-	PSI_CHECK_ALIGNOF($1)
-	psi_struct_name=m4_bregexp([$1], [^\(struct \)?\(\w+\)], [\2])
-	psi_struct_members="{PSI_T_STRUCT, \"struct\", \"$psi_struct_name\", PSI_SH_ALIGNOF($1), PSI_SH_SIZEOF($1), 0, 0}"
-	ifelse([$2],,,[m4_map_args_sep([PSI_STRUCT_MEMBER($1, m4_normalize(], [))], [], $2)])
-	psi_add_struct "$psi_struct_members"
-	if test "$1" = "$psi_struct_name"; then
-		psi_add_type "{PSI_T_STRUCT, \"$1\", \"$1\"}"
+	if PSI_SH_TEST_SIZEOF($1); then
+		PSI_CHECK_ALIGNOF($1)
+		psi_struct_name=m4_bregexp([$1], [^\(struct \)?\(\w+\)], [\2])
+		psi_struct_members="{PSI_T_STRUCT, \"struct\", \"$psi_struct_name\", PSI_SH_ALIGNOF($1), PSI_SH_SIZEOF($1), 0, 0}"
+		ifelse([$2],,,[m4_map_args_sep([PSI_STRUCT_MEMBER($1, m4_normalize(], [))], [], $2)])
+		psi_add_struct "$psi_struct_members"
+		if test "$1" = "$psi_struct_name"; then
+			psi_add_type "{PSI_T_STRUCT, \"$1\", \"$1\"}"
+		fi
 	fi
 ])
 
@@ -67,12 +69,14 @@ dnl Calls PSI_CHECK_SIZEOF for the union and each member.
 dnl Calls PSI_CHECK_OFFSETOF and PSI_TYPE_INDIRECTON for each member.
 AC_DEFUN(PSI_UNION, [
 	PSI_CHECK_SIZEOF($1)
-	PSI_CHECK_ALIGNOF($1)
-	psi_struct_name=m4_bregexp([$1], [^\(union \)?\(\w+\)], [\2])
-	psi_struct_members="{PSI_T_UNION, \"union\", \"$psi_struct_name\", PSI_SH_ALIGNOF($1), PSI_SH_SIZEOF($1), 0, 0}"
-	ifelse([$2],,,[m4_map_args_sep([PSI_STRUCT_MEMBER($1, m4_normalize(], [))], [], $2)])
-	psi_add_union "$psi_struct_members"
-	if test "$1" = "$psi_struct_name"; then
-		psi_add_type "{PSI_T_UNION, \"$1\", \"$1\"}"
+	if PSI_SH_TEST_SIZEOF($1); then
+		PSI_CHECK_ALIGNOF($1)
+		psi_struct_name=m4_bregexp([$1], [^\(union \)?\(\w+\)], [\2])
+		psi_struct_members="{PSI_T_UNION, \"union\", \"$psi_struct_name\", PSI_SH_ALIGNOF($1), PSI_SH_SIZEOF($1), 0, 0}"
+		ifelse([$2],,,[m4_map_args_sep([PSI_STRUCT_MEMBER($1, m4_normalize(], [))], [], $2)])
+		psi_add_union "$psi_struct_members"
+		if test "$1" = "$psi_struct_name"; then
+			psi_add_type "{PSI_T_UNION, \"$1\", \"$1\"}"
+		fi
 	fi
 ])
