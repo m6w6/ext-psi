@@ -47,7 +47,7 @@ PHP_ARG_ENABLE(psi, whether to enable PHP System Interface support,
 [  --enable-psi            Enable PHP System Interface support])
 
 PHP_ARG_ENABLE(psi-posix, whether to pre-define POSIX decls,
-[  --ebable-psi-posix      PSI: pre-define POSIX decls], [ ], [ ])
+[  --enable-psi-posix=...  PSI: pre-define POSIX decls], [ ], [ ])
 
 PHP_ARG_WITH(psi-libjit, where to find libjit,
 [  --with-psi-libjit=DIR   PSI: path to libjit], [ ], [ ])
@@ -65,8 +65,7 @@ if test "$PHP_PSI" != no; then
 	PSI_CHECK_LIBFFI
 
 	AC_FUNC_FNMATCH
-	AC_HEADER_DIRENT
-
+	
 	PSI_CONFIG_INIT
 	PSI_CHECK_STD_TYPES
 	PSI_CHECK_STDINT
