@@ -58,8 +58,6 @@ PHP_ARG_WITH(psi-libffi, where to find libffi,
 if test "$PHP_PSI" != no; then
 	PHP_CONFIGURE_PART(Configuring PSI)
 	
-	ifdef([AC_USE_SYSTEM_EXTENSIONS],AC_USE_SYSTEM_EXTENSIONS)
-
 	PSI_LEMON
 	PSI_CHECK_LIBJIT
 	PSI_CHECK_LIBFFI
