@@ -29,7 +29,7 @@ void psi_error(int, const char *, int, const char *, ...);
 %nonassoc NAME.
 %left PLUS MINUS.
 %left SLASH ASTERISK.
-%fallback NAME TEMP FREE SET LET RETURN LIB STRING.
+%fallback NAME TEMP FREE SET LET RETURN CALLOC LIB STRING.
 
 file ::= blocks.
 
