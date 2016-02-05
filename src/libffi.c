@@ -101,6 +101,7 @@ static inline ffi_type *psi_ffi_token_type(token_t t) {
 		return &ffi_type_longdouble;
 #endif
 	case PSI_T_POINTER:
+	case PSI_T_FUNCTION:
 		return &ffi_type_pointer;
 	}
 }

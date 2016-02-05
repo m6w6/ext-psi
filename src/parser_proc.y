@@ -280,7 +280,12 @@ decl_typedef_body_ex(def) ::= decl_enum(e) NAME(ALIAS). {
 decl_typedef_body(def) ::= decl_typedef_body_ex(def_). {
 	def = def_;
 }
-decl_typedef_body(def) ::= decl_func(func_) LPAREN decl_args(args) RPAREN. {
+%type decl_typedef_body_fn_args {decl_args *}
+%destructor decl_typedef_body_fn_args {free_decl_args($$);}
+decl_typedef_body_fn_args(args) ::= LPAREN decl_args(args_) RPAREN. {
+	args = args_;
+}
+decl_typedef_body(def) ::= decl_func(func_) decl_typedef_body_fn_args(args). {
 	def = init_decl_arg(init_decl_type(PSI_T_FUNCTION, func_->var->name), copy_decl_var(func_->var));
 	def->type->token = PSI_TokenCopy(func_->token);
 	def->type->func = init_decl(init_decl_abi("default"), func_, args);
@@ -309,6 +314,30 @@ decl_func(func) ::= VOID(T) NAME(N). {
 	func->type->token = T;
 	func->var->token = N;
 	func->token = N;
+}
+decl_typedef_body(def) ::= VOID(T) indirection(i) LPAREN ASTERISK NAME(N) RPAREN decl_typedef_body_fn_args(args). {
+	decl_arg *func_ = init_decl_arg(
+		init_decl_type(T->type, T->text),
+		init_decl_var(N->text, i, 0)
+	);
+	func_->type->token = T;
+	func_->var->token = N;
+	func_->token = N;
+	def = init_decl_arg(init_decl_type(PSI_T_FUNCTION, func_->var->name), copy_decl_var(func_->var));
+	def->type->token = PSI_TokenCopy(func_->token);
+	def->type->func = init_decl(init_decl_abi("default"), func_, args);
+}
+decl_typedef_body(def) ::= CONST VOID(T) pointers(i) LPAREN ASTERISK NAME(N) RPAREN decl_typedef_body_fn_args(args). {
+	decl_arg *func_ = init_decl_arg(
+		init_decl_type(T->type, T->text),
+		init_decl_var(N->text, i, 0)
+	);
+	func_->type->token = T;
+	func_->var->token = N;
+	func_->token = N;
+	def = init_decl_arg(init_decl_type(PSI_T_FUNCTION, func_->var->name), copy_decl_var(func_->var));
+	def->type->token = PSI_TokenCopy(func_->token);
+	def->type->func = init_decl(init_decl_abi("default"), func_, args);
 }
 
 %type decl_abi {decl_abi*}
@@ -344,6 +373,18 @@ decl_vars(vars) ::= decl_vars(vars_) COMMA decl_var(var). {
 decl_arg(arg_) ::= const_decl_type(type) decl_var(var). {
 	arg_ = init_decl_arg(type, var);
 }
+decl_typedef_body(def) ::= const_decl_type(type_) indirection(i) LPAREN ASTERISK NAME(N) RPAREN decl_typedef_body_fn_args(args). {
+	decl_arg *func_ = init_decl_arg(
+		type_,
+		init_decl_var(N->text, i, 0)
+	);
+	func_->var->token = N;
+	func_->token = N;
+	def = init_decl_arg(init_decl_type(PSI_T_FUNCTION, func_->var->name), copy_decl_var(func_->var));
+	def->type->token = PSI_TokenCopy(func_->token);
+	def->type->func = init_decl(init_decl_abi("default"), func_, args);
+}
+
 /* void pointers need a specific rule */
 decl_arg(arg_) ::= VOID(T) pointers(p) NAME(N). {
 	arg_ = init_decl_arg(
@@ -560,7 +601,7 @@ impl_def_val(def) ::= impl_def_val_token(T). {
 
 %type impl_var {impl_var*}
 %destructor impl_var {free_impl_var($$);}
-impl_var(var) ::= reference(r) DOLLAR NAME(T). {
+impl_var(var) ::= reference(r) DOLLAR_NAME(T). {
 	var = init_impl_var(T->text, r);
 	var->token = T;
 }
@@ -589,7 +630,7 @@ impl_args(args) ::= LPAREN impl_arg_list(args_) COMMA impl_vararg(va) RPAREN. {
 
 %type impl_vararg {impl_arg*}
 %destructor impl_vararg {free_impl_arg($$);}
-impl_vararg(va) ::= impl_type(type) reference(r) ELLIPSIS DOLLAR NAME(T). {
+impl_vararg(va) ::= impl_type(type) reference(r) ELLIPSIS DOLLAR_NAME(T). {
 	va = init_impl_arg(type, init_impl_var(T->text, r), NULL);
 	free(T);
 }
@@ -765,7 +806,7 @@ free_call(call) ::= NAME(F) LPAREN decl_vars(vars) RPAREN. {
 	call->token = F;
 }
 
-%token_class impl_type_token VOID MIXED BOOL INT FLOAT STRING ARRAY OBJECT.
+%token_class impl_type_token VOID MIXED BOOL INT FLOAT STRING ARRAY OBJECT CALLABLE.
 %type impl_type {impl_type*}
 %destructor impl_type {free_impl_type($$);}
 impl_type(type_) ::= impl_type_token(T). {

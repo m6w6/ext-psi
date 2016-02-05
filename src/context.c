@@ -184,7 +184,7 @@ void PSI_ContextBuild(PSI_Context *C, const char *paths)
 {
 	int i, n;
 	char *sep = NULL, *cpy = strdup(paths), *ptr = cpy;
-	struct dirent **entries = NULL;
+	struct dirent **entries;
 
 	do {
 		sep = strchr(ptr, ':');
@@ -193,6 +193,7 @@ void PSI_ContextBuild(PSI_Context *C, const char *paths)
 			*sep = 0;
 		}
 
+		entries = NULL;
 		n = php_scandir(ptr, &entries, psi_select_dirent, alphasort);
 
 		if (n > 0) {

@@ -53,7 +53,7 @@
 #define PSI_T_NULL                            53
 #define PSI_T_TRUE                            54
 #define PSI_T_FALSE                           55
-#define PSI_T_DOLLAR                          56
+#define PSI_T_DOLLAR_NAME                     56
 #define PSI_T_OBJVAL                          57
 #define PSI_T_ARRVAL                          58
 #define PSI_T_PATHVAL                         59
@@ -71,4 +71,5 @@
 #define PSI_T_MIXED                           71
 #define PSI_T_ARRAY                           72
 #define PSI_T_OBJECT                          73
-#define PSI_T_AMPERSAND                       74
+#define PSI_T_CALLABLE                        74
+#define PSI_T_AMPERSAND                       75
