@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include <Zend/zend_types.h>
+#include <Zend/zend_API.h> /* fcall */
 
 #include "parser_proc.h"
 
@@ -51,6 +52,10 @@ typedef union impl_val {
 		zend_bool bval;
 		zend_long lval;
 		zend_string *str;
+		struct {
+			zend_fcall_info *fci;
+			zend_fcall_info_cache *fcc;
+		} cb;
 	} zend;
 	void *ptr;
 	uint8_t _dbg[sizeof(void *)];
@@ -290,6 +295,10 @@ typedef struct decl_callinfo {
 	size_t argc;
 	void **args;
 	void **rval;
+	struct {
+		void *data;
+		void (*dtor)(void *data);
+	} closure;
 } decl_callinfo;
 
 typedef struct decl {

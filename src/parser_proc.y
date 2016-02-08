@@ -720,7 +720,7 @@ let_val(val) ::= let_func(func). {
 let_calloc(alloc) ::= num_exp(nmemb) COMMA num_exp(size). {
 	alloc = init_let_calloc(nmemb, size);
 }
-%token_class let_func_token OBJVAL ARRVAL PATHVAL STRLEN STRVAL FLOATVAL INTVAL BOOLVAL.
+%token_class let_func_token CBVAL OBJVAL ARRVAL PATHVAL STRLEN STRVAL FLOATVAL INTVAL BOOLVAL.
 %type let_func {let_func*}
 %destructor let_func {free_let_func($$);}
 let_func(func) ::= let_func_token(T) LPAREN impl_var(var) RPAREN. {

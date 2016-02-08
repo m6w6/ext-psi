@@ -43,8 +43,23 @@ static void *psi_ffi_closure_alloc(size_t s, void **code)
 	}
 	return *code;
 #else
-	return NULL;
+# error "Neither ffi_closure_alloc() nor mmap() available"
 #endif
+}
+
+static ffi_status psi_ffi_prep_closure(ffi_closure **closure, void **code, ffi_cif *sig, void (*handler)(ffi_cif*,void*,void**,void*), void *data) {
+	*closure = psi_ffi_closure_alloc(sizeof(ffi_closure), code);
+	ZEND_ASSERT(*closure != NULL);
+
+#if PSI_HAVE_FFI_PREP_CLOSURE_LOC
+	return ffi_prep_closure_loc(*closure, sig, handler, data, *code);
+
+#elif PSI_HAVE_FFI_PREP_CLOSURE
+	return ffi_prep_closure(*code, sig, handler, data);
+#else
+# error "Neither ffi_prep_closure() nor ffi_prep_closure_loc() is available"
+#endif
+
 }
 
 static void psi_ffi_closure_free(void *c)
@@ -59,9 +74,59 @@ static void psi_ffi_closure_free(void *c)
 static void psi_ffi_handler(ffi_cif *signature, void *_result, void **_args, void *_data);
 static inline ffi_type *psi_ffi_decl_arg_type(decl_arg *darg);
 
+typedef struct PSI_LibffiContext {
+	ffi_cif signature;
+	ffi_type *params[2];
+} PSI_LibffiContext;
+
+typedef struct PSI_LibffiCall {
+	void *code;
+	ffi_closure *closure;
+	ffi_cif signature;
+	void *params[1]; /* [type1, type2, NULL, arg1, arg2] ... */
+} PSI_LibffiCall;
+
 static inline ffi_abi psi_ffi_abi(const char *convention) {
 	return FFI_DEFAULT_ABI;
 }
+
+static inline PSI_LibffiCall *PSI_LibffiCallAlloc(PSI_Context *C, decl *decl) {
+	int rc;
+	size_t i, c = decl->args ? decl->args->count : 0;
+	PSI_LibffiCall *call = calloc(1, sizeof(*call) + 2 * c * sizeof(void *));
+
+	for (i = 0; i < c; ++i) {
+		call->params[i] = psi_ffi_decl_arg_type(decl->args->args[i]);
+	}
+	call->params[c] = NULL;
+
+	decl->call.info = call;
+	decl->call.rval = &decl->func->ptr;
+	decl->call.argc = c;
+	decl->call.args = (void **) &call->params[c+1];
+
+	rc = ffi_prep_cif(&call->signature, psi_ffi_abi(decl->abi->convention),
+			c, psi_ffi_decl_arg_type(decl->func), (ffi_type **) call->params);
+	ZEND_ASSERT(FFI_OK == rc);
+
+	return call;
+}
+
+static inline void PSI_LibffiCallInitClosure(PSI_Context *C, PSI_LibffiCall *call, impl *impl) {
+	PSI_LibffiContext *context = C->context;
+	ffi_status rc;
+
+	rc = psi_ffi_prep_closure(&call->closure, &call->code, &context->signature, psi_ffi_handler, impl);
+	ZEND_ASSERT(FFI_OK == rc);
+}
+
+static inline void PSI_LibffiCallFree(PSI_LibffiCall *call) {
+	if (call->closure) {
+		psi_ffi_closure_free(call->closure);
+	}
+	free(call);
+}
+
 static inline ffi_type *psi_ffi_token_type(token_t t) {
 	switch (t) {
 	default:
@@ -194,6 +259,20 @@ static inline ffi_type *psi_ffi_decl_type(decl_type *type) {
 	decl_type *real = real_decl_type(type);
 
 	switch (real->type) {
+	case PSI_T_FUNCTION:
+		if (!real->func->call.sym) {
+			PSI_LibffiCall *call = PSI_LibffiCallAlloc(&PSI_G(context), real->func);
+			ffi_status rc;
+
+			rc = psi_ffi_prep_closure(&real->func->call.closure.data, &real->func->call.sym,
+					&call->signature, psi_ffi_handler, NULL);
+			if (FFI_OK == rc) {
+				real->func->call.info = call;
+				real->func->call.closure.dtor = psi_ffi_closure_free;
+			}
+		}
+		return &ffi_type_pointer;
+
 	case PSI_T_STRUCT:
 		if (!real->strct->engine.type) {
 			ffi_type *strct = calloc(1, sizeof(ffi_type));
@@ -223,69 +302,6 @@ static inline ffi_type *psi_ffi_decl_arg_type(decl_arg *darg) {
 	}
 }
 
-typedef struct PSI_LibffiContext {
-	ffi_cif signature;
-	ffi_type *params[2];
-} PSI_LibffiContext;
-
-typedef struct PSI_LibffiCall {
-	void *code;
-	ffi_closure *closure;
-	ffi_cif signature;
-	void *params[1]; /* [type1, type2, NULL, arg1, arg2] ... */
-} PSI_LibffiCall;
-
-static inline PSI_LibffiCall *PSI_LibffiCallAlloc(PSI_Context *C, decl *decl) {
-	int rc;
-	size_t i, c = decl->args ? decl->args->count : 0;
-	PSI_LibffiCall *call = calloc(1, sizeof(*call) + 2 * c * sizeof(void *));
-
-	for (i = 0; i < c; ++i) {
-		call->params[i] = psi_ffi_decl_arg_type(decl->args->args[i]);
-	}
-	call->params[c] = NULL;
-
-	decl->call.info = call;
-	decl->call.rval = &decl->func->ptr;
-	decl->call.argc = c;
-	decl->call.args = (void **) &call->params[c+1];
-
-	rc = ffi_prep_cif(&call->signature, psi_ffi_abi(decl->abi->convention),
-			c, psi_ffi_decl_arg_type(decl->func), (ffi_type **) call->params);
-	ZEND_ASSERT(FFI_OK == rc);
-
-	return call;
-}
-
-static inline void PSI_LibffiCallInitClosure(PSI_Context *C, PSI_LibffiCall *call, impl *impl) {
-	PSI_LibffiContext *context = C->context;
-	int rc;
-
-	call->closure = psi_ffi_closure_alloc(sizeof(ffi_closure), &call->code);
-	ZEND_ASSERT(call->closure != NULL);
-
-#if PSI_HAVE_FFI_PREP_CLOSURE_LOC
-	rc = ffi_prep_closure_loc(
-			call->closure,
-			&context->signature,
-			psi_ffi_handler,
-			impl,
-			call->code);
-
-#elif PSI_HAVE_FFI_PREP_CLOSURE
-	rc = ffi_prep_closure(call->code, &context->signature, psi_ffi_handler, impl);
-#else
-# error "Neither ffi_prep_closure() nor ffi_prep_closure_loc() available"
-#endif
-	ZEND_ASSERT(FFI_OK == rc);
-}
-
-static inline void PSI_LibffiCallFree(PSI_LibffiCall *call) {
-	if (call->closure) {
-		psi_ffi_closure_free(call->closure);
-	}
-	free(call);
-}
 
 static inline PSI_LibffiContext *PSI_LibffiContextInit(PSI_LibffiContext *L) {
 	ffi_status rc;

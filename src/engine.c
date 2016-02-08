@@ -193,6 +193,8 @@ static inline ZEND_RESULT_CODE psi_parse_args(zend_execute_data *execute_data, i
 			Z_PARAM_PROLOGUE(0);
 		} else if (PSI_T_MIXED == iarg->type->type) {
 			Z_PARAM_PROLOGUE(0);
+		} else if (PSI_T_CALLABLE == iarg->type->type) {
+			Z_PARAM_FUNC_EX(iarg->val.zend.cb.fci, iarg->val.zend.cb.fcc, 1, 0);
 		} else {
 			error_code = ZPP_ERROR_FAILURE;
 			break;
@@ -321,6 +323,11 @@ static inline impl_val *psi_let_val(token_t let_func, impl_arg *iarg, impl_val *
 
 			obj = PSI_OBJ(iarg->_zv, NULL);
 			arg_val->ptr = obj->data;
+		}
+		break;
+	case PSI_T_CBVAL:
+		if (iarg->type->type == PSI_T_CALLABLE) {
+			
 		}
 		break;
 	EMPTY_SWITCH_DEFAULT_CASE();
