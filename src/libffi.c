@@ -71,7 +71,29 @@ static void psi_ffi_closure_free(void *c)
 #endif
 }
 
-static void psi_ffi_handler(ffi_cif *signature, void *_result, void **_args, void *_data);
+static void psi_ffi_handler(ffi_cif *_sig, void *_result, void **_args, void *_data)
+{
+	psi_call(*(zend_execute_data **)_args[0], *(zval **)_args[1], _data);
+}
+
+static void psi_ffi_callback(ffi_cif *_sig, void *_result, void **_args, void *_data)
+{
+	unsigned argc = _sig->nargs;
+	void **argv = _args;
+	ffi_arg *res = _result;
+	decl *decl = _data;
+	size_t i;
+
+	// prepare args for the userland call
+	for (i = 0; i < decl->args->count; ++i) {
+
+	}
+	// marshal return value of the userland call
+	switch (decl->func->type->type) {
+
+	}
+}
+
 static inline ffi_type *psi_ffi_decl_arg_type(decl_arg *darg);
 
 typedef struct PSI_LibffiContext {
@@ -317,11 +339,6 @@ static inline PSI_LibffiContext *PSI_LibffiContextInit(PSI_LibffiContext *L) {
 	ZEND_ASSERT(rc == FFI_OK);
 
 	return L;
-}
-
-static void psi_ffi_handler(ffi_cif *_sig, void *_result, void **_args, void *_data)
-{
-	psi_call(*(zend_execute_data **)_args[0], *(zval **)_args[1], _data);
 }
 
 static void psi_ffi_init(PSI_Context *C)

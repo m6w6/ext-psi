@@ -891,6 +891,7 @@ typedef struct let_func {
 	char *name;
 	impl_var *var;
 	impl_arg *arg;
+	set_values *callback;
 } let_func;
 
 static inline let_func *init_let_func(token_t type, const char *name, impl_var *var) {
@@ -1065,6 +1066,34 @@ static inline void free_set_value(set_value *val) {
 		free_num_exp(val->num);
 	}
 	free(val);
+}
+
+typedef struct set_values {
+	set_value **vals;
+	size_t count;
+} set_values;
+
+static inline set_values *init_set_values(set_value *val) {
+	set_values *vals = calloc(1, sizeof(*vals));
+	if (val) {
+		vals->count = 1;
+		vals->vals = calloc(1, sizeof(val));
+		vals->vals[0] = val;
+	}
+	return vals;
+}
+
+static inline set_values *add_set_value(set_values *vals, set_value *val) {
+	vals->vals = realloc(vals->vals, ++vals->count * sizeof(val));
+	vals->vals[vals->count-1] = val;
+	return vals;
+}
+
+static inline void free_set_values(set_values *vals) {
+	if (vals->vals) {
+		free(vals->vals);
+	}
+	free(vals);
 }
 
 typedef struct set_stmt {

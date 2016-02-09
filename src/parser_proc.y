@@ -720,14 +720,31 @@ let_val(val) ::= let_func(func). {
 let_calloc(alloc) ::= num_exp(nmemb) COMMA num_exp(size). {
 	alloc = init_let_calloc(nmemb, size);
 }
-%token_class let_func_token CBVAL OBJVAL ARRVAL PATHVAL STRLEN STRVAL FLOATVAL INTVAL BOOLVAL.
+%token_class let_func_token OBJVAL ARRVAL PATHVAL STRLEN STRVAL FLOATVAL INTVAL BOOLVAL.
 %type let_func {let_func*}
 %destructor let_func {free_let_func($$);}
 let_func(func) ::= let_func_token(T) LPAREN impl_var(var) RPAREN. {
 	func = init_let_func(T->type, T->text, var);
 	free(T);
 }
+let_func(func_) ::= CALLBACK let_func_token(T) LPAREN impl_var(var) callback_arg_list(args_) RPAREN. {
+	func_ = init_let_func(T->type, T->text, var);
+	func_->callback.func = func_;
+	func_->callback.args = args_;
+	free(T);
+}
 
+callback_arg_list ::= .
+callback_arg_list(args) ::= COMMA callback_args(args_). {
+	args = args_;
+}
+
+callback_args(args) ::= set_value(val). {
+	args = init_set_values(val);
+}
+callback_args(args) ::= callback_args(args_) COMMA set_value(val). {
+	args = add_set_value(args_, val);
+}
 
 %type set_stmt {set_stmt*}
 %destructor set_stmt {free_set_stmt($$);}
