@@ -29,7 +29,7 @@ function psi\setservent(bool $stayopen) : void {
 }
 
 function psi\gethostent() : array {
-	return to_array(gethostent, 
+	return to_array(*gethostent,
 		to_string(h_name),
 		to_array(h_aliases, to_string(h_aliases)),
 		to_int(h_addrtype),
