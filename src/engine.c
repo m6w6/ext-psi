@@ -194,7 +194,16 @@ static inline ZEND_RESULT_CODE psi_parse_args(zend_execute_data *execute_data, i
 		} else if (PSI_T_MIXED == iarg->type->type) {
 			Z_PARAM_PROLOGUE(0);
 		} else if (PSI_T_CALLABLE == iarg->type->type) {
-			Z_PARAM_FUNC_EX(iarg->val.zend.cb.fci, iarg->val.zend.cb.fcc, 1, 0);
+			zend_fcall_info fci;
+			zend_fcall_info_cache fcc;
+
+			Z_PARAM_FUNC_EX(fci, fcc, 1, 0);
+
+			if (fci.size) {
+				iarg->val.zend.cb = calloc(1, sizeof(zend_fcall));
+				iarg->val.zend.cb->fci = fci;
+				iarg->val.zend.cb->fcc = fcc;
+			}
 		} else {
 			error_code = ZPP_ERROR_FAILURE;
 			break;
@@ -325,7 +334,7 @@ static inline impl_val *psi_let_val(token_t let_func, impl_arg *iarg, impl_val *
 			arg_val->ptr = obj->data;
 		}
 		break;
-	case PSI_T_CBVAL:
+	case PSI_T_CALLBACK:
 		if (iarg->type->type == PSI_T_CALLABLE) {
 			
 		}
@@ -362,6 +371,9 @@ static inline void *psi_do_let(let_stmt *let)
 		arg_val->ptr = psi_do_calloc(let->val->data.alloc);
 		darg->mem = arg_val->ptr;
 		break;
+	case PSI_LET_CALLBACK:
+		arg_val->ptr = 0 /* callback closure */;
+		break;
 	case PSI_LET_NUMEXP:
 		arg_val->zend.lval = psi_long_num_exp(let->val->data.num, NULL);
 		break;
@@ -378,14 +390,6 @@ static inline void *psi_do_let(let_stmt *let)
 	} else {
 		return let->ptr = darg->ptr;
 	}
-}
-
-static inline void psi_do_set(zval *return_value, set_value *set)
-{
-	decl_arg *set_arg = set->vars->vars[0]->arg;
-
-	zval_dtor(return_value);
-	set->func->handler(return_value, set, set_arg->let ? set_arg->let->ptr : set_arg->ptr);
 }
 
 static inline void psi_do_return(zval *return_value, return_stmt *ret)

@@ -721,7 +721,6 @@ static inline int validate_set_value_handler(set_value *set) {
 		if (set->outer.set && set->outer.set->func->type == PSI_T_TO_ARRAY) {
 			set->func->handler = psi_to_recursive;
 			set->inner = set->outer.set->inner;
-			set->count = set->outer.set->count;
 			break;
 		}
 		/* no break */
@@ -766,7 +765,7 @@ static inline int validate_set_value_ex(PSI_Data *data, set_value *set, decl_arg
 	}
 	ref_type = real_decl_type(ref->type);
 
-	if (set->count) {
+	if (set->inner && set->inner->count) {
 		int is_to_array = (set->func->type == PSI_T_TO_ARRAY);
 		int is_pointer_to_struct = (ref_type->type == PSI_T_STRUCT && ref->var->pointer_level);
 
@@ -784,21 +783,21 @@ static inline int validate_set_value_ex(PSI_Data *data, set_value *set, decl_arg
 
 	if (ref_type->type == PSI_T_STRUCT) {
 		/* to_array(struct, to_...) */
-		if (!set->outer.set || set->outer.set->inner != set->inner) {
-			for (i = 0; i < set->count; ++i) {
-				decl_var *sub_var = set->inner[i]->vars->vars[0];
+		if (!set->outer.set || set->outer.set->inner->vals != set->inner->vals) {
+			for (i = 0; i < set->inner->count; ++i) {
+				decl_var *sub_var = set->inner->vals[i]->vars->vars[0];
 				decl_arg *sub_ref = locate_struct_member(ref_type->strct, sub_var);
 
 				if (sub_ref) {
-					if (!validate_set_value_ex(data, set->inner[i], sub_ref, ref_type->strct->args)) {
+					if (!validate_set_value_ex(data, set->inner->vals[i], sub_ref, ref_type->strct->args)) {
 						return 0;
 					}
 				}
 			}
 		}
-	} else if (set->count == 1) {
+	} else if (set->inner && set->inner->count == 1) {
 		/* to_array(ptr, to_string(*ptr)) */
-		decl_var *sub_var = set->inner[0]->vars->vars[0];
+		decl_var *sub_var = set->inner->vals[0]->vars->vars[0];
 		decl_arg *sub_ref = locate_decl_var_arg(sub_var, ref_list, ref);
 
 		if (sub_ref) {
@@ -806,11 +805,11 @@ static inline int validate_set_value_ex(PSI_Data *data, set_value *set, decl_arg
 				data->error(data, sub_var->token, E_WARNING, "Inner `set` statement casts on pointers must reference the same variable");
 				return 0;
 			}
-			if (!validate_set_value_ex(data, set->inner[0], sub_ref, ref_list)) {
+			if (!validate_set_value_ex(data, set->inner->vals[0], sub_ref, ref_list)) {
 				return 0;
 			}
 		}
-	} else if (set->count > 1) {
+	} else if (set->inner && set->inner->count > 1) {
 		data->error(data, set->func->token, E_WARNING, "Inner `set` statement casts on pointers may only occur once");
 		return 0;
 	}
@@ -883,6 +882,52 @@ static inline int validate_impl_ret_stmt(PSI_Data *data, impl *impl) {
 	return 1;
 }
 
+static inline int validate_let_func(PSI_Data *data, let_func *func, impl *impl) {
+	int check = 0;
+	size_t j;
+
+	if (impl->func->args) {
+		for (j = 0; j < impl->func->args->count; ++j) {
+			impl_arg *iarg = impl->func->args->args[j];
+
+			if (!strcmp(func->var->name, iarg->var->name)) {
+				func->arg = iarg;
+				check = 1;
+				break;
+			}
+		}
+	}
+	if (!check) {
+		data->error(data, func->var->token, PSI_WARNING, "Unknown value '$%s' of `let` statement"
+				" for cast '%s' of implementation '%s'",
+				func->var->name, func->name, impl->func->name);
+		return 0;
+	}
+	return 1;
+}
+
+static inline int validate_let_callback(PSI_Data *data, decl_var *let_var, let_callback *cb, impl *impl) {
+	decl_type *cb_type;
+	decl *cb_func;
+	size_t i;
+
+	if (!validate_let_func(data, cb->func, impl)) {
+		return 0;
+	}
+
+	cb_type = real_decl_type(let_var->arg->type);
+	if (cb_type->type != PSI_T_FUNCTION) {
+		data->error(data, let_var->token, PSI_WARNING, "Not a function: %s", let_var->name);
+		return 0;
+	}
+	cb_func = cb_type->func;
+	for (i = 0; i < cb->args->count; ++i) {
+		if (!validate_set_value(data, cb->args->vals[i], cb_func->args->count, cb_func->args->args, 0)) {
+			return 0;
+		}
+	}
+}
+
 static inline int validate_impl_let_stmts(PSI_Data *data, impl *impl) {
 	size_t i, j;
 	/* we can have multiple let stmts */
@@ -934,22 +979,13 @@ static inline int validate_impl_let_stmts(PSI_Data *data, impl *impl) {
 				return 0;
 			}
 			break;
-		case PSI_LET_FUNC:
-			if (impl->func->args) {
-				for (j = 0; j < impl->func->args->count; ++j) {
-					impl_arg *iarg = impl->func->args->args[j];
-
-					if (!strcmp(let->val->data.func->var->name, iarg->var->name)) {
-						let->val->data.func->arg = iarg;
-						check = 1;
-						break;
-					}
-				}
+		case PSI_LET_CALLBACK:
+			if (!validate_let_callback(data, let->var, let->val->data.callback, impl)) {
+				return 0;
 			}
-			if (!check) {
-				data->error(data, let->var->token, PSI_WARNING, "Unknown value '$%s' of `let` statement"
-						" for variable '%s' of implementation '%s'",
-						let->val->data.func->var->name, let->var->name, impl->func->name);
+			break;
+		case PSI_LET_FUNC:
+			if (!validate_let_func(data, let->val->data.func, impl)) {
 				return 0;
 			}
 			break;

@@ -16,6 +16,14 @@ static inline size_t psi_offset_padding(size_t diff, size_t alignment) {
 	return diff;
 }
 
+static inline void psi_do_set(zval *return_value, set_value *set)
+{
+	decl_arg *set_arg = set->vars->vars[0]->arg;
+
+	zval_dtor(return_value);
+	set->func->handler(return_value, set, set_arg->let ? set_arg->let->ptr : set_arg->ptr);
+}
+
 int psi_internal_type(impl_type *type);
 zend_internal_arg_info *psi_internal_arginfo(impl *impl);
 size_t psi_num_min_args(impl *impl);

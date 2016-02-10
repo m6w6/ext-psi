@@ -248,10 +248,10 @@ void psi_to_array(zval *return_value, set_value *set, impl_val *r_val)
 	if (t == PSI_T_STRUCT) {
 		// decl_struct *s = real_decl_type(var->arg->type)->strct;
 
-		if (set->count) {
+		if (set->inner && set->inner->count) {
 			/* explicit member casts */
-			for (i = 0; i < set->count; ++i) {
-				set_value *sub_set = set->inner[i];
+			for (i = 0; i < set->inner->count; ++i) {
+				set_value *sub_set = set->inner->vals[i];
 				decl_var *sub_var = sub_set->vars->vars[0];
 
 				sub_set->outer.val = ret_val;
@@ -301,7 +301,7 @@ void psi_to_array(zval *return_value, set_value *set, impl_val *r_val)
 		char *ptr;
 		zend_long i, n = psi_long_num_exp(set->num, set->outer.val);
 		size_t size = psi_t_size(var->arg->var->pointer_level ? PSI_T_POINTER : t);
-		set_value *sub_set = set->inner[0];
+		set_value *sub_set = set->inner->vals[0];
 
 		sub_set->outer.val = set->outer.val;
 		for (i = 0; i < n; ++i) {
@@ -314,7 +314,7 @@ void psi_to_array(zval *return_value, set_value *set, impl_val *r_val)
 		zval ele;
 		char *ptr = ret_val->ptr;
 		size_t size = psi_t_size(var->arg->var->pointer_level ? PSI_T_POINTER : t);
-		set_value *sub_set = set->inner[0];
+		set_value *sub_set = set->inner->vals[0];
 
 		sub_set->outer.val = set->outer.val;
 		while (*(void **) ptr) {

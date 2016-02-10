@@ -81,17 +81,24 @@ static void psi_ffi_callback(ffi_cif *_sig, void *_result, void **_args, void *_
 	unsigned argc = _sig->nargs;
 	void **argv = _args;
 	ffi_arg *res = _result;
-	decl *decl = _data;
-	size_t i;
+	let_stmt *let;
+	decl_arg *darg = let->var->arg;
+	decl *decl_cb = darg->type->func;
+	let_callback *cb = let->val->data.callback;
+	impl_arg *iarg = cb->func->arg;
+	size_t i, argc = cb->args->count;
+	zval *argv = calloc(argc, sizeof(*argv));
 
 	// prepare args for the userland call
-	for (i = 0; i < decl->args->count; ++i) {
+	for (i = 0; i < decl_cb->args->count; ++i) {
 
 	}
+	for (i = 0; i < cb->args->count; ++i) {
+		psi_do_set(&argv[i], cb->args->vals[i]);
+	}
+	zend_fcall_info_argp(iarg->val.zend.cb->fci, argc, argv);
 	// marshal return value of the userland call
-	switch (decl->func->type->type) {
-
-	}
+	darg->ptr = psi_let_val(cb->func->type, iarg, darg->ptr, real_decl_type(darg->type)->strct, &darg->mem);
 }
 
 static inline ffi_type *psi_ffi_decl_arg_type(decl_arg *darg);
@@ -286,8 +293,9 @@ static inline ffi_type *psi_ffi_decl_type(decl_type *type) {
 			PSI_LibffiCall *call = PSI_LibffiCallAlloc(&PSI_G(context), real->func);
 			ffi_status rc;
 
-			rc = psi_ffi_prep_closure(&real->func->call.closure.data, &real->func->call.sym,
-					&call->signature, psi_ffi_handler, NULL);
+			rc = psi_ffi_prep_closure(
+					(void *) &real->func->call.closure.data,
+					&real->func->call.sym, &call->signature, psi_ffi_handler, NULL);
 			if (FFI_OK == rc) {
 				real->func->call.info = call;
 				real->func->call.closure.dtor = psi_ffi_closure_free;
