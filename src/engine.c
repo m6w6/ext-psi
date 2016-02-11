@@ -7,6 +7,7 @@
 
 #include "zend_exceptions.h"
 
+#include "parser.h"
 #include "engine.h"
 #include "calc.h"
 #include "marshal.h"
@@ -261,60 +262,18 @@ static inline impl_val *psi_let_val(token_t let_func, impl_arg *iarg, impl_val *
 {
 	switch (let_func) {
 	case PSI_T_BOOLVAL:
-		if (iarg->type->type == PSI_T_BOOL) {
-			arg_val->cval = iarg->val.zend.bval;
-		} else {
-			arg_val->cval = zend_is_true(iarg->_zv);
-		}
 		break;
 	case PSI_T_INTVAL:
-		if (iarg->type->type == PSI_T_INT) {
-			arg_val->lval = iarg->val.zend.lval;
-		} else {
-			arg_val->lval = zval_get_long(iarg->_zv);
-		}
 		break;
 	case PSI_T_FLOATVAL:
-		if (iarg->type->type == PSI_T_FLOAT || iarg->type->type == PSI_T_DOUBLE) {
-			arg_val->dval = iarg->val.dval;
-		} else {
-			arg_val->dval = zval_get_double(iarg->_zv);
-		}
 		break;
 	case PSI_T_PATHVAL:
 	case PSI_T_STRVAL:
-		if (iarg->type->type == PSI_T_STRING) {
-			if (iarg->val.zend.str) {
-				arg_val->ptr = estrndup(iarg->val.zend.str->val, iarg->val.zend.str->len);
-				*to_free = arg_val->ptr;
-			} else {
-				arg_val->ptr = "";
-			}
-		} else {
-			zend_string *zs = zval_get_string(iarg->_zv);
-			arg_val->ptr = estrdup(zs->val);
-			*to_free = arg_val->ptr;
-			zend_string_release(zs);
-		}
 		if (PSI_T_PATHVAL == let_func) {
-			if (SUCCESS != php_check_open_basedir(arg_val->ptr)) {
-				efree(arg_val->ptr);
-				return NULL;
-			}
+
 		}
 		break;
 	case PSI_T_STRLEN:
-		if (iarg->type->type == PSI_T_STRING) {
-			if (iarg->val.zend.str) {
-				arg_val->lval = iarg->val.zend.str->len;
-			} else {
-				arg_val->lval = 0;
-			}
-		} else {
-			zend_string *zs = zval_get_string(iarg->_zv);
-			arg_val->lval = zs->len;
-			zend_string_release(zs);
-		}
 		break;
 	case PSI_T_ARRVAL:
 		if (iarg->type->type == PSI_T_ARRAY) {
@@ -342,6 +301,10 @@ static inline impl_val *psi_let_val(token_t let_func, impl_arg *iarg, impl_val *
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}
 	return arg_val;
+}
+
+static inline impl_val *psi_let_func(let_func *func, decl_arg *darg) {
+	return darg->ptr = func->handler(darg->ptr, darg->type, func->arg, &darg->mem);
 }
 
 static inline void *psi_do_let(let_stmt *let)
@@ -378,6 +341,10 @@ static inline void *psi_do_let(let_stmt *let)
 		arg_val->zend.lval = psi_long_num_exp(let->val->data.num, NULL);
 		break;
 	case PSI_LET_FUNC:
+		if (!psi_let_func(let->val->data.func, darg)) {
+			return NULL;
+		}
+
 		iarg = let->val->data.func->arg;
 
 		if (!(darg->ptr = psi_let_val(let->val->data.func->type, iarg, darg->ptr, real_decl_type(darg->type)->strct, &darg->mem))) {

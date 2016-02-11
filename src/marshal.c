@@ -4,7 +4,7 @@
 
 #include "php.h"
 #include "php_psi.h"
-
+#include "parser.h"
 #include "marshal.h"
 #include "calc.h"
 
@@ -19,6 +19,48 @@ void psi_to_bool(zval *return_value, set_value *set, impl_val *ret_val)
 	convert_to_boolean(return_value);
 }
 
+static inline impl_val *psi_val_boolval(impl_val *tmp, token_t real_type, zend_bool boolval) {
+	switch (real_type) {
+	case PSI_T_INT8:		tmp->i8 = boolval;		break;
+	case PSI_T_UINT8:		tmp->u8 = boolval;		break;
+	case PSI_T_INT16:		tmp->i16 = boolval;		break;
+	case PSI_T_UINT16:		tmp->u16 = boolval;		break;
+	case PSI_T_INT32:		tmp->i32 = boolval;		break;
+	case PSI_T_UINT32:		tmp->u32 = boolval;		break;
+	case PSI_T_INT64:		tmp->i64 = boolval;		break;
+	case PSI_T_UINT64:		tmp->u64 = boolval;		break;
+	case PSI_T_FLOAT:		tmp->fval = boolval;	break;
+	case PSI_T_DOUBLE:		tmp->dval = boolval;	break;
+#ifdef HAVE_LONG_DOUBLE
+	case PSI_T_LONG_DOUBLE:	tmp->ldval = boolval;	break;
+#endif
+	EMPTY_SWITCH_DEFAULT_CASE();
+	}
+	return tmp;
+}
+
+impl_val *psi_let_boolval(impl_val *tmp, decl_type *type, impl_arg *iarg, void **to_free)
+{
+	zend_bool boolval;
+	token_t real_type = type ? real_decl_type(type)->type : PSI_T_UINT8;
+
+	if (iarg->type->type == PSI_T_BOOL) {
+		boolval = iarg->val.zend.bval;
+	} else {
+		boolval = zend_is_true(iarg->_zv);
+	}
+
+	return psi_val_boolval(tmp, real_type, boolval);
+}
+
+# define RETVAL_LONG_U64(V) \
+		if (V > ZEND_LONG_MAX) { \
+			char d[24] = {0}; \
+			RETVAL_STRING(zend_print_ulong_to_buf(&d[22], V)); \
+		} else { \
+			RETVAL_LONG(V); \
+		}
+
 void psi_to_int(zval *return_value, set_value *set, impl_val *ret_val)
 {
 	decl_var *var = set->vars->vars[0];
@@ -26,56 +68,59 @@ void psi_to_int(zval *return_value, set_value *set, impl_val *ret_val)
 	impl_val *v = deref_impl_val(ret_val, var);
 
 	switch (t) {
-	case PSI_T_FLOAT:
-		RETVAL_DOUBLE((double) v->fval);
-		convert_to_long(return_value);
-		break;
-	case PSI_T_DOUBLE:
-		RETVAL_DOUBLE(v->dval);
-		convert_to_long(return_value);
-		break;
-	case PSI_T_INT8:
-		RETVAL_LONG(v->i8);
-		break;
-	case PSI_T_UINT8:
-		RETVAL_LONG(v->u8);
-		break;
-	case PSI_T_INT16:
-		RETVAL_LONG(v->i16);
-		break;
-	case PSI_T_UINT16:
-		RETVAL_LONG(v->u16);
-		break;
-	case PSI_T_INT32:
-		RETVAL_LONG(v->i32);
-		break;
-	case PSI_T_UINT32:
-#if UINT32_MAX >= ZEND_LONG_MAX
-		if (v->u32 > ZEND_LONG_MAX) {
-			char d[12] = {0};
-
-			RETVAL_STRING(zend_print_ulong_to_buf(&d[10], v->u32));
-		} else {
+	case PSI_T_INT8:		RETVAL_LONG(v->i8);					break;
+	case PSI_T_UINT8:		RETVAL_LONG(v->u8);					break;
+	case PSI_T_INT16:		RETVAL_LONG(v->i16);				break;
+	case PSI_T_UINT16:		RETVAL_LONG(v->u16);				break;
+	case PSI_T_INT32:		RETVAL_LONG(v->i32);				break;
+	case PSI_T_UINT32:		RETVAL_LONG(v->u32);				break;
+	case PSI_T_INT64:		RETVAL_LONG(v->i64);				break;
+	case PSI_T_UINT64:		RETVAL_LONG_U64(v->u64);			break;
+	case PSI_T_FLOAT:		RETVAL_DOUBLE((double) v->fval);	break;
+	case PSI_T_DOUBLE:		RETVAL_DOUBLE(v->dval);				break;
+#ifdef HAVE_LONG_DOUBLE
+	case PSI_T_LONG_DOUBLE:	RETVAL_DOUBLE((double) v->ldval);	break;
 #endif
-			RETVAL_LONG(v->u32);
-#if UINT32_MAX >= ZEND_LONG_MAX
-		}
-#endif
-		break;
-	case PSI_T_INT64:
-		RETVAL_LONG(v->i64);
-		break;
-	case PSI_T_UINT64:
-		if (v->u64 > ZEND_LONG_MAX) {
-			char d[24] = {0};
-
-			RETVAL_STRING(zend_print_ulong_to_buf(&d[22], v->u64));
-		} else {
-			RETVAL_LONG(v->u64);
-		}
-		break;
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}
+
+	convert_to_long(return_value);
+}
+
+static inline impl_val *psi_val_intval(impl_val *tmp, token_t real_type, zend_long intval) {
+	switch (real_decl_type(type)->type) {
+	case PSI_T_INT8:		tmp->i8 = intval;		break;
+	case PSI_T_UINT8:		tmp->u8 = intval;		break;
+	case PSI_T_INT16:		tmp->i16 = intval;		break;
+	case PSI_T_UINT16:		tmp->u16 = intval;		break;
+	case PSI_T_INT32:		tmp->i32 = intval;		break;
+	case PSI_T_UINT32:		tmp->u32 = intval;		break;
+	case PSI_T_INT:			tmp->ival = intval;		break;
+	case PSI_T_INT64:		tmp->i64 = intval;		break;
+	case PSI_T_UINT64:		tmp->u64 = intval;		break;
+	case PSI_T_FLOAT:		tmp->fval = intval;		break;
+	case PSI_T_DOUBLE:		tmp->dval = intval;		break;
+#ifdef HAVE_LONG_DOUBLE
+	case PSI_T_LONG_DOUBLE:	tmp->ldval = intval;	break;
+#endif
+	EMPTY_SWITCH_DEFAULT_CASE();
+	}
+
+	return tmp;
+}
+
+impl_val *psi_let_intval(impl_val *tmp, decl_type *type, impl_arg *iarg, void **to_free)
+{
+	zend_long intval;
+	token_t real_type = type ? real_decl_type(type)->type : PSI_T_INT;
+
+	if (iarg->type->type == PSI_T_INT) {
+		intval = iarg->val.zend.lval;
+	} else {
+		intval = zval_get_long(iarg->_zv);
+	}
+
+	return psi_val_intval(tmp, real_type, intval);
 }
 
 void psi_to_double(zval *return_value, set_value *set, impl_val *ret_val)
@@ -85,43 +130,56 @@ void psi_to_double(zval *return_value, set_value *set, impl_val *ret_val)
 	impl_val *v = deref_impl_val(ret_val, var);
 
 	switch (t) {
-	case PSI_T_FLOAT:
-		RETVAL_DOUBLE((double) v->fval);
-		break;
-	case PSI_T_DOUBLE:
-		RETVAL_DOUBLE(v->dval);
-		break;
+	case PSI_T_FLOAT:		RETVAL_DOUBLE((double) v->fval);	break;
+	case PSI_T_DOUBLE:		RETVAL_DOUBLE(v->dval);				break;
 #ifdef HAVE_LONG_DOUBLE
-	case PSI_T_LONG_DOUBLE:
-		RETVAL_DOUBLE((double) v->ldval);
-		break;
+	case PSI_T_LONG_DOUBLE:	RETVAL_DOUBLE((double) v->ldval);	break;
 #endif
-	case PSI_T_INT8:
-		RETVAL_DOUBLE((double) v->i8);
-		break;
-	case PSI_T_UINT8:
-		RETVAL_DOUBLE((double) v->u8);
-		break;
-	case PSI_T_INT16:
-		RETVAL_DOUBLE((double) v->i16);
-		break;
-	case PSI_T_UINT16:
-		RETVAL_DOUBLE((double) v->u16);
-		break;
-	case PSI_T_INT32:
-		RETVAL_DOUBLE((double) v->i32);
-		break;
-	case PSI_T_UINT32:
-		RETVAL_DOUBLE((double) v->u32);
-		break;
-	case PSI_T_INT64:
-		RETVAL_DOUBLE((double) v->i64);
-		break;
-	case PSI_T_UINT64:
-		RETVAL_DOUBLE((double) v->u64);
-		break;
+	case PSI_T_INT8:		RETVAL_DOUBLE((double) v->i8);		break;
+	case PSI_T_UINT8:		RETVAL_DOUBLE((double) v->u8);		break;
+	case PSI_T_INT16:		RETVAL_DOUBLE((double) v->i16);		break;
+	case PSI_T_UINT16:		RETVAL_DOUBLE((double) v->u16);		break;
+	case PSI_T_INT32:		RETVAL_DOUBLE((double) v->i32);		break;
+	case PSI_T_UINT32:		RETVAL_DOUBLE((double) v->u32);		break;
+	case PSI_T_INT64:		RETVAL_DOUBLE((double) v->i64);		break;
+	case PSI_T_UINT64:		RETVAL_DOUBLE((double) v->u64);		break;
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}
+}
+
+static inline impl_val *psi_val_floatval(impl_val *tmp, token_t real_type, double floatval) {
+	switch (real_decl_type(type)->type) {
+	case PSI_T_INT8:		tmp->i8 = floatval;		break;
+	case PSI_T_UINT8:		tmp->u8 = floatval;		break;
+	case PSI_T_INT16:		tmp->i16 = floatval;	break;
+	case PSI_T_UINT16:		tmp->u16 = floatval;	break;
+	case PSI_T_INT32:		tmp->i32 = floatval;	break;
+	case PSI_T_UINT32:		tmp->u32 = floatval;	break;
+	case PSI_T_INT64:		tmp->i64 = floatval;	break;
+	case PSI_T_UINT64:		tmp->u64 = floatval;	break;
+	case PSI_T_FLOAT:		tmp->fval = floatval;	break;
+	case PSI_T_DOUBLE:		tmp->dval = floatval;	break;
+#ifdef HAVE_LONG_DOUBLE
+	case PSI_T_LONG_DOUBLE:	tmp->ldval = floatval;	break;
+#endif
+	EMPTY_SWITCH_DEFAULT_CASE();
+	}
+
+	return tmp;
+}
+
+impl_val *psi_let_floatval(impl_val *tmp, decl_type *type, impl_arg *iarg, void **to_free)
+{
+	double floatval;
+	token_t real_type = type ? real_decl_type(type)->real : PSI_T_DOUBLE;
+
+	if (iarg->type->type == PSI_T_FLOAT || iarg->type->type == PSI_T_DOUBLE) {
+		floatval = iarg->val.dval;
+	} else {
+		floatval = zval_get_double(iarg->_zv);
+	}
+
+	return psi_val_floatval(tmp, real_type, floatval);
 }
 
 void psi_to_string(zval *return_value, set_value *set, impl_val *ret_val)
@@ -131,16 +189,10 @@ void psi_to_string(zval *return_value, set_value *set, impl_val *ret_val)
 	token_t t = real_decl_type(var->arg->type)->type;
 
 	switch (t) {
-	case PSI_T_FLOAT:
-		RETVAL_DOUBLE((double) deref_impl_val(ret_val, var)->fval);
-		break;
-	case PSI_T_DOUBLE:
-		RETVAL_DOUBLE(deref_impl_val(ret_val, var)->dval);
-		break;
+	case PSI_T_FLOAT:		RETVAL_DOUBLE((double) deref_impl_val(ret_val, var)->fval);		break;
+	case PSI_T_DOUBLE:		RETVAL_DOUBLE(deref_impl_val(ret_val, var)->dval);				break;
 #ifdef HAVE_LONG_DOUBLE
-	case PSI_T_LONG_DOUBLE:
-		RETVAL_DOUBLE((double) deref_impl_val(ret_val, var)->ldval);
-		break;
+	case PSI_T_LONG_DOUBLE:	RETVAL_DOUBLE((double) deref_impl_val(ret_val, var)->ldval);	break;
 #endif
 	default:
 		if (!var->arg->var->pointer_level) {
@@ -165,15 +217,114 @@ void psi_to_string(zval *return_value, set_value *set, impl_val *ret_val)
 		}
 		return;
 	}
+
 	convert_to_string(return_value);
 }
 
+impl_val *psi_let_strval(impl_val *tmp, decl_type *type, impl_arg *iarg, void **to_free)
+{
+	if (iarg->type->type == PSI_T_STRING) {
+		if (iarg->val.zend.str) {
+			tmp->ptr = estrndup(iarg->val.zend.str->val, iarg->val.zend.str->len);
+			*to_free = tmp->ptr;
+		} else {
+			tmp->ptr = "";
+		}
+	} else {
+		zend_string *zs = zval_get_string(iarg->_zv);
+		tmp->ptr = estrdup(zs->val);
+		*to_free = tmp->ptr;
+		zend_string_release(zs);
+	}
+
+	return tmp;
+}
+
+impl_val *psi_let_pathval(impl_val *tmp, decl_type *type, impl_arg *iarg, void **to_free)
+{
+	tmp = psi_let_strval(tmp, type, iarg, to_free);
+	if (SUCCESS != php_check_open_basedir(tmp->ptr)) {
+		efree(tmp->ptr);
+		return *to_free = NULL;
+	}
+	return tmp;
+}
+
+impl_val *psi_let_strlen(impl_val *tmp, decl_type *type, impl_arg *iarg, void **to_free)
+{
+	if (iarg->type->type == PSI_T_STRING) {
+		if (iarg->val.zend.str) {
+			tmp->lval = iarg->val.zend.str->len;
+		} else {
+			tmp->lval = 0;
+		}
+	} else {
+		zend_string *zs = zval_get_string(iarg->_zv);
+		tmp->lval = zs->len;
+		zend_string_release(zs);
+	}
+
+	return tmp;
+}
 
 static impl_val *iterate(impl_val *val, size_t size, unsigned i, impl_val *tmp)
 {
 	memset(tmp, 0, sizeof(*tmp));
 	memcpy(tmp, ((void*) val) + size * i, size);
 	return tmp;
+}
+
+void psi_from_zval_ex(impl_val **ptr, decl_arg *spec, token_t cast, zval *zv, void **tmp)
+{
+	decl_type *real = real_decl_type(spec->type);
+	impl_val *val = *ptr;
+
+	switch (real->type) {
+	default:
+		ZEND_ASSERT(0);
+		/* no break */
+	case PSI_T_INT8:
+		val->i8 = zval_get_long(zv);
+		break;
+	case PSI_T_UINT8:
+		val->u8 = zval_get_long(zv);
+		break;
+	case PSI_T_INT16:
+		val->i16 = zval_get_long(zv);
+		break;
+	case PSI_T_UINT16:
+		val->u16 = zval_get_long(zv);
+		break;
+	case PSI_T_INT32:
+		val->i32 = zval_get_long(zv);
+		break;
+	case PSI_T_UINT32:
+		val->u32 = zval_get_long(zv);
+		break;
+	case PSI_T_INT64:
+		val->i64 = zval_get_long(zv);
+		break;
+	case PSI_T_UINT64:
+		val->u64 = zval_get_long(zv);
+		break;
+	case PSI_T_FLOAT:
+		val->fval = zval_get_double(zv);
+		break;
+	case PSI_T_DOUBLE:
+		val->dval = zval_get_double(zv);
+		break;
+#ifdef HAVE_LONG_DOUBLE
+	case PSI_T_LONG_DOUBLE:
+		val->ldval = zval_get_double(zv);
+		break;
+#endif
+	case PSI_T_ENUM:
+		val->ival = zval_get_long(zv);
+		break;
+	case PSI_T_STRUCT:
+		*tmp = *ptr = psi_array_to_struct(real->strct, HASH_OF(zv));
+		break;
+	}
 }
 
 void psi_from_zval(impl_val *mem, decl_arg *spec, zval *zv, void **tmp)
@@ -325,6 +476,15 @@ void psi_to_array(zval *return_value, set_value *set, impl_val *r_val)
 	}
 }
 
+impl_val *psi_arrval(impl_val *tmp, decl_type *type, void *val, void **to_free)
+{
+	HashTable *arr = (HashTable *) val;
+	decl_type *real = type ? real_decl_type(type) : NULL;
+
+	ZEND_ASSERT(real && real->type == PSI_T_STRUCT);
+	return *to_free = psi_array_to_struct(real->strct, arr);
+}
+
 void psi_to_object(zval *return_value, set_value *set, impl_val *r_val)
 {
 	decl_var *var = set->vars->vars[0];
@@ -338,4 +498,19 @@ void psi_to_object(zval *return_value, set_value *set, impl_val *r_val)
 	} else {
 		RETVAL_NULL();
 	}
+}
+
+impl_val *psi_objval(impl_val *tmp, decl_type *type, void *val, void **to_free)
+{
+	zval *zv = (zval *) val;
+	psi_object *obj;
+
+	if (!instanceof_function(Z_OBJCE_P(zv), psi_object_get_class_entry())) {
+		return NULL;
+	}
+
+	obj = PSI_OBJ(zv, NULL);
+	tmp->ptr = obj->data;
+
+	return tmp;
 }

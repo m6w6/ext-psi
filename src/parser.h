@@ -925,6 +925,7 @@ typedef struct let_func {
 	char *name;
 	impl_var *var;
 	impl_arg *arg;
+	impl_val *(*handler)(impl_val *tmp, decl_type *type, void *val, void **to_free);
 } let_func;
 
 static inline let_func *init_let_func(token_t type, const char *name, impl_var *var) {

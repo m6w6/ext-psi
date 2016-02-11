@@ -87,7 +87,7 @@ static void psi_ffi_callback(ffi_cif *_sig, void *_result, void **_args, void *_
 	let_callback *cb = let->val->data.callback;
 	impl_arg *iarg = cb->func->arg;
 	size_t i, argc = cb->args->count;
-	zval *argv = calloc(argc, sizeof(*argv));
+	zval return_value, *argv = calloc(argc, sizeof(*argv));
 
 	// prepare args for the userland call
 	for (i = 0; i < decl_cb->args->count; ++i) {
@@ -97,7 +97,29 @@ static void psi_ffi_callback(ffi_cif *_sig, void *_result, void **_args, void *_
 		psi_do_set(&argv[i], cb->args->vals[i]);
 	}
 	zend_fcall_info_argp(iarg->val.zend.cb->fci, argc, argv);
+	zend_fcall_info_call(&iarg->val.zend.cb->fci, &iarg->val.zend.cb->fcc,
+			&return_value, NULL);
 	// marshal return value of the userland call
+	switch (cb->func->type) {
+	case PSI_T_BOOLVAL:
+		break;
+	case PSI_T_INTVAL:
+		break;
+	case PSI_T_FLOATVAL:
+		break;
+	case PSI_T_PATHVAL:
+	case PSI_T_STRVAL:
+		break;
+	case PSI_T_STRLEN:
+		break;
+	case PSI_T_ARRVAL:
+		break;
+	case PSI_T_OBJVAL:
+		break;
+	case PSI_T_CALLBACK:
+		break;
+	EMPTY_SWITCH_DEFAULT_CASE();
+	}
 	darg->ptr = psi_let_val(cb->func->type, iarg, darg->ptr, real_decl_type(darg->type)->strct, &darg->mem);
 }
 
