@@ -201,7 +201,7 @@ static inline ZEND_RESULT_CODE psi_parse_args(zend_execute_data *execute_data, i
 			Z_PARAM_FUNC_EX(fci, fcc, 1, 0);
 
 			if (fci.size) {
-				iarg->val.zend.cb = calloc(1, sizeof(zend_fcall));
+				iarg->val.zend.cb = ecalloc(1, sizeof(zend_fcall));
 				iarg->val.zend.cb->fci = fci;
 				iarg->val.zend.cb->fcc = fcc;
 			}
@@ -370,6 +370,14 @@ static inline void psi_do_clean(impl *impl)
 		case PSI_T_STRING:
 			if (iarg->val.zend.str) {
 				zend_string_release(iarg->val.zend.str);
+			}
+			break;
+		case PSI_T_CALLABLE:
+			if (iarg->val.zend.cb) {
+				if (iarg->val.zend.cb->fci.size) {
+					zend_fcall_info_args_clear(&iarg->val.zend.cb->fci, 1);
+				}
+				efree(iarg->val.zend.cb);
 			}
 			break;
 		}

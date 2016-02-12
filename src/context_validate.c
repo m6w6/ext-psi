@@ -531,9 +531,6 @@ static inline int validate_decl_func(PSI_Data *data, void *dl, decl *decl, decl_
 		return 0;
 	}
 
-	if (!validate_decl_arg(data, func)) {
-		return 0;
-	}
 	for (redir = &psi_func_redirs[0]; redir->name; ++redir) {
 		if (!strcmp(func->var->name, redir->name)) {
 			decl->call.sym = redir->func;
@@ -552,14 +549,13 @@ static inline int validate_decl_func(PSI_Data *data, void *dl, decl *decl, decl_
 	}
 	return 1;
 }
-
-static inline int validate_decl(PSI_Data *data, void *dl, decl *decl) {
+static inline int validate_decl_nodl(PSI_Data *data, decl *decl) {
 	if (!validate_decl_abi(data, decl->abi)) {
 		data->error(data, decl->abi->token, PSI_WARNING,
 				"Invalid calling convention: '%s'", decl->abi->token->text);
 		return 0;
 	}
-	if (!validate_decl_func(data, dl, decl, decl->func)) {
+	if (!validate_decl_arg(data, decl->func)) {
 		return 0;
 	}
 	if (decl->args) {
@@ -570,6 +566,15 @@ static inline int validate_decl(PSI_Data *data, void *dl, decl *decl) {
 				return 0;
 			}
 		}
+	}
+	return 1;
+}
+static inline int validate_decl(PSI_Data *data, void *dl, decl *decl) {
+	if (!validate_decl_nodl(data, decl)) {
+		return 0;
+	}
+	if (!validate_decl_func(data, dl, decl, decl->func)) {
+		return 0;
 	}
 	return 1;
 }
@@ -963,7 +968,7 @@ static inline int validate_let_callback(PSI_Data *data, decl_var *cb_var, let_ca
 		}
 	}
 
-	if (!validate_decl(data, NULL, cb_func)) {
+	if (!validate_decl_nodl(data, cb_func)) {
 		return 0;
 	}
 

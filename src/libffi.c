@@ -116,6 +116,12 @@ static void psi_ffi_callback(ffi_cif *_sig, void *_result, void **_args, void *_
 	if (result != _result) {
 		*(void **)_result = result;
 	}
+
+	zend_fcall_info_args_clear(&iarg->val.zend.cb->fci, 0);
+	for (i = 0; i < cb->args->count; ++i) {
+		zval_ptr_dtor(&zargv[i]);
+	}
+	free(zargv);
 }
 
 static inline ffi_type *psi_ffi_decl_arg_type(decl_arg *darg);
@@ -371,6 +377,26 @@ static void psi_ffi_dtor(PSI_Context *C)
 
 			if (decl->call.info) {
 				PSI_LibffiCallFree(decl->call.info);
+			}
+		}
+
+	}
+	if (C->impls) {
+		size_t i, j;
+
+		for (i = 0; i < C->impls->count; ++i) {
+			impl *impl = C->impls->list[i];
+
+			for (j = 0; j < impl->stmts->let.count; ++j) {
+				let_stmt *let = impl->stmts->let.list[j];
+
+				if (let->val && let->val->kind == PSI_LET_CALLBACK) {
+					let_callback *cb = let->val->data.callback;
+
+					if (cb->decl && cb->decl->call.info) {
+						PSI_LibffiCallFree(cb->decl->call.info);
+					}
+				}
 			}
 		}
 	}
