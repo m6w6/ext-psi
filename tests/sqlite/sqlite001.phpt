@@ -52,11 +52,6 @@ if ($rc) {
 
 sqlite3\close($db);
 
-$rc = sqlite3\exec($db, "SELECT * FROM test", "callback", new stdClass, $error);
-if ($rc) {
-	printf("%s: '%s'\n", sqlite3\errstr($rc), $error);
-}
-
 ?>
 ===DONE===
 --EXPECTF--
@@ -78,7 +73,6 @@ string(%d) "3.%d.%s"
 2: data = three
 
 SQL logic error or missing database: 'no tables specified'
-library routine called out of sequence: ''
 ===DONE===
 --CLEAN--
 <?php

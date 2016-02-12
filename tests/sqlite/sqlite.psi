@@ -67,4 +67,5 @@ function sqlite3\exec(object $db, string $sql, callable $cb, mixed $cd, string &
 	let errmsg = &NULL;
 	return to_int(sqlite3_exec);
 	set $error = to_string(*errmsg);
+	free sqlite3_free(*errmsg);
 }
