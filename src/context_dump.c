@@ -127,10 +127,10 @@ static inline void dump_impl_set_value(int fd, set_value *set, unsigned level, i
 		dprintf(fd, ", ");
 		dump_num_exp(fd, set->num);
 	}
-	if (set->inner && set->func->type != PSI_T_ELLIPSIS) {
+	if (set->inner && set->inner->vals && set->func->type != PSI_T_ELLIPSIS) {
 		dprintf(fd, ",\n");
-		for (i = 0; i < set->count; ++i) {
-			dump_impl_set_value(fd, set->inner[i], level+1, i == (set->count - 1));
+		for (i = 0; i < set->inner->count; ++i) {
+			dump_impl_set_value(fd, set->inner->vals[i], level+1, i == (set->inner->count - 1));
 		}
 		/* only if inner stmts, i.e. with new lines, were dumped */
 		dump_level(fd, level);

@@ -1,0 +1,70 @@
+lib "sqlite3";
+
+extern const char *sqlite3_libversion(void);
+function sqlite3\version() : string {
+	return to_string(sqlite3_libversion);
+}
+
+extern const char *sqlite3_errstr(int errno);
+function sqlite3\errstr(int $errno) : string {
+	let errno = intval($errno);
+	return to_string(sqlite3_errstr);
+}
+
+/* obviously fake, we ever always need a pointer to it */
+struct sqlite3::(8, 8);
+
+typedef struct sqlite3 sqlite3;
+
+typedef int64_t sqlite_int64;
+typedef uint64_t sqlite_uint64;
+
+typedef sqlite_int64 sqlite3_int64;
+typedef sqlite_uint64 sqlite3_uint64;
+
+extern void sqlite3_free(void *ptr);
+function sqlite3\free(object $object) : void {
+	let ptr = objval($object);
+	return void(sqlite3_free);
+}
+
+extern int sqlite3_close(sqlite3 *db);
+function sqlite3\close(object $db) : int {
+	let db = objval($db);
+	return to_int(sqlite3_close);
+}
+
+extern int sqlite3_open(const char *filename, sqlite3 **db_ptr);
+function sqlite3\open(string $uri, object &$db) : int {
+	let filename = pathval($uri);
+	let db_ptr = &NULL;
+	return to_int(sqlite3_open);
+	set $db = to_object(*db_ptr);
+}
+
+typedef int (*sqlite3_callback)(void *data, int argc, char** argv, char** cols);
+
+/*
+ * C calls into us, so we have to have a way to define how the callback 
+ * arguments have to be marshaled for the userland callback, i.e. from 
+ * native C types to ZE zvals /and/ how the userland return value has
+ * to be marshaled to a native type. All in all, the opposite of function impls.
+ */
+
+extern int sqlite3_exec(sqlite3 *db, const char *sql, sqlite3_callback callback, void *data, char **errmsg);
+function sqlite3\exec(object $db, string $sql, callable $cb, mixed $cd, string &$error = null) : int {
+	let db = objval($db);
+	let sql = strval($sql);
+	let callback = callback intval(
+		$cb(
+			zval(data), 
+			to_int(argc), 
+			to_array(argv, argc, to_string(argv)),
+			to_array(cols, argc, to_string(cols))
+		)
+	);
+	let data = zval($cd);
+	let errmsg = &NULL;
+	return to_int(sqlite3_exec);
+	set $error = to_string(*errmsg);
+}

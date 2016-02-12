@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include <Zend/zend_types.h>
+#include <Zend/zend_API.h> /* fcall */
 
 #include "parser_proc.h"
 
@@ -28,6 +29,11 @@ typedef struct PSI_Token {
 } PSI_Token;
 
 static inline PSI_Token *PSI_TokenCopy(PSI_Token *src);
+
+typedef struct zend_fcall {
+	zend_fcall_info fci;
+	zend_fcall_info_cache fcc;
+} zend_fcall;
 
 typedef union impl_val {
 	char cval;
@@ -51,9 +57,10 @@ typedef union impl_val {
 		zend_bool bval;
 		zend_long lval;
 		zend_string *str;
+		zend_fcall *cb;
 	} zend;
+	zval zval;
 	void *ptr;
-	uint8_t _dbg[sizeof(void *)];
 } impl_val;
 
 typedef struct decl_type {
@@ -150,7 +157,7 @@ typedef struct decl_arg {
 	decl_type *type;
 	decl_var *var;
 	decl_struct_layout *layout;
-	struct let_stmt *let;
+	struct let_stmt *let; /* FIXME: decls must not point to impls !!! */
 	impl_val val;
 	void *ptr;
 	void *mem;
@@ -470,6 +477,7 @@ static inline void free_impl_type(impl_type *type) {
 typedef struct impl_var {
 	PSI_Token *token;
 	char *name;
+	struct impl_arg *arg;
 	unsigned reference:1;
 } impl_var;
 
@@ -478,6 +486,17 @@ static inline impl_var *init_impl_var(const char *name, int is_reference) {
 	var->name = strdup(name);
 	var->reference = is_reference;
 	return var;
+}
+
+static inline impl_var *copy_impl_var(impl_var *var) {
+	impl_var *cpy = malloc(sizeof(*cpy));
+
+	memcpy(cpy, var, sizeof(*cpy));
+	cpy->name = strdup(cpy->name);
+	if (cpy->token) {
+		cpy->token = PSI_TokenCopy(cpy->token);
+	}
+	return cpy;
 }
 
 static inline void free_impl_var(impl_var *var) {
@@ -579,6 +598,7 @@ static inline impl_arg *init_impl_arg(impl_type *type, impl_var *var, impl_def_v
 	impl_arg *arg = calloc(1, sizeof(*arg));
 	arg->type = type;
 	arg->var = var;
+	arg->var->arg = arg;
 	arg->def = def;
 	return arg;
 }
@@ -877,11 +897,33 @@ static inline void free_let_calloc(let_calloc *alloc) {
 	free(alloc);
 }
 
+typedef struct let_callback {
+	struct let_func *func;
+	struct set_values *args;
+	decl *decl;
+} let_callback;
+
+static inline void free_let_func(struct let_func *func);
+static inline void free_set_values(struct set_values *vals);
+static inline let_callback *init_let_callback(struct let_func *func, struct set_values *args) {
+	let_callback *cb = calloc(1, sizeof(*cb));
+
+	cb->func = func;
+	cb->args = args;
+	return cb;
+}
+
+static inline void free_let_callback(let_callback *cb) {
+	free_let_func(cb->func);
+	free_set_values(cb->args);
+	free(cb);
+}
+
 typedef struct let_func {
 	token_t type;
 	char *name;
 	impl_var *var;
-	impl_arg *arg;
+	impl_val *(*handler)(impl_val *tmp, decl_type *type, impl_arg *iarg, void **to_free);
 } let_func;
 
 static inline let_func *init_let_func(token_t type, const char *name, impl_var *var) {
@@ -904,12 +946,14 @@ typedef struct let_val {
 		PSI_LET_NULL,
 		PSI_LET_NUMEXP,
 		PSI_LET_CALLOC,
+		PSI_LET_CALLBACK,
 		PSI_LET_FUNC,
 		PSI_LET_TMP,
 	} kind;
 	union {
 		num_exp *num;
 		let_calloc *alloc;
+		let_callback *callback;
 		let_func *func;
 		decl_var *var;
 	} data;
@@ -932,6 +976,9 @@ static inline let_val *init_let_val(enum let_val_kind kind, void *data) {
 	case PSI_LET_CALLOC:
 		let->data.alloc = data;
 		break;
+	case PSI_LET_CALLBACK:
+		let->data.callback = data;
+		break;
 	case PSI_LET_FUNC:
 		let->data.func = data;
 		break;
@@ -952,6 +999,9 @@ static inline void free_let_val(let_val *let) {
 		break;
 	case PSI_LET_CALLOC:
 		free_let_calloc(let->data.alloc);
+		break;
+	case PSI_LET_CALLBACK:
+		free_let_callback(let->data.callback);
 		break;
 	case PSI_LET_FUNC:
 		free_let_func(let->data.func);
@@ -1021,9 +1071,14 @@ typedef struct set_value {
 		struct set_value *set;
 		impl_val *val;
 	} outer;
-	struct set_value **inner;
-	size_t count;
+	struct set_values *inner;
 } set_value;
+
+typedef struct set_values {
+	set_value **vals;
+	size_t count;
+} set_values;
+
 
 static inline set_value *init_set_value(set_func *func, decl_vars *vars) {
 	set_value *val = calloc(1, sizeof(*val));
@@ -1031,9 +1086,10 @@ static inline set_value *init_set_value(set_func *func, decl_vars *vars) {
 	val->vars = vars;
 	return val;
 }
+
+static inline set_values *add_set_value(set_values *vals, set_value *val);
 static inline set_value *add_inner_set_value(set_value *val, set_value *inner) {
-	val->inner = realloc(val->inner, ++val->count * sizeof(*val->inner));
-	val->inner[val->count-1] = inner;
+	val->inner = add_set_value(val->inner, inner);
 	inner->outer.set = val;
 	return val;
 }
@@ -1046,16 +1102,43 @@ static inline void free_set_value(set_value *val) {
 		free_decl_vars(val->vars);
 	}
 	if (val->inner && (!val->outer.set || val->outer.set->inner != val->inner)) {
-		size_t i;
-		for (i = 0; i < val->count; ++i) {
-			free_set_value(val->inner[i]);
-		}
-		free(val->inner);
+		free_set_values(val->inner);
 	}
 	if (val->num) {
 		free_num_exp(val->num);
 	}
 	free(val);
+}
+
+static inline set_values *init_set_values(set_value *val) {
+	set_values *vals = calloc(1, sizeof(*vals));
+	if (val) {
+		vals->count = 1;
+		vals->vals = calloc(1, sizeof(val));
+		vals->vals[0] = val;
+	}
+	return vals;
+}
+
+static inline set_values *add_set_value(set_values *vals, set_value *val) {
+	if (!vals) {
+		vals = calloc(1, sizeof(*vals));
+	}
+	vals->vals = realloc(vals->vals, ++vals->count * sizeof(val));
+	vals->vals[vals->count-1] = val;
+	return vals;
+}
+
+static inline void free_set_values(set_values *vals) {
+	if (vals->vals) {
+		size_t i;
+
+		for (i = 0; i < vals->count; ++i) {
+			free_set_value(vals->vals[i]);
+		}
+		free(vals->vals);
+	}
+	free(vals);
 }
 
 typedef struct set_stmt {

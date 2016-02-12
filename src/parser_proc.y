@@ -29,7 +29,7 @@ void psi_error(int, const char *, int, const char *, ...);
 %nonassoc NAME.
 %left PLUS MINUS.
 %left SLASH ASTERISK.
-%fallback NAME TEMP FREE SET LET RETURN CALLOC LIB STRING.
+%fallback NAME TEMP FREE SET LET RETURN CALLOC CALLBACK ZVAL LIB STRING.
 
 file ::= blocks.
 
@@ -700,6 +700,35 @@ let_stmt(let) ::= TEMP decl_var(var) EQUALS decl_var(val) EOS. {
 	let = init_let_stmt(var, init_let_val(PSI_LET_TMP, val));
 }
 
+%type let_calloc {let_calloc*}
+%destructor let_calloc {free_let_calloc($$);}
+let_calloc(alloc) ::= num_exp(nmemb) COMMA num_exp(size). {
+	alloc = init_let_calloc(nmemb, size);
+}
+%token_class let_func_token ZVAL OBJVAL ARRVAL PATHVAL STRLEN STRVAL FLOATVAL INTVAL BOOLVAL.
+%type let_func {let_func*}
+%destructor let_func {free_let_func($$);}
+let_func(func) ::= let_func_token(T) LPAREN impl_var(var) RPAREN. {
+	func = init_let_func(T->type, T->text, var);
+	free(T);
+}
+
+%type callback_arg_list {set_values *}
+%destructor callback_arg_list {free_set_values($$);}
+callback_arg_list ::= .
+callback_arg_list(args) ::= callback_args(args_). {
+	args = args_;
+}
+
+%type callback_args {set_values *}
+%destructor callback_args {free_set_values($$);}
+callback_args(args) ::= set_value(val). {
+	args = init_set_values(val);
+}
+callback_args(args) ::= callback_args(args_) COMMA set_value(val). {
+	args = add_set_value(args_, val);
+}
+
 %type let_val {let_val*}
 %destructor let_val {free_let_val($$);}
 let_val(val) ::= NULL. {
@@ -714,20 +743,11 @@ let_val(val) ::= CALLOC LPAREN let_calloc(alloc) RPAREN. {
 let_val(val) ::= let_func(func). {
 	val = init_let_val(PSI_LET_FUNC, func);
 }
-
-%type let_calloc {let_calloc*}
-%destructor let_calloc {free_let_calloc($$);}
-let_calloc(alloc) ::= num_exp(nmemb) COMMA num_exp(size). {
-	alloc = init_let_calloc(nmemb, size);
+let_val(val) ::= CALLBACK let_func_token(F) LPAREN impl_var(var) LPAREN callback_arg_list(args_) RPAREN RPAREN. {
+	val = init_let_val(PSI_LET_CALLBACK, init_let_callback(
+		init_let_func(F->type, F->text, var), args_));
+	free(F);
 }
-%token_class let_func_token OBJVAL ARRVAL PATHVAL STRLEN STRVAL FLOATVAL INTVAL BOOLVAL.
-%type let_func {let_func*}
-%destructor let_func {free_let_func($$);}
-let_func(func) ::= let_func_token(T) LPAREN impl_var(var) RPAREN. {
-	func = init_let_func(T->type, T->text, var);
-	free(T);
-}
-
 
 %type set_stmt {set_stmt*}
 %destructor set_stmt {free_set_stmt($$);}
@@ -769,7 +789,7 @@ set_vals(vals) ::= set_vals(vals_) COMMA set_value(val). {
 	vals = add_inner_set_value(vals_, val);
 }
 
-%token_class set_func_token TO_OBJECT TO_ARRAY TO_STRING TO_INT TO_FLOAT TO_BOOL VOID.
+%token_class set_func_token TO_OBJECT TO_ARRAY TO_STRING TO_INT TO_FLOAT TO_BOOL ZVAL VOID.
 %type set_func {set_func*}
 %destructor set_func {free_set_func($$);}
 set_func(func) ::= set_func_token(T). {

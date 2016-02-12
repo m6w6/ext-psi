@@ -13,6 +13,7 @@
 #include "php_psi_macros.h"
 #include "php_psi_redirs.h"
 
+#include "parser.h"
 #include "calc.h"
 #include "marshal.h"
 #include "engine.h"
@@ -111,6 +112,22 @@ static inline int locate_decl_type_enum(decl_enums *enums, decl_type *type) {
 	return 0;
 }
 
+static inline int locate_decl_type_decl(decls *decls, decl_type *type) {
+	size_t i;
+
+	if (type->func) {
+		return 1;
+	}
+	if (decls) for (i = 0; i < decls->count; ++i) {
+		if (!strcmp(decls->list[i]->func->var->name, type->name)) {
+			type->func = decls->list[i];
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 static inline int validate_decl_struct(PSI_Data *data, decl_struct *s);
 static inline int validate_decl_union(PSI_Data *data, decl_union *u);
 static inline int validate_decl_enum(PSI_Data *data, decl_enum *e);
@@ -143,6 +160,12 @@ static inline int validate_decl_type(PSI_Data *data, decl_type *type) {
 		if (!locate_decl_type_enum(data->enums, type)) {
 			return 0;
 		}
+		break;
+	case PSI_T_FUNCTION:
+		if (!locate_decl_type_decl(data->decls, type)) {
+			return 0;
+		}
+		break;
 	}
 	return 1;
 }
@@ -508,9 +531,6 @@ static inline int validate_decl_func(PSI_Data *data, void *dl, decl *decl, decl_
 		return 0;
 	}
 
-	if (!validate_decl_arg(data, func)) {
-		return 0;
-	}
 	for (redir = &psi_func_redirs[0]; redir->name; ++redir) {
 		if (!strcmp(func->var->name, redir->name)) {
 			decl->call.sym = redir->func;
@@ -529,14 +549,13 @@ static inline int validate_decl_func(PSI_Data *data, void *dl, decl *decl, decl_
 	}
 	return 1;
 }
-
-static inline int validate_decl(PSI_Data *data, void *dl, decl *decl) {
+static inline int validate_decl_nodl(PSI_Data *data, decl *decl) {
 	if (!validate_decl_abi(data, decl->abi)) {
 		data->error(data, decl->abi->token, PSI_WARNING,
 				"Invalid calling convention: '%s'", decl->abi->token->text);
 		return 0;
 	}
-	if (!validate_decl_func(data, dl, decl, decl->func)) {
+	if (!validate_decl_arg(data, decl->func)) {
 		return 0;
 	}
 	if (decl->args) {
@@ -547,6 +566,15 @@ static inline int validate_decl(PSI_Data *data, void *dl, decl *decl) {
 				return 0;
 			}
 		}
+	}
+	return 1;
+}
+static inline int validate_decl(PSI_Data *data, void *dl, decl *decl) {
+	if (!validate_decl_nodl(data, decl)) {
+		return 0;
+	}
+	if (!validate_decl_func(data, dl, decl, decl->func)) {
+		return 0;
 	}
 	return 1;
 }
@@ -696,32 +724,18 @@ static inline int validate_decl_enum(PSI_Data *data, decl_enum *e) {
 
 static inline int validate_set_value_handler(set_value *set) {
 	switch (set->func->type) {
-	case PSI_T_TO_BOOL:
-		set->func->handler = psi_to_bool;
-		break;
-	case PSI_T_TO_INT:
-		set->func->handler = psi_to_int;
-		break;
-	case PSI_T_TO_FLOAT:
-		set->func->handler = psi_to_double;
-		break;
-	case PSI_T_TO_STRING:
-		set->func->handler = psi_to_string;
-		break;
-	case PSI_T_TO_ARRAY:
-		set->func->handler = psi_to_array;
-		break;
-	case PSI_T_TO_OBJECT:
-		set->func->handler = psi_to_object;
-		break;
-	case PSI_T_VOID:
-		set->func->handler = psi_to_void;
-		break;
+	case PSI_T_TO_BOOL:		set->func->handler = psi_to_bool;		break;
+	case PSI_T_TO_INT:		set->func->handler = psi_to_int;		break;
+	case PSI_T_TO_FLOAT:	set->func->handler = psi_to_double;		break;
+	case PSI_T_TO_STRING:	set->func->handler = psi_to_string;		break;
+	case PSI_T_TO_ARRAY:	set->func->handler = psi_to_array;		break;
+	case PSI_T_TO_OBJECT:	set->func->handler = psi_to_object;		break;
+	case PSI_T_VOID:		set->func->handler = psi_to_void;		break;
+	case PSI_T_ZVAL:		set->func->handler = psi_to_zval;		break;
 	case PSI_T_ELLIPSIS:
 		if (set->outer.set && set->outer.set->func->type == PSI_T_TO_ARRAY) {
 			set->func->handler = psi_to_recursive;
 			set->inner = set->outer.set->inner;
-			set->count = set->outer.set->count;
 			break;
 		}
 		/* no break */
@@ -766,7 +780,7 @@ static inline int validate_set_value_ex(PSI_Data *data, set_value *set, decl_arg
 	}
 	ref_type = real_decl_type(ref->type);
 
-	if (set->count) {
+	if (set->inner && set->inner->count) {
 		int is_to_array = (set->func->type == PSI_T_TO_ARRAY);
 		int is_pointer_to_struct = (ref_type->type == PSI_T_STRUCT && ref->var->pointer_level);
 
@@ -782,23 +796,23 @@ static inline int validate_set_value_ex(PSI_Data *data, set_value *set, decl_arg
 		}
 	}
 
-	if (ref_type->type == PSI_T_STRUCT) {
+	if (set->inner && ref_type->type == PSI_T_STRUCT) {
 		/* to_array(struct, to_...) */
-		if (!set->outer.set || set->outer.set->inner != set->inner) {
-			for (i = 0; i < set->count; ++i) {
-				decl_var *sub_var = set->inner[i]->vars->vars[0];
+		if (!set->outer.set || set->outer.set->inner->vals != set->inner->vals) {
+			for (i = 0; i < set->inner->count; ++i) {
+				decl_var *sub_var = set->inner->vals[i]->vars->vars[0];
 				decl_arg *sub_ref = locate_struct_member(ref_type->strct, sub_var);
 
 				if (sub_ref) {
-					if (!validate_set_value_ex(data, set->inner[i], sub_ref, ref_type->strct->args)) {
+					if (!validate_set_value_ex(data, set->inner->vals[i], sub_ref, ref_type->strct->args)) {
 						return 0;
 					}
 				}
 			}
 		}
-	} else if (set->count == 1) {
+	} else if (set->inner && set->inner->count == 1) {
 		/* to_array(ptr, to_string(*ptr)) */
-		decl_var *sub_var = set->inner[0]->vars->vars[0];
+		decl_var *sub_var = set->inner->vals[0]->vars->vars[0];
 		decl_arg *sub_ref = locate_decl_var_arg(sub_var, ref_list, ref);
 
 		if (sub_ref) {
@@ -806,11 +820,11 @@ static inline int validate_set_value_ex(PSI_Data *data, set_value *set, decl_arg
 				data->error(data, sub_var->token, E_WARNING, "Inner `set` statement casts on pointers must reference the same variable");
 				return 0;
 			}
-			if (!validate_set_value_ex(data, set->inner[0], sub_ref, ref_list)) {
+			if (!validate_set_value_ex(data, set->inner->vals[0], sub_ref, ref_list)) {
 				return 0;
 			}
 		}
-	} else if (set->count > 1) {
+	} else if (set->inner && set->inner->count > 1) {
 		data->error(data, set->func->token, E_WARNING, "Inner `set` statement casts on pointers may only occur once");
 		return 0;
 	}
@@ -878,7 +892,75 @@ static inline int validate_impl_ret_stmt(PSI_Data *data, impl *impl) {
 		return 0;
 	}
 
-	impl->decl->impl = impl;
+	//impl->decl->impl = impl;
+
+	return 1;
+}
+
+static inline impl_arg *locate_impl_var_arg(impl_var *var, impl_args *args) {
+	size_t i;
+
+	for (i = 0; i < args->count; ++i) {
+		impl_arg *iarg = args->args[i];
+
+		if (!strcmp(var->name, iarg->var->name)) {
+			return var->arg = iarg;
+		}
+	}
+
+	return NULL;
+}
+
+static inline int validate_let_func(PSI_Data *data, let_func *func, impl *impl) {
+	if (impl->func->args) {
+		if (!locate_impl_var_arg(func->var, impl->func->args)) {
+			data->error(data, func->var->token, PSI_WARNING,
+					"Unknown variable '$%s' of `let` statement"
+					" for cast '%s' of implementation '%s'",
+					func->var->name, func->name, impl->func->name);
+			return 0;
+		}
+	}
+	switch (func->type) {
+	case PSI_T_BOOLVAL:		func->handler = psi_let_boolval;	break;
+	case PSI_T_INTVAL:		func->handler = psi_let_intval;		break;
+	case PSI_T_FLOATVAL:	func->handler = psi_let_floatval;	break;
+	case PSI_T_STRVAL:		func->handler = psi_let_strval;		break;
+	case PSI_T_STRLEN:		func->handler = psi_let_strlen;		break;
+	case PSI_T_PATHVAL:		func->handler = psi_let_pathval;	break;
+	case PSI_T_ARRVAL:		func->handler = psi_let_arrval;		break;
+	case PSI_T_OBJVAL:		func->handler = psi_let_objval;		break;
+	case PSI_T_ZVAL:		func->handler = psi_let_zval;		break;
+	EMPTY_SWITCH_DEFAULT_CASE();
+	}
+	return 1;
+}
+
+static inline int validate_let_callback(PSI_Data *data, decl_var *cb_var, let_callback *cb, impl *impl) {
+	size_t i;
+	decl *cb_func;
+	decl_type *cb_type = real_decl_type(cb_var->arg->type);
+
+	if (!validate_let_func(data, cb->func, impl)) {
+		return 0;
+	}
+
+	if (cb_type->type != PSI_T_FUNCTION) {
+		data->error(data, cb_var->token, PSI_WARNING, "Not a function: %s", cb_var->name);
+		return 0;
+	}
+	cb_func = cb_type->func;
+	for (i = 0; i < cb->args->count; ++i) {
+		if (!validate_set_value(data, cb->args->vals[i], cb_func->args->count, cb_func->args->args, 0)) {
+			return 0;
+		}
+	}
+
+	if (!validate_decl_nodl(data, cb_func)) {
+		return 0;
+	}
+
+	cb->decl = cb_func;
 
 	return 1;
 }
@@ -891,7 +973,6 @@ static inline int validate_impl_let_stmts(PSI_Data *data, impl *impl) {
 	for (i = 0; i < impl->stmts->let.count; ++i) {
 		let_stmt *let = impl->stmts->let.list[i];
 		decl_var *let_var;
-		int check = 0;
 
 		if (let->val && let->val->kind == PSI_LET_TMP) {
 			let_var = let->val->data.var;
@@ -934,22 +1015,13 @@ static inline int validate_impl_let_stmts(PSI_Data *data, impl *impl) {
 				return 0;
 			}
 			break;
-		case PSI_LET_FUNC:
-			if (impl->func->args) {
-				for (j = 0; j < impl->func->args->count; ++j) {
-					impl_arg *iarg = impl->func->args->args[j];
-
-					if (!strcmp(let->val->data.func->var->name, iarg->var->name)) {
-						let->val->data.func->arg = iarg;
-						check = 1;
-						break;
-					}
-				}
+		case PSI_LET_CALLBACK:
+			if (!validate_let_callback(data, let->var, let->val->data.callback, impl)) {
+				return 0;
 			}
-			if (!check) {
-				data->error(data, let->var->token, PSI_WARNING, "Unknown value '$%s' of `let` statement"
-						" for variable '%s' of implementation '%s'",
-						let->val->data.func->var->name, let->var->name, impl->func->name);
+			break;
+		case PSI_LET_FUNC:
+			if (!validate_let_func(data, let->val->data.func, impl)) {
 				return 0;
 			}
 			break;
