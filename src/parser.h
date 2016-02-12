@@ -59,8 +59,8 @@ typedef union impl_val {
 		zend_string *str;
 		zend_fcall *cb;
 	} zend;
+	zval zval;
 	void *ptr;
-	uint8_t _dbg[sizeof(void *)];
 } impl_val;
 
 typedef struct decl_type {

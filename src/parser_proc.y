@@ -29,7 +29,7 @@ void psi_error(int, const char *, int, const char *, ...);
 %nonassoc NAME.
 %left PLUS MINUS.
 %left SLASH ASTERISK.
-%fallback NAME TEMP FREE SET LET RETURN CALLOC CALLBACK LIB STRING.
+%fallback NAME TEMP FREE SET LET RETURN CALLOC CALLBACK ZVAL LIB STRING.
 
 file ::= blocks.
 
@@ -705,7 +705,7 @@ let_stmt(let) ::= TEMP decl_var(var) EQUALS decl_var(val) EOS. {
 let_calloc(alloc) ::= num_exp(nmemb) COMMA num_exp(size). {
 	alloc = init_let_calloc(nmemb, size);
 }
-%token_class let_func_token OBJVAL ARRVAL PATHVAL STRLEN STRVAL FLOATVAL INTVAL BOOLVAL.
+%token_class let_func_token ZVAL OBJVAL ARRVAL PATHVAL STRLEN STRVAL FLOATVAL INTVAL BOOLVAL.
 %type let_func {let_func*}
 %destructor let_func {free_let_func($$);}
 let_func(func) ::= let_func_token(T) LPAREN impl_var(var) RPAREN. {
@@ -789,7 +789,7 @@ set_vals(vals) ::= set_vals(vals_) COMMA set_value(val). {
 	vals = add_inner_set_value(vals_, val);
 }
 
-%token_class set_func_token TO_OBJECT TO_ARRAY TO_STRING TO_INT TO_FLOAT TO_BOOL VOID.
+%token_class set_func_token TO_OBJECT TO_ARRAY TO_STRING TO_INT TO_FLOAT TO_BOOL ZVAL VOID.
 %type set_func {set_func*}
 %destructor set_func {free_set_func($$);}
 set_func(func) ::= set_func_token(T). {

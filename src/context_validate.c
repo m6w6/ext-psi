@@ -724,27 +724,14 @@ static inline int validate_decl_enum(PSI_Data *data, decl_enum *e) {
 
 static inline int validate_set_value_handler(set_value *set) {
 	switch (set->func->type) {
-	case PSI_T_TO_BOOL:
-		set->func->handler = psi_to_bool;
-		break;
-	case PSI_T_TO_INT:
-		set->func->handler = psi_to_int;
-		break;
-	case PSI_T_TO_FLOAT:
-		set->func->handler = psi_to_double;
-		break;
-	case PSI_T_TO_STRING:
-		set->func->handler = psi_to_string;
-		break;
-	case PSI_T_TO_ARRAY:
-		set->func->handler = psi_to_array;
-		break;
-	case PSI_T_TO_OBJECT:
-		set->func->handler = psi_to_object;
-		break;
-	case PSI_T_VOID:
-		set->func->handler = psi_to_void;
-		break;
+	case PSI_T_TO_BOOL:		set->func->handler = psi_to_bool;		break;
+	case PSI_T_TO_INT:		set->func->handler = psi_to_int;		break;
+	case PSI_T_TO_FLOAT:	set->func->handler = psi_to_double;		break;
+	case PSI_T_TO_STRING:	set->func->handler = psi_to_string;		break;
+	case PSI_T_TO_ARRAY:	set->func->handler = psi_to_array;		break;
+	case PSI_T_TO_OBJECT:	set->func->handler = psi_to_object;		break;
+	case PSI_T_VOID:		set->func->handler = psi_to_void;		break;
+	case PSI_T_ZVAL:		set->func->handler = psi_to_zval;		break;
 	case PSI_T_ELLIPSIS:
 		if (set->outer.set && set->outer.set->func->type == PSI_T_TO_ARRAY) {
 			set->func->handler = psi_to_recursive;
@@ -943,6 +930,7 @@ static inline int validate_let_func(PSI_Data *data, let_func *func, impl *impl) 
 	case PSI_T_PATHVAL:		func->handler = psi_let_pathval;	break;
 	case PSI_T_ARRVAL:		func->handler = psi_let_arrval;		break;
 	case PSI_T_OBJVAL:		func->handler = psi_let_objval;		break;
+	case PSI_T_ZVAL:		func->handler = psi_let_zval;		break;
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}
 	return 1;

@@ -13,6 +13,17 @@ void psi_to_void(zval *return_value, set_value *set, impl_val *ret_val)
 	RETVAL_NULL();
 }
 
+void psi_to_zval(zval *return_value, set_value *set, impl_val *ret_val) {
+	RETVAL_ZVAL(ret_val->ptr, 1, 0);
+}
+
+impl_val *psi_let_zval(impl_val *tmp, decl_type *type, impl_arg *iarg, void **to_free)
+{
+	*to_free = tmp->ptr = emalloc(sizeof(zval));
+	ZVAL_COPY_VALUE(tmp->ptr, iarg->_zv);
+	return tmp;
+}
+
 void psi_to_bool(zval *return_value, set_value *set, impl_val *ret_val)
 {
 	psi_to_int(return_value, set, ret_val);
@@ -526,3 +537,4 @@ impl_val *psi_let_objval(impl_val *tmp, decl_type *type, impl_arg *iarg, void **
 
 	return tmp;
 }
+
