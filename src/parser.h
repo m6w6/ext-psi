@@ -59,7 +59,6 @@ typedef union impl_val {
 		zend_string *str;
 		zend_fcall *cb;
 	} zend;
-	zval zval;
 	void *ptr;
 } impl_val;
 
@@ -157,9 +156,9 @@ typedef struct decl_arg {
 	decl_type *type;
 	decl_var *var;
 	decl_struct_layout *layout;
-	struct let_stmt *let; /* FIXME: decls must not point to impls !!! */
 	impl_val val;
 	void *ptr;
+	void *let;
 	void *mem;
 } decl_arg;
 
@@ -170,6 +169,7 @@ static inline decl_arg *init_decl_arg(decl_type *type, decl_var *var) {
 	arg->var = var;
 	var->arg = arg;
 	arg->ptr = &arg->val;
+	arg->let = arg->ptr;
 	return arg;
 }
 
@@ -1017,8 +1017,6 @@ static inline void free_let_val(let_val *let) {
 typedef struct let_stmt {
 	decl_var *var;
 	let_val *val;
-
-	void *ptr;
 } let_stmt;
 
 static inline let_stmt *init_let_stmt(decl_var *var, let_val *val) {

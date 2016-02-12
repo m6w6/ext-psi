@@ -91,7 +91,7 @@ static void psi_ffi_callback(ffi_cif *_sig, void *_result, void **_args, void *_
 
 	/* prepare args for the userland call */
 	for (i = 0; i < argc; ++i) {
-		cb->decl->args->args[i]->ptr = argv[i];
+		cb->decl->args->args[i]->let = argv[i];
 	}
 	for (i = 0; i < cb->args->count; ++i) {
 		psi_do_set(&zargv[i], cb->args->vals[i]);

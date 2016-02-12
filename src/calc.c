@@ -4,6 +4,7 @@
 
 #include "php.h"
 #include "php_psi.h"
+#include "parser.h"
 #include "calc.h"
 
 static inline int psi_calc_num_exp_value(num_exp *exp, impl_val *strct, impl_val *res) {
@@ -39,10 +40,8 @@ static inline int psi_calc_num_exp_value(num_exp *exp, impl_val *strct, impl_val
 	case PSI_T_NAME:
 		if (strct) {
 			ref = struct_member_ref(exp->u.dvar->arg, strct, &tmp);
-		} else if (exp->u.dvar->arg->let) {
-			ref = exp->u.dvar->arg->let->ptr;
 		} else {
-			ref = exp->u.dvar->arg->ptr;
+			ref = exp->u.dvar->arg->let;
 		}
 		switch (real_decl_type(exp->u.dvar->arg->type)->type) {
 		case PSI_T_INT8:

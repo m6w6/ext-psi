@@ -271,34 +271,28 @@ static inline impl_val *psi_let_func(let_func *func, decl_arg *darg) {
 static inline void *psi_do_let(let_stmt *let)
 {
 	decl_arg *darg = let->var->arg;
-	impl_val *arg_val = darg->ptr;
 
 	switch (let->val ? let->val->kind : PSI_LET_NULL) {
 	case PSI_LET_TMP:
-		memcpy(arg_val, deref_impl_val(let->val->data.var->arg->let->ptr, let->val->data.var), sizeof(*arg_val));
-#if 0
-		fprintf(stderr, "LET TMP: %p -> %p\n",
-				let->val->data.var->arg->let->ptr,
-				arg_val->ptr);
-#endif
+		memcpy(darg->ptr, deref_impl_val(let->val->data.var->arg->let, let->val->data.var), sizeof(impl_val));
 		break;
 	case PSI_LET_NULL:
 		if (darg->var->array_size) {
-			arg_val->ptr = ecalloc(darg->var->array_size, sizeof(*arg_val));
-			darg->mem = arg_val->ptr;
+			darg->val.ptr = ecalloc(darg->var->array_size, sizeof(impl_val));
+			darg->mem = darg->val.ptr;
 		} else {
-			memset(arg_val, 0, sizeof(*arg_val));
+			memset(&darg->val, 0, sizeof(impl_val));
 		}
 		break;
 	case PSI_LET_CALLOC:
-		arg_val->ptr = psi_do_calloc(let->val->data.alloc);
-		darg->mem = arg_val->ptr;
+		darg->val.ptr = psi_do_calloc(let->val->data.alloc);
+		darg->mem = darg->val.ptr;
 		break;
 	case PSI_LET_CALLBACK:
-		arg_val->ptr = let->val->data.callback->decl->call.sym;
+		darg->val.ptr = let->val->data.callback->decl->call.sym;
 		break;
 	case PSI_LET_NUMEXP:
-		arg_val->zend.lval = psi_long_num_exp(let->val->data.num, NULL);
+		darg->val.zend.lval = psi_long_num_exp(let->val->data.num, NULL);
 		break;
 	case PSI_LET_FUNC:
 		if (!psi_let_func(let->val->data.func, darg)) {
@@ -308,9 +302,9 @@ static inline void *psi_do_let(let_stmt *let)
 	}
 
 	if (let->val && let->val->flags.one.is_reference) {
-		return let->ptr = &darg->ptr;
+		return darg->let = &darg->ptr;
 	} else {
-		return let->ptr = darg->ptr;
+		return darg->let = darg->ptr;
 	}
 }
 
@@ -329,7 +323,7 @@ static inline void psi_do_free(free_stmt *fre)
 		for (j = 0; j < f->vars->count; ++j) {
 			decl_var *dvar = f->vars->vars[j];
 			decl_arg *darg = dvar->arg;
-			impl_val *fval = darg->let ? darg->let->ptr : darg->ptr;
+			impl_val *fval = darg->let;
 
 			f->decl->call.args[j] = deref_impl_val(fval, dvar);
 		}
@@ -339,10 +333,9 @@ static inline void psi_do_free(free_stmt *fre)
 	}
 }
 
-static inline void psi_clean_array_struct(decl_arg *darg) {
-	if (darg->let
-	&&	darg->let->val->kind == PSI_LET_FUNC
-	&&	darg->let->val->data.func->type == PSI_T_ARRVAL) {
+static inline void psi_clean_array_struct(let_stmt *let, decl_arg *darg) {
+	if (let->val->kind == PSI_LET_FUNC
+	&&	let->val->data.func->type == PSI_T_ARRVAL) {
 		decl_type *type = real_decl_type(darg->type);
 
 		if (type->type == PSI_T_STRUCT) {
@@ -363,6 +356,7 @@ static inline void psi_do_clean(impl *impl)
 		efree(impl->decl->func->ptr);
 		impl->decl->func->ptr = &impl->decl->func->val;
 	}
+
 	for (i = 0; i < impl->func->args->count; ++i ) {
 		impl_arg *iarg = impl->func->args->args[i];
 
@@ -383,15 +377,17 @@ static inline void psi_do_clean(impl *impl)
 		}
 	}
 
-	if (impl->decl->args) for (i = 0; i < impl->decl->args->count; ++i) {
-		decl_arg *darg = impl->decl->args->args[i];
+	for (i = 0; i < impl->stmts->let.count; ++i) {
+		let_stmt *let = impl->stmts->let.list[i];
+		decl_arg *darg = let->var->arg;
 
 		if (darg->mem) {
-			psi_clean_array_struct(darg);
+			psi_clean_array_struct(let, darg);
 			efree(darg->mem);
 			darg->mem = NULL;
 		}
 		darg->ptr = &darg->val;
+		darg->let = darg->ptr;
 	}
 
 	if (impl->func->args->vararg.args) {
@@ -423,7 +419,7 @@ static inline void psi_do_args(impl *impl) {
 	size_t i;
 
 	for (i = 0; i < impl->decl->args->count; ++i) {
-		impl->decl->call.args[i] = impl->decl->args->args[i]->let->ptr;
+		impl->decl->call.args[i] = impl->decl->args->args[i]->let;
 	}
 
 	if (!impl->decl->func->var->pointer_level) {

@@ -1037,7 +1037,6 @@ static inline int validate_impl_let_stmts(PSI_Data *data, impl *impl) {
 			let_stmt *let = impl->stmts->let.list[j];
 
 			if (!strcmp(let->var->name, darg->var->name)) {
-				darg->let = let;
 				check = 1;
 				break;
 			}
