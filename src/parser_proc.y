@@ -29,7 +29,7 @@ void psi_error(int, const char *, int, const char *, ...);
 %nonassoc NAME.
 %left PLUS MINUS.
 %left SLASH ASTERISK.
-%fallback NAME TEMP FREE SET LET RETURN CALLOC LIB STRING.
+%fallback NAME TEMP FREE SET LET RETURN CALLOC CALLBACK LIB STRING.
 
 file ::= blocks.
 
@@ -716,7 +716,7 @@ let_func(func) ::= let_func_token(T) LPAREN impl_var(var) RPAREN. {
 %type callback_arg_list {set_values *}
 %destructor callback_arg_list {free_set_values($$);}
 callback_arg_list ::= .
-callback_arg_list(args) ::= COMMA callback_args(args_). {
+callback_arg_list(args) ::= callback_args(args_). {
 	args = args_;
 }
 
@@ -743,7 +743,7 @@ let_val(val) ::= CALLOC LPAREN let_calloc(alloc) RPAREN. {
 let_val(val) ::= let_func(func). {
 	val = init_let_val(PSI_LET_FUNC, func);
 }
-let_val(val) ::= CALLBACK let_func_token(F) LPAREN impl_var(var) callback_arg_list(args_) RPAREN. {
+let_val(val) ::= CALLBACK let_func_token(F) LPAREN impl_var(var) LPAREN callback_arg_list(args_) RPAREN RPAREN. {
 	val = init_let_val(PSI_LET_CALLBACK, init_let_callback(
 		init_let_func(F->type, F->text, var), args_));
 	free(F);

@@ -260,58 +260,18 @@ static inline void *psi_do_calloc(let_calloc *alloc)
 
 static inline impl_val *psi_let_val(token_t let_func, impl_arg *iarg, impl_val *arg_val, decl_struct *strct, void **to_free)
 {
-	switch (let_func) {
-	case PSI_T_BOOLVAL:
-		break;
-	case PSI_T_INTVAL:
-		break;
-	case PSI_T_FLOATVAL:
-		break;
-	case PSI_T_PATHVAL:
-	case PSI_T_STRVAL:
-		if (PSI_T_PATHVAL == let_func) {
-
-		}
-		break;
-	case PSI_T_STRLEN:
-		break;
-	case PSI_T_ARRVAL:
-		if (iarg->type->type == PSI_T_ARRAY) {
-			arg_val = psi_array_to_struct(strct, HASH_OF(iarg->_zv));
-			*to_free = arg_val;
-		}
-		break;
-	case PSI_T_OBJVAL:
-		if (iarg->type->type == PSI_T_OBJECT) {
-			psi_object *obj;
-
-			if (!instanceof_function(Z_OBJCE_P(iarg->_zv), psi_object_get_class_entry())) {
-				return NULL;
-			}
-
-			obj = PSI_OBJ(iarg->_zv, NULL);
-			arg_val->ptr = obj->data;
-		}
-		break;
-	case PSI_T_CALLBACK:
-		if (iarg->type->type == PSI_T_CALLABLE) {
-			
-		}
-		break;
-	EMPTY_SWITCH_DEFAULT_CASE();
-	}
+	abort();
 	return arg_val;
 }
 
 static inline impl_val *psi_let_func(let_func *func, decl_arg *darg) {
-	return darg->ptr = func->handler(darg->ptr, darg->type, func->arg, &darg->mem);
+	return darg->ptr = func->handler(darg->ptr, darg->type, func->var->arg, &darg->mem);
 }
 
 static inline void *psi_do_let(let_stmt *let)
 {
 	decl_arg *darg = let->var->arg;
 	impl_val *arg_val = darg->ptr;
-	impl_arg *iarg;
 
 	switch (let->val ? let->val->kind : PSI_LET_NULL) {
 	case PSI_LET_TMP:
@@ -335,7 +295,7 @@ static inline void *psi_do_let(let_stmt *let)
 		darg->mem = arg_val->ptr;
 		break;
 	case PSI_LET_CALLBACK:
-		arg_val->ptr = 0 /* callback closure */;
+		arg_val->ptr = let->val->data.callback->decl->call.sym;
 		break;
 	case PSI_LET_NUMEXP:
 		arg_val->zend.lval = psi_long_num_exp(let->val->data.num, NULL);
@@ -344,12 +304,7 @@ static inline void *psi_do_let(let_stmt *let)
 		if (!psi_let_func(let->val->data.func, darg)) {
 			return NULL;
 		}
-
-		iarg = let->val->data.func->arg;
-
-		if (!(darg->ptr = psi_let_val(let->val->data.func->type, iarg, darg->ptr, real_decl_type(darg->type)->strct, &darg->mem))) {
-			return NULL;
-		}
+		break;
 	}
 
 	if (let->val && let->val->flags.one.is_reference) {

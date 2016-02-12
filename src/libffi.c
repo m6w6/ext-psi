@@ -78,49 +78,44 @@ static void psi_ffi_handler(ffi_cif *_sig, void *_result, void **_args, void *_d
 
 static void psi_ffi_callback(ffi_cif *_sig, void *_result, void **_args, void *_data)
 {
+	size_t i;
 	unsigned argc = _sig->nargs;
 	void **argv = _args;
-	ffi_arg *res = _result;
-	let_stmt *let;
-	decl_arg *darg = let->var->arg;
-	decl *decl_cb = darg->type->func;
-	let_callback *cb = let->val->data.callback;
-	impl_arg *iarg = cb->func->arg;
-	size_t i, argc = cb->args->count;
-	zval return_value, *argv = calloc(argc, sizeof(*argv));
+	let_callback *cb = _data;
+	decl *decl_cb = cb->decl;
+	impl_arg *iarg = cb->func->var->arg;
+	zval return_value, *zargv = calloc(argc, sizeof(*zargv));
+	void *result, *to_free = NULL;
 
-	// prepare args for the userland call
-	for (i = 0; i < decl_cb->args->count; ++i) {
+	ZEND_ASSERT(argc == cb->decl->args->count);
 
+	/* prepare args for the userland call */
+	for (i = 0; i < argc; ++i) {
+		cb->decl->args->args[i]->ptr = argv[i];
 	}
 	for (i = 0; i < cb->args->count; ++i) {
-		psi_do_set(&argv[i], cb->args->vals[i]);
+		psi_do_set(&zargv[i], cb->args->vals[i]);
 	}
-	zend_fcall_info_argp(iarg->val.zend.cb->fci, argc, argv);
-	zend_fcall_info_call(&iarg->val.zend.cb->fci, &iarg->val.zend.cb->fcc,
-			&return_value, NULL);
-	// marshal return value of the userland call
-	switch (cb->func->type) {
-	case PSI_T_BOOLVAL:
-		break;
-	case PSI_T_INTVAL:
-		break;
-	case PSI_T_FLOATVAL:
-		break;
-	case PSI_T_PATHVAL:
-	case PSI_T_STRVAL:
-		break;
-	case PSI_T_STRLEN:
-		break;
-	case PSI_T_ARRVAL:
-		break;
-	case PSI_T_OBJVAL:
-		break;
-	case PSI_T_CALLBACK:
-		break;
-	EMPTY_SWITCH_DEFAULT_CASE();
+	zend_fcall_info_argp(&iarg->val.zend.cb->fci, cb->args->count, zargv);
+
+	/* callback into userland */
+	ZVAL_UNDEF(&return_value);
+	iarg->_zv = &return_value;
+	zend_fcall_info_call(&iarg->val.zend.cb->fci, &iarg->val.zend.cb->fcc, iarg->_zv, NULL);
+
+	/* marshal return value of the userland call */
+	switch (iarg->type->type) {
+	case PSI_T_BOOL:	zend_parse_arg_bool(iarg->_zv, &iarg->val.zend.bval, NULL, 0);		break;
+	case PSI_T_LONG:	zend_parse_arg_long(iarg->_zv, &iarg->val.zend.lval, NULL, 0, 1);	break;
+	case PSI_T_FLOAT:
+	case PSI_T_DOUBLE:	zend_parse_arg_double(iarg->_zv, &iarg->val.dval, NULL, 0);			break;
+	case PSI_T_STRING:	zend_parse_arg_str(iarg->_zv, &iarg->val.zend.str, 0);				break;
 	}
-	darg->ptr = psi_let_val(cb->func->type, iarg, darg->ptr, real_decl_type(darg->type)->strct, &darg->mem);
+	result = cb->func->handler(_result, decl_cb->func->type, iarg, &to_free);
+
+	if (result != _result) {
+		*(void **)_result = result;
+	}
 }
 
 static inline ffi_type *psi_ffi_decl_arg_type(decl_arg *darg);
@@ -163,12 +158,14 @@ static inline PSI_LibffiCall *PSI_LibffiCallAlloc(PSI_Context *C, decl *decl) {
 	return call;
 }
 
-static inline void PSI_LibffiCallInitClosure(PSI_Context *C, PSI_LibffiCall *call, impl *impl) {
+static inline ffi_status PSI_LibffiCallInitClosure(PSI_Context *C, PSI_LibffiCall *call, impl *impl) {
 	PSI_LibffiContext *context = C->context;
-	ffi_status rc;
 
-	rc = psi_ffi_prep_closure(&call->closure, &call->code, &context->signature, psi_ffi_handler, impl);
-	ZEND_ASSERT(FFI_OK == rc);
+	return psi_ffi_prep_closure(&call->closure, &call->code, &context->signature, psi_ffi_handler, impl);
+}
+
+static inline ffi_status PSI_LibffiCallInitCallbackClosure(PSI_Context *C, PSI_LibffiCall *call, let_callback *cb) {
+	return psi_ffi_prep_closure(&call->closure, &call->code, &call->signature, psi_ffi_callback, cb);
 }
 
 static inline void PSI_LibffiCallFree(PSI_LibffiCall *call) {
@@ -311,18 +308,6 @@ static inline ffi_type *psi_ffi_decl_type(decl_type *type) {
 
 	switch (real->type) {
 	case PSI_T_FUNCTION:
-		if (!real->func->call.sym) {
-			PSI_LibffiCall *call = PSI_LibffiCallAlloc(&PSI_G(context), real->func);
-			ffi_status rc;
-
-			rc = psi_ffi_prep_closure(
-					(void *) &real->func->call.closure.data,
-					&real->func->call.sym, &call->signature, psi_ffi_handler, NULL);
-			if (FFI_OK == rc) {
-				real->func->call.info = call;
-				real->func->call.closure.dtor = psi_ffi_closure_free;
-			}
-		}
 		return &ffi_type_pointer;
 
 	case PSI_T_STRUCT:
@@ -394,7 +379,7 @@ static void psi_ffi_dtor(PSI_Context *C)
 
 static zend_function_entry *psi_ffi_compile(PSI_Context *C)
 {
-	size_t i, j = 0;
+	size_t c, i, j = 0;
 	zend_function_entry *zfe;
 
 	if (!C->impls) {
@@ -412,19 +397,41 @@ static zend_function_entry *psi_ffi_compile(PSI_Context *C)
 		}
 
 		call = PSI_LibffiCallAlloc(C, impl->decl);
-		PSI_LibffiCallInitClosure(C, call, impl);
+		if (FFI_OK != PSI_LibffiCallInitClosure(C, call, impl)) {
+			PSI_LibffiCallFree(call);
+			continue;
+		}
 
 		zf->fname = impl->func->name + (impl->func->name[0] == '\\');
 		zf->num_args = impl->func->args->count;
 		zf->handler = call->code;
 		zf->arg_info = psi_internal_arginfo(impl);
 		++j;
+
+		for (c = 0; c < impl->stmts->let.count; ++c) {
+			let_stmt *let = impl->stmts->let.list[c];
+
+			if (let->val->kind == PSI_LET_CALLBACK) {
+				let_callback *cb = let->val->data.callback;
+
+				call = PSI_LibffiCallAlloc(C, cb->decl);
+				if (FFI_OK != PSI_LibffiCallInitCallbackClosure(C, call, cb)) {
+					PSI_LibffiCallFree(call);
+					continue;
+				}
+
+				cb->decl->call.sym = call->code;
+			}
+		}
 	}
 
 	for (i = 0; i < C->decls->count; ++i) {
 		decl *decl = C->decls->list[i];
 
-		if (decl->impl) {
+//		if (decl->impl) {
+//			continue;
+//		}
+		if (decl->call.info) {
 			continue;
 		}
 

@@ -88,7 +88,7 @@ void psi_to_int(zval *return_value, set_value *set, impl_val *ret_val)
 }
 
 static inline impl_val *psi_val_intval(impl_val *tmp, token_t real_type, zend_long intval) {
-	switch (real_decl_type(type)->type) {
+	switch (real_type) {
 	case PSI_T_INT8:		tmp->i8 = intval;		break;
 	case PSI_T_UINT8:		tmp->u8 = intval;		break;
 	case PSI_T_INT16:		tmp->i16 = intval;		break;
@@ -148,7 +148,7 @@ void psi_to_double(zval *return_value, set_value *set, impl_val *ret_val)
 }
 
 static inline impl_val *psi_val_floatval(impl_val *tmp, token_t real_type, double floatval) {
-	switch (real_decl_type(type)->type) {
+	switch (real_type) {
 	case PSI_T_INT8:		tmp->i8 = floatval;		break;
 	case PSI_T_UINT8:		tmp->u8 = floatval;		break;
 	case PSI_T_INT16:		tmp->i16 = floatval;	break;
@@ -171,7 +171,7 @@ static inline impl_val *psi_val_floatval(impl_val *tmp, token_t real_type, doubl
 impl_val *psi_let_floatval(impl_val *tmp, decl_type *type, impl_arg *iarg, void **to_free)
 {
 	double floatval;
-	token_t real_type = type ? real_decl_type(type)->real : PSI_T_DOUBLE;
+	token_t real_type = type ? real_decl_type(type)->type : PSI_T_DOUBLE;
 
 	if (iarg->type->type == PSI_T_FLOAT || iarg->type->type == PSI_T_DOUBLE) {
 		floatval = iarg->val.dval;
@@ -476,13 +476,25 @@ void psi_to_array(zval *return_value, set_value *set, impl_val *r_val)
 	}
 }
 
-impl_val *psi_arrval(impl_val *tmp, decl_type *type, void *val, void **to_free)
+impl_val *psi_let_arrval(impl_val *tmp, decl_type *type, impl_arg *iarg, void **to_free)
 {
-	HashTable *arr = (HashTable *) val;
-	decl_type *real = type ? real_decl_type(type) : NULL;
+	decl_type *real = real_decl_type(type);
+	HashTable *arr;
 
-	ZEND_ASSERT(real && real->type == PSI_T_STRUCT);
-	return *to_free = psi_array_to_struct(real->strct, arr);
+	if (iarg->type->type != PSI_T_ARRAY) {
+		SEPARATE_ARG_IF_REF(iarg->_zv);
+		convert_to_array(iarg->_zv);
+	}
+	arr = HASH_OF(iarg->_zv);
+
+	switch (real->type) {
+	case PSI_T_STRUCT:
+		*to_free = tmp = psi_array_to_struct(real->strct, arr);
+		break;
+	EMPTY_SWITCH_DEFAULT_CASE();
+	}
+
+	return tmp;
 }
 
 void psi_to_object(zval *return_value, set_value *set, impl_val *r_val)
@@ -500,16 +512,16 @@ void psi_to_object(zval *return_value, set_value *set, impl_val *r_val)
 	}
 }
 
-impl_val *psi_objval(impl_val *tmp, decl_type *type, void *val, void **to_free)
+impl_val *psi_let_objval(impl_val *tmp, decl_type *type, impl_arg *iarg, void **to_free)
 {
-	zval *zv = (zval *) val;
 	psi_object *obj;
 
-	if (!instanceof_function(Z_OBJCE_P(zv), psi_object_get_class_entry())) {
+	if (Z_TYPE_P(iarg->_zv) != IS_OBJECT
+	||	!instanceof_function(Z_OBJCE_P(iarg->_zv), psi_object_get_class_entry())) {
 		return NULL;
 	}
 
-	obj = PSI_OBJ(zv, NULL);
+	obj = PSI_OBJ(iarg->_zv, NULL);
 	tmp->ptr = obj->data;
 
 	return tmp;

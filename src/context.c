@@ -342,6 +342,12 @@ void PSI_ContextDtor(PSI_Context *C)
 		}
 		free(C->structs);
 	}
+	if (C->unions) {
+		if (C->unions->list) {
+			free(C->unions->list);
+		}
+		free(C->unions);
+	}
 	if (C->enums) {
 		if (C->enums->list) {
 			free(C->enums->list);
