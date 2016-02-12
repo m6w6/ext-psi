@@ -52,6 +52,11 @@ if ($rc) {
 
 sqlite3\close($db);
 
+$rc = sqlite3\exec($db, "SELECT *", "callback", new stdClass, $error);
+if ($rc) {
+	printf("%s: '%s'\n", sqlite3\errstr($rc), $error);
+}
+
 ?>
 ===DONE===
 --EXPECTF--

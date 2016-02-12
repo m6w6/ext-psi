@@ -23,15 +23,13 @@ typedef sqlite_int64 sqlite3_int64;
 typedef sqlite_uint64 sqlite3_uint64;
 
 extern void sqlite3_free(void *ptr);
-function sqlite3\free(object $object) : void {
-	let ptr = objval($object);
-	return void(sqlite3_free);
-}
 
 extern int sqlite3_close(sqlite3 *db);
-function sqlite3\close(object $db) : int {
+function sqlite3\close(object &$db) : int {
 	let db = objval($db);
 	return to_int(sqlite3_close);
+	// unset($db) as safe-guard
+	set $db = void(db);
 }
 
 extern int sqlite3_open(const char *filename, sqlite3 **db_ptr);
