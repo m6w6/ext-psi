@@ -12,7 +12,16 @@
 
 #include <jit/jit.h>
 
-static void psi_jit_handler(jit_type_t _sig, void *result, void **_args, void *_data);
+static void psi_jit_handler(jit_type_t _sig, void *_result, void **_args, void *_data)
+{
+	psi_call(*(zend_execute_data **)_args[0], *(zval **)_args[1], _data);
+}
+
+static void psi_jit_callback(jit_type_t _sig, void *_result, void **_args, void *_data)
+{
+	psi_callback(_data, _result, jit_type_num_params(_sig), _args);
+}
+
 static inline jit_type_t psi_jit_decl_arg_type(decl_arg *darg);
 
 static inline jit_abi_t psi_jit_abi(const char *convention) {
@@ -44,6 +53,7 @@ static inline jit_type_t psi_jit_token_type(token_t t) {
 	case PSI_T_BOOL:
 		return jit_type_sys_bool;
 	case PSI_T_INT:
+	case PSI_T_ENUM:
 		return jit_type_sys_int;
 	case PSI_T_LONG:
 		return jit_type_sys_long;
@@ -56,6 +66,7 @@ static inline jit_type_t psi_jit_token_type(token_t t) {
 		return jit_type_sys_long_double;
 #endif
 	case PSI_T_POINTER:
+	case PSI_T_FUNCTION:
 		return jit_type_void_ptr;
 	}
 }
@@ -134,7 +145,8 @@ static unsigned psi_jit_struct_type_elements(decl_struct *strct, jit_type_t **fi
 static inline jit_type_t psi_jit_decl_type(decl_type *type) {
 	decl_type *real = real_decl_type(type);
 
-	if (real->type == PSI_T_STRUCT) {
+	switch (real->type) {
+	case PSI_T_STRUCT:
 		if (!real->strct->engine.type) {
 			unsigned count;
 			jit_type_t strct, *fields = NULL;
@@ -147,8 +159,13 @@ static inline jit_type_t psi_jit_decl_type(decl_type *type) {
 		}
 
 		return real->strct->engine.type;
+
+	case PSI_T_UNION:
+		return psi_jit_decl_arg_type(real->unn->args->args[0]);
+
+	default:
+		return psi_jit_token_type(real->type);
 	}
-	return psi_jit_token_type(real->type);
 }
 static inline jit_type_t psi_jit_decl_arg_type(decl_arg *darg) {
 	if (darg->var->pointer_level) {
@@ -197,13 +214,21 @@ static inline PSI_LibjitCall *PSI_LibjitCallAlloc(PSI_Context *C, decl *decl) {
 			psi_jit_abi(decl->abi->convention),
 			psi_jit_decl_arg_type(decl->func),
 			(jit_type_t *) call->params, c, 1);
+	ZEND_ASSERT(call->signature);
+
 	return call;
 }
 
-static inline void PSI_LibjitCallInitClosure(PSI_Context *C, PSI_LibjitCall *call, impl *impl) {
+static inline void *PSI_LibjitCallInitClosure(PSI_Context *C, PSI_LibjitCall *call, impl *impl) {
 	PSI_LibjitContext *context = C->context;
-	call->closure = jit_closure_create(context->jit, context->signature,
+	return call->closure = jit_closure_create(context->jit, context->signature,
 			&psi_jit_handler, impl);
+}
+
+static inline void *PSI_LibjitCallInitCallbackClosure(PSI_Context *C, PSI_LibjitCall *call, let_callback *cb) {
+	PSI_LibjitContext *context = C->context;
+	return call->closure = jit_closure_create(context->jit, call->signature,
+			&psi_jit_callback, cb);
 }
 
 static inline void PSI_LibjitCallFree(PSI_LibjitCall *call) {
@@ -242,11 +267,6 @@ static inline void PSI_LibjitContextFree(PSI_LibjitContext **L) {
 	}
 }
 
-static void psi_jit_handler(jit_type_t _sig, void *result, void **_args, void *_data)
-{
-	psi_call(*(zend_execute_data **)_args[0], *(zval **)_args[1], _data);
-}
-
 static void psi_jit_init(PSI_Context *C)
 {
 	C->context = PSI_LibjitContextInit(NULL);
@@ -260,7 +280,28 @@ static void psi_jit_dtor(PSI_Context *C)
 		for (i = 0; i < C->decls->count; ++i) {
 			decl *decl = C->decls->list[i];
 
-			PSI_LibjitCallFree(decl->call.info);
+			if (decl->call.info) {
+				PSI_LibjitCallFree(decl->call.info);
+			}
+		}
+	}
+	if (C->impls) {
+		size_t i, j;
+
+		for (i = 0; i < C->impls->count; ++i) {
+			impl *impl = C->impls->list[i];
+
+			for (j = 0; j < impl->stmts->let.count; ++j) {
+				let_stmt *let = impl->stmts->let.list[j];
+
+				if (let->val && let->val->kind == PSI_LET_CALLBACK) {
+					let_callback *cb = let->val->data.callback;
+
+					if (cb->decl && cb->decl->call.info) {
+						PSI_LibjitCallFree(cb->decl->call.info);
+					}
+				}
+			}
 		}
 	}
 	PSI_LibjitContextFree((void *) &C->context);
@@ -268,7 +309,7 @@ static void psi_jit_dtor(PSI_Context *C)
 
 static zend_function_entry *psi_jit_compile(PSI_Context *C)
 {
-	size_t i, j = 0;
+	size_t c, i, j = 0;
 	zend_function_entry *zfe;
 	PSI_LibjitContext *ctx = C->context;
 
@@ -288,20 +329,41 @@ static zend_function_entry *psi_jit_compile(PSI_Context *C)
 			continue;
 		}
 
-		call = PSI_LibjitCallAlloc(C, impl->decl);
-		PSI_LibjitCallInitClosure(C, call, impl);
+		if ((call = PSI_LibjitCallAlloc(C, impl->decl))) {
+			if (!PSI_LibjitCallInitClosure(C, call, impl)) {
+				PSI_LibjitCallFree(call);
+				continue;
+			}
+		}
 
 		zf->fname = impl->func->name + (impl->func->name[0] == '\\');
 		zf->num_args = impl->func->args->count;
 		zf->handler = call->closure;
 		zf->arg_info = psi_internal_arginfo(impl);
 		++j;
+
+		for (c = 0; c < impl->stmts->let.count; ++c) {
+			let_stmt *let = impl->stmts->let.list[c];
+
+			if (let->val && let->val->kind == PSI_LET_CALLBACK) {
+				let_callback *cb = let->val->data.callback;
+
+				if ((call = PSI_LibjitCallAlloc(C, cb->decl))) {
+					if (!PSI_LibjitCallInitCallbackClosure(C, call, cb)) {
+						PSI_LibjitCallFree(call);
+						continue;
+					}
+
+					cb->decl->call.sym = call->closure;
+				}
+			}
+		}
 	}
 
 	for (i = 0; i < C->decls->count; ++i) {
 		decl *decl = C->decls->list[i];
 
-		if (decl->impl) {
+		if (decl->call.info) {
 			continue;
 		}
 

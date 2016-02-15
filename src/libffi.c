@@ -270,9 +270,6 @@ static inline ffi_type *psi_ffi_decl_type(decl_type *type) {
 	decl_type *real = real_decl_type(type);
 
 	switch (real->type) {
-	case PSI_T_FUNCTION:
-		return &ffi_type_pointer;
-
 	case PSI_T_STRUCT:
 		if (!real->strct->engine.type) {
 			ffi_type *strct = calloc(1, sizeof(ffi_type));
@@ -319,6 +316,13 @@ static inline PSI_LibffiContext *PSI_LibffiContextInit(PSI_LibffiContext *L) {
 	return L;
 }
 
+static inline void PSI_LibffiContextFree(PSI_LibffiContext **L) {
+	if (*L) {
+		free(*L);
+		*L = NULL;
+	}
+}
+
 static void psi_ffi_init(PSI_Context *C)
 {
 	C->context = PSI_LibffiContextInit(NULL);
@@ -357,7 +361,7 @@ static void psi_ffi_dtor(PSI_Context *C)
 			}
 		}
 	}
-	free(C->context);
+	PSI_LibffiContextFree((void *) &C->context);
 }
 
 static zend_function_entry *psi_ffi_compile(PSI_Context *C)
@@ -379,10 +383,11 @@ static zend_function_entry *psi_ffi_compile(PSI_Context *C)
 			continue;
 		}
 
-		call = PSI_LibffiCallAlloc(C, impl->decl);
-		if (FFI_OK != PSI_LibffiCallInitClosure(C, call, impl)) {
-			PSI_LibffiCallFree(call);
-			continue;
+		if ((call = PSI_LibffiCallAlloc(C, impl->decl))) {
+			if (FFI_OK != PSI_LibffiCallInitClosure(C, call, impl)) {
+				PSI_LibffiCallFree(call);
+				continue;
+			}
 		}
 
 		zf->fname = impl->func->name + (impl->func->name[0] == '\\');
@@ -394,16 +399,17 @@ static zend_function_entry *psi_ffi_compile(PSI_Context *C)
 		for (c = 0; c < impl->stmts->let.count; ++c) {
 			let_stmt *let = impl->stmts->let.list[c];
 
-			if (let->val->kind == PSI_LET_CALLBACK) {
+			if (let->val && let->val->kind == PSI_LET_CALLBACK) {
 				let_callback *cb = let->val->data.callback;
 
-				call = PSI_LibffiCallAlloc(C, cb->decl);
-				if (FFI_OK != PSI_LibffiCallInitCallbackClosure(C, call, cb)) {
-					PSI_LibffiCallFree(call);
-					continue;
-				}
+				if ((call = PSI_LibffiCallAlloc(C, cb->decl))) {
+					if (FFI_OK != PSI_LibffiCallInitCallbackClosure(C, call, cb)) {
+						PSI_LibffiCallFree(call);
+						continue;
+					}
 
-				cb->decl->call.sym = call->code;
+					cb->decl->call.sym = call->code;
+				}
 			}
 		}
 	}
@@ -411,9 +417,6 @@ static zend_function_entry *psi_ffi_compile(PSI_Context *C)
 	for (i = 0; i < C->decls->count; ++i) {
 		decl *decl = C->decls->list[i];
 
-//		if (decl->impl) {
-//			continue;
-//		}
 		if (decl->call.info) {
 			continue;
 		}
