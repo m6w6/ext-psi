@@ -42,13 +42,6 @@ function sqlite3\open(string $uri, object &$db) : int {
 
 typedef int (*sqlite3_callback)(void *data, int argc, char** argv, char** cols);
 
-/*
- * C calls into us, so we have to have a way to define how the callback 
- * arguments have to be marshaled for the userland callback, i.e. from 
- * native C types to ZE zvals /and/ how the userland return value has
- * to be marshaled to a native type. All in all, the opposite of function impls.
- */
-
 extern int sqlite3_exec(sqlite3 *db, const char *sql, sqlite3_callback callback, void *data, char **errmsg);
 function sqlite3\exec(object $db, string $sql, callable $cb, mixed $cd, string &$error = null) : int {
 	let db = objval($db);

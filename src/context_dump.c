@@ -57,8 +57,10 @@ static inline void dump_decl_var(int fd, decl_var *v) {
 
 static inline void dump_decl_arg(int fd, decl_arg *a) {
 	dump_decl_type(fd, a->type);
-	dprintf(fd, " ");
-	dump_decl_var(fd, a->var);
+	if (a->type->type != PSI_T_FUNCTION) {
+		dprintf(fd, " ");
+		dump_decl_var(fd, a->var);
+	}
 }
 
 static inline void dump_level(int fd, unsigned level) {
@@ -307,7 +309,7 @@ static inline void dump_impl_func(int fd, impl_func *func) {
 		for (j = 0; j < func->args->count; ++j) {
 			impl_arg *iarg = func->args->args[j];
 
-			dprintf(fd, "%s%s %s$%s",
+			dprintf(fd, "%s%s %s%s",
 					j ? ", " : "",
 					iarg->type->name,
 					iarg->var->reference ? "&" : "",
@@ -319,7 +321,7 @@ static inline void dump_impl_func(int fd, impl_func *func) {
 		if (func->args->vararg.name) {
 			impl_arg *vararg = func->args->vararg.name;
 
-			dprintf(fd, ", %s %s...$%s",
+			dprintf(fd, ", %s %s...%s",
 					vararg->type->name,
 					vararg->var->reference ? "&" : "",
 					vararg->var->name);
@@ -348,8 +350,23 @@ static inline void dump_impl_let_stmt(int fd, let_stmt *let) {
 			dump_num_exp(fd, let->val->data.alloc->size);
 			dprintf(fd, ")");
 			break;
+		case PSI_LET_CALLBACK:
+			dprintf(fd, "callback %s(%s(", let->val->data.callback->func->name,
+					let->val->data.callback->func->var->name);
+			if (let->val->data.callback->args) {
+				size_t i, c = let->val->data.callback->args->count;
+
+				dprintf(fd, "\n");
+				for (i = 0; i < c; ++i) {
+					set_value *set = let->val->data.callback->args->vals[i];
+					dump_impl_set_value(fd, set, 2, i + 1 == c);
+				}
+				dprintf(fd, "\t");
+			}
+			dprintf(fd, "));");
+			break;
 		case PSI_LET_FUNC:
-			dprintf(fd, "%s($%s)", let->val->data.func->name,
+			dprintf(fd, "%s(%s)", let->val->data.func->name,
 					let->val->data.func->var->name);
 			break;
 		case PSI_LET_NUMEXP:
@@ -368,7 +385,7 @@ static inline void dump_impl_return_stmt(int fd, return_stmt *ret) {
 }
 
 static inline void dump_impl_set_stmt(int fd, set_stmt *set) {
-	dprintf(fd, "\tset $%s = ", set->var->name);
+	dprintf(fd, "\tset %s = ", set->var->name);
 	dump_impl_set_value(fd, set->val, 1, 0);
 }
 
