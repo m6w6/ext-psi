@@ -78,50 +78,7 @@ static void psi_ffi_handler(ffi_cif *_sig, void *_result, void **_args, void *_d
 
 static void psi_ffi_callback(ffi_cif *_sig, void *_result, void **_args, void *_data)
 {
-	size_t i;
-	unsigned argc = _sig->nargs;
-	void **argv = _args;
-	let_callback *cb = _data;
-	decl *decl_cb = cb->decl;
-	impl_arg *iarg = cb->func->var->arg;
-	zval return_value, *zargv = calloc(argc, sizeof(*zargv));
-	void *result, *to_free = NULL;
-
-	ZEND_ASSERT(argc == cb->decl->args->count);
-
-	/* prepare args for the userland call */
-	for (i = 0; i < argc; ++i) {
-		cb->decl->args->args[i]->let = argv[i];
-	}
-	for (i = 0; i < cb->args->count; ++i) {
-		psi_do_set(&zargv[i], cb->args->vals[i]);
-	}
-	zend_fcall_info_argp(&iarg->val.zend.cb->fci, cb->args->count, zargv);
-
-	/* callback into userland */
-	ZVAL_UNDEF(&return_value);
-	iarg->_zv = &return_value;
-	zend_fcall_info_call(&iarg->val.zend.cb->fci, &iarg->val.zend.cb->fcc, iarg->_zv, NULL);
-
-	/* marshal return value of the userland call */
-	switch (iarg->type->type) {
-	case PSI_T_BOOL:	zend_parse_arg_bool(iarg->_zv, &iarg->val.zend.bval, NULL, 0);		break;
-	case PSI_T_LONG:	zend_parse_arg_long(iarg->_zv, &iarg->val.zend.lval, NULL, 0, 1);	break;
-	case PSI_T_FLOAT:
-	case PSI_T_DOUBLE:	zend_parse_arg_double(iarg->_zv, &iarg->val.dval, NULL, 0);			break;
-	case PSI_T_STRING:	zend_parse_arg_str(iarg->_zv, &iarg->val.zend.str, 0);				break;
-	}
-	result = cb->func->handler(_result, decl_cb->func->type, iarg, &to_free);
-
-	if (result != _result) {
-		*(void **)_result = result;
-	}
-
-	zend_fcall_info_args_clear(&iarg->val.zend.cb->fci, 0);
-	for (i = 0; i < cb->args->count; ++i) {
-		zval_ptr_dtor(&zargv[i]);
-	}
-	free(zargv);
+	psi_callback(_data, _result, _sig->nargs, _args);
 }
 
 static inline ffi_type *psi_ffi_decl_arg_type(decl_arg *darg);

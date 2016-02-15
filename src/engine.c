@@ -488,7 +488,7 @@ static inline impl_vararg *psi_do_varargs(impl *impl) {
 	return va;
 }
 
-void psi_call(zend_execute_data *execute_data, zval *return_value, impl *impl)
+ZEND_RESULT_CODE psi_call(zend_execute_data *execute_data, zval *return_value, impl *impl)
 {
 	size_t i;
 	impl_vararg *va = NULL;
@@ -496,7 +496,7 @@ void psi_call(zend_execute_data *execute_data, zval *return_value, impl *impl)
 	memset(impl->decl->func->ptr, 0, sizeof(impl_val));
 
 	if (SUCCESS != psi_parse_args(execute_data, impl)) {
-		return;
+		return FAILURE;
 	}
 
 	for (i = 0; i < impl->stmts->let.count; ++i) {
@@ -505,7 +505,7 @@ void psi_call(zend_execute_data *execute_data, zval *return_value, impl *impl)
 		if (!psi_do_let(let)) {
 			psi_do_return(return_value, impl->stmts->ret.list[0]);
 			psi_do_clean(impl);
-			return;
+			return FAILURE;
 		}
 	}
 
@@ -534,4 +534,54 @@ void psi_call(zend_execute_data *execute_data, zval *return_value, impl *impl)
 		psi_do_free(fre);
 	}
 	psi_do_clean(impl);
+
+	return SUCCESS;
+}
+
+ZEND_RESULT_CODE psi_callback(let_callback *cb, void *retval, unsigned argc, void **argv)
+{
+	size_t i;
+	decl *decl_cb = cb->decl;
+	impl_arg *iarg = cb->func->var->arg;
+	zval return_value, *zargv = calloc(argc, sizeof(*zargv));
+	void *result, *to_free = NULL;
+
+	ZEND_ASSERT(argc == cb->decl->args->count);
+
+	/* prepare args for the userland call */
+	for (i = 0; i < argc; ++i) {
+		cb->decl->args->args[i]->let = argv[i];
+	}
+	for (i = 0; i < cb->args->count; ++i) {
+		psi_do_set(&zargv[i], cb->args->vals[i]);
+	}
+	zend_fcall_info_argp(&iarg->val.zend.cb->fci, cb->args->count, zargv);
+
+	/* callback into userland */
+	ZVAL_UNDEF(&return_value);
+	iarg->_zv = &return_value;
+	zend_fcall_info_call(&iarg->val.zend.cb->fci, &iarg->val.zend.cb->fcc, iarg->_zv, NULL);
+
+	/* marshal return value of the userland call */
+	switch (iarg->type->type) {
+	case PSI_T_BOOL:	zend_parse_arg_bool(iarg->_zv, &iarg->val.zend.bval, NULL, 0);		break;
+	case PSI_T_LONG:	zend_parse_arg_long(iarg->_zv, &iarg->val.zend.lval, NULL, 0, 1);	break;
+	case PSI_T_FLOAT:
+	case PSI_T_DOUBLE:	zend_parse_arg_double(iarg->_zv, &iarg->val.dval, NULL, 0);			break;
+	case PSI_T_STRING:	zend_parse_arg_str(iarg->_zv, &iarg->val.zend.str, 0);				break;
+	}
+	result = cb->func->handler(retval, decl_cb->func->type, iarg, &to_free);
+
+	if (result != retval) {
+		*(void **)retval = result;
+	}
+
+	zend_fcall_info_args_clear(&iarg->val.zend.cb->fci, 0);
+	for (i = 0; i < cb->args->count; ++i) {
+		zval_ptr_dtor(&zargv[i]);
+	}
+	free(zargv);
+
+	return SUCCESS;
+
 }
