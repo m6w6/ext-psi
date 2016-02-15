@@ -4,10 +4,18 @@
 #include "libjit.h"
 #include "libffi.h"
 
-static inline void dump_decl_arg(int fd, decl_arg *darg);
+static inline void dump_level(int fd, unsigned level) {
+	dprintf(fd, "%.*s", level > 30 ? 30 : level,
+			"\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t");
+}
 
-static inline void dump_decl_type(int fd, decl_type *t) {
-	const char *pre;
+static inline void dump_decl_arg(int fd, decl_arg *darg, unsigned level);
+static inline void dump_struct_args(int fd, decl_args *args, unsigned level);
+static inline void dump_enum_items(int fd, decl_enum_items *items, unsigned level);
+
+#define is_anon_type(name, type) !strncmp(name, type "@", sizeof(type))
+
+static inline void dump_decl_type(int fd, decl_type *t, unsigned level) {
 	size_t j;
 
 	switch (t->type) {
@@ -16,14 +24,14 @@ static inline void dump_decl_type(int fd, decl_type *t) {
 		return;
 
 	case PSI_T_FUNCTION:
-		dump_decl_arg(fd, t->func->func);
+		dump_decl_arg(fd, t->func->func, level);
 		dprintf(fd, "(");
 		if (t->func->args) {
 			for (j = 0; j < t->func->args->count; ++j) {
 				if (j) {
 					dprintf(fd, ", ");
 				}
-				dump_decl_arg(fd, t->func->args->args[j]);
+				dump_decl_arg(fd, t->func->args->args[j], level+1);
 			}
 			if (t->func->args->varargs) {
 				dprintf(fd, ", ...");
@@ -33,19 +41,30 @@ static inline void dump_decl_type(int fd, decl_type *t) {
 		return;
 
 	case PSI_T_STRUCT:
-		pre = "struct ";
+		dprintf(fd, "struct ");
+		if (!strncmp(t->name, "struct@", sizeof("struct"))) {
+			dump_struct_args(fd, t->strct->args, level);
+			return;
+		}
 		break;
+
 	case PSI_T_ENUM:
-		pre = "enum ";
+		dprintf(fd, "enum ");
+		if (!strncmp(t->name, "enum@", sizeof("enum"))) {
+			dump_enum_items(fd, t->enm->items, level);
+			return;
+		}
 		break;
+
 	case PSI_T_UNION:
-		pre = "union ";
-		break;
-	default:
-		pre = "";
+		dprintf(fd, "union ");
+		if (!strncmp(t->name, "union@", sizeof("union"))) {
+			dump_struct_args(fd, t->unn->args, level);
+			return;
+		}
 		break;
 	}
-	dprintf(fd, "%s%s", pre, t->name);
+	dprintf(fd, "%s", t->name);
 }
 
 static inline void dump_decl_var(int fd, decl_var *v) {
@@ -55,16 +74,13 @@ static inline void dump_decl_var(int fd, decl_var *v) {
 	}
 }
 
-static inline void dump_decl_arg(int fd, decl_arg *a) {
-	dump_decl_type(fd, a->type);
+static inline void dump_decl_arg(int fd, decl_arg *a, unsigned level) {
+	dump_decl_type(fd, a->type, level);
+
 	if (a->type->type != PSI_T_FUNCTION) {
 		dprintf(fd, " ");
 		dump_decl_var(fd, a->var);
 	}
-}
-
-static inline void dump_level(int fd, unsigned level) {
-	dprintf(fd, "%.*s", level > 10 ? 10 : level, "\t\t\t\t\t\t\t\t\t\t");
 }
 
 static inline void dump_num_exp(int fd, num_exp *exp) {
@@ -146,13 +162,8 @@ static inline void dump_impl_set_value(int fd, set_value *set, unsigned level, i
 
 static inline void dump_typedef(int fd, decl_arg *tdef) {
 	dprintf(fd, "typedef ");
-	dump_decl_arg(fd, tdef);
+	dump_decl_arg(fd, tdef, 0);
 	dprintf(fd, ";");
-	/*
-	dump_decl_type(fd, tdef->type);
-	dprintf(fd, " %s%s;", tdef->type->type == PSI_T_POINTER ? "*":"",
-			tdef->alias);
-	*/
 }
 
 static inline void dump_typedefs(int fd, decl_typedefs *defs) {
@@ -166,20 +177,29 @@ static inline void dump_typedefs(int fd, decl_typedefs *defs) {
 	}
 }
 
-static inline void dump_struct(int fd, decl_struct *strct) {
+static inline void dump_struct_args(int fd, decl_args *args, unsigned level) {
 	size_t j;
 
-	dprintf(fd, "struct %s::(%zu, %zu)", strct->name, strct->align, strct->size);
-	if (strct->args && strct->args->count) {
-		dprintf(fd, " {\n");
-		for (j = 0; j < strct->args->count; ++j) {
-			decl_arg *sarg = strct->args->args[j];
+	dprintf(fd, " {\n");
+	if (args) {
+		++level;
+		for (j = 0; j < args->count; ++j) {
+			decl_arg *sarg = args->args[j];
 
-			dprintf(fd, "\t");
-			dump_decl_arg(fd, sarg);
+			dump_level(fd, level);
+			dump_decl_arg(fd, sarg, level);
 			dprintf(fd, "::(%zu, %zu);\n", sarg->layout->pos, sarg->layout->len);
 		}
-		dprintf(fd, "}");
+		--level;
+	}
+	dump_level(fd, level);
+	dprintf(fd, "}");
+}
+
+static inline void dump_struct(int fd, decl_struct *strct) {
+	dprintf(fd, "struct %s::(%zu, %zu)", strct->name, strct->align, strct->size);
+	if (strct->args && strct->args->count) {
+		dump_struct_args(fd, strct->args, 0);
 	} else {
 		dprintf(fd, ";");
 	}
@@ -191,8 +211,10 @@ static inline void dump_structs(int fd, decl_structs *structs) {
 	for (i = 0; i < structs->count; ++i) {
 		decl_struct *strct = structs->list[i];
 
-		dump_struct(fd, strct);
-		dprintf(fd, "\n");
+		if (!is_anon_type(strct->name, "struct")) {
+			dump_struct(fd, strct);
+			dprintf(fd, "\n");
+		}
 	}
 }
 
@@ -204,7 +226,7 @@ static inline void dump_union(int fd, decl_union *unn) {
 		decl_arg *uarg = unn->args->args[j];
 
 		dprintf(fd, "\t");
-		dump_decl_arg(fd, uarg);
+		dump_decl_arg(fd, uarg, 0);
 		dprintf(fd, "::(%zu, %zu);\n", uarg->layout->pos, uarg->layout->len);
 	}
 	dprintf(fd, "}");
@@ -216,27 +238,38 @@ static inline void dump_unions(int fd, decl_unions *unions) {
 	for (i = 0; i < unions->count; ++i) {
 		decl_union *unn = unions->list[i];
 
-		dump_union(fd, unn);
-		dprintf(fd, "\n");
+		if (!is_anon_type(unn->name, "union")) {
+			dump_union(fd, unn);
+			dprintf(fd, "\n");
+		}
+	}
+}
+
+static inline void dump_enum_items(int fd, decl_enum_items *items, unsigned level) {
+	size_t j;
+
+	if (items) {
+		++level;
+		for (j = 0; j < items->count; ++j) {
+			decl_enum_item *i = items->list[j];
+
+			if (j) {
+				dprintf(fd, ",\n");
+			}
+			dump_level(fd, level);
+			dprintf(fd, "%s", i->name);
+			if (i->num && i->num != &i->inc) {
+				dprintf(fd, " = ");
+				dump_num_exp(fd, i->num);
+			}
+		}
+		--level;
 	}
 }
 
 static inline void dump_enum(int fd, decl_enum *e) {
-	size_t j;
-
 	dprintf(fd, "enum %s {\n", e->name);
-	for (j = 0; j < e->items->count; ++j) {
-		decl_enum_item *i = e->items->list[j];
-
-		if (j) {
-			dprintf(fd, ",\n");
-		}
-		dprintf(fd, "\t%s", i->name);
-		if (i->num && i->num != &i->inc) {
-			dprintf(fd, " = ");
-			dump_num_exp(fd, i->num);
-		}
-	}
+	dump_enum_items(fd, e->items, 0);
 	dprintf(fd, "\n}");
 }
 
@@ -246,8 +279,10 @@ static inline void dump_enums(int fd, decl_enums *enums) {
 	for (i = 0; i < enums->count; ++i) {
 		decl_enum *e = enums->list[i];
 
-		dump_enum(fd, e);
-		dprintf(fd, "\n");
+		if (!is_anon_type(e->name, "enum")) {
+			dump_enum(fd, e);
+			dprintf(fd, "\n");
+		}
 	}
 }
 static inline void dump_constant(int fd, constant *cnst) {
@@ -274,14 +309,14 @@ static inline void dump_decl(int fd, decl *decl) {
 	size_t j;
 
 	dprintf(fd, "%s ", decl->abi->convention);
-	dump_decl_arg(fd, decl->func);
+	dump_decl_arg(fd, decl->func, 0);
 	dprintf(fd, "(");
 	if (decl->args) {
 		for (j = 0; j < decl->args->count; ++j) {
 			if (j) {
 				dprintf(fd, ", ");
 			}
-			dump_decl_arg(fd, decl->args->args[j]);
+			dump_decl_arg(fd, decl->args->args[j], 0);
 		}
 		if (decl->args->varargs) {
 			dprintf(fd, ", ...");
