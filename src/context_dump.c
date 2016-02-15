@@ -16,28 +16,9 @@ static inline void dump_enum_items(int fd, decl_enum_items *items, unsigned leve
 #define is_anon_type(name, type) !strncmp(name, type "@", sizeof(type))
 
 static inline void dump_decl_type(int fd, decl_type *t, unsigned level) {
-	size_t j;
-
 	switch (t->type) {
 	case PSI_T_POINTER:
 		dprintf(fd, "%s *", t->name);
-		return;
-
-	case PSI_T_FUNCTION:
-		dump_decl_arg(fd, t->func->func, level);
-		dprintf(fd, "(");
-		if (t->func->args) {
-			for (j = 0; j < t->func->args->count; ++j) {
-				if (j) {
-					dprintf(fd, ", ");
-				}
-				dump_decl_arg(fd, t->func->args->args[j], level+1);
-			}
-			if (t->func->args->varargs) {
-				dprintf(fd, ", ...");
-			}
-		}
-		dprintf(fd, ")");
 		return;
 
 	case PSI_T_STRUCT:
@@ -75,9 +56,27 @@ static inline void dump_decl_var(int fd, decl_var *v) {
 }
 
 static inline void dump_decl_arg(int fd, decl_arg *a, unsigned level) {
-	dump_decl_type(fd, a->type, level);
+	if (a->type->type == PSI_T_FUNCTION) {
+		dump_decl_type(fd, a->type->func->func->type, level);
+		dprintf(fd, " (");
+		dump_decl_var(fd, a->var);
+		dprintf(fd, ")(");
+		if (a->type->func->args) {
+			size_t j;
 
-	if (a->type->type != PSI_T_FUNCTION) {
+			for (j = 0; j < a->type->func->args->count; ++j) {
+				if (j) {
+					dprintf(fd, ", ");
+				}
+				dump_decl_arg(fd, a->type->func->args->args[j], level+1);
+			}
+			if (a->type->func->args->varargs) {
+				dprintf(fd, ", ...");
+			}
+		}
+		dprintf(fd, ")");
+	} else {
+		dump_decl_type(fd, a->type, level);
 		dprintf(fd, " ");
 		dump_decl_var(fd, a->var);
 	}

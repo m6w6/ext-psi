@@ -315,27 +315,37 @@ decl_func(func) ::= VOID(T) NAME(N). {
 	func->var->token = N;
 	func->token = N;
 }
-decl_typedef_body(def) ::= VOID(T) indirection(i) LPAREN ASTERISK NAME(N) RPAREN decl_typedef_body_fn_args(args). {
+decl_typedef_body(def) ::= VOID(T) indirection(decl_i) LPAREN indirection(type_i) NAME(N) RPAREN decl_typedef_body_fn_args(args). {
 	decl_arg *func_ = init_decl_arg(
 		init_decl_type(T->type, T->text),
-		init_decl_var(N->text, i, 0)
+		init_decl_var(N->text, decl_i, 0)
 	);
 	func_->type->token = T;
 	func_->var->token = N;
 	func_->token = N;
-	def = init_decl_arg(init_decl_type(PSI_T_FUNCTION, func_->var->name), copy_decl_var(func_->var));
+
+	def = init_decl_arg(
+		init_decl_type(PSI_T_FUNCTION, func_->var->name),
+		copy_decl_var(func_->var)
+	);
+	def->var->pointer_level = type_i;
 	def->type->token = PSI_TokenCopy(func_->token);
 	def->type->func = init_decl(init_decl_abi("default"), func_, args);
 }
-decl_typedef_body(def) ::= CONST VOID(T) pointers(i) LPAREN ASTERISK NAME(N) RPAREN decl_typedef_body_fn_args(args). {
+decl_typedef_body(def) ::= CONST VOID(T) pointers(decl_i) LPAREN indirection(type_i) NAME(N) RPAREN decl_typedef_body_fn_args(args). {
 	decl_arg *func_ = init_decl_arg(
 		init_decl_type(T->type, T->text),
-		init_decl_var(N->text, i, 0)
+		init_decl_var(N->text, decl_i, 0)
 	);
 	func_->type->token = T;
 	func_->var->token = N;
 	func_->token = N;
-	def = init_decl_arg(init_decl_type(PSI_T_FUNCTION, func_->var->name), copy_decl_var(func_->var));
+
+	def = init_decl_arg(
+		init_decl_type(PSI_T_FUNCTION, func_->var->name),
+		copy_decl_var(func_->var)
+	);
+	def->var->pointer_level = type_i;
 	def->type->token = PSI_TokenCopy(func_->token);
 	def->type->func = init_decl(init_decl_abi("default"), func_, args);
 }
@@ -373,14 +383,19 @@ decl_vars(vars) ::= decl_vars(vars_) COMMA decl_var(var). {
 decl_arg(arg_) ::= const_decl_type(type) decl_var(var). {
 	arg_ = init_decl_arg(type, var);
 }
-decl_typedef_body(def) ::= const_decl_type(type_) indirection(i) LPAREN ASTERISK NAME(N) RPAREN decl_typedef_body_fn_args(args). {
+decl_typedef_body(def) ::= const_decl_type(type_) indirection(decl_i) LPAREN indirection(type_i) NAME(N) RPAREN decl_typedef_body_fn_args(args). {
 	decl_arg *func_ = init_decl_arg(
 		type_,
-		init_decl_var(N->text, i, 0)
+		init_decl_var(N->text, decl_i, 0)
 	);
 	func_->var->token = N;
 	func_->token = N;
-	def = init_decl_arg(init_decl_type(PSI_T_FUNCTION, func_->var->name), copy_decl_var(func_->var));
+
+	def = init_decl_arg(
+		init_decl_type(PSI_T_FUNCTION, func_->var->name),
+		copy_decl_var(func_->var)
+	);
+	def->var->pointer_level = type_i;
 	def->type->token = PSI_TokenCopy(func_->token);
 	def->type->func = init_decl(init_decl_abi("default"), func_, args);
 }
