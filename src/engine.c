@@ -449,7 +449,8 @@ static inline impl_vararg *psi_do_varargs(impl *impl) {
 	for (i = 0, j = 0; i < vacount; ++i) {
 		impl_arg *vaarg = va->args->args[i];
 		void *to_free = NULL;
-		token_t let_fn, vatype = va->name->type->type;
+		token_t vatype = va->name->type->type;
+		let_func_handler let_fn;
 
 		if (vatype == PSI_T_MIXED) {
 			switch (Z_TYPE_P(vaarg->_zv)) {
@@ -463,17 +464,19 @@ static inline impl_vararg *psi_do_varargs(impl *impl) {
 
 
 		switch (vatype) {
-		case PSI_T_BOOL:	let_fn = PSI_T_BOOLVAL;	break;
-		case PSI_T_INT:		let_fn = PSI_T_INTVAL;	break;
+		case PSI_T_BOOL:	let_fn = psi_let_boolval;	break;
+		case PSI_T_INT:		let_fn = psi_let_intval;	break;
 		case PSI_T_FLOAT:
-		case PSI_T_DOUBLE:	let_fn = PSI_T_FLOATVAL;break;
-		case PSI_T_STRING:	let_fn = PSI_T_STRVAL;	break;
+		case PSI_T_DOUBLE:	let_fn = psi_let_floatval;	break;
+		case PSI_T_STRING:	let_fn = psi_let_strval;	break;
 		EMPTY_SWITCH_DEFAULT_CASE();
 		}
 
 		va->types[i] = vatype;
+
 		/* FIXME: varargs with struct-by-value :) */
-		if (!psi_let_val(let_fn, vaarg, &va->values[i], NULL, &to_free)) {
+		//if (!psi_let_val(let_fn, vaarg, &va->values[i], NULL, &to_free)) {
+		if (!let_fn(&va->values[i], NULL, vaarg, &to_free)) {
 			return NULL;
 		}
 

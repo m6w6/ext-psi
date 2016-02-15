@@ -919,11 +919,13 @@ static inline void free_let_callback(let_callback *cb) {
 	free(cb);
 }
 
+typedef impl_val *(*let_func_handler)(impl_val *tmp, decl_type *type, impl_arg *iarg, void **to_free);
+
 typedef struct let_func {
 	token_t type;
 	char *name;
 	impl_var *var;
-	impl_val *(*handler)(impl_val *tmp, decl_type *type, impl_arg *iarg, void **to_free);
+	let_func_handler handler;
 } let_func;
 
 static inline let_func *init_let_func(token_t type, const char *name, impl_var *var) {
