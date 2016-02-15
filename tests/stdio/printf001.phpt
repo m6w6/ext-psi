@@ -12,6 +12,7 @@ psi.directory={PWD}/../../psi.d:{PWD}
 ===TEST===
 <?php
 psi\printf("%.*s %ld %f\n", 5, "hello world", 123456789, .987654321);
+flush();
 ?>
 ===DONE===
 --EXPECT--
