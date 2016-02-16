@@ -24,7 +24,7 @@ static inline void dump_decl_type(int fd, decl_type *t, unsigned level) {
 	case PSI_T_STRUCT:
 		dprintf(fd, "struct ");
 		if (!strncmp(t->name, "struct@", sizeof("struct"))) {
-			dump_struct_args(fd, t->strct->args, level);
+			dump_struct_args(fd, t->real.strct->args, level);
 			return;
 		}
 		break;
@@ -32,7 +32,7 @@ static inline void dump_decl_type(int fd, decl_type *t, unsigned level) {
 	case PSI_T_ENUM:
 		dprintf(fd, "enum ");
 		if (!strncmp(t->name, "enum@", sizeof("enum"))) {
-			dump_enum_items(fd, t->enm->items, level);
+			dump_enum_items(fd, t->real.enm->items, level);
 			return;
 		}
 		break;
@@ -40,7 +40,7 @@ static inline void dump_decl_type(int fd, decl_type *t, unsigned level) {
 	case PSI_T_UNION:
 		dprintf(fd, "union ");
 		if (!strncmp(t->name, "union@", sizeof("union"))) {
-			dump_struct_args(fd, t->unn->args, level);
+			dump_struct_args(fd, t->real.unn->args, level);
 			return;
 		}
 		break;
@@ -57,20 +57,20 @@ static inline void dump_decl_var(int fd, decl_var *v) {
 
 static inline void dump_decl_arg(int fd, decl_arg *a, unsigned level) {
 	if (a->type->type == PSI_T_FUNCTION) {
-		dump_decl_type(fd, a->type->func->func->type, level);
+		dump_decl_type(fd, a->type->real.func->func->type, level);
 		dprintf(fd, " (");
 		dump_decl_var(fd, a->var);
 		dprintf(fd, ")(");
-		if (a->type->func->args) {
+		if (a->type->real.func->args) {
 			size_t j;
 
-			for (j = 0; j < a->type->func->args->count; ++j) {
+			for (j = 0; j < a->type->real.func->args->count; ++j) {
 				if (j) {
 					dprintf(fd, ", ");
 				}
-				dump_decl_arg(fd, a->type->func->args->args[j], level+1);
+				dump_decl_arg(fd, a->type->real.func->args->args[j], level+1);
 			}
-			if (a->type->func->args->varargs) {
+			if (a->type->real.func->args->varargs) {
 				dprintf(fd, ", ...");
 			}
 		}

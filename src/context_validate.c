@@ -46,14 +46,14 @@ static inline int locate_decl_type_alias(decl_typedefs *defs, decl_type *type) {
 	size_t i;
 	struct psi_std_type *stdtyp;
 
-	if (type->real) {
+	if (type->real.def) {
 		return 1;
 	}
 	if (defs) for (i = 0; i < defs->count; ++i) {
 		decl_arg *def = defs->list[i];
 
 		if (def->type->type != type->type && !strcmp(def->var->name, type->name)) {
-			type->real = def->type;
+			type->real.def = def;
 			return 1;
 		}
 	}
@@ -70,12 +70,12 @@ static inline int locate_decl_type_alias(decl_typedefs *defs, decl_type *type) {
 static inline int locate_decl_type_struct(decl_structs *structs, decl_type *type) {
 	size_t i;
 
-	if (type->strct) {
+	if (type->real.strct) {
 		return 1;
 	}
 	if (structs) for (i = 0; i < structs->count; ++i) {
 		if (!strcmp(structs->list[i]->name, type->name)) {
-			type->strct = structs->list[i];
+			type->real.strct = structs->list[i];
 			return 1;
 		}
 	}
@@ -85,12 +85,12 @@ static inline int locate_decl_type_struct(decl_structs *structs, decl_type *type
 static inline int locate_decl_type_union(decl_unions *unions, decl_type *type) {
 	size_t i;
 
-	if (type->unn) {
+	if (type->real.unn) {
 		return 1;
 	}
 	if (unions) for (i = 0; i < unions->count; ++i) {
 		if (!strcmp(unions->list[i]->name, type->name)) {
-			type->unn = unions->list[i];
+			type->real.unn = unions->list[i];
 			return 1;
 		}
 	}
@@ -100,12 +100,12 @@ static inline int locate_decl_type_union(decl_unions *unions, decl_type *type) {
 static inline int locate_decl_type_enum(decl_enums *enums, decl_type *type) {
 	size_t i;
 
-	if (type->enm) {
+	if (type->real.enm) {
 		return 1;
 	}
 	if (enums) for (i = 0; i < enums->count; ++i) {
 		if (!strcmp(enums->list[i]->name, type->name)) {
-			type->enm = enums->list[i];
+			type->real.enm = enums->list[i];
 			return 1;
 		}
 	}
@@ -115,12 +115,12 @@ static inline int locate_decl_type_enum(decl_enums *enums, decl_type *type) {
 static inline int locate_decl_type_decl(decls *decls, decl_type *type) {
 	size_t i;
 
-	if (type->func) {
+	if (type->real.func) {
 		return 1;
 	}
 	if (decls) for (i = 0; i < decls->count; ++i) {
 		if (!strcmp(decls->list[i]->func->var->name, type->name)) {
-			type->func = decls->list[i];
+			type->real.func = decls->list[i];
 			return 1;
 		}
 	}
@@ -128,24 +128,23 @@ static inline int locate_decl_type_decl(decls *decls, decl_type *type) {
 	return 0;
 }
 
+static inline int validate_decl_nodl(PSI_Data *data, decl *decl);
 static inline int validate_decl_struct(PSI_Data *data, decl_struct *s);
 static inline int validate_decl_union(PSI_Data *data, decl_union *u);
 static inline int validate_decl_enum(PSI_Data *data, decl_enum *e);
 
-static inline int validate_decl_type(PSI_Data *data, decl_type *type) {
-	switch (type->type) {
-	case PSI_T_CHAR:
-	case PSI_T_SHORT:
-	case PSI_T_INT:
-	case PSI_T_LONG:
-	case PSI_T_NAME:
+static inline int validate_decl_type(PSI_Data *data, decl_type *type, decl_arg *def) {
+	if (weak_decl_type(type)) {
 		if (!locate_decl_type_alias(data->defs, type)) {
 			return 0;
 		}
-		if (type->real) {
-			return validate_decl_type(data, type->real);
+		if (type->real.def) {
+			return validate_decl_type(data, type->real.def->type, type->real.def);
 		}
 		return 1;
+	}
+
+	switch (type->type) {
 	case PSI_T_STRUCT:
 		if (!locate_decl_type_struct(data->structs, type)) {
 			return 0;
@@ -165,20 +164,37 @@ static inline int validate_decl_type(PSI_Data *data, decl_type *type) {
 		if (!locate_decl_type_decl(data->decls, type)) {
 			return 0;
 		}
+		if (!validate_decl_nodl(data, type->real.func)) {
+			return 0;
+		}
 		break;
 	}
 	return 1;
 }
 static inline int validate_decl_typedef(PSI_Data *data, decl_arg *def) {
-	if (!validate_decl_type(data, def->type)) {
+	if (!validate_decl_type(data, def->type, def)) {
+		const char *pre;
+
+		switch (def->type->type) {
+		case PSI_T_STRUCT:	pre = "struct ";	break;
+		case PSI_T_UNION:	pre = "union ";		break;
+		case PSI_T_ENUM:	pre = "enum ";		break;
+		default:			pre = "";			break;
+		}
 		data->error(data, def->token, PSI_WARNING,
 			"Type '%s' cannot be aliased to %s'%s'",
-			def->type->name, def->type->type == PSI_T_STRUCT?"struct ":"",
-			def->var->name);
+			def->var->name, pre, def->type->name);
 		return 0;
 	}
-	if (def->type->type == PSI_T_VOID && def->var->pointer_level) {
-		def->type->type = PSI_T_POINTER;
+	if (def->type->type == PSI_T_VOID) {
+		if (def->var->pointer_level) {
+			def->type->type = PSI_T_POINTER;
+		} else {
+			data->error(data, def->token, PSI_WARNING,
+				"Type '%s' cannot be aliased to 'void'",
+				def->type->name);
+			return 0;
+		}
 	}
 	return 1;
 }
@@ -189,7 +205,7 @@ static inline int validate_constant(PSI_Data *data, constant *c) {
 }
 
 static inline int validate_decl_arg(PSI_Data *data, decl_arg *arg) {
-	if (!validate_decl_type(data, arg->type)) {
+	if (!validate_decl_type(data, arg->type, NULL)) {
 		data->error(data, arg->type->token, PSI_WARNING,
 			"Cannot use '%s' as type for '%s'",
 			arg->type->name, arg->var->name);
@@ -233,26 +249,35 @@ static inline int validate_decl_struct_darg(PSI_Data *data, decl_arg *darg, void
 	/* pre-validate any structs/unions/enums */
 	switch (real->type) {
 	case PSI_T_STRUCT:
-		if (current && current == real->strct) {
+		if (current && current == real->real.strct) {
 			return 1;
 		}
-		if (!validate_decl_struct(data, real->strct)) {
+		if (!locate_decl_type_struct(data->structs, real)) {
+			return 0;
+		}
+		if (!validate_decl_struct(data, real->real.strct)) {
 			return 0;
 		}
 		break;
 	case PSI_T_UNION:
-		if (current && current == real->unn) {
+		if (current && current == real->real.unn) {
 			return 1;
 		}
-		if (!validate_decl_union(data, real->unn)) {
+		if (!locate_decl_type_union(data->unions, real)) {
+			return 0;
+		}
+		if (!validate_decl_union(data, real->real.unn)) {
 			return 0;
 		}
 		break;
 	case PSI_T_ENUM:
-		if (current && current == real->enm) {
+		if (current && current == real->real.enm) {
 			return 1;
 		}
-		if (!validate_decl_enum(data, real->enm)) {
+		if (!locate_decl_type_enum(data->enums, real)) {
+			return 0;
+		}
+		if (!validate_decl_enum(data, real->real.enm)) {
 			return 0;
 		}
 		break;
@@ -276,10 +301,10 @@ static inline size_t sizeof_decl_arg(decl_arg *darg) {
 	} else {
 		switch (real->type) {
 		case PSI_T_UNION:
-			size = real->unn->size;
+			size = real->real.unn->size;
 			break;
 		case PSI_T_STRUCT:
-			size = real->strct->size;
+			size = real->real.strct->size;
 			break;
 		case PSI_T_ENUM:
 		default:
@@ -333,10 +358,10 @@ static inline size_t alignof_decl_type(decl_type *t) {
 
 	switch (real->type) {
 	case PSI_T_STRUCT:
-		align = alignof_decl_struct(real->strct);
+		align = alignof_decl_struct(real->real.strct);
 		break;
 	case PSI_T_UNION:
-		align = alignof_decl_union(real->unn);
+		align = alignof_decl_union(real->real.unn);
 		break;
 	case PSI_T_ENUM:
 	default:
@@ -374,7 +399,7 @@ static inline int validate_decl_struct(PSI_Data *data, decl_struct *s) {
 
 	if (!s->size && !s->args->count) {
 		data->error(data, s->token, PSI_WARNING,
-				"Cannot compute size of empty struct %s",
+				"Cannot compute size of empty struct '%s'",
 				s->name);
 		return 0;
 	}
@@ -801,10 +826,10 @@ static inline int validate_set_value_ex(PSI_Data *data, set_value *set, decl_arg
 		if (!set->outer.set || set->outer.set->inner->vals != set->inner->vals) {
 			for (i = 0; i < set->inner->count; ++i) {
 				decl_var *sub_var = set->inner->vals[i]->vars->vars[0];
-				decl_arg *sub_ref = locate_struct_member(ref_type->strct, sub_var);
+				decl_arg *sub_ref = locate_struct_member(ref_type->real.strct, sub_var);
 
 				if (sub_ref) {
-					if (!validate_set_value_ex(data, set->inner->vals[i], sub_ref, ref_type->strct->args)) {
+					if (!validate_set_value_ex(data, set->inner->vals[i], sub_ref, ref_type->real.strct->args)) {
 						return 0;
 					}
 				}
@@ -949,7 +974,7 @@ static inline int validate_let_callback(PSI_Data *data, decl_var *cb_var, let_ca
 		data->error(data, cb_var->token, PSI_WARNING, "Not a function: %s", cb_var->name);
 		return 0;
 	}
-	cb_func = cb_type->func;
+	cb_func = cb_type->real.func;
 	for (i = 0; i < cb->args->count; ++i) {
 		if (!validate_set_value(data, cb->args->vals[i], cb_func->args->count, cb_func->args->args, 0)) {
 			return 0;
