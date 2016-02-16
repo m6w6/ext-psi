@@ -147,21 +147,21 @@ static inline jit_type_t psi_jit_decl_type(decl_type *type) {
 
 	switch (real->type) {
 	case PSI_T_STRUCT:
-		if (!real->strct->engine.type) {
+		if (!real->real.strct->engine.type) {
 			unsigned count;
 			jit_type_t strct, *fields = NULL;
 
-			count = psi_jit_struct_type_elements(real->strct, &fields);
+			count = psi_jit_struct_type_elements(real->real.strct, &fields);
 			strct = jit_type_create_struct(fields, count, 0);
 
-			real->strct->engine.type = strct;
-			real->strct->engine.dtor = psi_jit_struct_type_dtor;
+			real->real.strct->engine.type = strct;
+			real->real.strct->engine.dtor = psi_jit_struct_type_dtor;
 		}
 
-		return real->strct->engine.type;
+		return real->real.strct->engine.type;
 
 	case PSI_T_UNION:
-		return psi_jit_decl_arg_type(real->unn->args->args[0]);
+		return psi_jit_decl_arg_type(real->real.unn->args->args[0]);
 
 	default:
 		return psi_jit_token_type(real->type);

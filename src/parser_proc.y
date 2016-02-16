@@ -57,11 +57,22 @@ block ::= impl(impl). {
 }
 block ::= decl_typedef(def). {
 	P->defs = add_decl_typedef(P->defs, def);
-	if (def->type->strct) {
-		P->structs = add_decl_struct(P->structs, def->type->strct);
-	}
-	if (def->type->enm) {
-		P->enums = add_decl_enum(P->enums, def->type->enm);
+	switch (def->type->type) {
+		case PSI_T_STRUCT:
+			if (def->type->real.strct) {
+				P->structs = add_decl_struct(P->structs, def->type->real.strct);
+			}
+			break;
+		case PSI_T_UNION:
+			if (def->type->real.unn) {
+				P->unions = add_decl_union(P->unions, def->type->real.unn);
+			}
+			break;
+		case PSI_T_ENUM:
+			if (def->type->real.enm) {
+				P->enums = add_decl_enum(P->enums, def->type->real.enm);
+			}
+			break;
 	}
 }
 block ::= constant(constant). {
@@ -208,16 +219,16 @@ constant(constant) ::= CONST const_type(type) NSNAME(T) EQUALS impl_def_val(val)
 
 %type decl_typedef {decl_arg*}
 %destructor decl_typedef {
-	free_decl_arg($$);
-	if ($$->type->strct) {
-		free_decl_struct($$->type->strct);
+	free_decl_arg($$);/*
+	if ($$->type->real.strct) {
+		free_decl_struct($$->type->real.strct);
 	}
-	if ($$->type->enm) {
-		free_decl_enum($$->type->enm);
+	if ($$->type->real.enm) {
+		free_decl_enum($$->type->real.enm);
 	}
-	if ($$->type->func) {
-		free_decl($$->type->func);
-	}
+	if ($$->type->real.func) {
+		free_decl($$->type->real.func);
+	}*/
 }
 decl_typedef(def) ::= TYPEDEF(T) decl_typedef_body(def_) EOS. {
 	def = def_;
@@ -225,57 +236,57 @@ decl_typedef(def) ::= TYPEDEF(T) decl_typedef_body(def_) EOS. {
 }
 %type decl_typedef_body_ex {decl_arg*}
 %destructor decl_typedef_body_ex {
-	free_decl_arg($$);
-	if ($$->type->strct) {
-		free_decl_struct($$->type->strct);
+	free_decl_arg($$);/*
+	if ($$->type->real.strct) {
+		free_decl_struct($$->type->real.strct);
 	}
-	if ($$->type->enm) {
-		free_decl_enum($$->type->enm);
+	if ($$->type->real.enm) {
+		free_decl_enum($$->type->real.enm);
 	}
-	if ($$->type->unn) {
-		free_decl_union($$->type->unn);
+	if ($$->type->real.unn) {
+		free_decl_union($$->type->real.unn);
 	}
-	if ($$->type->func) {
-		free_decl($$->type->func);
-	}
+	if ($$->type->real.func) {
+		free_decl($$->type->real.func);
+	}*/
 }
 decl_typedef_body_ex(def) ::= struct_name(N) align_and_size(as) decl_struct_args_block(args) decl_var(var). {
 	def = init_decl_arg(init_decl_type(PSI_T_STRUCT, N->text), var);
 	def->type->token = PSI_TokenCopy(N);
-	def->type->strct = init_decl_struct(N->text, args);
-	def->type->strct->token = N;
-	def->type->strct->align = as.a;
-	def->type->strct->size = as.s;
+	def->type->real.strct = init_decl_struct(N->text, args);
+	def->type->real.strct->token = N;
+	def->type->real.strct->align = as.a;
+	def->type->real.strct->size = as.s;
 }
 decl_typedef_body_ex(def) ::= union_name(N) align_and_size(as) decl_struct_args_block(args) decl_var(var). {
 	def = init_decl_arg(init_decl_type(PSI_T_UNION, N->text), var);
 	def->type->token = PSI_TokenCopy(N);
-	def->type->unn = init_decl_union(N->text, args);
-	def->type->unn->token = N;
-	def->type->unn->align = as.a;
-	def->type->unn->size = as.s;
+	def->type->real.unn = init_decl_union(N->text, args);
+	def->type->real.unn->token = N;
+	def->type->real.unn->align = as.a;
+	def->type->real.unn->size = as.s;
 }
 decl_typedef_body_ex(def) ::= decl_enum(e) NAME(ALIAS). {
 	def = init_decl_arg(init_decl_type(PSI_T_ENUM, e->name), init_decl_var(ALIAS->text, 0, 0));
 	def->var->token = ALIAS;
 	def->type->token = PSI_TokenCopy(e->token);
-	def->type->enm = e;
+	def->type->real.enm = e;
 }
 %type decl_typedef_body {decl_arg*}
 %destructor decl_typedef_body {
-	free_decl_arg($$);
-	if ($$->type->strct) {
-		free_decl_struct($$->type->strct);
+	free_decl_arg($$);/*
+	if ($$->type->real.strct) {
+		free_decl_struct($$->type->real.strct);
 	}
-	if ($$->type->enm) {
-		free_decl_enum($$->type->enm);
+	if ($$->type->real.enm) {
+		free_decl_enum($$->type->real.enm);
 	}
-	if ($$->type->unn) {
-		free_decl_union($$->type->unn);
+	if ($$->type->real.unn) {
+		free_decl_union($$->type->real.unn);
 	}
-	if ($$->type->func) {
-		free_decl($$->type->func);
-	}
+	if ($$->type->real.func) {
+		free_decl($$->type->real.func);
+	}*/
 }
 decl_typedef_body(def) ::= decl_typedef_body_ex(def_). {
 	def = def_;
@@ -288,7 +299,7 @@ decl_typedef_body_fn_args(args) ::= LPAREN decl_args(args_) RPAREN. {
 decl_typedef_body(def) ::= decl_func(func_) decl_typedef_body_fn_args(args). {
 	def = init_decl_arg(init_decl_type(PSI_T_FUNCTION, func_->var->name), copy_decl_var(func_->var));
 	def->type->token = PSI_TokenCopy(func_->token);
-	def->type->func = init_decl(init_decl_abi("default"), func_, args);
+	def->type->real.func = init_decl(init_decl_abi("default"), func_, args);
 }
 decl_typedef_body(def) ::= decl_arg(arg). {
 	def = arg;
@@ -330,7 +341,7 @@ decl_typedef_body(def) ::= VOID(T) indirection(decl_i) LPAREN indirection(type_i
 	);
 	def->var->pointer_level = type_i;
 	def->type->token = PSI_TokenCopy(func_->token);
-	def->type->func = init_decl(init_decl_abi("default"), func_, args);
+	def->type->real.func = init_decl(init_decl_abi("default"), func_, args);
 }
 decl_typedef_body(def) ::= CONST VOID(T) pointers(decl_i) LPAREN indirection(type_i) NAME(N) RPAREN decl_typedef_body_fn_args(args). {
 	decl_arg *func_ = init_decl_arg(
@@ -347,7 +358,7 @@ decl_typedef_body(def) ::= CONST VOID(T) pointers(decl_i) LPAREN indirection(typ
 	);
 	def->var->pointer_level = type_i;
 	def->type->token = PSI_TokenCopy(func_->token);
-	def->type->func = init_decl(init_decl_abi("default"), func_, args);
+	def->type->real.func = init_decl(init_decl_abi("default"), func_, args);
 }
 
 %type decl_abi {decl_abi*}
@@ -397,7 +408,7 @@ decl_typedef_body(def) ::= const_decl_type(type_) indirection(decl_i) LPAREN ind
 	);
 	def->var->pointer_level = type_i;
 	def->type->token = PSI_TokenCopy(func_->token);
-	def->type->func = init_decl(init_decl_abi("default"), func_, args);
+	def->type->real.func = init_decl(init_decl_abi("default"), func_, args);
 }
 
 /* void pointers need a specific rule */
@@ -445,23 +456,35 @@ struct_args(args) ::= struct_args(args_) struct_arg(arg). {
 %type struct_arg {decl_arg*}
 %destructor struct_arg {
 	free_decl_arg($$);
-	if ($$->type->strct) {
-		free_decl_struct($$->type->strct);
+	/*
+	if ($$->type->real.strct) {
+		free_decl_struct($$->type->real.strct);
 	}
-	if ($$->type->enm) {
-		free_decl_enum($$->type->enm);
+	if ($$->type->real.enm) {
+		free_decl_enum($$->type->real.enm);
 	}
-	if ($$->type->func) {
-		free_decl($$->type->func);
-	}
+	if ($$->type->real.func) {
+		free_decl($$->type->real.func);
+	}*/
 }
 struct_arg(arg_) ::= decl_typedef_body_ex(def) EOS. {
 	arg_ = def;
-	if (def->type->strct) {
-		P->structs = add_decl_struct(P->structs, def->type->strct);
-	}
-	if (def->type->enm) {
-		P->enums = add_decl_enum(P->enums, def->type->enm);
+	switch (def->type->type) {
+	case PSI_T_STRUCT:
+		if (def->type->real.strct) {
+			P->structs = add_decl_struct(P->structs, def->type->real.strct);
+		}
+		break;
+	case PSI_T_UNION:
+		if (def->type->real.unn) {
+			P->unions = add_decl_union(P->unions, def->type->real.unn);
+		}
+		break;
+	case PSI_T_ENUM:
+		if (def->type->real.enm) {
+			P->enums = add_decl_enum(P->enums, def->type->real.enm);
+		}
+		break;
 	}
 }
 struct_arg(arg) ::= decl_arg(arg_) struct_layout(layout_) EOS. {

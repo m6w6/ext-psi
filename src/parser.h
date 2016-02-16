@@ -66,11 +66,13 @@ typedef struct decl_type {
 	PSI_Token *token;
 	char *name;
 	token_t type;
-	struct decl_type *real;
-	struct decl_struct *strct;
-	struct decl_union *unn;
-	struct decl_enum *enm;
-	struct decl *func;
+	union {
+		struct decl_arg *def;
+		struct decl_struct *strct;
+		struct decl_union *unn;
+		struct decl_enum *enm;
+		struct decl *func;
+	} real;
 } decl_type;
 
 static inline decl_type *init_decl_type(token_t type, const char *name) {
@@ -80,11 +82,17 @@ static inline decl_type *init_decl_type(token_t type, const char *name) {
 	return t;
 }
 
-static inline decl_type *real_decl_type(decl_type *type) {
-	while (type->real) {
-		type = type->real;
+static inline int weak_decl_type(decl_type *type) {
+	switch (type->type) {
+	case PSI_T_CHAR:
+	case PSI_T_SHORT:
+	case PSI_T_INT:
+	case PSI_T_LONG:
+	case PSI_T_NAME:
+		return type->type;
+	default:
+		return 0;
 	}
-	return type;
 }
 
 static inline void free_decl(struct decl *decl);
@@ -93,7 +101,7 @@ static inline void free_decl_type(decl_type *type) {
 		free(type->token);
 	}
 	if (type->type == PSI_T_FUNCTION) {
-		free_decl(type->func);
+		free_decl(type->real.func);
 	}
 	free(type->name);
 	free(type);
@@ -183,6 +191,13 @@ static inline void free_decl_arg(decl_arg *arg) {
 		free_decl_struct_layout(arg->layout);
 	}
 	free(arg);
+}
+
+static inline decl_type *real_decl_type(decl_type *type) {
+	while (weak_decl_type(type)) {
+		type = type->real.def->type;
+	}
+	return type;
 }
 
 typedef struct decl_typedefs {

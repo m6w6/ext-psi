@@ -37,8 +37,8 @@ PSI_Parser *PSI_ParserInit(PSI_Parser *P, const char *filename, psi_error_cb err
 	P->line = 1;
 	P->error = error;
 	P->flags = flags;
-
 	P->proc = PSI_ParserProcAlloc(malloc);
+
 	if (flags & PSI_PARSER_DEBUG) {
 		PSI_ParserProcTrace(stderr, "PSI> ");
 	}

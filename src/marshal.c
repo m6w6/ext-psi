@@ -334,7 +334,7 @@ void psi_from_zval_ex(impl_val **ptr, decl_arg *spec, token_t cast, zval *zv, vo
 		val->ival = zval_get_long(zv);
 		break;
 	case PSI_T_STRUCT:
-		*tmp = *ptr = psi_array_to_struct(real->strct, HASH_OF(zv));
+		*tmp = *ptr = psi_array_to_struct(real->real.strct, HASH_OF(zv));
 		break;
 	}
 }
@@ -501,7 +501,7 @@ impl_val *psi_let_arrval(impl_val *tmp, decl_type *type, impl_arg *iarg, void **
 
 	switch (real->type) {
 	case PSI_T_STRUCT:
-		*to_free = tmp = psi_array_to_struct(real->strct, arr);
+		*to_free = tmp = psi_array_to_struct(real->real.strct, arr);
 		break;
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}

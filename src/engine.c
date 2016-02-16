@@ -339,7 +339,7 @@ static inline void psi_clean_array_struct(let_stmt *let, decl_arg *darg) {
 		decl_type *type = real_decl_type(darg->type);
 
 		if (type->type == PSI_T_STRUCT) {
-			void **ptr = (void **) ((char *) darg->mem + type->strct->size);
+			void **ptr = (void **) ((char *) darg->mem + type->real.strct->size);
 
 			while (*ptr) {
 				efree(*ptr++);
@@ -427,7 +427,7 @@ static inline void psi_do_args(impl *impl) {
 
 		switch (real->type) {
 		case PSI_T_STRUCT:
-			impl->decl->func->ptr = psi_array_to_struct(real->strct, NULL);
+			impl->decl->func->ptr = psi_array_to_struct(real->real.strct, NULL);
 			break;
 		}
 	}

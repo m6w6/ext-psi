@@ -11,7 +11,8 @@ function validate($check, $psi) {
 	$file = __DIR__."/001.psi";
 	file_put_contents($file, $psi);
 	if ($check !== psi_validate($file)) {
-		echo "Assertion failed!\n";
+		printf("Assertion failed!\nExpected: %s\n\n%s\n\n",
+				$check ? "true" : "false", $psi);
 	}
 }
 
@@ -21,9 +22,9 @@ validate(false, "typedef long int;");
 validate(true, "typedef long foo;");
 validate(false, "typedef struct foo bar;");
 validate(true, "typedef struct {int a;} foo;");
-validate(false, "struct a; \n typedef struct a a_t;");
-validate(true, "struct a::(8,8); \n typedef struct a a_t;");
-validate(true, "typedef struct a a_t; \n struct a::(8,8);");
+validate(false, "struct a; \ntypedef struct a a_t;");
+validate(true, "struct a::(8,8); \ntypedef struct a a_t;");
+validate(true, "typedef struct a a_t; \nstruct a::(8,8);");
 
 validate(true,
 <<<PSI
@@ -72,8 +73,8 @@ validate(true, "typedef int (foo)(int bar);");
 validate(true, "typedef int (*foo)(int bar);");
 validate(true, "typedef int *(*foo)(int bar);");
 validate(false, "typedef int *(*foo)(int *(*bar)(int baz));");
-validate(true, "typedef int *(*bar)(int baz); \n typedef int *(*foo)(bar bar);");
-validate(false, "typedef int bar(int baz); \n typedef int *(*foo)(bar bar);");
+validate(true, "typedef int *(*bar)(int baz); \ntypedef int *(*foo)(bar bar);");
+validate(false, "typedef int bar(int baz); \ntypedef int *(*foo)(bar bar);");
 
 ?>
 ===DONE===
