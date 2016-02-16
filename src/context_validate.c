@@ -128,17 +128,18 @@ static inline int locate_decl_type_decl(decls *decls, decl_type *type) {
 	return 0;
 }
 
+static inline int validate_decl_nodl(PSI_Data *data, decl *decl);
 static inline int validate_decl_struct(PSI_Data *data, decl_struct *s);
 static inline int validate_decl_union(PSI_Data *data, decl_union *u);
 static inline int validate_decl_enum(PSI_Data *data, decl_enum *e);
 
-static inline int validate_decl_type(PSI_Data *data, decl_type *type) {
+static inline int validate_decl_type(PSI_Data *data, decl_type *type, decl_arg *def) {
 	if (weak_decl_type(type)) {
 		if (!locate_decl_type_alias(data->defs, type)) {
 			return 0;
 		}
 		if (type->real.def) {
-			return validate_decl_type(data, type->real.def->type);
+			return validate_decl_type(data, type->real.def->type, type->real.def);
 		}
 		return 1;
 	}
@@ -163,12 +164,15 @@ static inline int validate_decl_type(PSI_Data *data, decl_type *type) {
 		if (!locate_decl_type_decl(data->decls, type)) {
 			return 0;
 		}
+		if (!validate_decl_nodl(data, type->real.func)) {
+			return 0;
+		}
 		break;
 	}
 	return 1;
 }
 static inline int validate_decl_typedef(PSI_Data *data, decl_arg *def) {
-	if (!validate_decl_type(data, def->type)) {
+	if (!validate_decl_type(data, def->type, def)) {
 		const char *pre;
 
 		switch (def->type->type) {
@@ -201,16 +205,11 @@ static inline int validate_constant(PSI_Data *data, constant *c) {
 }
 
 static inline int validate_decl_arg(PSI_Data *data, decl_arg *arg) {
-	if (!validate_decl_type(data, arg->type)) {
+	if (!validate_decl_type(data, arg->type, NULL)) {
 		data->error(data, arg->type->token, PSI_WARNING,
 			"Cannot use '%s' as type for '%s'",
 			arg->type->name, arg->var->name);
 		return 0;
-	} else {
-		decl_type *real = real_decl_type(arg->type);
-
-		if (real->type == PSI_T_FUNCTION) {
-		}
 	}
 	return 1;
 }

@@ -74,7 +74,7 @@ validate(true, "typedef int (*foo)(int bar);");
 validate(true, "typedef int *(*foo)(int bar);");
 validate(false, "typedef int *(*foo)(int *(*bar)(int baz));");
 validate(true, "typedef int *(*bar)(int baz); \ntypedef int *(*foo)(bar bar);");
-validate(false, "typedef int bar(int baz); \ntypedef int *(*foo)(bar bar);");
+validate(true, "typedef int bar(int baz); \ntypedef int *(*foo)(bar bar);");
 
 ?>
 ===DONE===
