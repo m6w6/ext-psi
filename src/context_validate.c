@@ -171,14 +171,28 @@ static inline int validate_decl_type(PSI_Data *data, decl_type *type) {
 }
 static inline int validate_decl_typedef(PSI_Data *data, decl_arg *def) {
 	if (!validate_decl_type(data, def->type)) {
+		const char *pre;
+
+		switch (def->type->type) {
+		case PSI_T_STRUCT:	pre = "struct ";	break;
+		case PSI_T_UNION:	pre = "union ";		break;
+		case PSI_T_ENUM:	pre = "enum ";		break;
+		default:			pre = "";			break;
+		}
 		data->error(data, def->token, PSI_WARNING,
 			"Type '%s' cannot be aliased to %s'%s'",
-			def->type->name, def->type->type == PSI_T_STRUCT?"struct ":"",
-			def->var->name);
+			def->type->name, pre, def->var->name);
 		return 0;
 	}
-	if (def->type->type == PSI_T_VOID && def->var->pointer_level) {
-		def->type->type = PSI_T_POINTER;
+	if (def->type->type == PSI_T_VOID) {
+		if (def->var->pointer_level) {
+			def->type->type = PSI_T_POINTER;
+		} else {
+			data->error(data, def->token, PSI_WARNING,
+				"Type '%s' cannot be aliased to 'void'",
+				def->type->name);
+			return 0;
+		}
 	}
 	return 1;
 }
@@ -194,6 +208,11 @@ static inline int validate_decl_arg(PSI_Data *data, decl_arg *arg) {
 			"Cannot use '%s' as type for '%s'",
 			arg->type->name, arg->var->name);
 		return 0;
+	} else {
+		decl_type *real = real_decl_type(arg->type);
+
+		if (real->type == PSI_T_FUNCTION) {
+		}
 	}
 	return 1;
 }
