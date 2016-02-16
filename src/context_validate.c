@@ -181,7 +181,7 @@ static inline int validate_decl_typedef(PSI_Data *data, decl_arg *def) {
 		}
 		data->error(data, def->token, PSI_WARNING,
 			"Type '%s' cannot be aliased to %s'%s'",
-			def->type->name, pre, def->var->name);
+			def->var->name, pre, def->type->name);
 		return 0;
 	}
 	if (def->type->type == PSI_T_VOID) {
@@ -393,7 +393,7 @@ static inline int validate_decl_struct(PSI_Data *data, decl_struct *s) {
 
 	if (!s->size && !s->args->count) {
 		data->error(data, s->token, PSI_WARNING,
-				"Cannot compute size of empty struct %s",
+				"Cannot compute size of empty struct '%s'",
 				s->name);
 		return 0;
 	}
