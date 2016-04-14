@@ -1,13 +1,19 @@
 # psi_add_str_const(name, value)
 # Add a pre-defined string constant to $PSI_CONSTS
 psi_add_str_const() {
-	grep -q "\"psi\\\\\\\\$1\"" $PSI_CONSTS || cat >>$PSI_CONSTS <<<"	{PSI_T_STRING, \"string\", \"psi\\\\$1\", $2, PSI_T_QUOTED_STRING}, "
+	grep -q "\"psi\\\\\\\\$1\"" $PSI_CONSTS \
+		|| cat >>$PSI_CONSTS <<EOF
+	{PSI_T_STRING, "string", "psi\\$1", $2, PSI_T_QUOTED_STRING},
+EOF 
 }
 
 # psi_add_int_const(name, value)
 # Add a pre-defined int constant to $PSI_CONSTS
 psi_add_int_const() {
-	grep -q "\"psi\\\\\\\\$1\"" $PSI_CONSTS || cat >>$PSI_CONSTS <<<"	{PSI_T_INT, \"int\", \"psi\\\\$1\", \"$2\", PSI_T_NUMBER}, "
+	grep -q "\"psi\\\\\\\\$1\"" $PSI_CONSTS \
+		|| cat >>$PSI_CONSTS <<EOF
+	{PSI_T_INT, "int", "psi\\$1", "$2", PSI_T_NUMBER}, 
+EOF
 }
 
 dnl PSI_CONST(const name, type)

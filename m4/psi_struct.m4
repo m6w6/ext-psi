@@ -1,13 +1,17 @@
 # psi_add_struct(struct members)
 # Add a pre-defined struct to $PSI_STRUCTS.
 psi_add_struct() {
-	cat >>$PSI_STRUCTS <<<"	$1, {0}, "
+	cat >>$PSI_STRUCTS <<EOF
+	$1, {0}, 
+EOF
 }
 
 # psi_add_union(union/struct members)
 # Add a pre-defined union to $PSI_UNIONS.
 psi_add_union() {
-	cat >>$PSI_UNIONS <<<"	$1, {0}, "
+	cat >>$PSI_UNIONS <<EOF
+	$1, {0}, 
+EOF
 }
 
 dnl PSI_STRUCT_MEMBER(struct name, decl member)

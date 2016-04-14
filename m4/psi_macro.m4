@@ -1,7 +1,9 @@
 # psi_add_macro(macro)
 # Add a pre-defined macro function to $PSI_MACROS.
 psi_add_macro() {
-	cat >>$PSI_MACROS <<<"$1"
+	cat >>$PSI_MACROS <<EOF
+$1
+EOF
 }
 
 dnl PSI_MACRO(macro, decl args, action-if-true)

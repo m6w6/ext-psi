@@ -1,7 +1,9 @@
 # psi_add_redir(name, symbol)
 # Add a function redirection to $PSI_REDIRS.
 psi_add_redir() {
-	cat >>$PSI_REDIRS <<<"	{\"$1\", (psi_func_ptr) $2}, "
+	cat >>$PSI_REDIRS <<EOF
+	{"$1", (psi_func_ptr) $2}, 
+EOF
 }
 
 # psi_add_decl(decl, options)
@@ -9,10 +11,14 @@ psi_add_redir() {
 psi_add_decl() {
 	case "$2" in
 	*vararg*)
-		cat >>$PSI_VA_DECLS <<<"	$1, {0}, "
+		cat >>$PSI_VA_DECLS <<EOF
+	$1, {0}, 
+EOF
 		;;
 	*)
-		cat >>$PSI_DECLS <<<"	$1, {0}, "
+		cat >>$PSI_DECLS <<EOF
+	$1, {0}, 
+EOF
 		;;
 	esac
 }
@@ -26,12 +32,11 @@ AC_DEFUN(PSI_REDIR, [
 dnl PSI_FUNC_LIBC_MAIN()
 dnl Check for the platforms default stub in executables.
 AC_DEFUN(PSI_FUNC_LIBC_MAIN, [
-	AC_REQUIRE([AC_PROG_NM])
 	AC_REQUIRE([AC_PROG_AWK])
 	AC_CACHE_CHECK(for libc start main symbol, psi_cv_libc_main, [
 		psi_libc_main=
 		AC_TRY_LINK(PSI_INCLUDES, [(void)0;], [
-			psi_libc_main=`$NM -g conftest$ac_exeext | $AWK -F" *|@" '/^@<:@@<:@:space:@:>@@:>@+U / {print$[]3; exit}'`
+			psi_libc_main=`nm -g conftest$ac_exeext | $AWK -F ' *|@' '/^@<:@@<:@:space:@:>@@:>@+U / {print$[]3; exit}'`
 		])
 		psi_cv_libc_main=$psi_libc_main
 	])
@@ -73,9 +78,9 @@ AC_DEFUN(PSI_DECL, [
 	AC_CACHE_CHECK(for PSI_VAR_NAME($1), [psi_cv_fn_]PSI_VAR_NAME($1), [
 		psi_symbol_redirect=
 		AC_TRY_LINK(PSI_INCLUDES, [
-			void (*fn)(void) = (void (*)(void)) $psi_symbol;
+			void (*fn)(void) = (void (*)(void)) $psi_symbol; (*fn)()
 		], [
-			psi_symbol_redirect=`$NM -g conftest$ac_exeext | $AWK -F" *|@" '/^@<:@@<:@:space:@:>@@:>@+U '$psi_cv_libc_main'/ {next} /^@<:@@<:@:space:@:>@@:>@+U / {print$[]3; exit}'`
+			psi_symbol_redirect=`nm -g conftest$ac_exeext | $AWK -F ' *|@' '/^@<:@@<:@:space:@:>@@:>@+U '$psi_cv_libc_main'/ {next} /^@<:@@<:@:space:@:>@@:>@+U / {print$[]3; exit}'`
 		])
 		[psi_cv_fn_]PSI_VAR_NAME($1)=$psi_symbol_redirect
 	])
@@ -83,12 +88,17 @@ AC_DEFUN(PSI_DECL, [
 	"$psi_symbol"|"_$psi_symbol")
 		psi_add_decl "$psi_decl_args" $3
 		;;
-	*)
+	"")
 		ifelse([$3], vararg, [
 			AC_MSG_ERROR(varargs macro support is not implemented)
 		],[
-			PSI_MACRO($1, $2, [psi_add_decl "$psi_decl_args"])
+			PSI_MACRO($1, $2, [
+				psi_add_decl "$psi_decl_args"
+			])
 		])
+		;;
+	"*")
+		PSI_REDIR($psi_symbol, $psi_symbol_redirect)
 		;;
 	esac
 ])

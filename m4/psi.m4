@@ -152,7 +152,7 @@ dnl PSI_CONFIG_POSIX(section, headers)
 AC_DEFUN(PSI_CONFIG_POSIX, [
 	PSI_CONFIG_POSIX_ENABLED($1, [
 		PHP_CONFIGURE_PART(Configuring PSI POSIX: $1)
-		ifelse([$2],,,AC_CHECK_HEADERS($2))
+		ifelse([$2],,:,[AC_CHECK_HEADERS($2)])
 	], [
 		return 0
 	])

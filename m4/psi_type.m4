@@ -1,22 +1,26 @@
 # psi_add_type(type triplet)
 # Add a pre-defined type to $PSI_TYPES.
 psi_add_type() {
-	cat >>$PSI_TYPES <<<"	$1, "
+	cat >>$PSI_TYPES <<EOF
+	$1, 
+EOF
 }
 
 psi_add_stdtype() {
-	cat >>$PSI_STDTYPES <<<"	$1, "
+	cat >>$PSI_STDTYPES <<EOF
+	$1, 
+EOF
 }
 
 # psi_type_pair(type, size)
 # Output a PSI_T_<TYPE>, \"<TYPENAME>\" tuple.
 # Uses stdint types when possible.
 psi_type_pair() {
-	local psi_type_name=`tr -cd A-Za-z0-9_ <<<$1`
-	local psi_type_lower=`tr A-Z a-z <<<$psi_type_name`
+	local psi_type_name=`printf "%s" "$1" | tr -cd A-Za-z0-9_`
+	local psi_type_lower=`printf "%s" "$1" | tr A-Z a-z`
 	case $psi_type_lower in
 	int*|uint*)
-		local psi_type_upper=`tr a-z A-Z <<<$psi_type_name`
+		local psi_type_upper=`printf "%s" "$psi_type_name" | tr a-z A-Z`
 		local psi_type_bits=`expr $2 \* 8`
 		echo "PSI_T_${psi_type_upper}${psi_type_bits}, \"${psi_type_lower}${psi_type_bits}_t\""
 		;;
