@@ -12,7 +12,7 @@ EOF
 psi_add_int_const() {
 	grep -q "\"psi\\\\\\\\$1\"" $PSI_CONSTS \
 		|| cat >>$PSI_CONSTS <<EOF
-	{PSI_T_INT, "int", "psi\\$1", "$2", PSI_T_NUMBER}, 
+	{PSI_T_INT, "int", "psi\\\\$1", "$2", PSI_T_NUMBER}, 
 EOF
 }
 
