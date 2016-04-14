@@ -12,6 +12,9 @@ The acronym PSI may be read as:
 The latter because PSI can be configured to include declarations for most of the
 [base definitions and system interfaces of POSIX.1-2008](http://pubs.opengroup.org/onlinepubs/9699919799/).
 
+> **WARNING:**  
+> This is heavy WIP. Only a small part of configuration and implementation has been completed yet.
+
 ## Features
 
 * standard scalar types mapped to stdint types
@@ -21,6 +24,9 @@ The latter because PSI can be configured to include declarations for most of the
 * vararg calls
 
 ## Installing
+
+> **WARNING:**  
+> This is heavy WIP. Installation only works from a source checkout yet.
 
 ### PECL
 
@@ -104,6 +110,11 @@ The following modules are available to select:
 
 ### --with-psi-libffi
 **Path to libffi.**
+
+> **WARNING:**  
+> We currently rely on a patched libjit, because of an apparent bug in how
+> libjit creates closures, which still needs to be verified, though.  
+> See https::/github.com/m6w6/libjit for the preliminary patch.
 
 ## Configuring PSI at runtime
 
