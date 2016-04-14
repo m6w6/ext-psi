@@ -108,13 +108,13 @@ The following modules are available to select:
 ### --with-psi-libjit
 **Path to libjit.**
 
-### --with-psi-libffi
-**Path to libffi.**
-
 > **WARNING:**  
 > We currently rely on a patched libjit, because of an apparent bug in how
-> libjit creates closures, which still needs to be verified, though.  
-> See https::/github.com/m6w6/libjit for the preliminary patch.
+> libjit creates closures, which still needs to be verified, though.
+> See https://github.com/m6w6/libjit for the preliminary patch.
+
+### --with-psi-libffi
+**Path to libffi.**
 
 ## Configuring PSI at runtime
 
