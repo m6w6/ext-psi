@@ -1,3 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<package version="2.0" xmlns="http://pear.php.net/dtd/package-2.0"
+ xmlns:tasks="http://pear.php.net/dtd/tasks-1.0"
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="
+  http://pear.php.net/dtd/tasks-1.0
+  http://pear.php.net/dtd/tasks-1.0.xsd
+  http://pear.php.net/dtd/package-2.0
+  http://pear.php.net/dtd/package-2.0.xsd">
+ <name>psi</name>
+ <channel>pecl.php.net</channel>
+ <summary>PHP System Interface / POSIX Standard Interface</summary>
+ <description><![CDATA[
+PSI is a PHP extension, which provides a foreign function interface through libffi and/or libjit.
 
-Parse error: parse error in /Users/Mike/Sources/repo-template.git/presets/package.xml on line 2
+The acronym PSI may be read as:
 
+    PHP System Interface
+    POSIX Standard Interface
+
+The latter because PSI can be configured to include declarations for most of the base definitions 
+and system interfaces of POSIX.1-2008 (http://pubs.opengroup.org/onlinepubs/9699919799/).
+]]></description>
+ <lead>
+  <name>Michael Wallner</name>
+  <user>mike</user>
+  <email>mike@php.net</email>
+  <active>yes</active>
+ </lead>
+ <date>2016-04-14</date>
+ <version>
+  <release>0.1.0dev</release>
+  <api>0.1.0</api>
+ </version>
+ <stability>
+  <release>alpha</release>
+  <api>alpha</api>
+ </stability>
+ <license uri="http://copyfree.org/content/standard/licenses/2bsd/license.txt">BSD-2-Clause</license>
+ <notes><![CDATA[
+*
+]]></notes>
+ <contents>
+  <dir name="/">
+   <file role="doc" name="AUTHORS"/>
+   <file role="doc" name="BUGS"/>
+   <file role="doc" name="CONTRIBUTING.md"/>
+   <file role="doc" name="CREDITS"/>
+   <file role="doc" name="LICENSE"/>
+   <file role="doc" name="README.md"/>
+   <file role="doc" name="THANKS"/>
+   <file role="doc" name="TODO"/>
+   <file role="src" name="config.m4"/>
+   <file role="src" name="Makefile.frag"/>
+   <file role="src" name="php_psi.h"/>
+   <dir name="src">
+    <file role="src" name="calc.c"/>
+    <file role="src" name="calc.h"/>
+    <file role="src" name="context.c"/>
+    <file role="src" name="context_dump.c"/>
+    <file role="src" name="context.h"/>
+    <file role="src" name="context_validate.c"/>
+    <file role="src" name="engine.c"/>
+    <file role="src" name="engine.h"/>
+    <file role="src" name="libffi.c"/>
+    <file role="src" name="libffi.h"/>
+    <file role="src" name="libjit.c"/>
+    <file role="src" name="libjit.h"/>
+    <file role="src" name="marshal.c"/>
+    <file role="src" name="marshal.h"/>
+    <file role="src" name="module.c"/>
+    <file role="src" name="parser.c"/>
+    <file role="src" name="parser.h"/>
+    <file role="src" name="parser_proc.c"/>
+    <file role="src" name="parser_proc.h"/>
+    <file role="src" name="parser_proc.y"/>
+    <file role="src" name="parser.re"/>
+   </dir>
+   <dir name="tests">
+   </dir>
+  </dir>
+ </contents>
+ <dependencies>
+  <required>
+   <php>
+    <min>7.0.0-dev</min>
+   </php>
+   <pearinstaller>
+    <min>1.10.1</min>
+   </pearinstaller>
+  </required>
+ </dependencies>
+ <providesextension>psi</providesextension>
+ <extsrcrelease>
+ </extsrcrelease>
+ <changelog />
+</package>
