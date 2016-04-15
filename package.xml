@@ -18,7 +18,7 @@ The acronym PSI may be read as:
     PHP System Interface
     POSIX Standard Interface
 
-The latter because PSI can be configured to include declarations for most of the base definitions 
+The latter because PSI can be configured to include declarations for most of the base definitions
 and system interfaces of POSIX.1-2008 (http://pubs.opengroup.org/onlinepubs/9699919799/).
 ]]></description>
  <lead>
@@ -86,7 +86,7 @@ and system interfaces of POSIX.1-2008 (http://pubs.opengroup.org/onlinepubs/9699
     <min>7.0.0-dev</min>
    </php>
    <pearinstaller>
-    <min>1.10.1</min>
+    <min>1.4.1</min>
    </pearinstaller>
   </required>
  </dependencies>
