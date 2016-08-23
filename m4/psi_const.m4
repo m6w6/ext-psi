@@ -3,8 +3,8 @@
 psi_add_str_const() {
 	grep -q "\"psi\\\\\\\\$1\"" $PSI_CONSTS \
 		|| cat >>$PSI_CONSTS <<EOF
-	{PSI_T_STRING, "string", "psi\\$1", $2, PSI_T_QUOTED_STRING},
-EOF 
+	{PSI_T_STRING, "string", "psi\\\\$1", $2, PSI_T_QUOTED_STRING},
+EOF
 }
 
 # psi_add_int_const(name, value)

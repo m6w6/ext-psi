@@ -97,8 +97,9 @@ AC_DEFUN(PSI_DECL, [
 			])
 		])
 		;;
-	"*")
-		PSI_REDIR($psi_symbol, $psi_symbol_redirect)
+	*)
+		PSI_REDIR($psi_symbol)
+		psi_add_decl "$psi_decl_args" $3
 		;;
 	esac
 ])

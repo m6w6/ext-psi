@@ -2,6 +2,8 @@
 # include "config.h"
 #endif
 
+#include "php_psi_stdinc.h"
+
 #include "php.h"
 
 #ifdef HAVE_DIRENT_H
