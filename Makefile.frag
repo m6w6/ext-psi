@@ -29,8 +29,9 @@ $(PHP_PSI_SRCDIR)/src/parser_proc.h: $(PHP_PSI_SRCDIR)/src/parser_proc.c
 
 $(PHP_PSI_SRCDIR)/src/%.c: $(PHP_PSI_SRCDIR)/src/parser.h $(PHP_PSI_SRCDIR)/src/parser_proc.h
 	touch $@
-$(PHP_PSI_SRCDIR)/src/parser_proc.y: $(PHP_PSI_SRCDIR)/src/parser.h
-	touch $@
+$(PHP_PSI_SRCDIR)/src/parser_proc.y: $(PHP_PSI_SRCDIR)/src/parser_def.h $(PHP_PSI_SRCDIR)/src/parser.h
+	cat $(PHP_PSI_SRCDIR)/src/parser_proc.inc >$@
+	$(CPP) -P -DGENERATE $< >>$@
 $(PHP_PSI_SRCDIR)/src/parser_proc.c: $(PHP_PSI_SRCDIR)/src/parser_proc.y $(LEMON)
 	$(LEMON) -c $<
 

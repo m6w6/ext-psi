@@ -957,16 +957,17 @@ static inline void free_let_func(let_func *func) {
 	free(func);
 }
 
+enum let_val_kind {
+	PSI_LET_NULL,
+	PSI_LET_NUMEXP,
+	PSI_LET_CALLOC,
+	PSI_LET_CALLBACK,
+	PSI_LET_FUNC,
+	PSI_LET_TMP,
+};
 #define PSI_LET_REFERENCE 0x1;
 typedef struct let_val {
-	enum let_val_kind {
-		PSI_LET_NULL,
-		PSI_LET_NUMEXP,
-		PSI_LET_CALLOC,
-		PSI_LET_CALLBACK,
-		PSI_LET_FUNC,
-		PSI_LET_TMP,
-	} kind;
+	enum let_val_kind kind;
 	union {
 		num_exp *num;
 		let_calloc *alloc;
