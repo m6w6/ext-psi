@@ -4,7 +4,7 @@
 #include "context.h"
 
 #ifdef HAVE_LIBFFI
-PSI_ContextOps *PSI_Libffi(void);
+struct psi_context_ops *psi_libffi_ops(void);
 #endif
 
 #endif

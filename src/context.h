@@ -1,39 +1,43 @@
 #ifndef _PSI_CONTEXT_H
 #define _PSI_CONTEXT_H
 
-#include "parser.h"
+struct psi_context;
+struct psi_token;
+struct psi_parser;
+struct decl_callinfo;
+struct impl_vararg;
 
 #define PSI_ERROR 16
 #define PSI_WARNING 32
-typedef void (*PSI_ContextErrorFunc)(void *context, PSI_Token *token, int type, const char *msg, ...);
+typedef void (*psi_context_error_func)(void *context, struct psi_token *token, int type, const char *msg, ...);
 
-typedef struct PSI_Context PSI_Context;
-typedef struct PSI_ContextOps PSI_ContextOps;
 
-struct PSI_ContextOps {
-	void (*init)(PSI_Context *C);
-	void (*dtor)(PSI_Context *C);
-	zend_function_entry *(*compile)(PSI_Context *C);
-	void (*call)(PSI_Context *C, decl_callinfo *decl_call, impl_vararg *va);
+struct psi_context_ops {
+	void (*init)(struct psi_context *C);
+	void (*dtor)(struct psi_context *C);
+	zend_function_entry *(*compile)(struct psi_context *C);
+	void (*call)(struct psi_context *C, struct decl_callinfo *decl_call, struct impl_vararg *va);
 };
 
-struct PSI_Context {
+#include "data.h"
+
+struct psi_context {
 	PSI_DATA_MEMBERS;
 	void *context;
-	struct PSI_ContextOps *ops;
+	struct psi_context_ops *ops;
 	zend_function_entry *closures;
-	PSI_Data *data;
+	struct psi_data *data;
 	size_t count;
 };
 
-PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErrorFunc error, unsigned flags);
-void PSI_ContextBuild(PSI_Context *C, const char *path);
-int PSI_ContextValidate(PSI_Context *C, PSI_Parser *P);
-int PSI_ContextValidateData(PSI_Data *C, PSI_Data *D);
-zend_function_entry *PSI_ContextCompile(PSI_Context *C);
-void PSI_ContextCall(PSI_Context *C, decl_callinfo *decl_call, impl_vararg *va);
-void PSI_ContextDump(PSI_Context *C, int fd);
-void PSI_ContextDtor(PSI_Context *C);
-void PSI_ContextFree(PSI_Context **C);
+struct psi_context *psi_context_init(struct psi_context *C, struct psi_context_ops *ops, psi_context_error_func error, unsigned flags);
+void psi_context_build(struct psi_context *C, const char *path);
+int psi_context_validate(struct psi_context *C, struct psi_parser *P);
+int psi_context_validate_data(struct psi_data *C, struct psi_data *D);
+zend_function_entry *psi_context_compile(struct psi_context *C);
+void psi_context_call(struct psi_context *C, struct decl_callinfo *decl_call, struct impl_vararg *va);
+void psi_context_dump(struct psi_context *C, int fd);
+void psi_context_dtor(struct psi_context *C);
+void psi_context_free(struct psi_context **C);
 
 #endif

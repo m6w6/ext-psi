@@ -20,13 +20,13 @@
 #define DEF(dn, dv)
 #define LET(nt, rule)
 #define PARSE(nt, rule) \
-	static void COUNTED(nt) (PSI_Parser *P rule)
+	static void COUNTED(nt) (struct psi_parser *P rule)
 #define PARSE_NAMED(nt, nt_name, rule) \
-	static void COUNTED(nt) (PSI_Parser *P NAMED(nt, nt_name) rule)
+	static void COUNTED(nt) (struct psi_parser *P NAMED(nt, nt_name) rule)
 #define PARSE_TYPED(nt, nt_name, rule) \
-	static void COUNTED(nt) (PSI_Parser *P TYPED(nt, nt_name) rule)
+	static void COUNTED(nt) (struct psi_parser *P TYPED(nt, nt_name) rule)
 #define TOKEN(t)
-#define NAMED(t, name) , PSI_Token *name
+#define NAMED(t, name) , struct psi_token *name
 #define TYPED(t, name) , TOKEN_TYPE_NAME(t) name
 #define TOKEN_TYPE_NAME(token) _##token##_type
 #define TOKEN_TYPE(token, type) typedef type TOKEN_TYPE_NAME(token);
@@ -37,12 +37,12 @@ DEF(%include, {
 void psi_error(int, const char *, int, const char *, ...);
 })
 
-DEF(%name, PSI_ParserProc)
+DEF(%name, psi_parser_proc_)
 DEF(%token_prefix, PSI_T_)
-DEF(%token_type, {PSI_Token *})
+DEF(%token_type, {struct psi_token *})
 DEF(%token_destructor, {free($$);})
 DEF(%default_destructor, {(void)P;})
-DEF(%extra_argument, {PSI_Parser *P})
+DEF(%extra_argument, {struct psi_parser *P})
 
 /* TOKEN is defined inside syntax_error */
 DEF(%syntax_error, {
@@ -253,8 +253,8 @@ PARSE_NAMED(enum_name, n,
 	} else {
 		char digest[17];
 
-		PSI_TokenHash(E, digest);
-		n = PSI_TokenTranslit(PSI_TokenAppend(E, 1, digest), " ", "@");
+		psi_token_hash(E, digest);
+		n = psi_token_translit(psi_token_append(E, 1, digest), " ", "@");
 	}
 }
 
@@ -300,8 +300,8 @@ PARSE_NAMED(union_name, n,
 	} else {
 		char digest[17];
 
-		PSI_TokenHash(U, digest);
-		n = PSI_TokenTranslit(PSI_TokenAppend(U, 1, digest), " ", "@");
+		psi_token_hash(U, digest);
+		n = psi_token_translit(psi_token_append(U, 1, digest), " ", "@");
 	}
 }
 
@@ -314,8 +314,8 @@ PARSE_NAMED(struct_name, n,
 	} else {
 		char digest[17];
 
-		PSI_TokenHash(S, digest);
-		n = PSI_TokenTranslit(PSI_TokenAppend(S, 1, digest), " ", "@");
+		psi_token_hash(S, digest);
+		n = psi_token_translit(psi_token_append(S, 1, digest), " ", "@");
 	}
 }
 
@@ -406,7 +406,7 @@ PARSE_TYPED(decl_typedef_body_ex, def,
 		TYPED(decl_struct_args_block, args)
 		TYPED(decl_var, var)) {
 	def = init_decl_arg(init_decl_type(PSI_T_STRUCT, N->text), var);
-	def->type->token = PSI_TokenCopy(N);
+	def->type->token = psi_token_copy(N);
 	def->type->real.strct = init_decl_struct(N->text, args);
 	def->type->real.strct->token = N;
 	def->type->real.strct->align = as.pos;
@@ -418,7 +418,7 @@ PARSE_TYPED(decl_typedef_body_ex, def,
 		TYPED(decl_struct_args_block, args)
 		TYPED(decl_var, var)) {
 	def = init_decl_arg(init_decl_type(PSI_T_UNION, N->text), var);
-	def->type->token = PSI_TokenCopy(N);
+	def->type->token = psi_token_copy(N);
 	def->type->real.unn = init_decl_union(N->text, args);
 	def->type->real.unn->token = N;
 	def->type->real.unn->align = as.pos;
@@ -429,7 +429,7 @@ PARSE_TYPED(decl_typedef_body_ex, def,
 		NAMED(NAME, ALIAS)) {
 	def = init_decl_arg(init_decl_type(PSI_T_ENUM, e->name), init_decl_var(ALIAS->text, 0, 0));
 	def->var->token = ALIAS;
-	def->type->token = PSI_TokenCopy(e->token);
+	def->type->token = psi_token_copy(e->token);
 	def->type->real.enm = e;
 }
 
@@ -448,7 +448,7 @@ PARSE_TYPED(decl_typedef_body, def,
 		TYPED(decl_func, func_)
 		TYPED(decl_typedef_body_fn_args, args)) {
 	def = init_decl_arg(init_decl_type(PSI_T_FUNCTION, func_->var->name), copy_decl_var(func_->var));
-	def->type->token = PSI_TokenCopy(func_->token);
+	def->type->token = psi_token_copy(func_->token);
 	def->type->real.func = init_decl(init_decl_abi("default"), func_, args);
 }
 PARSE_TYPED(decl_typedef_body, def,
@@ -503,7 +503,7 @@ PARSE_TYPED(decl_typedef_body, def,
 		copy_decl_var(func_->var)
 	);
 	def->var->pointer_level = type_i;
-	def->type->token = PSI_TokenCopy(func_->token);
+	def->type->token = psi_token_copy(func_->token);
 	def->type->real.func = init_decl(init_decl_abi("default"), func_, args);
 }
 PARSE_TYPED(decl_typedef_body, def,
@@ -528,7 +528,7 @@ PARSE_TYPED(decl_typedef_body, def,
 		copy_decl_var(func_->var)
 	);
 	def->var->pointer_level = type_i;
-	def->type->token = PSI_TokenCopy(func_->token);
+	def->type->token = psi_token_copy(func_->token);
 	def->type->real.func = init_decl(init_decl_abi("default"), func_, args);
 }
 
@@ -591,7 +591,7 @@ PARSE_TYPED(decl_typedef_body, def,
 		copy_decl_var(func_->var)
 	);
 	def->var->pointer_level = type_i;
-	def->type->token = PSI_TokenCopy(func_->token);
+	def->type->token = psi_token_copy(func_->token);
 	def->type->real.func = init_decl(init_decl_abi("default"), func_, args);
 }
 
@@ -707,7 +707,7 @@ PARSE_NAMED(decl_scalar_type, type_,
 		NAMED(SHORT, S)
 		NAMED(decl_scalar_type_short, s)) {
 	if (s) {
-		type_ = PSI_TokenCat(2, S, s);
+		type_ = psi_token_cat(2, S, s);
 		free(S);
 		free(s);
 	} else {
@@ -730,7 +730,7 @@ PARSE_NAMED(decl_scalar_type, type_,
 		NAMED(LONG, L)
 		NAMED(decl_scalar_type_long, l)) {
 	if (l) {
-		type_ = PSI_TokenCat(2, L, l);
+		type_ = psi_token_cat(2, L, l);
 		free(L);
 		free(l);
 	} else {
@@ -748,7 +748,7 @@ PARSE_NAMED(decl_scalar_type_long, l,
 		NAMED(LONG, L)
 		NAMED(decl_scalar_type_long_long, ll)) {
 	if (ll) {
-		l = PSI_TokenCat(2, L, ll);
+		l = psi_token_cat(2, L, ll);
 		free(L);
 		free(ll);
 	} else {
@@ -765,7 +765,7 @@ PARSE_NAMED(decl_scalar_type_long_long, ll,
 PARSE_TYPED(decl_type, type_,
 		NAMED(UNSIGNED, U)
 		NAMED(decl_scalar_type, N)) {
-	PSI_Token *T = PSI_TokenCat(2, U, N);
+	struct psi_token *T = psi_token_cat(2, U, N);
 	type_ = init_decl_type(T->type, T->text);
 	type_->token = T;
 	free(U);
@@ -774,7 +774,7 @@ PARSE_TYPED(decl_type, type_,
 PARSE_TYPED(decl_type, type_,
 		NAMED(SIGNED, S)
 		NAMED(decl_scalar_type, N)) {
-	PSI_Token *T = PSI_TokenCat(2, S, N);
+	struct psi_token *T = psi_token_cat(2, S, N);
 	type_ = init_decl_type(T->type, T->text);
 	type_->token = T;
 	free(S);
@@ -955,7 +955,7 @@ PARSE_TYPED(num_exp, exp,
 PARSE_TYPED(num_exp, exp,
 		TYPED(decl_var, var)) {
 	exp = init_num_exp(PSI_T_NAME, var);
-	exp->token = PSI_TokenCopy(var->token);
+	exp->token = psi_token_copy(var->token);
 }
 PARSE_TYPED(num_exp, exp,
 		TYPED(num_exp, exp_)

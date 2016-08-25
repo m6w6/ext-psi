@@ -1,4 +1,3 @@
-
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
@@ -10,6 +9,8 @@
 #include "zend_operators.h"
 
 #include "php_psi.h"
+#include "token.h"
+#include "parser.h"
 
 #if HAVE_LIBJIT
 # include "libjit.h"
@@ -37,7 +38,7 @@ zend_class_entry *psi_object_get_class_entry()
 	return psi_class_entry;
 }
 
-void psi_error_wrapper(void *context, PSI_Token *t, int type, const char *msg, ...)
+void psi_error_wrapper(void *context, struct psi_token *t, int type, const char *msg, ...)
 {
 	va_list argv;
 	const char *fn = NULL;
@@ -119,7 +120,7 @@ static PHP_FUNCTION(psi_dump) {
 			RETURN_FALSE;
 		}
 	}
-	PSI_ContextDump(&PSI_G(context), fd);
+	psi_context_dump(&PSI_G(context), fd);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_psi_validate, 0, 0, 1)
@@ -127,35 +128,35 @@ ZEND_BEGIN_ARG_INFO_EX(ai_psi_validate, 0, 0, 1)
 ZEND_END_ARG_INFO();
 static PHP_FUNCTION(psi_validate) {
 	zend_string *file;
-	PSI_Parser P;
+	struct psi_parser P;
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "P", &file)) {
 		return;
 	}
 
-	if (!PSI_ParserInit(&P, file->val, psi_error_wrapper, 0)) {
+	if (!psi_parser_init(&P, file->val, psi_error_wrapper, 0)) {
 		RETURN_FALSE;
 	}
 
-	while (0 < PSI_ParserScan(&P)) {
-		PSI_ParserParse(&P, PSI_TokenAlloc(&P));
+	while (0 < psi_parser_scan(&P)) {
+		psi_parser_parse(&P, psi_token_alloc(&P));
 		if (P.num == PSI_T_EOF) {
 			break;
 		}
 	}
-	PSI_ParserParse(&P, NULL);
+	psi_parser_parse(&P, NULL);
 
-	if (0 == PSI_ContextValidateData(NULL, PSI_DATA(&P)) && !P.errors) {
+	if (0 == psi_context_validate_data(NULL, PSI_DATA(&P)) && !P.errors) {
 		RETVAL_TRUE;
 	} else {
 		RETVAL_FALSE;
 	}
-	PSI_ParserDtor(&P);
+	psi_parser_dtor(&P);
 }
 
 static PHP_MINIT_FUNCTION(psi)
 {
-	PSI_ContextOps *ops = NULL;
+	struct psi_context_ops *ops = NULL;
 	zend_class_entry ce = {0};
 	unsigned flags = psi_check_env("PSI_DEBUG") ? PSI_PARSER_DEBUG : (
 			psi_check_env("PSI_SILENT") ? PSI_PARSER_SILENT : 0);
@@ -173,11 +174,11 @@ static PHP_MINIT_FUNCTION(psi)
 
 #ifdef HAVE_LIBJIT
 	if (!strcasecmp(PSI_G(engine), "jit")) {
-		ops = PSI_Libjit();
+		ops = psi_libjit_ops();
 	} else
 #endif
 #ifdef HAVE_LIBFFI
-		ops = PSI_Libffi();
+		ops = psi_libffi_ops();
 #endif
 
 	if (!ops) {
@@ -185,11 +186,11 @@ static PHP_MINIT_FUNCTION(psi)
 		return FAILURE;
 	}
 
-	PSI_ContextInit(&PSI_G(context), ops, psi_error_wrapper, flags);
-	PSI_ContextBuild(&PSI_G(context), PSI_G(directory));
+	psi_context_init(&PSI_G(context), ops, psi_error_wrapper, flags);
+	psi_context_build(&PSI_G(context), PSI_G(directory));
 
 	if (psi_check_env("PSI_DUMP")) {
-		PSI_ContextDump(&PSI_G(context), STDOUT_FILENO);
+		psi_context_dump(&PSI_G(context), STDOUT_FILENO);
 	}
 
 	return SUCCESS;
@@ -197,7 +198,7 @@ static PHP_MINIT_FUNCTION(psi)
 
 static PHP_MSHUTDOWN_FUNCTION(psi)
 {
-	PSI_ContextDtor(&PSI_G(context));
+	psi_context_dtor(&PSI_G(context));
 
 	UNREGISTER_INI_ENTRIES();
 

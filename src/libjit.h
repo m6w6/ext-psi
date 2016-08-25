@@ -4,7 +4,7 @@
 #include "context.h"
 
 #ifdef HAVE_LIBJIT
-PSI_ContextOps *PSI_Libjit(void);
+struct psi_context_ops *psi_libjit_ops(void);
 #endif
 
 #endif

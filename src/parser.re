@@ -1,18 +1,25 @@
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#else
+# include "php_config.h"
+#endif
+
 #include <stddef.h>
 #include <stdio.h>
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
 
-#include "parser.h"
 #include "parser_proc.h"
 
-void *PSI_ParserProcAlloc(void*(unsigned long));
-void PSI_ParserProcFree(void*, void(*)(void*));
-void PSI_ParserProc(void *, token_t, PSI_Token *, PSI_Parser *);
-void PSI_ParserProcTrace(FILE *, const char*);
+#include "parser.h"
 
-PSI_Parser *PSI_ParserInit(PSI_Parser *P, const char *filename, psi_error_cb error, unsigned flags)
+void *psi_parser_proc_Alloc(void*(unsigned long));
+void psi_parser_proc_Free(void*, void(*)(void*));
+void psi_parser_proc_(void *, token_t, struct psi_token *, struct psi_parser *);
+void psi_parser_proc_Trace(FILE *, const char*);
+
+struct psi_parser *psi_parser_init(struct psi_parser *P, const char *filename, psi_error_cb error, unsigned flags)
 {
 	FILE *fp;
 
@@ -37,18 +44,18 @@ PSI_Parser *PSI_ParserInit(PSI_Parser *P, const char *filename, psi_error_cb err
 	P->line = 1;
 	P->error = error;
 	P->flags = flags;
-	P->proc = PSI_ParserProcAlloc(malloc);
+	P->proc = psi_parser_proc_Alloc(malloc);
 
 	if (flags & PSI_PARSER_DEBUG) {
-		PSI_ParserProcTrace(stderr, "PSI> ");
+		psi_parser_proc_Trace(stderr, "PSI> ");
 	}
 
-	PSI_ParserFill(P, 0);
+	psi_parser_fill(P, 0);
 
 	return P;
 }
 
-size_t PSI_ParserFill(PSI_Parser *P, size_t n)
+size_t psi_parser_fill(struct psi_parser *P, size_t n)
 {
 	if (P->flags & PSI_PARSER_DEBUG) {
 		fprintf(stderr, "PSI> Fill: n=%zu\n", n);
@@ -89,32 +96,32 @@ size_t PSI_ParserFill(PSI_Parser *P, size_t n)
 	return P->lim - P->cur;
 }
 
-void PSI_ParserParse(PSI_Parser *P, PSI_Token *T)
+void psi_parser_parse(struct psi_parser *P, struct psi_token *T)
 {
 	if (T) {
-		PSI_ParserProc(P->proc, T->type, T, P);
+		psi_parser_proc_(P->proc, T->type, T, P);
 	} else {
-		PSI_ParserProc(P->proc, 0, NULL, P);
+		psi_parser_proc_(P->proc, 0, NULL, P);
 	}
 }
 
-void PSI_ParserDtor(PSI_Parser *P)
+void psi_parser_dtor(struct psi_parser *P)
 {
-	PSI_ParserProcFree(P->proc, free);
+	psi_parser_proc_Free(P->proc, free);
 
 	if (P->fp) {
 		fclose(P->fp);
 	}
 
-	PSI_DataDtor((PSI_Data *) P);
+	psi_data_dtor(PSI_DATA(P));
 
 	memset(P, 0, sizeof(*P));
 }
 
-void PSI_ParserFree(PSI_Parser **P)
+void psi_parser_free(struct psi_parser **P)
 {
 	if (*P) {
-		PSI_ParserDtor(*P);
+		psi_parser_dtor(*P);
 		free(*P);
 		*P = NULL;
 	}
@@ -145,7 +152,7 @@ void PSI_ParserFree(PSI_Parser **P)
 	++P->line; \
 	goto label
 
-token_t PSI_ParserScan(PSI_Parser *P)
+token_t psi_parser_scan(struct psi_parser *P)
 {
 	for (;;) {
 		ADDCOLS;
@@ -157,7 +164,7 @@ token_t PSI_ParserScan(PSI_Parser *P)
 		re2c:define:YYCURSOR = P->cur;
 		re2c:define:YYLIMIT = P->lim;
 		re2c:define:YYMARKER = P->mrk;
-		re2c:define:YYFILL = "{ if (!PSI_ParserFill(P,@@)) RETURN(PSI_T_EOF); }";
+		re2c:define:YYFILL = "{ if (!psi_parser_fill(P,@@)) RETURN(PSI_T_EOF); }";
 		re2c:yyfill:parameter = 0;
 
 		B = [^a-zA-Z0-9_];

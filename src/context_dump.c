@@ -1,5 +1,11 @@
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #include "php.h"
 #include "php_psi.h"
+
+#include "types.h"
 
 #include "libjit.h"
 #include "libffi.h"
@@ -497,15 +503,15 @@ static inline void dump_impls(int fd, impls *impls) {
 	}
 }
 
-void PSI_ContextDump(PSI_Context *C, int fd)
+void psi_context_dump(struct psi_context *C, int fd)
 {
 #ifdef HAVE_LIBJIT
-	if (C->ops == PSI_Libjit()) {
+	if (C->ops == psi_libjit_ops()) {
 		dprintf(fd, "// psi.engine=jit\n");
 	}
 #endif
 #ifdef HAVE_LIBFFI
-	if (C->ops == PSI_Libffi()) {
+	if (C->ops == psi_libffi_ops()) {
 		dprintf(fd, "// psi.engine=ffi\n");
 	}
 #endif

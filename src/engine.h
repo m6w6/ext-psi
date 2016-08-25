@@ -1,9 +1,6 @@
 #ifndef _PSI_ENGINE_H
 #define _PSI_ENGINE_H
 
-size_t psi_t_alignment(token_t t);
-size_t psi_t_size(token_t t);
-
 static inline size_t psi_align(size_t s, size_t a) {
 	return ((s - 1) | (a - 1)) + 1;
 }

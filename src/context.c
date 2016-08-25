@@ -25,12 +25,14 @@
 
 #include <fnmatch.h>
 
-#include "php.h"
 #include "php_scandir.h"
 #include "php_psi.h"
 #include "calc.h"
 #include "libjit.h"
 #include "libffi.h"
+
+#include "token.h"
+#include "parser.h"
 
 #include "php_psi_types.h"
 #include "php_psi_consts.h"
@@ -39,9 +41,9 @@
 #include "php_psi_structs.h"
 #include "php_psi_unions.h"
 
-PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErrorFunc error, unsigned flags)
+struct psi_context *psi_context_init(struct psi_context *C, struct psi_context_ops *ops, psi_context_error_func error, unsigned flags)
 {
-	PSI_Data T;
+	struct psi_data T;
 	struct psi_predef_type *predef_type;
 	struct psi_predef_const *predef_const;
 	struct psi_predef_struct *predef_struct;
@@ -165,11 +167,11 @@ PSI_Context *PSI_ContextInit(PSI_Context *C, PSI_ContextOps *ops, PSI_ContextErr
 		predef_decl = farg;
 	}
 
-	PSI_ContextValidateData(PSI_DATA(C), &T);
+	psi_context_validate_data(PSI_DATA(C), &T);
 
 	C->count = 1;
 	C->data = malloc(sizeof(*C->data));
-	PSI_DataExchange(C->data, &T);
+	psi_data_exchange(C->data, &T);
 
 	return C;
 }
@@ -182,7 +184,7 @@ static int psi_select_dirent(const struct dirent *entry)
 	return 0 == fnmatch("*.psi", entry->d_name, FNM_CASEFOLD);
 }
 
-void PSI_ContextBuild(PSI_Context *C, const char *paths)
+void psi_context_build(struct psi_context *C, const char *paths)
 {
 	int i, n;
 	char *sep = NULL, *cpy = strdup(paths), *ptr = cpy;
@@ -201,28 +203,28 @@ void PSI_ContextBuild(PSI_Context *C, const char *paths)
 		if (n > 0) {
 			for (i = 0; i < n; ++i) {
 				char psi[MAXPATHLEN];
-				PSI_Parser P;
+				struct psi_parser P;
 
 				if (MAXPATHLEN <= slprintf(psi, MAXPATHLEN, "%s/%s", ptr, entries[i]->d_name)) {
 					C->error(C, NULL, PSI_WARNING, "Path to PSI file too long: %s/%s",
 						ptr, entries[i]->d_name);
 				}
-				if (!PSI_ParserInit(&P, psi, C->error, C->flags)) {
+				if (!psi_parser_init(&P, psi, C->error, C->flags)) {
 					C->error(C, NULL, PSI_WARNING, "Failed to init PSI parser (%s): %s",
 						psi, strerror(errno));
 					continue;
 				}
 
-				while (0 < PSI_ParserScan(&P)) {
-					PSI_ParserParse(&P, PSI_TokenAlloc(&P));
+				while (0 < psi_parser_scan(&P)) {
+					psi_parser_parse(&P, psi_token_alloc(&P));
 					if (P.num == PSI_T_EOF) {
 						break;
 					}
 				}
 
-				PSI_ParserParse(&P, NULL);
-				PSI_ContextValidate(C, &P);
-				PSI_ParserDtor(&P);
+				psi_parser_parse(&P, NULL);
+				psi_context_validate(C, &P);
+				psi_parser_dtor(&P);
 			}
 		}
 
@@ -237,7 +239,7 @@ void PSI_ContextBuild(PSI_Context *C, const char *paths)
 	} while (sep);
 
 
-	if (PSI_ContextCompile(C) && SUCCESS != zend_register_functions(NULL, C->closures, NULL, MODULE_PERSISTENT)) {
+	if (psi_context_compile(C) && SUCCESS != zend_register_functions(NULL, C->closures, NULL, MODULE_PERSISTENT)) {
 		C->error(C, NULL, PSI_WARNING, "Failed to register functions!");
 	}
 
@@ -245,7 +247,7 @@ void PSI_ContextBuild(PSI_Context *C, const char *paths)
 
 }
 
-zend_function_entry *PSI_ContextCompile(PSI_Context *C)
+zend_function_entry *psi_context_compile(struct psi_context *C)
 {
 	size_t i;
 	zend_constant zc;
@@ -295,13 +297,13 @@ zend_function_entry *PSI_ContextCompile(PSI_Context *C)
 }
 
 
-void PSI_ContextCall(PSI_Context *C, decl_callinfo *decl_call, impl_vararg *va)
+void psi_context_call(struct psi_context *C, struct decl_callinfo *decl_call, struct impl_vararg *va)
 {
 	C->ops->call(C, decl_call, va);
 }
 
 
-void PSI_ContextDtor(PSI_Context *C)
+void psi_context_dtor(struct psi_context *C)
 {
 	size_t i;
 	zend_function_entry *zfe;
@@ -314,7 +316,7 @@ void PSI_ContextDtor(PSI_Context *C)
 
 	if (C->data) {
 		for (i = 0; i < C->count; ++i) {
-			PSI_DataDtor(&C->data[i]);
+			psi_data_dtor(&C->data[i]);
 		}
 		free(C->data);
 	}
@@ -372,10 +374,10 @@ void PSI_ContextDtor(PSI_Context *C)
 	memset(C, 0, sizeof(*C));
 }
 
-void PSI_ContextFree(PSI_Context **C)
+void psi_context_free(struct psi_context **C)
 {
 	if (*C) {
-		PSI_ContextDtor(*C);
+		psi_context_dtor(*C);
 		free(*C);
 		*C = NULL;
 	}

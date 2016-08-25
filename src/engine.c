@@ -12,57 +12,6 @@
 #include "calc.h"
 #include "marshal.h"
 
-size_t psi_t_alignment(token_t t)
-{
-#define PSI_ALIGNOF(T) case PSI_T_## T: return ALIGNOF_## T ##_T;
-	switch (t) {
-	PSI_ALIGNOF(INT8);
-	PSI_ALIGNOF(UINT8);
-	PSI_ALIGNOF(INT16);
-	PSI_ALIGNOF(UINT16);
-	PSI_ALIGNOF(INT32);
-	PSI_ALIGNOF(UINT32);
-	PSI_ALIGNOF(INT64);
-	PSI_ALIGNOF(UINT64);
-	case PSI_T_FLOAT:
-		return ALIGNOF_FLOAT;
-	case PSI_T_DOUBLE:
-		return ALIGNOF_DOUBLE;
-	case PSI_T_POINTER:
-	case PSI_T_FUNCTION:
-		return ALIGNOF_VOID_P;
-	case PSI_T_ENUM:
-		return ALIGNOF_INT;
-	EMPTY_SWITCH_DEFAULT_CASE();
-	}
-	return 0;
-}
-
-size_t psi_t_size(token_t t)
-{
-#define PSI_SIZEOF(T) case PSI_T_## T : return SIZEOF_## T ##_T;
-	switch (t) {
-	PSI_SIZEOF(INT8);
-	PSI_SIZEOF(UINT8);
-	PSI_SIZEOF(INT16);
-	PSI_SIZEOF(UINT16);
-	PSI_SIZEOF(INT32);
-	PSI_SIZEOF(UINT32);
-	PSI_SIZEOF(INT64);
-	PSI_SIZEOF(UINT64);
-	case PSI_T_FLOAT:
-		return SIZEOF_FLOAT;
-	case PSI_T_DOUBLE:
-		return SIZEOF_DOUBLE;
-	case PSI_T_POINTER:
-	case PSI_T_FUNCTION:
-		return SIZEOF_VOID_P;
-	case PSI_T_ENUM:
-		return SIZEOF_INT;
-	EMPTY_SWITCH_DEFAULT_CASE();
-	}
-	return 0;
-}
 
 int psi_internal_type(impl_type *type)
 {
@@ -329,7 +278,7 @@ static inline void psi_do_free(free_stmt *fre)
 		}
 
 		/* FIXME: check in validate_* that free functions return scalar */
-		PSI_ContextCall(&PSI_G(context), &f->decl->call, NULL);
+		psi_context_call(&PSI_G(context), &f->decl->call, NULL);
 	}
 }
 
@@ -520,7 +469,7 @@ ZEND_RESULT_CODE psi_call(zend_execute_data *execute_data, zval *return_value, i
 		}
 	}
 
-	PSI_ContextCall(&PSI_G(context), &impl->decl->call, va);
+	psi_context_call(&PSI_G(context), &impl->decl->call, va);
 	psi_do_return(return_value, impl->stmts->ret.list[0]);
 
 	for (i = 0; i < impl->stmts->set.count; ++i) {

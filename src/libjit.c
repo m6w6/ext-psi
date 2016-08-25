@@ -175,30 +175,30 @@ static inline jit_type_t psi_jit_decl_arg_type(decl_arg *darg) {
 	}
 }
 
-typedef struct PSI_LibjitContext {
+struct psi_jit_context {
 	jit_context_t jit;
 	jit_type_t signature;
 	struct {
-		struct PSI_LibjitData **list;
+		struct psi_jit_data **list;
 		size_t count;
 	} data;
-} PSI_LibjitContext;
+};
 
-typedef struct PSI_LibjitCall {
+struct psi_jit_call {
 	void *closure;
 	jit_type_t signature;
 	void *params[1]; /* [type1, type2, NULL, arg1, arg2] ... */
-} PSI_LibjitCall;
+};
 
-typedef struct PSI_LibjitData {
-	PSI_LibjitContext *context;
+struct psi_jit_data {
+	struct psi_jit_context *context;
 	impl *impl;
 	zend_internal_arg_info *arginfo;
-} PSI_LibjitData;
+};
 
-static inline PSI_LibjitCall *PSI_LibjitCallAlloc(PSI_Context *C, decl *decl) {
+static inline struct psi_jit_call *psi_jit_call_alloc(struct psi_context *C, decl *decl) {
 	size_t i, c = decl->args ? decl->args->count : 0;
-	PSI_LibjitCall *call = calloc(1, sizeof(*call) + 2 * c * sizeof(void *));
+	struct psi_jit_call *call = calloc(1, sizeof(*call) + 2 * c * sizeof(void *));
 
 	for (i = 0; i < c; ++i) {
 		call->params[i] = psi_jit_decl_arg_type(decl->args->args[i]);
@@ -219,24 +219,24 @@ static inline PSI_LibjitCall *PSI_LibjitCallAlloc(PSI_Context *C, decl *decl) {
 	return call;
 }
 
-static inline void *PSI_LibjitCallInitClosure(PSI_Context *C, PSI_LibjitCall *call, impl *impl) {
-	PSI_LibjitContext *context = C->context;
+static inline void *psi_jit_call_init_closure(struct psi_context *C, struct psi_jit_call *call, impl *impl) {
+	struct psi_jit_context *context = C->context;
 	return call->closure = jit_closure_create(context->jit, context->signature,
 			&psi_jit_handler, impl);
 }
 
-static inline void *PSI_LibjitCallInitCallbackClosure(PSI_Context *C, PSI_LibjitCall *call, let_callback *cb) {
-	PSI_LibjitContext *context = C->context;
+static inline void *psi_jit_call_init_callback_closure(struct psi_context *C, struct psi_jit_call *call, let_callback *cb) {
+	struct psi_jit_context *context = C->context;
 	return call->closure = jit_closure_create(context->jit, call->signature,
 			&psi_jit_callback, cb);
 }
 
-static inline void PSI_LibjitCallFree(PSI_LibjitCall *call) {
+static inline void psi_jit_call_free(struct psi_jit_call *call) {
 	jit_type_free(call->signature);
 	free(call);
 }
 
-static inline PSI_LibjitContext *PSI_LibjitContextInit(PSI_LibjitContext *L) {
+static inline struct psi_jit_context *psi_jit_context_init(struct psi_jit_context *L) {
 	jit_type_t params[] = {
 		jit_type_void_ptr,
 		jit_type_void_ptr
@@ -254,25 +254,25 @@ static inline PSI_LibjitContext *PSI_LibjitContextInit(PSI_LibjitContext *L) {
 	return L;
 }
 
-static inline void PSI_LibjitContextDtor(PSI_LibjitContext *L) {
+static inline void psi_jit_context_dtor(struct psi_jit_context *L) {
 	jit_type_free(L->signature);
 	jit_context_destroy(L->jit);
 }
 
-static inline void PSI_LibjitContextFree(PSI_LibjitContext **L) {
+static inline void psi_jit_context_free(struct psi_jit_context **L) {
 	if (*L) {
-		PSI_LibjitContextDtor(*L);
+		psi_jit_context_dtor(*L);
 		free(*L);
 		*L = NULL;
 	}
 }
 
-static void psi_jit_init(PSI_Context *C)
+static void psi_jit_init(struct psi_context *C)
 {
-	C->context = PSI_LibjitContextInit(NULL);
+	C->context = psi_jit_context_init(NULL);
 }
 
-static void psi_jit_dtor(PSI_Context *C)
+static void psi_jit_dtor(struct psi_context *C)
 {
 	if (C->decls) {
 		size_t i;
@@ -281,7 +281,7 @@ static void psi_jit_dtor(PSI_Context *C)
 			decl *decl = C->decls->list[i];
 
 			if (decl->call.info) {
-				PSI_LibjitCallFree(decl->call.info);
+				psi_jit_call_free(decl->call.info);
 			}
 		}
 	}
@@ -298,20 +298,20 @@ static void psi_jit_dtor(PSI_Context *C)
 					let_callback *cb = let->val->data.callback;
 
 					if (cb->decl && cb->decl->call.info) {
-						PSI_LibjitCallFree(cb->decl->call.info);
+						psi_jit_call_free(cb->decl->call.info);
 					}
 				}
 			}
 		}
 	}
-	PSI_LibjitContextFree((void *) &C->context);
+	psi_jit_context_free((void *) &C->context);
 }
 
-static zend_function_entry *psi_jit_compile(PSI_Context *C)
+static zend_function_entry *psi_jit_compile(struct psi_context *C)
 {
 	size_t c, i, j = 0;
 	zend_function_entry *zfe;
-	PSI_LibjitContext *ctx = C->context;
+	struct psi_jit_context *ctx = C->context;
 
 	if (!C->impls) {
 		return NULL;
@@ -322,16 +322,16 @@ static zend_function_entry *psi_jit_compile(PSI_Context *C)
 
 	for (i = 0; i < C->impls->count; ++i) {
 		zend_function_entry *zf = &zfe[j];
-		PSI_LibjitCall *call;
+		struct psi_jit_call *call;
 		impl *impl = C->impls->list[i];
 
 		if (!impl->decl) {
 			continue;
 		}
 
-		if ((call = PSI_LibjitCallAlloc(C, impl->decl))) {
-			if (!PSI_LibjitCallInitClosure(C, call, impl)) {
-				PSI_LibjitCallFree(call);
+		if ((call = psi_jit_call_alloc(C, impl->decl))) {
+			if (!psi_jit_call_init_closure(C, call, impl)) {
+				psi_jit_call_free(call);
 				continue;
 			}
 		}
@@ -348,9 +348,9 @@ static zend_function_entry *psi_jit_compile(PSI_Context *C)
 			if (let->val && let->val->kind == PSI_LET_CALLBACK) {
 				let_callback *cb = let->val->data.callback;
 
-				if ((call = PSI_LibjitCallAlloc(C, cb->decl))) {
-					if (!PSI_LibjitCallInitCallbackClosure(C, call, cb)) {
-						PSI_LibjitCallFree(call);
+				if ((call = psi_jit_call_alloc(C, cb->decl))) {
+					if (!psi_jit_call_init_callback_closure(C, call, cb)) {
+						psi_jit_call_free(call);
 						continue;
 					}
 
@@ -367,7 +367,7 @@ static zend_function_entry *psi_jit_compile(PSI_Context *C)
 			continue;
 		}
 
-		PSI_LibjitCallAlloc(C, decl);
+		psi_jit_call_alloc(C, decl);
 	}
 
 	jit_context_build_end(ctx->jit);
@@ -375,8 +375,8 @@ static zend_function_entry *psi_jit_compile(PSI_Context *C)
 	return zfe;
 }
 
-static void psi_jit_call(PSI_Context *C, decl_callinfo *decl_call, impl_vararg *va) {
-	PSI_LibjitCall *call = decl_call->info;
+static void psi_jit_call(struct psi_context *C, decl_callinfo *decl_call, impl_vararg *va) {
+	struct psi_jit_call *call = decl_call->info;
 
 	if (va) {
 		jit_type_t signature;
@@ -408,14 +408,14 @@ static void psi_jit_call(PSI_Context *C, decl_callinfo *decl_call, impl_vararg *
 	}
 }
 
-static PSI_ContextOps ops = {
+static struct psi_context_ops ops = {
 	psi_jit_init,
 	psi_jit_dtor,
 	psi_jit_compile,
 	psi_jit_call,
 };
 
-PSI_ContextOps *PSI_Libjit(void)
+struct psi_context_ops *psi_libjit_ops(void)
 {
 	return &ops;
 }

@@ -18,7 +18,7 @@
 #include "marshal.h"
 #include "engine.h"
 
-static int validate_lib(PSI_Data *data, void **dlopened) {
+static int validate_lib(struct psi_data *data, void **dlopened) {
 	char lib[MAXPATHLEN];
 	const char *ptr = data->psi.file.ln;
 	size_t len;
@@ -128,12 +128,12 @@ static inline int locate_decl_type_decl(decls *decls, decl_type *type) {
 	return 0;
 }
 
-static inline int validate_decl_nodl(PSI_Data *data, decl *decl);
-static inline int validate_decl_struct(PSI_Data *data, decl_struct *s);
-static inline int validate_decl_union(PSI_Data *data, decl_union *u);
-static inline int validate_decl_enum(PSI_Data *data, decl_enum *e);
+static inline int validate_decl_nodl(struct psi_data *data, decl *decl);
+static inline int validate_decl_struct(struct psi_data *data, decl_struct *s);
+static inline int validate_decl_union(struct psi_data *data, decl_union *u);
+static inline int validate_decl_enum(struct psi_data *data, decl_enum *e);
 
-static inline int validate_decl_type(PSI_Data *data, decl_type *type, decl_arg *def) {
+static inline int validate_decl_type(struct psi_data *data, decl_type *type, decl_arg *def) {
 	if (weak_decl_type(type)) {
 		if (!locate_decl_type_alias(data->defs, type)) {
 			return 0;
@@ -171,7 +171,7 @@ static inline int validate_decl_type(PSI_Data *data, decl_type *type, decl_arg *
 	}
 	return 1;
 }
-static inline int validate_decl_typedef(PSI_Data *data, decl_arg *def) {
+static inline int validate_decl_typedef(struct psi_data *data, decl_arg *def) {
 	if (!validate_decl_type(data, def->type, def)) {
 		const char *pre;
 
@@ -199,12 +199,12 @@ static inline int validate_decl_typedef(PSI_Data *data, decl_arg *def) {
 	return 1;
 }
 
-static inline int validate_constant(PSI_Data *data, constant *c) {
+static inline int validate_constant(struct psi_data *data, constant *c) {
 	/* FIXME */
 	return 1;
 }
 
-static inline int validate_decl_arg(PSI_Data *data, decl_arg *arg) {
+static inline int validate_decl_arg(struct psi_data *data, decl_arg *arg) {
 	if (!validate_decl_type(data, arg->type, NULL)) {
 		data->error(data, arg->type->token, PSI_WARNING,
 			"Cannot use '%s' as type for '%s'",
@@ -243,7 +243,7 @@ static inline void psi_sort_struct_args(void **args, size_t count) {
 			psi_sort_struct_arg_cmp, psi_sort_struct_arg_swp);
 }
 
-static inline int validate_decl_struct_darg(PSI_Data *data, decl_arg *darg, void *current) {
+static inline int validate_decl_struct_darg(struct psi_data *data, decl_arg *darg, void *current) {
 	decl_type *real = real_decl_type(darg->type);
 
 	/* pre-validate any structs/unions/enums */
@@ -394,7 +394,7 @@ static inline size_t align_decl_arg(decl_arg *darg, size_t *pos, size_t *len) {
 	return align;
 }
 
-static inline int validate_decl_struct(PSI_Data *data, decl_struct *s) {
+static inline int validate_decl_struct(struct psi_data *data, decl_struct *s) {
 	size_t i, pos, len, size, align;
 
 	if (!s->size && !s->args->count) {
@@ -465,7 +465,7 @@ static inline int validate_decl_struct(PSI_Data *data, decl_struct *s) {
 	return 1;
 }
 
-static inline int validate_decl_union(PSI_Data *data, decl_union *u) {
+static inline int validate_decl_union(struct psi_data *data, decl_union *u) {
 	size_t i, pos, len, size = 0, align;
 
 	if (!u->size && !u->args->count) {
@@ -537,7 +537,7 @@ static const char * const abi_ccs[] = {
 		"stdcall",
 		"fastcall",
 };
-static inline int validate_decl_abi(PSI_Data *data, decl_abi *abi) {
+static inline int validate_decl_abi(struct psi_data *data, decl_abi *abi) {
 	size_t i;
 
 	for (i = 0; i < sizeof(abi_ccs)/sizeof(char*); ++i) {
@@ -547,7 +547,7 @@ static inline int validate_decl_abi(PSI_Data *data, decl_abi *abi) {
 	}
 	return 0;
 }
-static inline int validate_decl_func(PSI_Data *data, void *dl, decl *decl, decl_arg *func)
+static inline int validate_decl_func(struct psi_data *data, void *dl, decl *decl, decl_arg *func)
 {
 	struct psi_func_redir *redir;
 
@@ -574,7 +574,7 @@ static inline int validate_decl_func(PSI_Data *data, void *dl, decl *decl, decl_
 	}
 	return 1;
 }
-static inline int validate_decl_nodl(PSI_Data *data, decl *decl) {
+static inline int validate_decl_nodl(struct psi_data *data, decl *decl) {
 	if (!validate_decl_abi(data, decl->abi)) {
 		data->error(data, decl->abi->token, PSI_WARNING,
 				"Invalid calling convention: '%s'", decl->abi->token->text);
@@ -594,7 +594,7 @@ static inline int validate_decl_nodl(PSI_Data *data, decl *decl) {
 	}
 	return 1;
 }
-static inline int validate_decl(PSI_Data *data, void *dl, decl *decl) {
+static inline int validate_decl(struct psi_data *data, void *dl, decl *decl) {
 	if (!validate_decl_nodl(data, decl)) {
 		return 0;
 	}
@@ -669,7 +669,7 @@ static inline decl_enum_item *locate_num_exp_enum_item(num_exp *exp, decl_enums 
 	}
 	return NULL;
 }
-static inline int validate_num_exp(PSI_Data *data, num_exp *exp, decl_args *dargs, decl_arg *func, decl_enum *enm) {
+static inline int validate_num_exp(struct psi_data *data, num_exp *exp, decl_args *dargs, decl_arg *func, decl_enum *enm) {
 	if (exp->operand) {
 		switch (exp->operator) {
 		case PSI_T_PLUS:
@@ -715,7 +715,7 @@ static inline int validate_num_exp(PSI_Data *data, num_exp *exp, decl_args *darg
 	}
 }
 
-static inline int validate_decl_enum(PSI_Data *data, decl_enum *e) {
+static inline int validate_decl_enum(struct psi_data *data, decl_enum *e) {
 	size_t j;
 
 	if (!e->items || !e->items->count) {
@@ -782,7 +782,7 @@ static inline void decl_var_arg_v(decl_args *args, va_list argp) {
 		}
 	}
 }
-static inline int validate_set_value_ex(PSI_Data *data, set_value *set, decl_arg *ref, decl_args *ref_list) {
+static inline int validate_set_value_ex(struct psi_data *data, set_value *set, decl_arg *ref, decl_args *ref_list) {
 	size_t i;
 	decl_type *ref_type;
 	decl_var *set_var = set->vars->vars[0];
@@ -856,7 +856,7 @@ static inline int validate_set_value_ex(PSI_Data *data, set_value *set, decl_arg
 
 	return 1;
 }
-static inline int validate_set_value(PSI_Data *data, set_value *set, ...) {
+static inline int validate_set_value(struct psi_data *data, set_value *set, ...) {
 	va_list argp;
 	decl_args args = {0};
 	int check;
@@ -885,7 +885,7 @@ static inline decl *locate_impl_decl(decls *decls, return_stmt *ret) {
 
 	return NULL;
 }
-static inline int validate_impl_ret_stmt(PSI_Data *data, impl *impl) {
+static inline int validate_impl_ret_stmt(struct psi_data *data, impl *impl) {
 	return_stmt *ret;
 
 	/* we must have exactly one ret stmt delcaring the native func to call */
@@ -936,7 +936,7 @@ static inline impl_arg *locate_impl_var_arg(impl_var *var, impl_args *args) {
 	return NULL;
 }
 
-static inline int validate_let_func(PSI_Data *data, let_func *func, impl *impl) {
+static inline int validate_let_func(struct psi_data *data, let_func *func, impl *impl) {
 	if (impl->func->args) {
 		if (!locate_impl_var_arg(func->var, impl->func->args)) {
 			data->error(data, func->var->token, PSI_WARNING,
@@ -961,7 +961,7 @@ static inline int validate_let_func(PSI_Data *data, let_func *func, impl *impl) 
 	return 1;
 }
 
-static inline int validate_let_callback(PSI_Data *data, decl_var *cb_var, let_callback *cb, impl *impl) {
+static inline int validate_let_callback(struct psi_data *data, decl_var *cb_var, let_callback *cb, impl *impl) {
 	size_t i;
 	decl *cb_func;
 	decl_type *cb_type = real_decl_type(cb_var->arg->type);
@@ -990,7 +990,7 @@ static inline int validate_let_callback(PSI_Data *data, decl_var *cb_var, let_ca
 	return 1;
 }
 
-static inline int validate_impl_let_stmts(PSI_Data *data, impl *impl) {
+static inline int validate_impl_let_stmts(struct psi_data *data, impl *impl) {
 	size_t i, j;
 	/* we can have multiple let stmts */
 
@@ -1078,7 +1078,7 @@ static inline int validate_impl_let_stmts(PSI_Data *data, impl *impl) {
 
 	return 1;
 }
-static inline int validate_impl_set_stmts(PSI_Data *data, impl *impl) {
+static inline int validate_impl_set_stmts(struct psi_data *data, impl *impl) {
 	size_t i, j, k;
 	/* we can have any count of set stmts; processing out vars */
 	/* check that set stmts reference known variables */
@@ -1162,7 +1162,7 @@ static inline decl *locate_free_decl(decls *decls, free_call *f) {
 
 	return NULL;
 }
-static inline int validate_impl_free_stmts(PSI_Data *data, impl *impl) {
+static inline int validate_impl_free_stmts(struct psi_data *data, impl *impl) {
 	size_t i, j, k, l;
 	/* we can have any count of free stmts; freeing any out vars */
 	for (i = 0; i < impl->stmts->fre.count; ++i) {
@@ -1214,7 +1214,7 @@ static inline int validate_impl_free_stmts(PSI_Data *data, impl *impl) {
 	}
 	return 1;
 }
-static inline int validate_impl_stmts(PSI_Data *data, impl *impl) {
+static inline int validate_impl_stmts(struct psi_data *data, impl *impl) {
 	if (!impl->stmts) {
  		data->error(data, impl->func->token, PSI_WARNING,
  				"Missing body for implementation %s!",
@@ -1239,7 +1239,7 @@ static inline int validate_impl_stmts(PSI_Data *data, impl *impl) {
 	return 1;
 }
 
-static inline int validate_impl_args(PSI_Data *data, impl *impl) {
+static inline int validate_impl_args(struct psi_data *data, impl *impl) {
 	int def = 0;
 	size_t i;
 
@@ -1260,7 +1260,7 @@ static inline int validate_impl_args(PSI_Data *data, impl *impl) {
 	return 1;
 }
 
-static inline int validate_impl(PSI_Data *data, impl *impl) {
+static inline int validate_impl(struct psi_data *data, impl *impl) {
 	if (!validate_impl_args(data, impl)) {
 		return 0;
 	}
@@ -1268,9 +1268,9 @@ static inline int validate_impl(PSI_Data *data, impl *impl) {
 }
 
 
-int PSI_ContextValidate(PSI_Context *C, PSI_Parser *P)
+int psi_context_validate(struct psi_context *C, struct psi_parser *P)
 {
-	PSI_Data *D;
+	struct psi_data *D;
 	void *dlopened = NULL;
 	size_t i, count = C->count++, check_round, check_count;
 	decl_typedefs *check_defs = P->defs;
@@ -1280,7 +1280,7 @@ int PSI_ContextValidate(PSI_Context *C, PSI_Parser *P)
 	unsigned silent = C->flags & PSI_PARSER_SILENT;
 
 	C->data = realloc(C->data, C->count * sizeof(*C->data));
-	D = PSI_DataExchange(&C->data[count], PSI_DATA(P));
+	D = psi_data_exchange(&C->data[count], PSI_DATA(P));
 
 #define REVALIDATE(what) do { \
 		if (check_round && check_ ##what) { \
@@ -1376,7 +1376,7 @@ int PSI_ContextValidate(PSI_Context *C, PSI_Parser *P)
 	return 1;
 }
 
-int PSI_ContextValidateData(PSI_Data *dest, PSI_Data *source)
+int psi_context_validate_data(struct psi_data *dest, struct psi_data *source)
 {
 	size_t i;
 	int errors = 0;

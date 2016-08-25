@@ -7,7 +7,7 @@
 #ifdef HAVE_LIBFFI
 
 #include "php_psi.h"
-#include "libffi.h"
+#include "ffi.h"
 #include "engine.h"
 
 #undef PACKAGE
@@ -83,26 +83,26 @@ static void psi_ffi_callback(ffi_cif *_sig, void *_result, void **_args, void *_
 
 static inline ffi_type *psi_ffi_decl_arg_type(decl_arg *darg);
 
-typedef struct PSI_LibffiContext {
+struct psi_ffi_context {
 	ffi_cif signature;
 	ffi_type *params[2];
-} PSI_LibffiContext;
+};
 
-typedef struct PSI_LibffiCall {
+struct psi_ffi_call {
 	void *code;
 	ffi_closure *closure;
 	ffi_cif signature;
 	void *params[1]; /* [type1, type2, NULL, arg1, arg2] ... */
-} PSI_LibffiCall;
+};
 
 static inline ffi_abi psi_ffi_abi(const char *convention) {
 	return FFI_DEFAULT_ABI;
 }
 
-static inline PSI_LibffiCall *PSI_LibffiCallAlloc(PSI_Context *C, decl *decl) {
+static inline struct psi_ffi_call *psi_ffi_call_alloc(struct psi_context *C, decl *decl) {
 	int rc;
 	size_t i, c = decl->args ? decl->args->count : 0;
-	PSI_LibffiCall *call = calloc(1, sizeof(*call) + 2 * c * sizeof(void *));
+	struct psi_ffi_call *call = calloc(1, sizeof(*call) + 2 * c * sizeof(void *));
 
 	for (i = 0; i < c; ++i) {
 		call->params[i] = psi_ffi_decl_arg_type(decl->args->args[i]);
@@ -121,17 +121,17 @@ static inline PSI_LibffiCall *PSI_LibffiCallAlloc(PSI_Context *C, decl *decl) {
 	return call;
 }
 
-static inline ffi_status PSI_LibffiCallInitClosure(PSI_Context *C, PSI_LibffiCall *call, impl *impl) {
-	PSI_LibffiContext *context = C->context;
+static inline ffi_status psi_ffi_call_init_closure(struct psi_context *C, struct psi_ffi_call *call, impl *impl) {
+	struct psi_ffi_context *context = C->context;
 
 	return psi_ffi_prep_closure(&call->closure, &call->code, &context->signature, psi_ffi_handler, impl);
 }
 
-static inline ffi_status PSI_LibffiCallInitCallbackClosure(PSI_Context *C, PSI_LibffiCall *call, let_callback *cb) {
+static inline ffi_status psi_ffi_call_init_callback_closure(struct psi_context *C, struct psi_ffi_call *call, let_callback *cb) {
 	return psi_ffi_prep_closure(&call->closure, &call->code, &call->signature, psi_ffi_callback, cb);
 }
 
-static inline void PSI_LibffiCallFree(PSI_LibffiCall *call) {
+static inline void psi_ffi_call_free(struct psi_ffi_call *call) {
 	if (call->closure) {
 		psi_ffi_closure_free(call->closure);
 	}
@@ -300,7 +300,7 @@ static inline ffi_type *psi_ffi_decl_arg_type(decl_arg *darg) {
 }
 
 
-static inline PSI_LibffiContext *PSI_LibffiContextInit(PSI_LibffiContext *L) {
+static inline struct psi_ffi_context *psi_ffi_context_init(struct psi_ffi_context *L) {
 	ffi_status rc;
 
 	if (!L) {
@@ -316,19 +316,19 @@ static inline PSI_LibffiContext *PSI_LibffiContextInit(PSI_LibffiContext *L) {
 	return L;
 }
 
-static inline void PSI_LibffiContextFree(PSI_LibffiContext **L) {
+static inline void psi_ffi_context_free(struct psi_ffi_context **L) {
 	if (*L) {
 		free(*L);
 		*L = NULL;
 	}
 }
 
-static void psi_ffi_init(PSI_Context *C)
+static void psi_ffi_init(struct psi_context *C)
 {
-	C->context = PSI_LibffiContextInit(NULL);
+	C->context = psi_ffi_context_init(NULL);
 }
 
-static void psi_ffi_dtor(PSI_Context *C)
+static void psi_ffi_dtor(struct psi_context *C)
 {
 	if (C->decls) {
 		size_t i;
@@ -337,7 +337,7 @@ static void psi_ffi_dtor(PSI_Context *C)
 			decl *decl = C->decls->list[i];
 
 			if (decl->call.info) {
-				PSI_LibffiCallFree(decl->call.info);
+				psi_ffi_call_free(decl->call.info);
 			}
 		}
 
@@ -355,16 +355,16 @@ static void psi_ffi_dtor(PSI_Context *C)
 					let_callback *cb = let->val->data.callback;
 
 					if (cb->decl && cb->decl->call.info) {
-						PSI_LibffiCallFree(cb->decl->call.info);
+						psi_ffi_call_free(cb->decl->call.info);
 					}
 				}
 			}
 		}
 	}
-	PSI_LibffiContextFree((void *) &C->context);
+	psi_ffi_context_free((void *) &C->context);
 }
 
-static zend_function_entry *psi_ffi_compile(PSI_Context *C)
+static zend_function_entry *psi_ffi_compile(struct psi_context *C)
 {
 	size_t c, i, j = 0;
 	zend_function_entry *zfe;
@@ -376,16 +376,16 @@ static zend_function_entry *psi_ffi_compile(PSI_Context *C)
 	zfe = calloc(C->impls->count + 1, sizeof(*zfe));
 	for (i = 0; i < C->impls->count; ++i) {
 		zend_function_entry *zf = &zfe[j];
-		PSI_LibffiCall *call;
+		struct psi_ffi_call *call;
 		impl *impl = C->impls->list[i];
 
 		if (!impl->decl) {
 			continue;
 		}
 
-		if ((call = PSI_LibffiCallAlloc(C, impl->decl))) {
-			if (FFI_OK != PSI_LibffiCallInitClosure(C, call, impl)) {
-				PSI_LibffiCallFree(call);
+		if ((call = psi_ffi_call_alloc(C, impl->decl))) {
+			if (FFI_OK != psi_ffi_call_init_closure(C, call, impl)) {
+				psi_ffi_call_free(call);
 				continue;
 			}
 		}
@@ -402,9 +402,9 @@ static zend_function_entry *psi_ffi_compile(PSI_Context *C)
 			if (let->val && let->val->kind == PSI_LET_CALLBACK) {
 				let_callback *cb = let->val->data.callback;
 
-				if ((call = PSI_LibffiCallAlloc(C, cb->decl))) {
-					if (FFI_OK != PSI_LibffiCallInitCallbackClosure(C, call, cb)) {
-						PSI_LibffiCallFree(call);
+				if ((call = psi_ffi_call_alloc(C, cb->decl))) {
+					if (FFI_OK != psi_ffi_call_init_callback_closure(C, call, cb)) {
+						psi_ffi_call_free(call);
 						continue;
 					}
 
@@ -421,14 +421,14 @@ static zend_function_entry *psi_ffi_compile(PSI_Context *C)
 			continue;
 		}
 
-		PSI_LibffiCallAlloc(C, decl);
+		psi_ffi_call_alloc(C, decl);
 	}
 
 	return zfe;
 }
 
-static void psi_ffi_call(PSI_Context *C, decl_callinfo *decl_call, impl_vararg *va) {
-	PSI_LibffiCall *call = decl_call->info;
+static void psi_ffi_call(struct psi_context *C, decl_callinfo *decl_call, impl_vararg *va) {
+	struct psi_ffi_call *call = decl_call->info;
 
 	if (va) {
 		ffi_status rc;
@@ -461,14 +461,14 @@ static void psi_ffi_call(PSI_Context *C, decl_callinfo *decl_call, impl_vararg *
 	}
 }
 
-static PSI_ContextOps ops = {
+static struct psi_context_ops ops = {
 	psi_ffi_init,
 	psi_ffi_dtor,
 	psi_ffi_compile,
 	psi_ffi_call,
 };
 
-PSI_ContextOps *PSI_Libffi(void)
+struct psi_context_ops *psi_libffi_ops(void)
 {
 	return &ops;
 }

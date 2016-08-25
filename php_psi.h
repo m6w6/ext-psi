@@ -20,7 +20,7 @@ extern zend_module_entry psi_module_entry;
 
 #include "context.h"
 
-void psi_error_wrapper(void *context, PSI_Token *t, int type, const char *msg, ...);
+void psi_error_wrapper(void *context, struct psi_token *t, int type, const char *msg, ...);
 void psi_error(int type, const char *fn, unsigned ln, const char *msg, ...);
 void psi_verror(int type, const char *fn, unsigned ln, const char *msg, va_list argv);
 
@@ -47,7 +47,7 @@ PHP_PSI_API zend_class_entry *psi_object_get_class_entry();
 ZEND_BEGIN_MODULE_GLOBALS(psi)
 	char *engine;
 	char *directory;
-	PSI_Context context;
+	struct psi_context context;
 ZEND_END_MODULE_GLOBALS(psi);
 
 ZEND_EXTERN_MODULE_GLOBALS(psi);
