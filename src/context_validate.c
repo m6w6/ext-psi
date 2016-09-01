@@ -603,17 +603,27 @@ static inline int validate_decl(struct psi_data *data, void *dl, decl *decl) {
 	}
 	return 1;
 }
-static inline decl_arg *locate_decl_var_arg(decl_var *var, decl_args *args, decl_arg *func) {
+static inline decl_arg *locate_decl_arg(decl_args *args, const char *name) {
 	size_t i;
 
 	if (args) for (i = 0; i < args->count; ++i) {
 		decl_arg *arg = args->args[i];
 
-		if (!strcmp(var->name, arg->var->name)) {
-			ZEND_ASSERT(!var->arg || var->arg == arg);
-			return var->arg = arg;
+		if (!strcmp(name, arg->var->name)) {
+			return arg;
 		}
 	}
+
+	return NULL;
+}
+static inline decl_arg *locate_decl_var_arg(decl_var *var, decl_args *args, decl_arg *func) {
+	decl_arg *arg = locate_decl_arg(args, var->name);
+
+	if (arg) {
+		ZEND_ASSERT(!var->arg || var->arg == arg);
+		return var->arg = arg;
+	}
+
 	if (func && !strcmp(var->name, func->var->name)) {
 		return var->arg = func;
 	}
@@ -936,15 +946,49 @@ static inline impl_arg *locate_impl_var_arg(impl_var *var, impl_args *args) {
 	return NULL;
 }
 
-static inline int validate_let_func(struct psi_data *data, let_func *func, impl *impl) {
-	if (impl->func->args) {
-		if (!locate_impl_var_arg(func->var, impl->func->args)) {
-			data->error(data, func->var->token, PSI_WARNING,
-					"Unknown variable '$%s' of `let` statement"
-					" for cast '%s' of implementation '%s'",
-					func->var->name, func->name, impl->func->name);
+static inline int validate_let_val(struct psi_data *data, let_val *val, decl_var *let_var, impl *impl);
+
+static inline const char *locate_let_val_varname(let_val *val) {
+	if (val) {
+		switch (val->kind) {
+		case PSI_LET_CALLBACK:
+			return &val->data.callback->func->var->name[1];
+		case PSI_LET_FUNC:
+			return &val->data.func->var->name[1];
+		default:
+			break;
+		}
+	}
+	return NULL;
+}
+
+static inline int validate_let_func(struct psi_data *data, let_func *func, decl_var *let_var, impl *impl) {
+	if (func->outer) {
+		decl_type *var_typ = real_decl_type(let_var->arg->type);
+
+		switch (var_typ->type) {
+		case PSI_T_STRUCT:
+			func->ref = locate_decl_arg(var_typ->real.strct->args, &func->var->name[1]);
+			break;
+		case PSI_T_UNION:
+			func->ref = locate_decl_arg(var_typ->real.unn->args, &func->var->name[1]);
+			break;
+		default:
+			data->error(data, let_var->token, PSI_WARNING,
+					"Inner let statement's values must refer to a structure type, got '%s' for '%s'",
+					real_decl_type(let_var->arg->type)->name, let_var->name);
 			return 0;
 		}
+	}
+	if (impl->func->args) {
+		locate_impl_var_arg(func->var, impl->func->args);
+	}
+	if (!func->var->arg && !func->ref) {
+		data->error(data, func->var->token, PSI_WARNING,
+				"Unknown variable '$%s' of `let` statement"
+				" for cast '%s' of implementation '%s'",
+				func->var->name, func->name, impl->func->name);
+		return 0;
 	}
 	switch (func->type) {
 	case PSI_T_BOOLVAL:		func->handler = psi_let_boolval;	break;
@@ -956,7 +1000,45 @@ static inline int validate_let_func(struct psi_data *data, let_func *func, impl 
 	case PSI_T_ARRVAL:		func->handler = psi_let_arrval;		break;
 	case PSI_T_OBJVAL:		func->handler = psi_let_objval;		break;
 	case PSI_T_ZVAL:		func->handler = psi_let_zval;		break;
+	case PSI_T_VOID:		func->handler = psi_let_void;		break;
 	EMPTY_SWITCH_DEFAULT_CASE();
+	}
+
+	if (func->inner && func->ref) {
+		size_t i;
+		decl_type *var_typ = real_decl_type(let_var->arg->type);
+
+		switch (var_typ->type) {
+		case PSI_T_STRUCT:
+		case PSI_T_UNION:
+			break;
+		default:
+			data->error(data, let_var->token, PSI_WARNING,
+					"Inner let statement's values must refer to a structure type, got '%s' for '%s'",
+					real_decl_type(let_var->arg->type)->name, let_var->name);
+			return 0;
+		}
+
+		for (i = 0; i < func->inner->count; ++i) {
+			let_val *inner = func->inner->vals[i];
+			let_val *outer = func->outer;
+			const char *name = locate_let_val_varname(inner);
+			decl_arg *sub_arg;
+
+			if (name) {
+				sub_arg = locate_decl_arg(var_typ->real.strct->args, name);
+			}
+			if (!name || !sub_arg) {
+				data->error(data, let_var->token, PSI_WARNING,
+						"Unknown variable '%s' of '%s'",
+						name,
+						var_typ->real.strct->name);
+				return 0;
+			}
+			if (!validate_let_val(data, inner, sub_arg->var, impl)) {
+				return 0;
+			}
+		}
 	}
 	return 1;
 }
@@ -966,7 +1048,7 @@ static inline int validate_let_callback(struct psi_data *data, decl_var *cb_var,
 	decl *cb_func;
 	decl_type *cb_type = real_decl_type(cb_var->arg->type);
 
-	if (!validate_let_func(data, cb->func, impl)) {
+	if (!validate_let_func(data, cb->func, cb_var, impl)) {
 		return 0;
 	}
 
@@ -986,6 +1068,95 @@ static inline int validate_let_callback(struct psi_data *data, decl_var *cb_var,
 	}
 
 	cb->decl = cb_func;
+
+	return 1;
+}
+
+static inline int validate_let_val(struct psi_data *data, let_val *val, decl_var *let_var, impl *impl) {
+
+	switch (val->kind) {
+	case PSI_LET_NULL:
+		break;
+	case PSI_LET_TMP:
+		if (!let_var) {
+			data->error(data, NULL, PSI_WARNING,
+					"Ivalid let statement value of implementation '%s'",
+					impl->func->name);
+			return 0;
+		}
+		/* e.g. let bar = &strval($bar); // decl_arg(char **bar) */
+		/* e.g. let foo = *bar;  */
+		let_var->pointer_level = val->data.var->pointer_level;
+		let_var->arg = init_decl_arg(
+				init_decl_type(
+						real_decl_type(val->data.var->arg->type)->type,
+						real_decl_type(val->data.var->arg->type)->name),
+				init_decl_var(
+						let_var->name,
+						let_var->pointer_level,
+						let_var->array_size));
+		break;
+	case PSI_LET_NUMEXP:
+		if (!validate_num_exp(data, val->data.num, impl->decl->args, impl->decl->func, NULL)) {
+			return 0;
+		}
+		break;
+	case PSI_LET_CALLOC:
+		if (!validate_num_exp(data, val->data.alloc->nmemb, impl->decl->args, impl->decl->func, NULL)) {
+			return 0;
+		}
+		if (!validate_num_exp(data, val->data.alloc->size, impl->decl->args, impl->decl->func, NULL)) {
+			return 0;
+		}
+		break;
+	case PSI_LET_CALLBACK:
+		if (!let_var) {
+			data->error(data, NULL, PSI_WARNING,
+					"Ivalid let statement value of implementation '%s'",
+					impl->func->name);
+			return 0;
+		}
+		if (val->data.callback->func->inner) {
+			size_t i;
+
+			for (i = 0; i < val->data.callback->func->inner->count; ++i) {
+				let_val *inner = val->data.callback->func->inner->vals[i];
+				switch (inner->kind) {
+				case PSI_LET_FUNC:
+					inner->data.func->outer = val;
+					break;
+				case PSI_LET_CALLBACK:
+					inner->data.callback->func->outer = val;
+					break;
+				}
+			}
+		}
+		if (!validate_let_callback(data, let_var, val->data.callback, impl)) {
+			return 0;
+		}
+		break;
+	case PSI_LET_FUNC:
+		if (val->data.func->inner) {
+			size_t i;
+
+			for (i = 0; i < val->data.func->inner->count; ++i) {
+				let_val *inner = val->data.func->inner->vals[i];
+				switch (inner->kind) {
+				case PSI_LET_FUNC:
+					inner->data.func->outer = val;
+					break;
+				case PSI_LET_CALLBACK:
+					inner->data.callback->func->outer = val;
+					break;
+				}
+			}
+		}
+
+		if (!validate_let_func(data, val->data.func, let_var, impl)) {
+			return 0;
+		}
+		break;
+	}
 
 	return 1;
 }
@@ -1011,48 +1182,10 @@ static inline int validate_impl_let_stmts(struct psi_data *data, impl *impl) {
 			return 0;
 		}
 
-		switch (let->val->kind) {
-		case PSI_LET_NULL:
-			break;
-		case PSI_LET_TMP:
-			/* e.g. let bar = &strval($bar); // decl_arg(char **bar) */
-			/* e.g. let foo = *bar;  */
-			let->var->pointer_level = let->val->data.var->pointer_level;
-			let->var->arg = init_decl_arg(
-					init_decl_type(
-							real_decl_type(let->val->data.var->arg->type)->type,
-							real_decl_type(let->val->data.var->arg->type)->name),
-					init_decl_var(
-							let->var->name,
-							let->var->pointer_level,
-							let->var->array_size));
-			break;
-		case PSI_LET_NUMEXP:
-			if (!validate_num_exp(data, let->val->data.num, impl->decl->args, impl->decl->func, NULL)) {
-				return 0;
-			}
-			break;
-		case PSI_LET_CALLOC:
-			if (!validate_num_exp(data, let->val->data.alloc->nmemb, impl->decl->args, impl->decl->func, NULL)) {
-				return 0;
-			}
-			if (!validate_num_exp(data, let->val->data.alloc->size, impl->decl->args, impl->decl->func, NULL)) {
-				return 0;
-			}
-			break;
-		case PSI_LET_CALLBACK:
-			if (!validate_let_callback(data, let->var, let->val->data.callback, impl)) {
-				return 0;
-			}
-			break;
-		case PSI_LET_FUNC:
-			if (!validate_let_func(data, let->val->data.func, impl)) {
-				return 0;
-			}
-			break;
+		if (!validate_let_val(data, let->val, let->var, impl)) {
+			return 0;
 		}
 	}
-
 	/* check that we have a let stmt for every decl arg */
 	if (impl->decl->args) for (i = 0; i < impl->decl->args->count; ++i) {
 		decl_arg *darg = impl->decl->args->args[i];
@@ -1277,7 +1410,7 @@ int psi_context_validate(struct psi_context *C, struct psi_parser *P)
 	decl_structs *check_structs = P->structs;
 	decl_unions *check_unions = P->unions;
 	decl_enums *check_enums = P->enums;
-	unsigned silent = C->flags & PSI_PARSER_SILENT;
+	unsigned flags = C->flags;
 
 	C->data = realloc(C->data, C->count * sizeof(*C->data));
 	D = psi_data_exchange(&C->data[count], PSI_DATA(P));
@@ -1292,7 +1425,7 @@ int psi_context_validate(struct psi_context *C, struct psi_parser *P)
 #define CHECK_TOTAL (CHECK_COUNT(defs) + CHECK_COUNT(structs) + CHECK_COUNT(enums))
 #define CHECK_COUNT(of) (check_ ##of ? check_ ##of->count : 0)
 
-	if (!silent) {
+	if (!(flags & PSI_PARSER_SILENT)) {
 		/* no warnings on first round */
 		C->flags |= PSI_PARSER_SILENT;
 	}
@@ -1338,11 +1471,12 @@ int psi_context_validate(struct psi_context *C, struct psi_parser *P)
 		REVALIDATE(unions);
 		REVALIDATE(enums);
 
-		if (check_round == 0 && !silent) {
-			C->flags &= ~PSI_PARSER_SILENT;
+		if (check_round == 0 && !(flags & PSI_PARSER_SILENT)) {
+			C->flags ^= PSI_PARSER_SILENT;
 		}
 	}
 
+	C->flags = flags;
 
 	if (D->consts) {
 		for (i = 0; i < D->consts->count; ++i) {

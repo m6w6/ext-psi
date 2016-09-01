@@ -48,7 +48,7 @@ DEF(%extra_argument, {struct psi_parser *P})
 DEF(%syntax_error, {
 	++P->errors;
 	if (TOKEN && TOKEN->type != PSI_T_EOF) {
-		psi_error(PSI_WARNING, TOKEN->file, TOKEN->line, "PSI syntax error: Unexpected token '%s'", TOKEN->text);
+		psi_error(PSI_WARNING, TOKEN->file, TOKEN->line, "PSI syntax error: Unexpected token '%s' at pos %u", TOKEN->text, TOKEN->col);
 	} else {
 		psi_error(PSI_WARNING, P->psi.file.fn, P->line, "PSI syntax error: Unexpected end of input");
 	}
@@ -153,6 +153,8 @@ TOKEN_TYPE(callback_args, set_values *)
 TOKEN_DTOR(callback_args, free_set_values($$);)
 TOKEN_TYPE(let_val, let_val*)
 TOKEN_DTOR(let_val, free_let_val($$);)
+TOKEN_TYPE(let_vals, let_vals*)
+TOKEN_DTOR(let_vals, free_let_vals($$);)
 TOKEN_TYPE(set_stmt, set_stmt*)
 TOKEN_DTOR(set_stmt, free_set_stmt($$);)
 TOKEN_TYPE(set_value, set_value*)
@@ -1008,6 +1010,29 @@ PARSE_TYPED(let_func, func,
 	free(T);
 }
 
+PARSE_TYPED(let_vals, vals,
+		TYPED(let_val, val)) {
+	vals = init_let_vals(val);
+}
+PARSE_TYPED(let_vals, vals,
+		TYPED(let_vals, vals_)
+		TOKEN(COMMA)
+		TYPED(let_val, val)) {
+	vals = add_let_val(vals_, val);
+}
+
+PARSE_TYPED(let_func, func,
+		NAMED(let_func_token, T)
+		TOKEN(LPAREN)
+		TYPED(impl_var, var)
+		TOKEN(COMMA)
+		TYPED(let_vals, vals)
+		TOKEN(RPAREN)) {
+	func = init_let_func(T->type, T->text, var);
+	func->inner = vals;
+	free(T);
+}
+
 LET(callback_arg_list, )
 PARSE_TYPED(callback_arg_list, args,
 		TYPED(callback_args, args_)) {
@@ -1023,6 +1048,14 @@ PARSE_TYPED(callback_args, args,
 		TOKEN(COMMA)
 		TYPED(set_value, val)) {
 	args = add_set_value(args_, val);
+}
+PARSE_NAMED(callback_rval, rval,
+		NAMED(let_func_token, F)) {
+	rval = F;
+}
+PARSE_NAMED(callback_rval, rval,
+		NAMED(VOID, V)) {
+	rval = V;
 }
 
 PARSE_TYPED(let_val, val,
@@ -1041,12 +1074,12 @@ PARSE_TYPED(let_val, val,
 	val = init_let_val(PSI_LET_CALLOC, alloc);
 }
 PARSE_TYPED(let_val, val,
-		TYPED(let_func, func)) {
-	val = init_let_val(PSI_LET_FUNC, func);
+		TYPED(let_func, func_)) {
+	val = init_let_val(PSI_LET_FUNC, func_);
 }
 PARSE_TYPED(let_val, val,
 		TOKEN(CALLBACK)
-		NAMED(let_func_token, F)
+		NAMED(callback_rval, F)
 		TOKEN(LPAREN)
 		TYPED(impl_var, var)
 		TOKEN(LPAREN)

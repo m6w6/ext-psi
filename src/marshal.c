@@ -13,6 +13,10 @@ void psi_to_void(zval *return_value, set_value *set, impl_val *ret_val)
 	RETVAL_NULL();
 }
 
+impl_val *psi_let_void(impl_val *tmp, decl_type *type, impl_arg *iarg, void **to_free) {
+	return tmp;
+}
+
 void psi_to_zval(zval *return_value, set_value *set, impl_val *ret_val) {
 	RETVAL_ZVAL(ret_val->ptr, 1, 0);
 }

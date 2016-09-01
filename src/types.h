@@ -43,6 +43,7 @@ typedef struct zend_fcall {
 #include "types/let_callback.h"
 #include "types/let_func.h"
 #include "types/let_val.h"
+#include "types/let_vals.h"
 #include "types/let_stmt.h"
 #include "types/set_func.h"
 #include "types/set_value.h"
