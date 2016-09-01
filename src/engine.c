@@ -207,12 +207,6 @@ static inline void *psi_do_calloc(let_calloc *alloc)
 	return mem;
 }
 
-static inline impl_val *psi_let_val(token_t let_func, impl_arg *iarg, impl_val *arg_val, decl_struct *strct, void **to_free)
-{
-	abort();
-	return arg_val;
-}
-
 static inline impl_val *psi_let_func(let_func *func, decl_arg *darg) {
 	return darg->ptr = func->handler(darg->ptr, darg->type, func->var->arg, &darg->mem);
 }
@@ -292,6 +286,12 @@ static inline void psi_clean_array_struct(let_stmt *let, decl_arg *darg) {
 
 			while (*ptr) {
 				efree(*ptr++);
+			}
+		} else if (type->type == PSI_T_STRUCT) {
+			void **ptr = (void **) ((char *) darg->mem + type->real.unn->size);
+
+			if (*ptr) {
+				efree(*ptr);
 			}
 		}
 	}
@@ -377,6 +377,9 @@ static inline void psi_do_args(impl *impl) {
 		switch (real->type) {
 		case PSI_T_STRUCT:
 			impl->decl->func->ptr = psi_array_to_struct(real->real.strct, NULL);
+			break;
+		case PSI_T_UNION:
+			impl->decl->func->ptr = psi_array_to_union(real->real.unn, NULL);
 			break;
 		}
 	}

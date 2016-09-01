@@ -127,6 +127,14 @@ AC_DEFUN(PSI_OPAQUE_TYPE, [
 	fi
 ])
 
+dnl PSI_FUNCTOR_TYPE(type functor_name, args)
+dnl Forwards to PSI_DECL_TYPE.
+AC_DEFUN(PSI_FUNCTOR_TYPE, [
+	dnl psi_add_type "{PSI_T_POINTER, \"void\", \"PSI_VAR_NAME($1)\"}"
+	AS_TR_SH([ac_cv_sizeof_]PSI_VAR_NAME($1))=PSI_SH_SIZEOF(void *)
+	PSI_DECL_TYPE([$1], [$2])
+])
+
 dnl PSI_VAR_TYPE(decl arg)
 dnl Extracts the type of a decl arg, e.g. dnl unsigned char* buf[16] -> unsigned char*.
 AC_DEFUN(PSI_VAR_TYPE, [m4_bregexp([$1], [^\(const \)?\(.*\) \([*]*\)[^ ]+$], [\2\3])])

@@ -11,6 +11,7 @@ void psi_to_array(zval *return_value, set_value *set, impl_val *ret_val);
 void psi_to_object(zval *return_value, set_value *set, impl_val *ret_val);
 void psi_to_zval(zval *return_value, set_value *set, impl_val *ret_val);
 
+void *psi_array_to_union(decl_union *u, HashTable *arr);
 void *psi_array_to_struct(decl_struct *s, HashTable *arr);
 void psi_from_zval(impl_val *mem, decl_arg *spec, zval *zv, void **tmp);
 

@@ -348,6 +348,8 @@ void psi_from_zval(impl_val *mem, decl_arg *spec, zval *zv, void **tmp)
 	decl_type *type = real_decl_type(spec->type);
 
 	switch (type->type) {
+	case PSI_T_FUNCTION:
+		break;
 	case PSI_T_FLOAT:
 		mem->fval = (float) zval_get_double(zv);
 		break;
@@ -391,6 +393,32 @@ void *psi_array_to_struct(decl_struct *s, HashTable *arr)
 			}
 		}
 	}
+	return mem;
+}
+
+void *psi_array_to_union(decl_union *u, HashTable *arr) {
+	size_t i;
+	char *mem = ecalloc(1, u->size + sizeof(void *));
+
+	if (arr) for (i = 0; i < u->args->count; ++i) {
+		decl_arg *darg = u->args->args[i];
+		zval *entry = zend_hash_str_find_ind(arr, darg->var->name, strlen(darg->var->name));
+
+		if (entry) {
+			impl_val val;
+			void *tmp = NULL;
+
+			memset(&tmp, 0, sizeof(tmp));
+			psi_from_zval(&val, darg, entry, &tmp);
+			memcpy(mem, &val, darg->layout->len);
+			if (tmp) {
+				((void **)(mem + u->size))[0] = tmp;
+			}
+			/* first found entry wins */
+			break;
+		}
+	}
+
 	return mem;
 }
 
@@ -506,6 +534,9 @@ impl_val *psi_let_arrval(impl_val *tmp, decl_type *type, impl_arg *iarg, void **
 	switch (real->type) {
 	case PSI_T_STRUCT:
 		*to_free = tmp = psi_array_to_struct(real->real.strct, arr);
+		break;
+	case PSI_T_UNION:
+		*to_free = tmp = psi_array_to_union(real->real.unn, arr);
 		break;
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}

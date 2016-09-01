@@ -123,11 +123,14 @@ PSI_CHECK_SIGNAL() {
 		int ss_flags]
 	)
 	
+	PSI_FUNCTOR_TYPE(void sa_handler, [(int signo)])
+	PSI_FUNCTOR_TYPE(void sa_sigaction, [(int signo, siginfo_t *info, void *context)])
+	
 	PSI_STRUCT(struct sigaction, [
-		void *sa_handler,
+		sa_handler sa_handler,
 		sigset_t sa_mask,
 		int sa_flags,
-		void *sa_sigaction]
+		sa_sigaction sa_sigaction]
 	)
 	
 	PSI_STRUCT(ucontext_t, [

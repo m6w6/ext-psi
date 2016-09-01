@@ -10,6 +10,11 @@ EOF
 # Add a pre-defined decl to $PSI_VA_DECLS/$PSI_DECLS.
 psi_add_decl() {
 	case "$2" in
+ *functor*)
+		cat >>$PSI_FN_DECLS <<EOF
+	$1, {0},
+EOF
+		;;
 	*vararg*)
 		cat >>$PSI_VA_DECLS <<EOF
 	$1, {0}, 
@@ -23,6 +28,12 @@ EOF
 	esac
 }
 
+dnl PSI_DECL_TYPE(type functor_name, args)
+dnl Adds a pre-defined functor decl to $PSI_FN_DECLS.
+AC_DEFUN(PSI_DECL_TYPE, [
+	PSI_DECL_ARGS($1, $2)
+	psi_add_decl "$psi_decl_args" functor
+])
 dnl PSI_REDIR(name, custom symbol)
 dnl Create a function redirection to an optional custom symbol.
 AC_DEFUN(PSI_REDIR, [

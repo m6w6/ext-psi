@@ -372,50 +372,87 @@ static inline void dump_impl_func(int fd, impl_func *func) {
 			func->return_type->name);
 }
 
+static inline void dump_impl_let_func(int fd, let_func *func, unsigned level);
+
+static inline void dump_impl_let_val(int fd, let_val *val, unsigned level, int last) {
+	if (level > 1) {
+		/* only if not directly after `set ...` */
+		dump_level(fd, level);
+	}
+
+	dprintf(fd, "%s", val->flags.one.is_reference ? "&" : "");
+	switch (val->kind) {
+	case PSI_LET_NULL:
+		dprintf(fd, "NULL");
+		break;
+	case PSI_LET_TMP:
+		dump_decl_var(fd, val->data.var);
+		break;
+	case PSI_LET_CALLOC:
+		dprintf(fd, "calloc(");
+		dump_num_exp(fd, val->data.alloc->nmemb);
+		dprintf(fd, ", ");
+		dump_num_exp(fd, val->data.alloc->size);
+		dprintf(fd, ")");
+		break;
+	case PSI_LET_CALLBACK:
+		dprintf(fd, "callback %s(%s(", val->data.callback->func->name,
+				val->data.callback->func->var->name);
+		if (val->data.callback->args) {
+			size_t i, c = val->data.callback->args->count;
+
+			dprintf(fd, "\n");
+			for (i = 0; i < c; ++i) {
+				set_value *set = val->data.callback->args->vals[i];
+				++level;
+				dump_impl_set_value(fd, set, level, i + 1 == c);
+				--level;
+			}
+			dump_level(fd, level);
+		}
+		dprintf(fd, "))");
+		break;
+	case PSI_LET_FUNC:
+		dump_impl_let_func(fd, val->data.func, level);
+		break;
+	case PSI_LET_NUMEXP:
+		dump_num_exp(fd, val->data.num);
+		break;
+
+	EMPTY_SWITCH_DEFAULT_CASE();
+	}
+	if (level > 1) {
+		if (!last) {
+			dprintf(fd, ",");
+		}
+	} else {
+		dprintf(fd, ";");
+	}
+}
+
+static inline void dump_impl_let_func(int fd, let_func *func, unsigned level) {
+	dprintf(fd, "%s(%s", func->name,
+			func->var->name);
+	if (func->inner) {
+		size_t i;
+
+		dprintf(fd, ",");
+		++level;
+		for (i = 0; i < func->inner->count; ++i) {
+			dprintf(fd, "\n");
+			dump_impl_let_val(fd, func->inner->vals[i], level, i+1 == func->inner->count);
+		}
+		--level;
+		dprintf(fd, "\n");
+		dump_level(fd, level);
+	}
+	dprintf(fd, ")");
+}
 static inline void dump_impl_let_stmt(int fd, let_stmt *let) {
 	dprintf(fd, "\tlet %s", let->var->name);
 	if (let->val) {
-		dprintf(fd, " = %s", let->val->flags.one.is_reference ? "&" : "");
-		switch (let->val->kind) {
-		case PSI_LET_NULL:
-			dprintf(fd, "NULL");
-			break;
-		case PSI_LET_TMP:
-			dump_decl_var(fd, let->val->data.var);
-			break;
-		case PSI_LET_CALLOC:
-			dprintf(fd, "calloc(");
-			dump_num_exp(fd, let->val->data.alloc->nmemb);
-			dprintf(fd, ", ");
-			dump_num_exp(fd, let->val->data.alloc->size);
-			dprintf(fd, ")");
-			break;
-		case PSI_LET_CALLBACK:
-			dprintf(fd, "callback %s(%s(", let->val->data.callback->func->name,
-					let->val->data.callback->func->var->name);
-			if (let->val->data.callback->args) {
-				size_t i, c = let->val->data.callback->args->count;
-
-				dprintf(fd, "\n");
-				for (i = 0; i < c; ++i) {
-					set_value *set = let->val->data.callback->args->vals[i];
-					dump_impl_set_value(fd, set, 2, i + 1 == c);
-				}
-				dprintf(fd, "\t");
-			}
-			dprintf(fd, "));");
-			break;
-		case PSI_LET_FUNC:
-			dprintf(fd, "%s(%s)", let->val->data.func->name,
-					let->val->data.func->var->name);
-			break;
-		case PSI_LET_NUMEXP:
-			dump_num_exp(fd, let->val->data.num);
-			break;
-
-		EMPTY_SWITCH_DEFAULT_CASE();
-		}
-		dprintf(fd, ";");
+		dprintf(fd, " = ");
+		dump_impl_let_val(fd, let->val, 1, 1);
 	}
 }
 

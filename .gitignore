@@ -62,6 +62,7 @@ php_psi_stdtypes.h
 php_psi_structs.h
 php_psi_types.h
 php_psi_va_decls.h
+php_psi_fn_decls.h
 /tmp/
 *.loT
 php_psi_unions.h

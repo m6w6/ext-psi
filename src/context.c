@@ -38,6 +38,7 @@
 #include "php_psi_consts.h"
 #include "php_psi_decls.h"
 #include "php_psi_va_decls.h"
+#include "php_psi_fn_decls.h"
 #include "php_psi_structs.h"
 #include "php_psi_unions.h"
 
@@ -164,6 +165,29 @@ struct psi_context *psi_context_init(struct psi_context *C, struct psi_context_o
 		args->varargs = 1;
 
 		T.decls = add_decl(T.decls, decl);
+		predef_decl = farg;
+	}
+
+	for (predef_decl = &psi_predef_functor_decls[0]; predef_decl->type_tag; ++predef_decl) {
+		struct psi_predef_decl *farg;
+		decl_type *dtype, *ftype = init_decl_type(predef_decl->type_tag, predef_decl->type_name);
+		decl_var *fname = init_decl_var(predef_decl->var_name, predef_decl->pointer_level, predef_decl->array_size);
+		decl_arg *tdef, *func = init_decl_arg(ftype, fname);
+		decl_args *args = init_decl_args(NULL);
+		decl *decl = init_decl(init_decl_abi("default"), func, args);
+
+		for (farg = &predef_decl[1]; farg->type_tag; ++farg) {
+			decl_type *arg_type = init_decl_type(farg->type_tag, farg->type_name);
+			decl_var *arg_var = init_decl_var(farg->var_name, farg->pointer_level, farg->array_size);
+			decl_arg *darg = init_decl_arg(arg_type, arg_var);
+			args = add_decl_arg(args, darg);
+		}
+
+		dtype = init_decl_type(PSI_T_FUNCTION, fname->name);
+		dtype->real.func = decl;
+		tdef = init_decl_arg(dtype, copy_decl_var(fname));
+		T.defs = add_decl_typedef(T.defs, tdef);
+
 		predef_decl = farg;
 	}
 
