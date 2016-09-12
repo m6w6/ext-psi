@@ -13,6 +13,7 @@ enum let_val_kind {
 #define PSI_LET_REFERENCE 0x1;
 typedef struct let_val {
 	enum let_val_kind kind;
+	decl_var *var;
 	union {
 		num_exp *num;
 		let_calloc *alloc;

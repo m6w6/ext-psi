@@ -17,6 +17,7 @@
 #include "calc.h"
 #include "marshal.h"
 #include "engine.h"
+#include "context.h"
 
 static int validate_lib(struct psi_data *data, void **dlopened) {
 	char lib[MAXPATHLEN];
@@ -637,6 +638,13 @@ static inline decl_arg *locate_struct_member(decl_struct *s, decl_var *var) {
 
 	return NULL;
 }
+static inline decl_arg *locate_union_member(decl_union *u, decl_var *var) {
+	if (u->args) {
+		return locate_decl_var_arg(var, u->args, NULL);
+	}
+
+	return NULL;
+}
 static inline constant *locate_num_exp_constant(num_exp *exp, constants *consts) {
 	size_t i;
 
@@ -831,12 +839,21 @@ static inline int validate_set_value_ex(struct psi_data *data, set_value *set, d
 		}
 	}
 
-	if (set->inner && ref_type->type == PSI_T_STRUCT) {
+	if (set->inner && (ref_type->type == PSI_T_STRUCT || ref_type->type == PSI_T_UNION)) {
 		/* to_array(struct, to_...) */
 		if (!set->outer.set || set->outer.set->inner->vals != set->inner->vals) {
 			for (i = 0; i < set->inner->count; ++i) {
 				decl_var *sub_var = set->inner->vals[i]->vars->vars[0];
-				decl_arg *sub_ref = locate_struct_member(ref_type->real.strct, sub_var);
+				decl_arg *sub_ref;
+
+				switch (ref_type->type) {
+				case PSI_T_STRUCT:
+					sub_ref = locate_struct_member(ref_type->real.strct, sub_var);
+					break;
+				case PSI_T_UNION:
+					sub_ref = locate_union_member(ref_type->real.unn, sub_var);
+					break;
+				}
 
 				if (sub_ref) {
 					if (!validate_set_value_ex(data, set->inner->vals[i], sub_ref, ref_type->real.strct->args)) {
@@ -860,7 +877,10 @@ static inline int validate_set_value_ex(struct psi_data *data, set_value *set, d
 			}
 		}
 	} else if (set->inner && set->inner->count > 1) {
-		data->error(data, set->func->token, E_WARNING, "Inner `set` statement casts on pointers may only occur once");
+		data->error(data, set->func->token, E_WARNING,
+				"Inner `set` statement casts on pointers may only occur once, "
+				"unless the outer type is a scruct or union, got '%s%.*s'",
+				ref_type->name, PSI_PRINT_POINTER_LEVEL(ref->var->pointer_level));
 		return 0;
 	}
 
@@ -964,29 +984,16 @@ static inline const char *locate_let_val_varname(let_val *val) {
 
 static inline int validate_let_func(struct psi_data *data, let_func *func, decl_var *let_var, impl *impl) {
 	if (func->outer) {
-		decl_type *var_typ = real_decl_type(let_var->arg->type);
 
-		switch (var_typ->type) {
-		case PSI_T_STRUCT:
-			func->ref = locate_decl_arg(var_typ->real.strct->args, &func->var->name[1]);
-			break;
-		case PSI_T_UNION:
-			func->ref = locate_decl_arg(var_typ->real.unn->args, &func->var->name[1]);
-			break;
-		default:
-			data->error(data, let_var->token, PSI_WARNING,
-					"Inner let statement's values must refer to a structure type, got '%s' for '%s'",
-					real_decl_type(let_var->arg->type)->name, let_var->name);
-			return 0;
-		}
 	}
 	if (impl->func->args) {
 		locate_impl_var_arg(func->var, impl->func->args);
 	}
 	if (!func->var->arg && !func->ref) {
 		data->error(data, func->var->token, PSI_WARNING,
-				"Unknown variable '$%s' of `let` statement"
+				"Unknown variable '%s%s' of `let` statement"
 				" for cast '%s' of implementation '%s'",
+				*func->var->name == '$' ? "" : "$",
 				func->var->name, func->name, impl->func->name);
 		return 0;
 	}
@@ -1004,13 +1011,17 @@ static inline int validate_let_func(struct psi_data *data, let_func *func, decl_
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}
 
-	if (func->inner && func->ref) {
+	if (func->inner) {
 		size_t i;
 		decl_type *var_typ = real_decl_type(let_var->arg->type);
+		decl_args *sub_args;
 
 		switch (var_typ->type) {
 		case PSI_T_STRUCT:
+			sub_args = var_typ->real.strct->args;
+			break;
 		case PSI_T_UNION:
+			sub_args = var_typ->real.unn->args;
 			break;
 		default:
 			data->error(data, let_var->token, PSI_WARNING,
@@ -1026,7 +1037,7 @@ static inline int validate_let_func(struct psi_data *data, let_func *func, decl_
 			decl_arg *sub_arg;
 
 			if (name) {
-				sub_arg = locate_decl_arg(var_typ->real.strct->args, name);
+				sub_arg = locate_decl_arg(sub_args, name);
 			}
 			if (!name || !sub_arg) {
 				data->error(data, let_var->token, PSI_WARNING,
@@ -1118,15 +1129,36 @@ static inline int validate_let_val(struct psi_data *data, let_val *val, decl_var
 		}
 		if (val->data.callback->func->inner) {
 			size_t i;
+			decl_type *var_typ = real_decl_type(let_var->arg->type);
+			decl_args *sub_args;
 
+			switch (var_typ->type) {
+			case PSI_T_STRUCT:
+				sub_args = var_typ->real.strct->args;
+				break;
+			case PSI_T_UNION:
+				sub_args = var_typ->real.unn->args;
+				break;
+			default:
+				data->error(data, let_var->token, PSI_WARNING,
+						"Inner let statement's values must refer to a structure type, got '%s' for '%s'",
+						real_decl_type(let_var->arg->type)->name, let_var->name);
+				return 0;
+			}
 			for (i = 0; i < val->data.callback->func->inner->count; ++i) {
 				let_val *inner = val->data.callback->func->inner->vals[i];
 				switch (inner->kind) {
 				case PSI_LET_FUNC:
 					inner->data.func->outer = val;
+					inner->data.func->ref = locate_decl_arg(sub_args,
+							&inner->data.func->var->name[1]);
+					break;
+
 					break;
 				case PSI_LET_CALLBACK:
 					inner->data.callback->func->outer = val;
+					inner->data.callback->func->ref = locate_decl_arg(sub_args,
+							&inner->data.callback->func->var->name[1]);
 					break;
 				}
 			}
@@ -1138,19 +1170,40 @@ static inline int validate_let_val(struct psi_data *data, let_val *val, decl_var
 	case PSI_LET_FUNC:
 		if (val->data.func->inner) {
 			size_t i;
+			decl_type *var_typ = real_decl_type(let_var->arg->type);
+			decl_args *sub_args;
 
+			switch (var_typ->type) {
+			case PSI_T_STRUCT:
+				sub_args = var_typ->real.strct->args;
+				break;
+			case PSI_T_UNION:
+				sub_args = var_typ->real.unn->args;
+				break;
+			default:
+				data->error(data, let_var->token, PSI_WARNING,
+						"Inner let statement's values must refer to a structure type, got '%s' for '%s'",
+						real_decl_type(let_var->arg->type)->name, let_var->name);
+				return 0;
+			}
 			for (i = 0; i < val->data.func->inner->count; ++i) {
 				let_val *inner = val->data.func->inner->vals[i];
 				switch (inner->kind) {
 				case PSI_LET_FUNC:
 					inner->data.func->outer = val;
+					inner->data.func->ref = locate_decl_arg(sub_args,
+							&inner->data.func->var->name[1]);
 					break;
 				case PSI_LET_CALLBACK:
 					inner->data.callback->func->outer = val;
+					inner->data.callback->func->ref = locate_decl_arg(sub_args,
+							&inner->data.callback->func->var->name[1]);
 					break;
 				}
 			}
 		}
+
+		val->data.func->var;
 
 		if (!validate_let_func(data, val->data.func, let_var, impl)) {
 			return 0;
@@ -1165,10 +1218,11 @@ static inline int validate_impl_let_stmts(struct psi_data *data, impl *impl) {
 	size_t i, j;
 	/* we can have multiple let stmts */
 
-	/* check that we have a decl arg for every let stmt */
+	/* check that we have a decl arg and impl arg for every let stmt */
 	for (i = 0; i < impl->stmts->let.count; ++i) {
 		let_stmt *let = impl->stmts->let.list[i];
 		decl_var *let_var;
+		impl_var *let_ivar = NULL;
 
 		if (let->val && let->val->kind == PSI_LET_TMP) {
 			let_var = let->val->data.var;
@@ -1179,6 +1233,21 @@ static inline int validate_impl_let_stmts(struct psi_data *data, impl *impl) {
 		if (!locate_decl_var_arg(let_var, impl->decl->args, impl->decl->func)) {
 			data->error(data, let_var->token, PSI_WARNING, "Unknown variable '%s' in `let` statement"
 					" of implementation '%s'", let_var->name, impl->func->name);
+			return 0;
+		}
+		switch (let->val->kind) {
+		case PSI_LET_CALLBACK:
+			let_ivar = let->val->data.callback->func->var;
+			break;
+		case PSI_LET_FUNC:
+			let_ivar = let->val->data.func->var;
+			break;
+		default:
+			break;
+		}
+		if (let_ivar && !locate_impl_var_arg(let_ivar, impl->func->args)) {
+			data->error(data, let_var->token, PSI_WARNING, "Unknown variable '%s' in `let` statement"
+					" of implementation '%s'", let_ivar->name, impl->func->name);
 			return 0;
 		}
 

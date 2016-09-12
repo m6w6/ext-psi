@@ -7,6 +7,7 @@ struct psi_parser;
 struct decl_callinfo;
 struct impl_vararg;
 
+#define PSI_PRINT_POINTER_LEVEL(l) l,"************************"
 #define PSI_ERROR 16
 #define PSI_WARNING 32
 typedef void (*psi_context_error_func)(void *context, struct psi_token *token, int type, const char *msg, ...);

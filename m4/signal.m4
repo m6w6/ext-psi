@@ -124,7 +124,7 @@ PSI_CHECK_SIGNAL() {
 	)
 	
 	PSI_FUNCTOR_TYPE(void sa_handler, [(int signo)])
-	PSI_FUNCTOR_TYPE(void sa_sigaction, [(int signo, siginfo_t *info, void *context)])
+	PSI_FUNCTOR_TYPE(void sa_sigaction, [(int signo, siginfo_t *info, ucontext_t *context)])
 	
 	PSI_STRUCT(struct sigaction, [
 		sa_handler sa_handler,

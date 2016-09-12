@@ -7,7 +7,6 @@
 #ifdef HAVE_LIBFFI
 
 #include "php_psi.h"
-#include "ffi.h"
 #include "engine.h"
 
 #undef PACKAGE
@@ -328,6 +327,37 @@ static void psi_ffi_init(struct psi_context *C)
 	C->context = psi_ffi_context_init(NULL);
 }
 
+static inline void psi_ffi_destroy_callbacks(struct psi_context *C, let_val *let_val) {
+	let_callback *cb;
+	let_func *fn = NULL;
+
+	switch (let_val->kind) {
+	case PSI_LET_CALLBACK:
+		cb = let_val->data.callback;
+
+		if (cb->decl && cb->decl->call.info) {
+			psi_ffi_call_free(cb->decl->call.info);
+		}
+		fn = cb->func;
+		/* no break */
+	case PSI_LET_FUNC:
+		if (!fn) {
+			fn = let_val->data.func;
+		}
+
+		if (fn->inner) {
+			size_t i;
+
+			for (i = 0; i < fn->inner->count; ++i) {
+				psi_ffi_destroy_callbacks(C, fn->inner->vals[i]);
+			}
+		}
+		break;
+	default:
+		break;
+	}
+}
+
 static void psi_ffi_dtor(struct psi_context *C)
 {
 	if (C->decls) {
@@ -364,6 +394,41 @@ static void psi_ffi_dtor(struct psi_context *C)
 	psi_ffi_context_free((void *) &C->context);
 }
 
+static inline void psi_ffi_compile_callbacks(struct psi_context *C, let_val *let_val) {
+	struct psi_ffi_call *call;
+	let_callback *cb;
+	let_func *fn = NULL;
+
+	switch (let_val->kind) {
+	case PSI_LET_CALLBACK:
+		cb = let_val->data.callback;
+		if ((call = psi_ffi_call_alloc(C, cb->decl))) {
+			if (FFI_OK != psi_ffi_call_init_callback_closure(C, call, cb)) {
+				psi_ffi_call_free(call);
+				break;
+			}
+
+			cb->decl->call.sym = call->code;
+		}
+		fn = cb->func;
+		/* no break */
+	case PSI_LET_FUNC:
+		if (!fn) {
+			fn = let_val->data.func;
+		}
+		if (fn->inner) {
+			size_t i;
+
+			for (i = 0; i < fn->inner->count; ++i) {
+				psi_ffi_compile_callbacks(C, fn->inner->vals[i]);
+			}
+		}
+		break;
+	default:
+		break;
+	}
+}
+
 static zend_function_entry *psi_ffi_compile(struct psi_context *C)
 {
 	size_t c, i, j = 0;
@@ -397,20 +462,7 @@ static zend_function_entry *psi_ffi_compile(struct psi_context *C)
 		++j;
 
 		for (c = 0; c < impl->stmts->let.count; ++c) {
-			let_stmt *let = impl->stmts->let.list[c];
-
-			if (let->val && let->val->kind == PSI_LET_CALLBACK) {
-				let_callback *cb = let->val->data.callback;
-
-				if ((call = psi_ffi_call_alloc(C, cb->decl))) {
-					if (FFI_OK != psi_ffi_call_init_callback_closure(C, call, cb)) {
-						psi_ffi_call_free(call);
-						continue;
-					}
-
-					cb->decl->call.sym = call->code;
-				}
-			}
+			psi_ffi_compile_callbacks(C, impl->stmts->let.list[c]->val);
 		}
 	}
 

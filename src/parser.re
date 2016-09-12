@@ -55,7 +55,7 @@ struct psi_parser *psi_parser_init(struct psi_parser *P, const char *filename, p
 	return P;
 }
 
-size_t psi_parser_fill(struct psi_parser *P, size_t n)
+ssize_t psi_parser_fill(struct psi_parser *P, size_t n)
 {
 	if (P->flags & PSI_PARSER_DEBUG) {
 		fprintf(stderr, "PSI> Fill: n=%zu\n", n);
@@ -91,7 +91,7 @@ size_t psi_parser_fill(struct psi_parser *P, size_t n)
 		}
 	}
 	if (P->flags & PSI_PARSER_DEBUG) {
-		fprintf(stderr, "PSI> Fill: avail=%zu\n", P->lim - P->cur);
+		fprintf(stderr, "PSI> Fill: avail=%zd\n", P->lim - P->cur);
 	}
 	return P->lim - P->cur;
 }

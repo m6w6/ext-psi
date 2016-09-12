@@ -298,7 +298,8 @@ void psi_from_zval_ex(impl_val **ptr, decl_arg *spec, token_t cast, zval *zv, vo
 	switch (real->type) {
 	default:
 		ZEND_ASSERT(0);
-		/* no break */
+		val->i64 = zval_get_long(zv);
+		break;
 	case PSI_T_INT8:
 		val->i8 = zval_get_long(zv);
 		break;
@@ -340,34 +341,22 @@ void psi_from_zval_ex(impl_val **ptr, decl_arg *spec, token_t cast, zval *zv, vo
 	case PSI_T_STRUCT:
 		*tmp = *ptr = psi_array_to_struct(real->real.strct, HASH_OF(zv));
 		break;
-	}
-}
-
-void psi_from_zval(impl_val *mem, decl_arg *spec, zval *zv, void **tmp)
-{
-	decl_type *type = real_decl_type(spec->type);
-
-	switch (type->type) {
+	case PSI_T_UNION:
+		*tmp = *ptr = psi_array_to_union(real->real.unn, HASH_OF(zv));
+		break;
 	case PSI_T_FUNCTION:
-		break;
-	case PSI_T_FLOAT:
-		mem->fval = (float) zval_get_double(zv);
-		break;
-	case PSI_T_DOUBLE:
-		mem->dval = zval_get_double(zv);
+		/*FIXME*/
+		val->ptr = NULL;
 		break;
 	case PSI_T_VOID:
-	case PSI_T_INT8:
-	case PSI_T_UINT8:
-		if (spec->var->pointer_level) {
+		val->ptr = NULL;
+		if (Z_TYPE_P(zv) == IS_OBJECT && instanceof_function(Z_OBJCE_P(zv), psi_object_get_class_entry())) {
+			*ptr = PSI_OBJ(zv, NULL)->data;
+		} else {
 			zend_string *zs = zval_get_string(zv);
-			*tmp = mem->ptr = estrndup(zs->val, zs->len);
+			*tmp = val->ptr = estrndup(zs->val, zs->len);
 			zend_string_release(zs);
-			break;
 		}
-		/* no break */
-	default:
-		mem->zend.lval = zval_get_long(zv);
 		break;
 	}
 }
@@ -382,12 +371,12 @@ void *psi_array_to_struct(decl_struct *s, HashTable *arr)
 		zval *entry = zend_hash_str_find_ind(arr, darg->var->name, strlen(darg->var->name));
 
 		if (entry) {
-			impl_val val;
+			impl_val val, *ptr = &val;
 			void *tmp = NULL;
 
-			memset(&tmp, 0, sizeof(tmp));
-			psi_from_zval(&val, darg, entry, &tmp);
-			memcpy(mem + darg->layout->pos, &val, darg->layout->len);
+			memset(&val, 0, sizeof(val));
+			psi_from_zval_ex(&ptr, darg, /*FIXME*/0, entry, &tmp);
+			memcpy(mem + darg->layout->pos, ptr, darg->layout->len);
 			if (tmp) {
 				((void **)(mem + s->size))[j++] = tmp;
 			}
@@ -405,11 +394,11 @@ void *psi_array_to_union(decl_union *u, HashTable *arr) {
 		zval *entry = zend_hash_str_find_ind(arr, darg->var->name, strlen(darg->var->name));
 
 		if (entry) {
-			impl_val val;
+			impl_val val, *ptr = &val;
 			void *tmp = NULL;
 
-			memset(&tmp, 0, sizeof(tmp));
-			psi_from_zval(&val, darg, entry, &tmp);
+			memset(&val, 0, sizeof(val));
+			psi_from_zval_ex(&ptr, darg, /*FIXME*/0, entry, &tmp);
 			memcpy(mem, &val, darg->layout->len);
 			if (tmp) {
 				((void **)(mem + u->size))[0] = tmp;
@@ -440,7 +429,7 @@ void psi_to_array(zval *return_value, set_value *set, impl_val *r_val)
 
 	array_init(return_value);
 
-	if (t == PSI_T_STRUCT) {
+	if (t == PSI_T_STRUCT || t == PSI_T_UNION) {
 		// decl_struct *s = real_decl_type(var->arg->type)->strct;
 
 		if (set->inner && set->inner->count) {
@@ -464,8 +453,8 @@ void psi_to_array(zval *return_value, set_value *set, impl_val *r_val)
 					}
 				}
 			}
+			return;
 		}
-		return;
 	}
 
 	if (var->arg->var->array_size) {
@@ -548,12 +537,10 @@ void psi_to_object(zval *return_value, set_value *set, impl_val *r_val)
 {
 	decl_var *var = set->vars->vars[0];
 	impl_val *ret_val = deref_impl_val(r_val, var);
-	psi_object *obj;
 
 	if ((intptr_t) ret_val->ptr > (intptr_t) 0) {
 		object_init_ex(return_value, psi_object_get_class_entry());
-		obj = PSI_OBJ(return_value, NULL);
-		obj->data = ret_val->ptr;
+		PSI_OBJ(return_value, NULL)->data = ret_val->ptr;
 	} else {
 		RETVAL_NULL();
 	}

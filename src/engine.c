@@ -207,17 +207,15 @@ static inline void *psi_do_calloc(let_calloc *alloc)
 	return mem;
 }
 
-static inline impl_val *psi_let_func(let_func *func, decl_arg *darg) {
-	return darg->ptr = func->handler(darg->ptr, darg->type, func->var->arg, &darg->mem);
-}
+static inline impl_val *psi_let_func(let_func *func, decl_arg *darg);
 
-static inline void *psi_do_let(let_stmt *let)
+static inline void *psi_let_val(let_val *val, decl_arg *darg)
 {
-	decl_arg *darg = let->var->arg;
+	ZEND_ASSERT(darg);
 
-	switch (let->val ? let->val->kind : PSI_LET_NULL) {
+	switch (val ? val->kind : PSI_LET_NULL) {
 	case PSI_LET_TMP:
-		memcpy(darg->ptr, deref_impl_val(let->val->data.var->arg->let, let->val->data.var), sizeof(impl_val));
+		memcpy(darg->ptr, deref_impl_val(val->data.var->arg->let, val->data.var), sizeof(impl_val));
 		break;
 	case PSI_LET_NULL:
 		if (darg->var->array_size) {
@@ -228,27 +226,60 @@ static inline void *psi_do_let(let_stmt *let)
 		}
 		break;
 	case PSI_LET_CALLOC:
-		darg->val.ptr = psi_do_calloc(let->val->data.alloc);
+		darg->val.ptr = psi_do_calloc(val->data.alloc);
 		darg->mem = darg->val.ptr;
 		break;
 	case PSI_LET_CALLBACK:
-		darg->val.ptr = let->val->data.callback->decl->call.sym;
+		darg->val.ptr = val->data.callback->decl->call.sym;
 		break;
 	case PSI_LET_NUMEXP:
-		darg->val.zend.lval = psi_long_num_exp(let->val->data.num, NULL);
+		darg->val.zend.lval = psi_long_num_exp(val->data.num, NULL);
 		break;
 	case PSI_LET_FUNC:
-		if (!psi_let_func(let->val->data.func, darg)) {
+		if (!psi_let_func(val->data.func, darg)) {
 			return NULL;
 		}
 		break;
 	}
 
-	if (let->val && let->val->flags.one.is_reference) {
+	if (val && val->flags.one.is_reference) {
 		return darg->let = &darg->ptr;
 	} else {
 		return darg->let = darg->ptr;
 	}
+}
+
+static inline impl_val *psi_let_func(let_func *func, decl_arg *darg) {
+	impl_arg *iarg = NULL;
+
+	if (0 && func->inner) {
+		size_t i;
+
+		for (i = 0; i < func->inner->count; ++i) {
+			let_val *inner = func->inner->vals[i];
+			decl_arg *ref = NULL;
+
+			switch (inner->kind) {
+			case PSI_LET_CALLBACK:
+				ref = inner->data.callback->func->ref;
+				break;
+			case PSI_LET_FUNC:
+				ref = inner->data.func->ref;
+				break;
+			EMPTY_SWITCH_DEFAULT_CASE();
+			}
+
+			psi_let_val(inner, ref);
+		}
+	}
+
+	return darg->ptr = func->handler(darg->ptr, darg->type, func->var->arg, &darg->mem);
+
+}
+
+static inline void *psi_do_let(let_stmt *let)
+{
+	return psi_let_val(let->val, let->var->arg);
 }
 
 static inline void psi_do_return(zval *return_value, return_stmt *ret)

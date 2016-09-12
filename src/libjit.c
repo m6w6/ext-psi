@@ -272,6 +272,37 @@ static void psi_jit_init(struct psi_context *C)
 	C->context = psi_jit_context_init(NULL);
 }
 
+static inline void psi_jit_destroy_callbacks(struct psi_context *C, let_val *let_val) {
+	let_callback *cb;
+	let_func *fn = NULL;
+
+	switch (let_val->kind) {
+	case PSI_LET_CALLBACK:
+		cb = let_val->data.callback;
+
+		if (cb->decl && cb->decl->call.info) {
+			psi_jit_call_free(cb->decl->call.info);
+		}
+		fn = cb->func;
+		/* no break */
+	case PSI_LET_FUNC:
+		if (!fn) {
+			fn = let_val->data.func;
+		}
+
+		if (fn->inner) {
+			size_t i;
+
+			for (i = 0; i < fn->inner->count; ++i) {
+				psi_jit_destroy_callbacks(C, fn->inner->vals[i]);
+			}
+		}
+		break;
+	default:
+		break;
+	}
+}
+
 static void psi_jit_dtor(struct psi_context *C)
 {
 	if (C->decls) {
@@ -292,19 +323,46 @@ static void psi_jit_dtor(struct psi_context *C)
 			impl *impl = C->impls->list[i];
 
 			for (j = 0; j < impl->stmts->let.count; ++j) {
-				let_stmt *let = impl->stmts->let.list[j];
-
-				if (let->val && let->val->kind == PSI_LET_CALLBACK) {
-					let_callback *cb = let->val->data.callback;
-
-					if (cb->decl && cb->decl->call.info) {
-						psi_jit_call_free(cb->decl->call.info);
-					}
-				}
+				psi_jit_destroy_callbacks(C, impl->stmts->let.list[j]->val);
 			}
 		}
 	}
 	psi_jit_context_free((void *) &C->context);
+}
+
+static inline void psi_jit_compile_callbacks(struct psi_context *C, let_val *let_val) {
+	struct psi_jit_call *call;
+	let_callback *cb;
+	let_func *fn = NULL;
+
+	switch (let_val->kind) {
+	case PSI_LET_CALLBACK:
+		cb = let_val->data.callback;
+		if ((call = psi_jit_call_alloc(C, cb->decl))) {
+			if (!psi_jit_call_init_callback_closure(C, call, cb)) {
+				psi_jit_call_free(call);
+				break;
+			}
+
+			cb->decl->call.sym = call->closure;
+		}
+		fn = cb->func;
+		/* no break */
+	case PSI_LET_FUNC:
+		if (!fn) {
+			fn = let_val->data.func;
+		}
+		if (fn->inner) {
+			size_t i;
+
+			for (i = 0; i < fn->inner->count; ++i) {
+				psi_jit_compile_callbacks(C, fn->inner->vals[i]);
+			}
+		}
+		break;
+	default:
+		break;
+	}
 }
 
 static zend_function_entry *psi_jit_compile(struct psi_context *C)
@@ -343,20 +401,7 @@ static zend_function_entry *psi_jit_compile(struct psi_context *C)
 		++j;
 
 		for (c = 0; c < impl->stmts->let.count; ++c) {
-			let_stmt *let = impl->stmts->let.list[c];
-
-			if (let->val && let->val->kind == PSI_LET_CALLBACK) {
-				let_callback *cb = let->val->data.callback;
-
-				if ((call = psi_jit_call_alloc(C, cb->decl))) {
-					if (!psi_jit_call_init_callback_closure(C, call, cb)) {
-						psi_jit_call_free(call);
-						continue;
-					}
-
-					cb->decl->call.sym = call->closure;
-				}
-			}
+			psi_jit_compile_callbacks(C, impl->stmts->let.list[c]->val);
 		}
 	}
 

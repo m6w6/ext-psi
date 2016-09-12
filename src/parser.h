@@ -28,7 +28,7 @@ struct psi_parser {
 
 struct psi_parser *psi_parser_init(struct psi_parser *P, const char *filename, psi_error_cb error, unsigned flags);
 void psi_parser_syntax_error(struct psi_parser *P, const char *fn, size_t ln, const char *msg, ...);
-size_t psi_parser_fill(struct psi_parser *P, size_t n);
+ssize_t psi_parser_fill(struct psi_parser *P, size_t n);
 token_t psi_parser_scan(struct psi_parser *P);
 void psi_parser_parse(struct psi_parser *P, struct psi_token *src);
 void psi_parser_dtor(struct psi_parser *P);

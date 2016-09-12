@@ -85,9 +85,9 @@ validate(true, "typedef int bar(int baz); \ntypedef int *(*foo)(bar bar);");
 --EXPECTF--
 ===TEST===
 
-Warning: PSI syntax error: Unexpected token ';' in %s001.psi on line 1
+Warning: PSI syntax error: Unexpected token ';' at pos 17 in %s001.psi on line 1
 
-Warning: PSI syntax error: Unexpected token 'int' in %s001.psi on line 1
+Warning: PSI syntax error: Unexpected token 'int' at pos 14 in %s001.psi on line 1
 
 Warning: Type 'bar' cannot be aliased to struct 'foo' in %s001.psi on line 1
 
@@ -95,5 +95,5 @@ Warning: Cannot compute size of empty struct 'a' in %s001.psi on line 1
 
 Warning: Unknown variable 'X' in numeric expression in %s001.psi on line 4
 
-Warning: PSI syntax error: Unexpected token '(' in %s001.psi on line 1
+Warning: PSI syntax error: Unexpected token '(' at pos 26 in %s001.psi on line 1
 ===DONE===
