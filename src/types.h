@@ -1,12 +1,6 @@
 #ifndef _PSI_TYPES_H
 #define _PSI_TYPES_H
 
-#include "Zend/zend_API.h"
-typedef struct zend_fcall {
-	zend_fcall_info fci;
-	zend_fcall_info_cache fcc;
-} zend_fcall;
-
 #include "token.h"
 
 #include "types/impl_val.h"
@@ -60,27 +54,6 @@ typedef struct zend_fcall {
 #include "types/decl_file.h"
 #include "types/decl_libs.h"
 
-
-static inline int weak_decl_type(decl_type *type) {
-	switch (type->type) {
-	case PSI_T_CHAR:
-	case PSI_T_SHORT:
-	case PSI_T_INT:
-	case PSI_T_LONG:
-	case PSI_T_NAME:
-		return type->type;
-	default:
-		return 0;
-	}
-}
-
-static inline decl_type *real_decl_type(decl_type *type) {
-	while (weak_decl_type(type)) {
-		type = type->real.def->type;
-	}
-	return type;
-}
-
 static inline impl_val *deref_impl_val(impl_val *ret_val, decl_var *var) {
 	unsigned i;
 
@@ -132,10 +105,5 @@ static inline impl_val *struct_member_ref(decl_arg *set_arg, impl_val *struct_pt
 #endif
 	return ptr;
 }
-
-
-#define PSI_ERROR 16
-#define PSI_WARNING 32
-typedef void (*psi_error_cb)(void *context, struct psi_token *token, int type, const char *msg, ...);
 
 #endif

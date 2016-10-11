@@ -1,6 +1,9 @@
 #ifndef _PSI_CALC_H
 #define _PSI_CALC_H
 
+#include "num_exp.h"
+#include "impl_val.h"
+
 int psi_calc_num_exp(num_exp *exp, impl_val *strct, impl_val *res);
 
 static inline zend_long psi_long_num_exp(num_exp *exp, impl_val *strct) {

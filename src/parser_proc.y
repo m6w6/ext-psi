@@ -13,7 +13,6 @@
 
 #include "parser.h"
 }
-%include { void psi_error(int, const char *, int, const char *, ...); }
 %name psi_parser_proc_
 %token_prefix PSI_T_
 %token_type {struct psi_token *}

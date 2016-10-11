@@ -111,14 +111,16 @@ if test "$PHP_PSI" != no; then
 	AC_DEFINE_UNQUOTED([PSI_VA_DECLS], [$PSI_VA_DECLS], [Predefined vararg functions])
 
 	PHP_ADD_INCLUDE($PHP_PSI_SRCDIR/src)
+	PHP_ADD_INCLUDE($PHP_PSI_SRCDIR/src/types)
 	PHP_ADD_BUILD_DIR($PHP_PSI_BUILDDIR/src)
+	PHP_ADD_BUILD_DIR($PHP_PSI_BUILDDIR/src/types)
 
 	PHP_PSI_HEADERS=`(cd $PHP_PSI_SRCDIR/src && ls *.h types/*.h)`
 	# parser* should come first
 	PHP_PSI_SOURCES=" \
 		src/parser_proc.c \
 		src/parser.c \
-		`(cd $PHP_PSI_SRCDIR && ls src/*.c | $EGREP -v '^src/parser')` \
+		`(cd $PHP_PSI_SRCDIR && ls src/*.c src/types/*.c | $EGREP -v '^src/parser')` \
 	"
 
 	PHP_NEW_EXTENSION(psi, $PHP_PSI_SOURCES, $ext_shared)

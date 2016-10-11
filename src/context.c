@@ -1,5 +1,7 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
+#else
+# include "php_config.h"
 #endif
 
 #include "php_psi_stdinc.h"
@@ -42,7 +44,7 @@
 #include "php_psi_structs.h"
 #include "php_psi_unions.h"
 
-struct psi_context *psi_context_init(struct psi_context *C, struct psi_context_ops *ops, psi_context_error_func error, unsigned flags)
+struct psi_context *psi_context_init(struct psi_context *C, struct psi_context_ops *ops, psi_error_cb error, unsigned flags)
 {
 	struct psi_data T;
 	struct psi_predef_type *predef_type;
@@ -296,6 +298,11 @@ zend_function_entry *psi_context_compile(struct psi_context *C)
 			case PSI_T_FLOAT:
 				convert_to_double(&zc.value);
 				break;
+			case PSI_T_STRING:
+			case PSI_T_QUOTED_STRING:
+				break;
+			default:
+				assert(0);
 			}
 			zend_register_constant(&zc);
 		}
@@ -405,4 +412,266 @@ void psi_context_free(struct psi_context **C)
 		free(*C);
 		*C = NULL;
 	}
+}
+
+int psi_context_validate(struct psi_context *C, struct psi_parser *P)
+{
+	struct psi_data *D;
+	void *dlopened = NULL;
+	size_t i, count = C->count++, check_round, check_count;
+	decl_typedefs *check_defs = P->defs;
+	decl_structs *check_structs = P->structs;
+	decl_unions *check_unions = P->unions;
+	decl_enums *check_enums = P->enums;
+	unsigned flags = C->flags;
+
+	C->data = realloc(C->data, C->count * sizeof(*C->data));
+	D = psi_data_exchange(&C->data[count], PSI_DATA(P));
+
+#define REVALIDATE(what) do { \
+		if (check_round && check_ ##what) { \
+			free(check_ ##what->list); \
+			free(check_ ##what); \
+		} \
+		check_ ##what = recheck_ ##what; \
+} while (0)
+#define CHECK_TOTAL (CHECK_COUNT(defs) + CHECK_COUNT(structs) + CHECK_COUNT(enums))
+#define CHECK_COUNT(of) (check_ ##of ? check_ ##of->count : 0)
+
+	if (!(flags & PSI_PARSER_SILENT)) {
+		/* no warnings on first round */
+		C->flags |= PSI_PARSER_SILENT;
+	}
+	for (check_round = 0, check_count = 0; CHECK_TOTAL && check_count != CHECK_TOTAL; ++check_round) {
+		decl_typedefs *recheck_defs = NULL;
+		decl_structs *recheck_structs = NULL;
+		decl_unions *recheck_unions = NULL;
+		decl_enums *recheck_enums = NULL;
+
+		check_count = CHECK_TOTAL;
+
+		for (i = 0; i < CHECK_COUNT(defs); ++i) {
+			if (validate_decl_typedef(PSI_DATA(C), check_defs->list[i])) {
+				C->defs = add_decl_typedef(C->defs, check_defs->list[i]);
+			} else {
+				recheck_defs = add_decl_typedef(recheck_defs, check_defs->list[i]);
+			}
+		}
+		for (i = 0; i < CHECK_COUNT(structs); ++i) {
+			if (validate_decl_struct(PSI_DATA(C), check_structs->list[i])) {
+				C->structs = add_decl_struct(C->structs, check_structs->list[i]);
+			} else {
+				recheck_structs = add_decl_struct(recheck_structs, check_structs->list[i]);
+			}
+		}
+		for (i = 0; i < CHECK_COUNT(unions); ++i) {
+			if (validate_decl_union(PSI_DATA(C), check_unions->list[i])) {
+				C->unions = add_decl_union(C->unions, check_unions->list[i]);
+			} else {
+				recheck_unions = add_decl_union(recheck_unions, check_unions->list[i]);
+			}
+		}
+		for (i = 0; i < CHECK_COUNT(enums); ++i) {
+			if (validate_decl_enum(PSI_DATA(C), check_enums->list[i])) {
+				C->enums = add_decl_enum(C->enums, check_enums->list[i]);
+			} else {
+				recheck_enums = add_decl_enum(recheck_enums, check_enums->list[i]);
+			}
+		}
+
+		REVALIDATE(defs);
+		REVALIDATE(structs);
+		REVALIDATE(unions);
+		REVALIDATE(enums);
+
+		if (check_round == 0 && !(flags & PSI_PARSER_SILENT)) {
+			C->flags ^= PSI_PARSER_SILENT;
+		}
+	}
+
+	C->flags = flags;
+
+	if (D->consts) {
+		for (i = 0; i < D->consts->count; ++i) {
+			if (validate_constant(PSI_DATA(C), D->consts->list[i])) {
+				C->consts = add_constant(C->consts, D->consts->list[i]);
+			}
+		}
+	}
+
+	if (!validate_file(D, &dlopened)) {
+		return 0;
+	}
+
+	add_decl_lib(&C->psi.libs, dlopened);
+
+	if (D->decls) {
+		for (i = 0; i < D->decls->count; ++i) {
+			if (validate_decl(PSI_DATA(C), dlopened, D->decls->list[i])) {
+				C->decls = add_decl(C->decls, D->decls->list[i]);
+			}
+		}
+	}
+	if (D->impls) {
+		for (i = 0; i < D->impls->count; ++i) {
+			if (validate_impl(PSI_DATA(C), D->impls->list[i])) {
+				C->impls = add_impl(C->impls, D->impls->list[i]);
+			}
+		}
+	}
+
+	return 1;
+}
+
+int psi_context_validate_data(struct psi_data *dest, struct psi_data *source)
+{
+	size_t i;
+	int errors = 0;
+
+	if (source->defs) for (i = 0; i < source->defs->count; ++i) {
+		decl_arg *def = source->defs->list[i];
+
+		if (validate_decl_typedef(source, def)) {
+			if (dest) {
+				dest->defs = add_decl_typedef(dest->defs, def);
+			}
+		} else {
+			++errors;
+		}
+	}
+
+	if (source->consts) for (i = 0; i < source->consts->count; ++i) {
+		constant *constant = source->consts->list[i];
+
+		if (validate_constant(source, constant)) {
+			if (dest) {
+				dest->consts = add_constant(dest->consts, constant);
+			}
+		} else {
+			++errors;
+		}
+	}
+
+	if (source->structs) for (i = 0; i < source->structs->count; ++i) {
+		decl_struct *dstruct = source->structs->list[i];
+
+		if (validate_decl_struct(source, dstruct)) {
+			if (dest) {
+				dest->structs = add_decl_struct(dest->structs, dstruct);
+			}
+		} else {
+			++errors;
+		}
+	}
+
+	if (source->unions) for (i = 0; i < source->unions->count; ++i) {
+		decl_union *dunion = source->unions->list[i];
+
+		if (validate_decl_union(source, dunion)) {
+			if (dest) {
+				dest->unions = add_decl_union(dest->unions, dunion);
+			}
+		} else {
+			++errors;
+		}
+	}
+
+	if (source->enums) for (i = 0; i < source->enums->count; ++i) {
+		decl_enum *denum = source->enums->list[i];
+
+		if (validate_decl_enum(source, denum)) {
+			if (dest) {
+				dest->enums = add_decl_enum(dest->enums, denum);
+			}
+		} else {
+			++errors;
+		}
+	}
+
+	if (source->decls) for (i = 0; i < source->decls->count; ++i) {
+		decl *decl = source->decls->list[i];
+
+		if (validate_decl(source, NULL, decl)) {
+			if (dest) {
+				dest->decls = add_decl(dest->decls, decl);
+			}
+		} else {
+			++errors;
+		}
+	}
+
+	if (source->impls) for (i = 0; i < source->impls->count; ++i) {
+		impl *impl = source->impls->list[i];
+
+		if (validate_impl(source, impl)) {
+			if (dest) {
+				dest->impls = add_impl(dest->impls, impl);
+			}
+		} else {
+			++errors;
+		}
+	}
+
+	return errors;
+}
+
+static inline void dump_data(int fd, struct psi_data *D) {
+	if (D->psi.file.fn) {
+		dprintf(fd, "// psi.filename=%s\n", D->psi.file.fn);
+		if (D->psi.file.ln) {
+			dprintf(fd, "lib \"%s\";\n", D->psi.file.ln);
+		}
+	} else {
+		dprintf(fd, "// builtin predef\n");
+	}
+	if (D->defs) {
+		dump_decl_typedefs(fd, D->defs);
+		dprintf(fd, "\n");
+	}
+	if (D->unions) {
+		dump_decl_unions(fd, D->unions);
+		dprintf(fd, "\n");
+	}
+	if (D->structs) {
+		dump_decl_structs(fd, D->structs);
+		dprintf(fd, "\n");
+	}
+	if (D->enums) {
+		dump_decl_enums(fd, D->enums);
+		dprintf(fd, "\n");
+	}
+	if (D->consts) {
+		dump_constants(fd, D->consts);
+		dprintf(fd, "\n");
+	}
+	if (D->decls) {
+		dump_decls(fd, D->decls);
+		dprintf(fd, "\n");
+	}
+	if (D->impls) {
+		dump_impls(fd, D->impls);
+		dprintf(fd, "\n");
+	}
+}
+
+void psi_context_dump(struct psi_context *C, int fd)
+{
+	size_t i;
+
+#ifdef HAVE_LIBJIT
+	if (C->ops == psi_libjit_ops()) {
+		dprintf(fd, "// psi.engine=jit\n");
+	}
+#endif
+#ifdef HAVE_LIBFFI
+	if (C->ops == psi_libffi_ops()) {
+		dprintf(fd, "// psi.engine=ffi\n");
+	}
+#endif
+	dprintf(fd, "\n");
+
+	for (i = 0; i < C->count; ++i) {
+		dump_data(fd, &C->data[i]);
+	}
+
 }

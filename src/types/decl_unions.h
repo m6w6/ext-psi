@@ -1,28 +1,40 @@
-#ifndef _PSI_TYPES_DECL_UNOINS_H
-#define _PSI_TYPES_DECL_UNOINS_H
+/*******************************************************************************
+ Copyright (c) 2016, Michael Wallner <mike@php.net>.
+ All rights reserved.
+
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+
+     * Redistributions of source code must retain the above copyright notice,
+       this list of conditions and the following disclaimer.
+     * Redistributions in binary form must reproduce the above copyright
+       notice, this list of conditions and the following disclaimer in the
+       documentation and/or other materials provided with the distribution.
+
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*******************************************************************************/
+
+#ifndef PSI_TYPES_DECL_UNOINS_H
+#define PSI_TYPES_DECL_UNOINS_H
+
+#include "decl_union.h"
 
 typedef struct decl_unions {
 	decl_union **list;
 	size_t count;
 } decl_unions;
 
-static inline decl_unions *add_decl_union(decl_unions *uu, decl_union *u) {
-	if (!uu) {
-		uu = calloc(1, sizeof(*uu));
-	}
-	uu->list = realloc(uu->list, ++uu->count * sizeof(*uu->list));
-	uu->list[uu->count-1] = u;
-	return uu;
-}
-
-static inline void free_decl_unions(decl_unions *uu) {
-	size_t i;
-
-	for (i = 0; i < uu->count; ++i) {
-		free_decl_union(uu->list[i]);
-	}
-	free(uu->list);
-	free(uu);
-}
+decl_unions *add_decl_union(decl_unions *uu, decl_union *u);
+void free_decl_unions(decl_unions *uu);
+void dump_decl_unions(int fd, decl_unions *unions);
 
 #endif

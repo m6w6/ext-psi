@@ -33,10 +33,6 @@
 #define TOKEN_DTOR(token, dtor)
 #endif
 
-DEF(%include, {
-void psi_error(int, const char *, int, const char *, ...);
-})
-
 DEF(%name, psi_parser_proc_)
 DEF(%token_prefix, PSI_T_)
 DEF(%token_type, {struct psi_token *})

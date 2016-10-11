@@ -7,15 +7,24 @@ function psi\dbm_open(string $file, int $open_flags, int $file_mode) : object {
 
 function psi\dbm_store(object $db, array $key, array $data, int $mode) : int {
 	let db = objval($db);
-	let key = arrval($key);
-	let content = arrval($data);
+	let key = arrval($key,
+		strval($dptr),
+		intval($dsize)
+	);
+	let content = arrval($data,
+		strval($dptr),
+		intval($dsize)
+	);
 	let store_mode = intval($mode);
 	return to_int(dbm_store);
 }
 
 function psi\dbm_fetch(object $db, array $key) : array {
 	let db = objval($db);
-	let key = arrval($key);
+	let key = arrval($key,
+		strval($dptr),
+		intval($dsize)
+	);
 	return to_array(dbm_fetch,
 		to_string(dptr, dsize),
 		to_int(dsize)

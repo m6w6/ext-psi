@@ -19,6 +19,7 @@ psi-clean-headers:
 .PHONY: psi-clean-sources
 psi-clean-sources:
 	-rm -f $(PHP_PSI_BUILDDIR)/src/*o
+	-rm -f $(PHP_PSI_BUILDDIR)/src/types/*o
 	-rm -f $(PHP_PSI_SRCDIR)/src/parser.c $(PHP_PSI_SRCDIR)/src/parser_proc.c $(PHP_PSI_SRCDIR)/src/parser_proc.y
 
 .PHONY: psi-clean-aux

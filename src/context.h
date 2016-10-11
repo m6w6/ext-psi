@@ -7,12 +7,6 @@ struct psi_parser;
 struct decl_callinfo;
 struct impl_vararg;
 
-#define PSI_PRINT_POINTER_LEVEL(l) l,"************************"
-#define PSI_ERROR 16
-#define PSI_WARNING 32
-typedef void (*psi_context_error_func)(void *context, struct psi_token *token, int type, const char *msg, ...);
-
-
 struct psi_context_ops {
 	void (*init)(struct psi_context *C);
 	void (*dtor)(struct psi_context *C);
@@ -31,7 +25,7 @@ struct psi_context {
 	size_t count;
 };
 
-struct psi_context *psi_context_init(struct psi_context *C, struct psi_context_ops *ops, psi_context_error_func error, unsigned flags);
+struct psi_context *psi_context_init(struct psi_context *C, struct psi_context_ops *ops, psi_error_cb error, unsigned flags);
 void psi_context_build(struct psi_context *C, const char *path);
 int psi_context_validate(struct psi_context *C, struct psi_parser *P);
 int psi_context_validate_data(struct psi_data *C, struct psi_data *D);

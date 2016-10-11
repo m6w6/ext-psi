@@ -1,5 +1,7 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
+#else
+# include "php_config.h"
 #endif
 
 #include "php.h"
@@ -12,6 +14,13 @@
 #include "calc.h"
 #include "marshal.h"
 
+static inline void psi_do_set(zval *return_value, set_value *set)
+{
+	decl_arg *set_arg = set->vars->vars[0]->arg;
+
+	zval_dtor(return_value);
+	set->func->handler(return_value, set, set_arg->let);
+}
 
 int psi_internal_type(impl_type *type)
 {
@@ -229,14 +238,14 @@ static inline void *psi_let_val(let_val *val, decl_arg *darg)
 		darg->val.ptr = psi_do_calloc(val->data.alloc);
 		darg->mem = darg->val.ptr;
 		break;
-	case PSI_LET_CALLBACK:
-		darg->val.ptr = val->data.callback->decl->call.sym;
-		break;
 	case PSI_LET_NUMEXP:
 		darg->val.zend.lval = psi_long_num_exp(val->data.num, NULL);
 		break;
+	case PSI_LET_CALLBACK:
+		darg->val.ptr = val->data.callback->decl->call.sym;
+		break;
 	case PSI_LET_FUNC:
-		if (!psi_let_func(val->data.func, darg)) {
+		if (!(darg->ptr = psi_let_func(val->data.func, darg))) {
 			return NULL;
 		}
 		break;
@@ -249,32 +258,77 @@ static inline void *psi_let_val(let_val *val, decl_arg *darg)
 	}
 }
 
-static inline impl_val *psi_let_func(let_func *func, decl_arg *darg) {
-	impl_arg *iarg = NULL;
+static void *marshal_func(void *cb_ctx, impl_val **ptr, decl_arg *spec, token_t cast, zval *zv, void **tmp) {
+	let_vals *vals = cb_ctx;
+	size_t i;
 
-	if (0 && func->inner) {
-		size_t i;
+	for (i = 0; i < vals->count; ++i) {
+		impl_var *var = locate_let_val_impl_var(vals->vals[i]);
 
-		for (i = 0; i < func->inner->count; ++i) {
-			let_val *inner = func->inner->vals[i];
-			decl_arg *ref = NULL;
-
-			switch (inner->kind) {
-			case PSI_LET_CALLBACK:
-				ref = inner->data.callback->func->ref;
-				break;
-			case PSI_LET_FUNC:
-				ref = inner->data.func->ref;
-				break;
-			EMPTY_SWITCH_DEFAULT_CASE();
-			}
-
-			psi_let_val(inner, ref);
+		if (!strcmp(&var->name[1], spec->var->name)) {
+			return *ptr = psi_let_val(vals->vals[i], spec);
 		}
 	}
 
-	return darg->ptr = func->handler(darg->ptr, darg->type, func->var->arg, &darg->mem);
+	return *ptr = NULL;
+}
 
+static inline impl_val *psi_let_func(let_func *func, decl_arg *darg) {
+	impl_arg *iarg = func->var->arg;
+
+	if (func->outer && !iarg) {
+		impl_arg *outer_arg = locate_let_val_impl_var(func->outer)->arg;
+		iarg = init_impl_arg(
+				init_impl_type(PSI_T_MIXED, "mixed"),
+				copy_impl_var(func->var), NULL);
+
+
+		if (!(iarg->_zv = zend_hash_str_find(Z_ARRVAL_P(outer_arg->_zv), &iarg->var->name[1], strlen(iarg->var->name)-1))) {
+			iarg->_zv = ecalloc(1, sizeof(*iarg->_zv));
+		}
+	}
+
+	switch (func->type) {
+	case PSI_T_BOOLVAL:
+		return psi_let_boolval(darg->ptr, darg->type, iarg->type->type, &iarg->val, iarg->_zv, &darg->mem);
+	case PSI_T_INTVAL:
+		return psi_let_intval(darg->ptr, darg->type, iarg->type->type, &iarg->val, iarg->_zv, &darg->mem);
+	case PSI_T_FLOATVAL:
+		return psi_let_floatval(darg->ptr, darg->type, iarg->type->type, &iarg->val, iarg->_zv, &darg->mem);
+	case PSI_T_STRVAL:
+		return psi_let_strval(darg->ptr, darg->type, iarg->type->type, &iarg->val, iarg->_zv, &darg->mem);
+	case PSI_T_STRLEN:
+		return psi_let_strlen(darg->ptr, darg->type, iarg->type->type, &iarg->val, iarg->_zv, &darg->mem);
+	case PSI_T_PATHVAL:
+		return psi_let_pathval(darg->ptr, darg->type, iarg->type->type, &iarg->val, iarg->_zv, &darg->mem);
+	case PSI_T_OBJVAL:
+		return psi_let_objval(darg->ptr, darg->type, iarg->type->type, &iarg->val, iarg->_zv, &darg->mem);
+	case PSI_T_ZVAL:
+		return psi_let_zval(darg->ptr, darg->type, iarg->type->type, &iarg->val, iarg->_zv, &darg->mem);
+	case PSI_T_VOID:
+		return psi_let_void(darg->ptr, darg->type, iarg->type->type, &iarg->val, iarg->_zv, &darg->mem);
+		break;
+	case PSI_T_ARRVAL:
+		if (func->inner) {
+			size_t i;
+			decl_type *real = real_decl_type(darg->type);
+
+			if (iarg->type->type != PSI_T_ARRAY) {
+				SEPARATE_ARG_IF_REF(iarg->_zv);
+				convert_to_array(iarg->_zv);
+			}
+
+			return psi_array_to_struct_ex(real->real.strct, Z_ARRVAL_P(iarg->_zv), marshal_func, func->inner);
+		} else {
+			return psi_let_arrval(darg->ptr, darg->type, iarg->type->type, &iarg->val, iarg->_zv, &darg->mem);
+		}
+		break;
+	default:
+		assert(0);
+	}
+	return NULL;
+
+	// return darg->ptr = func->handler(darg->ptr, darg->type, func->var->arg, &darg->mem);
 }
 
 static inline void *psi_do_let(let_stmt *let)
@@ -433,7 +487,7 @@ static inline impl_vararg *psi_do_varargs(impl *impl) {
 		impl_arg *vaarg = va->args->args[i];
 		void *to_free = NULL;
 		token_t vatype = va->name->type->type;
-		let_func_handler let_fn;
+		psi_marshal_let let_fn;
 
 		if (vatype == PSI_T_MIXED) {
 			switch (Z_TYPE_P(vaarg->_zv)) {
@@ -556,7 +610,7 @@ ZEND_RESULT_CODE psi_callback(let_callback *cb, void *retval, unsigned argc, voi
 	case PSI_T_DOUBLE:	zend_parse_arg_double(iarg->_zv, &iarg->val.dval, NULL, 0);			break;
 	case PSI_T_STRING:	zend_parse_arg_str(iarg->_zv, &iarg->val.zend.str, 0);				break;
 	}
-	result = cb->func->handler(retval, decl_cb->func->type, iarg, &to_free);
+	result = NULL;//cb->func->handler(retval, decl_cb->func->type, iarg, &to_free);
 
 	if (result != retval) {
 		*(void **)retval = result;

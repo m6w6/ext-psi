@@ -2,6 +2,7 @@
 #define _PSI_DATA_H
 
 #include "types.h"
+#include "error.h"
 
 #define PSI_DATA(D) ((struct psi_data *) (D))
 
