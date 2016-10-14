@@ -2,7 +2,7 @@
 #define _PSI_MARSHAL_H
 
 typedef void (*psi_marshal_set)(zval *return_value, set_value *set, impl_val *ret_val);
-typedef impl_val *(*psi_marshal_let)(impl_val *tmp, decl_type *type, impl_arg *iarg, void **to_free);
+typedef impl_val *(*psi_marshal_let)(impl_val *tmp, decl_type *decl_type, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
 
 void psi_to_void(zval *return_value, set_value *set, impl_val *ret_val);
 void psi_to_bool(zval *return_value, set_value *set, impl_val *ret_val);
@@ -35,6 +35,4 @@ impl_val *psi_let_arrval(impl_val *tmp, decl_type *decl_type, token_t impl_type,
 impl_val *psi_let_objval(impl_val *tmp, decl_type *decl_type, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
 impl_val *psi_let_zval(impl_val *tmp, decl_type *decl_type, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
 
-
-typedef impl_val *(*psi_let)(impl_val *tmp, decl_type *decl_type, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
 #endif
