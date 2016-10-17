@@ -1,7 +1,10 @@
-function psi\glob(string $pattern, int $flags, array &$glob = NULL) : int {
+function psi\glob(string $pattern, int $flags, array &$glob = NULL, callable $errfn = NULL) : int {
 	let path = strval($pattern);
 	let flags = intval($flags);
-	let err = NULL;
+	let err = callback intval($errfn(
+		to_string(errmsg),
+		to_int(errno)
+	));
 	let buf = &arrval($glob);
 	return to_int(glob);
 	set $glob = to_array(*buf,

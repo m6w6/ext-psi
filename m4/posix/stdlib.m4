@@ -56,7 +56,7 @@ PSI_CHECK_STDLIB() {
 	PSI_DECL(long random, [()])
 	PSI_DECL(char *realpath, [(char *path, char *resolved)])
 	PSI_DECL(unsigned short *seed48, [(unsigned short seed16v@<:@3@:>@)])
-	PSI_DECL(int setenv, [(char *var)])
+	PSI_DECL(int setenv, [(char *var, char *val, int overwrite)])
 	
 	AC_SEARCH_LIBS(setkey, crypt, [
 		PSI_DECL(void setkey, [(char *key)])
@@ -68,9 +68,9 @@ PSI_CHECK_STDLIB() {
 	PSI_DECL(void srandom, [(unsigned seed)])
 	PSI_DECL(double strtod, [(char *nptr, char **endptr)])
 	PSI_DECL(float strtof, [(char *nptr, char **endptr)])
-	PSI_DECL(long strtol, [(char *nptr, char **endptr)])
+	PSI_DECL(long strtol, [(char *nptr, char **endptr, int base)])
 	PSI_DECL(long double strtold, [(const char *nptr, char **endptr)])
-	PSI_DECL(unsigned long strtoul, [(char *nptr, char **endptr)])
+	PSI_DECL(unsigned long strtoul, [(char *nptr, char **endptr, int base)])
 	PSI_DECL(int system, [(char *command)])
 	PSI_DECL(int unlockpt, [(int fd)])
 	PSI_DECL(int unsetenv, [(char *var)])

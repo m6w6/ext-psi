@@ -22,5 +22,4 @@ PSI_CHECK_SYS_TIME() {
 	PSI_DECL(int setitimer, [(int which, struct itimerval *value, struct itimerval *ovalue)])
 	PSI_DECL(int gettimeofday, [(struct timeval *tp, struct timezone *tz)])
 	PSI_DECL(int utimes, [(char *path, struct timeval times@<:@2@:>@)])
-	PSI_DECL(int utimensat, [(int fd, char *path, struct timespec times@<:@2@:>@)])
 }

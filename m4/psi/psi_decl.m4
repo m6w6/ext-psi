@@ -97,7 +97,16 @@ AC_DEFUN(PSI_DECL, [
 	])
 	case "$[psi_cv_fn_]PSI_VAR_NAME($1)" in
 	"$psi_symbol"|"_$psi_symbol")
-		psi_add_decl "$psi_decl_args" $3
+		case "$PHP_DEBUG-$3" in
+		"1-")
+			PSI_MACRO($1, $2, [
+				psi_add_decl "$psi_decl_args"
+			])
+			;;
+		*)
+			psi_add_decl "$psi_decl_args" $3
+			;;
+		esac
 		;;
 	"")
 		ifelse([$3], vararg, [

@@ -8,7 +8,8 @@ PSI_CHECK_GLOB() {
         int gl_flags,
         char **gl_pathv])
 
-    PSI_DECL(int glob, [(char *path, int flags, void *err, glob_t *buf)])
+	PSI_FUNCTOR_TYPE(int glob_err, [(const char *epath, int eerrno)])
+    PSI_DECL(int glob, [(char *path, int flags, glob_err err, glob_t *buf)])
     PSI_DECL(void globfree, [(glob_t *buf)])
 
     PSI_CONST(GLOB_APPEND, int)

@@ -12,7 +12,7 @@ PHP_OS === "Linux" or die("skip - only for Linux");
 <?php
 chdir(__DIR__);
 $glob = ["gl_offs" => 5];
-var_dump(psi\glob("*.php{,t}", psi\GLOB_BRACE|psi\GLOB_DOOFFS, $glob));
+var_dump(psi\glob("*002.php{,t}", psi\GLOB_BRACE|psi\GLOB_DOOFFS, $glob));
 var_dump($glob);
 ?>
 ===DONE===
@@ -21,13 +21,13 @@ var_dump($glob);
 int(0)
 array(4) {
   ["gl_pathc"]=>
-  int(4)
+  int(2)
   ["gl_offs"]=>
   int(5)
   ["gl_flags"]=>
   int(%d)
   ["gl_pathv"]=>
-  array(9) {
+  array(7) {
     [0]=>
     string(0) ""
     [1]=>
@@ -41,11 +41,7 @@ array(4) {
     [5]=>
     string(11) "glob002.php"
     [6]=>
-    string(12) "glob001.phpt"
-    [7]=>
     string(12) "glob002.phpt"
-    [8]=>
-    string(12) "glob003.phpt"
   }
 }
 ===DONE===

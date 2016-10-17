@@ -99,12 +99,12 @@ int psi_calc_num_exp(num_exp *exp, impl_val *strct, impl_val *res) {
 #define PSI_CALC_OP(var) do { \
 	const char *fmt = "calc %" PRI##var ", %" PRI##var ": %" PRI##var "\n"; \
 	res->var = PSI_CALC(v1->var, v2->var); \
-	if (!res->var) fprintf(stderr, fmt, v1->var, v2->var, res->var); \
+	if (!res->var && (v1->var || v2->var)) fprintf(stderr, fmt, v1->var, v2->var, res->var); \
 } while (0)
 #define PSI_CALC_OP2(vres, var1, var2) do { \
 	const char *fmt = "calc %" PRI##var1 ", %" PRI##var2 ": %" PRI##vres "\n"; \
 	res->vres = PSI_CALC(v1->var1, v2->var2); \
-	if (!res->vres) fprintf(stderr, fmt, v1->var1, v2->var2, res->vres); \
+	if (!res->vres && (v1->var1 || v2->var2)) fprintf(stderr, fmt, v1->var1, v2->var2, res->vres); \
 } while(0)
 
 #ifdef HAVE_LONG_DOUBLE

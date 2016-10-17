@@ -76,7 +76,7 @@ PSI_CHECK_NETDB() {
 	PSI_DECL(void endprotoent, [(void)])
 	PSI_DECL(void endservent, [(void)])
 	PSI_DECL(void freeaddrinfo, [(struct addrinfo *res)])
-	PSI_DECL(char *gai_strerror, [(int errcode)])
+	PSI_DECL(const char *gai_strerror, [(int errcode)])
 	PSI_DECL(int getaddrinfo, [(char *node, char *service, struct addrinfo *hints, struct addrinfo **res)])
 	PSI_DECL(struct hostent *gethostent, [(void)])
 	PSI_DECL(int getnameinfo, [(struct sockaddr *sa, socklen_t salen, char *host, socklen_t hostlen, char *serv, socklen_t servlen, int flags)])
