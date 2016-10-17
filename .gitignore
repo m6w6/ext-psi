@@ -66,3 +66,6 @@ php_psi_fn_decls.h
 /tmp/
 *.loT
 php_psi_unions.h
+/*.c
+/*.diff
+/*.phar
