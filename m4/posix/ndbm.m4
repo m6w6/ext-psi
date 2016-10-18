@@ -1,7 +1,7 @@
 PSI_CHECK_NDBM() {
 	PSI_CONFIG_POSIX(ndbm, ndbm.h gdbm-ndbm.h)
 
-	PHP_CHECK_FUNC_LIB(dbm_open, gdbm_compat)
+	PHP_CHECK_FUNC(dbm_open, gdbm_compat)
 
 	PSI_STRUCT(datum, [
 		void *dptr,
