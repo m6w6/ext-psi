@@ -2,7 +2,7 @@
 # Add a function redirection to $PSI_REDIRS.
 psi_add_redir() {
 	cat >>$PSI_REDIRS <<EOF
-	{"$1", (psi_func_ptr) $2}, 
+	{"$1", (psi_func_ptr) $2},
 EOF
 }
 
@@ -17,12 +17,12 @@ EOF
 		;;
 	*vararg*)
 		cat >>$PSI_VA_DECLS <<EOF
-	$1, {0}, 
+	$1, {0},
 EOF
 		;;
 	*)
 		cat >>$PSI_DECLS <<EOF
-	$1, {0}, 
+	$1, {0},
 EOF
 		;;
 	esac
@@ -80,11 +80,11 @@ AC_DEFUN(PSI_DECL_ARG, [
 dnl PSI_DECL(type func, args, flags)
 dnl Check for a function or macro declaration and a possible asm redirection.
 dnl Adds a pre-defined (vararg) decl to $PSI_VA_DECLS/$PSI_DECLS.
-dnl Calls PSI_MACRO if PSI_FUNC fails. 
+dnl Calls PSI_MACRO if PSI_FUNC fails.
 AC_DEFUN(PSI_DECL, [
 	AC_REQUIRE([PSI_FUNC_LIBC_MAIN])
 	PSI_DECL_ARGS($1, $2)
-	
+
 	psi_symbol="PSI_VAR_NAME($1)"
 	AC_CACHE_CHECK(for PSI_VAR_NAME($1), [psi_cv_fn_]PSI_VAR_NAME($1), [
 		psi_symbol_redirect=
@@ -110,7 +110,7 @@ AC_DEFUN(PSI_DECL, [
 		;;
 	"")
 		ifelse([$3], vararg, [
-			AC_MSG_ERROR(varargs macro support is not implemented)
+			AC_MSG_WARN(varargs macro support is not implemented)
 		],[
 			PSI_MACRO($1, $2, [
 				psi_add_decl "$psi_decl_args"

@@ -137,7 +137,7 @@ AC_DEFUN(PSI_CONFIG_POSIX_ENABLED, [
 	AS_TR_SH([psi_config_posix_]$1)=false
 	case "$PHP_PSI_POSIX" in
 	yes|all)
-		AS_TR_SH([psi_config_posix_]$1)=true 
+		AS_TR_SH([psi_config_posix_]$1)=true
 		;;
 	*)
 		if expr "$PHP_PSI_POSIX" : '\b$1\b' >/dev/null; then
@@ -185,7 +185,11 @@ AC_DEFUN(PSI_PTHREAD, [
 dnl PSI_INCLUDES()
 dnl Expands to a complete list of include statements including
 dnl AC_INCLUDES_DEFAULT().
-AC_DEFUN(PSI_INCLUDES, [AC_INCLUDES_DEFAULT()
+AC_DEFUN(PSI_INCLUDES, [#define PSI_INCLUDES
+#define _GNU_SOURCE 1
+#define _POSIX_C_SOURCE 200809L
+#define _XOPEN_SOURCE 700
+AC_INCLUDES_DEFAULT()
 #ifdef HAVE_ERRNO_H
 # include <errno.h>
 #endif
@@ -212,6 +216,8 @@ AC_DEFUN(PSI_INCLUDES, [AC_INCLUDES_DEFAULT()
 #endif
 #ifdef HAVE_NDBM_H
 # include <ndbm.h>
+#elif HAVE_GDBM_NDBM_H
+# include <gdbm-ndbm.h>
 #endif
 #ifdef HAVE_NETDB_H
 # include <netdb.h>

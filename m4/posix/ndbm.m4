@@ -1,18 +1,18 @@
 PSI_CHECK_NDBM() {
-	PSI_CONFIG_POSIX(ndbm, ndbm.h)
-	
+	PSI_CONFIG_POSIX(ndbm, ndbm.h gdbm-ndbm.h)
+
 	PHP_CHECK_FUNC_LIB(dbm_open, gdbm_compat)
-	
+
 	PSI_STRUCT(datum, [
 		void *dptr,
 		int dsize]
 	)
-	
+
 	PSI_OPAQUE_TYPE(DBM)
-	
+
 	PSI_CONST(DBM_INSERT, int)
 	PSI_CONST(DBM_REPLACE, int)
-	
+
 	PSI_DECL(void dbm_clearerr, [(DBM *db)])
 	PSI_DECL(void dbm_close, [(DBM *db)])
 	PSI_DECL(int dbm_delete, [(DBM *db, datum key)])
