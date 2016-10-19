@@ -9,6 +9,7 @@ addons:
    - php5-cli
    - php-pear
    - re2c
+   - libidn11-dev
 
 env:
  matrix:
