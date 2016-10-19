@@ -3,7 +3,9 @@
 PHP_PSI_HEADERS := $(addprefix $(PHP_PSI_BUILDDIR)/,$(PHP_PSI_HEADERS))
 PHP_PSI_SOURCES := $(addprefix $(PHP_PSI_SRCDIR)/,$(PHP_PSI_SOURCES))
 
-$(PHP_PSI_BUILDDIR)/types/%.h: $(PHP_PSI_SRCDIR)/src/types/%.h
+$(PHP_PSI_BUILDDIR)/types:
+	mkdir -p $@
+$(PHP_PSI_BUILDDIR)/types/%.h: $(PHP_PSI_SRCDIR)/src/types/%.h | $(PHP_PSI_BUILDDIR)/types
 	@cat >$@ <$<
 $(PHP_PSI_BUILDDIR)/%.h: $(PHP_PSI_SRCDIR)/src/%.h
 	@cat >$@ <$<
@@ -17,6 +19,7 @@ psi-build-headers: $(PHP_PSI_HEADERS)
 .PHONY: psi-clean-headers
 psi-clean-headers:
 	-rm -f $(PHP_PSI_HEADERS)
+	-rmdir $(PHP_PSI_BUILDDIR)/types
 
 .PHONY: psi-clean-sources
 psi-clean-sources:
@@ -30,8 +33,8 @@ psi-clean-aux:
 
 .PHONY: psi-clean
 psi-clean: psi-clean-headers psi-clean-sources psi-clean-aux
-	
-		
+
+
 lempar.c:
 	curl -sSo $@ "http://www.sqlite.org/src/raw/tool/lempar.c?name=3ec1463a034b37d87d782be5f6b8b10a3b1ecbe7"
 
