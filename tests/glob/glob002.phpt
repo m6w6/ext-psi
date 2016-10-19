@@ -12,7 +12,7 @@ PHP_OS === "Linux" or die("skip - only for Linux");
 <?php
 chdir(__DIR__);
 $glob = ["gl_offs" => 5];
-var_dump(psi\glob("*002.php{,t}", psi\GLOB_BRACE|psi\GLOB_DOOFFS, $glob));
+var_dump(psi\glob("*002.php*", psi\GLOB_DOOFFS, $glob));
 var_dump($glob);
 ?>
 ===DONE===
