@@ -2,6 +2,10 @@ PSI_CHECK_NDBM() {
 	PSI_CONFIG_POSIX(ndbm, ndbm.h gdbm-ndbm.h)
 
 	PHP_CHECK_FUNC(dbm_open, gdbm_compat)
+	# See http://www.gnu.org.ua/software/gdbm/manual/html_section/gdbm_19.html
+	if expr X"$LIBS" : "X.*-lgdbm_compat" >/dev/null; then
+		LIBS="-lgdbm $LIBS"
+	fi
 
 	PSI_STRUCT(datum, [
 		void *dptr,
