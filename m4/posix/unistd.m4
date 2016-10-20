@@ -289,18 +289,10 @@ PSI_CHECK_UNISTD() {
 	PSI_DECL(int chown, [(const char *path, uid_t owner, gid_t group)])
 	PSI_DECL(int close, [(int fildes)])
 	PSI_DECL(size_t confstr, [(int name, char *buf, size_t len)])
-	
-	AC_SEARCH_LIBS(crypt, crypt, [
-		PSI_DECL(char *crypt, [(const char *key, const char *salt)])
-	])
-	
+	PSI_DECL(char *crypt, [(const char *key, const char *salt)], [], [-lcrypt])
 	PSI_DECL(int dup, [(int fildes)])
 	PSI_DECL(int dup2, [(int fildes, int fildes2)])
-	
-	AC_SEARCH_LIBS(encrypt, crypt, [
-		PSI_DECL(void encrypt, [(char block@<:@64@:>@, int edflag)])
-	])
-	
+	PSI_DECL(void encrypt, [(char block@<:@64@:>@, int edflag)], [], [-lcrypt])
 	PSI_DECL(void _exit, [(int status)])
 	PSI_DECL(int execl, [(const char *path, const char *arg)], vararg)
 	PSI_DECL(int execle, [(const char *path, const char *arg)], vararg)

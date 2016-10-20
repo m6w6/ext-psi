@@ -77,25 +77,51 @@ AC_DEFUN(PSI_DECL_ARG, [
     psi_decl_args="[$psi_decl_args{]PSI_TYPE_PAIR(member_type)[, \"]member_name[\",] $pl, $as[}]"
 ])
 
-dnl PSI_DECL(type func, args, flags)
+dnl PSI_DECL(type func, args, flags, libs)
 dnl Check for a function or macro declaration and a possible asm redirection.
 dnl Adds a pre-defined (vararg) decl to $PSI_VA_DECLS/$PSI_DECLS.
 dnl Calls PSI_MACRO if PSI_FUNC fails.
 AC_DEFUN(PSI_DECL, [
-	AC_REQUIRE([PSI_FUNC_LIBC_MAIN])
+	AC_REQUIRE([PSI_FUNC_LIBC_MAIN])dnl
+	
 	PSI_DECL_ARGS($1, $2)
 
 	psi_symbol="PSI_VAR_NAME($1)"
 	AC_CACHE_CHECK(for PSI_VAR_NAME($1), [psi_cv_fn_]PSI_VAR_NAME($1), [
+		psi_decl_check=
 		psi_symbol_redirect=
-		AC_TRY_LINK(PSI_INCLUDES, [
-			void (*fn)(void) = (void (*)(void)) $psi_symbol; (*fn)()
-		], [
-			psi_symbol_redirect=`nm -g conftest$ac_exeext | $AWK -F ' *|@' '/^@<:@@<:@:space:@:>@@:>@+U '$psi_cv_libc_main'/ {next} /^@<:@@<:@:space:@:>@@:>@+U / {print$[]3; exit}'`
-		])
-		[psi_cv_fn_]PSI_VAR_NAME($1)=$psi_symbol_redirect
+		for lib in "" $4; do
+			decl_save_LIBS=$LIBS
+			LIBS=$lib
+			AC_TRY_LINK(PSI_INCLUDES, [
+				void (*fn)(void) = (void (*)(void)) $psi_symbol; (*fn)()
+			], [
+				psi_symbol_redirect=`nm -g conftest$ac_exeext | $AWK -F ' *|@' '/^@<:@@<:@:space:@:>@@:>@+U '$psi_cv_libc_main'/ {next} /^@<:@@<:@:space:@:>@@:>@+U / {print$[]3; exit}'`
+			])
+			LIBS=$decl_save_LIBS
+			
+			if test -n "$psi_symbol_redirect"; then
+				if test -n "$lib"; then
+					psi_decl_check="$psi_symbol_redirect in $lib"
+				else
+					psi_decl_check="$psi_symbol_redirect" 
+				fi
+				break
+			fi
+		done
+		[psi_cv_fn_]PSI_VAR_NAME($1)=$psi_decl_check
 	])
-	case "$[psi_cv_fn_]PSI_VAR_NAME($1)" in
+	
+	psi_symbol_redirect=`AS_ECHO("$[psi_cv_fn_]PSI_VAR_NAME($1)") | $AWK -F " in " '{print [$]1}'`
+	psi_symbol_libflag=`AS_ECHO("$[psi_cv_fn_]PSI_VAR_NAME($1)") | $AWK -F " in " '{print [$]2}'`
+	
+	if test -n "$psi_symbol_libflag"; then
+		if ! expr "X$LIBS" : "X.*\b$psi_symbol_libflag\b" >/dev/null; then
+			LIBS="$psi_symbol_libflag $LIBS"
+		fi
+	fi
+	
+	case "$psi_symbol_redirect" in
 	"$psi_symbol"|"_$psi_symbol")
 		case "$PHP_DEBUG-$3" in
 		"1-")

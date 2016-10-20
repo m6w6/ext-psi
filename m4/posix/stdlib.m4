@@ -57,11 +57,7 @@ PSI_CHECK_STDLIB() {
 	PSI_DECL(char *realpath, [(char *path, char *resolved)])
 	PSI_DECL(unsigned short *seed48, [(unsigned short seed16v@<:@3@:>@)])
 	PSI_DECL(int setenv, [(char *var, char *val, int overwrite)])
-	
-	AC_SEARCH_LIBS(setkey, crypt, [
-		PSI_DECL(void setkey, [(char *key)])
-	])
-	
+	PSI_DECL(void setkey, [(char *key)], [], [-lcrypt])
 	PSI_DECL(char *setstate, [(char *state)])
 	PSI_DECL(void srand, [(unsigned seed)])
 	PSI_DECL(void srand48, [(long seed)])

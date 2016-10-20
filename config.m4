@@ -46,19 +46,19 @@ m4_foreach(incfile, [
 PHP_ARG_ENABLE(psi, whether to enable PHP System Interface support,
 [  --enable-psi            Enable PHP System Interface support])
 
-PHP_ARG_ENABLE(psi-posix, whether to pre-define POSIX decls,
-[  --enable-psi-posix=...  PSI: pre-define POSIX decls], [ ], [ ])
-
-PHP_ARG_WITH(psi-libjit, where to find libjit,
-[  --with-psi-libjit=DIR   PSI: path to libjit], [ ], [ ])
-
-PHP_ARG_WITH(psi-libffi, where to find libffi,
-[  --with-psi-libffi=DIR   PSI: path to libffi], [ ], [ ])
-
 if test "$PHP_PSI" != no; then
 	PHP_CONFIGURE_PART(Configuring PSI)
 
-	save_LIBS=$LIBS
+	PHP_ARG_ENABLE(psi-posix, whether to pre-define POSIX decls,
+	[  --enable-psi-posix=...  PSI: pre-define POSIX decls], [ ], [ ])
+
+	PHP_ARG_WITH(psi-libjit, where to find libjit,
+	[  --with-psi-libjit=DIR   PSI: path to libjit], [ ], [ ])
+
+	PHP_ARG_WITH(psi-libffi, where to find libffi,
+	[  --with-psi-libffi=DIR   PSI: path to libffi], [ ], [ ])
+
+	psi_save_LIBS=$LIBS
 	LIBS=
 
 	PSI_LEMON
@@ -99,22 +99,22 @@ if test "$PHP_PSI" != no; then
 	PSI_CHECK_WCTYPE
 	PSI_CONFIG_DONE
 
-	eval_LIBS=$LIBS
-	LIBS=$save_LIBS
-	PHP_EVAL_LIBLINE($eval_LIBS, PSI_SHARED_LIBADD)
+	psi_eval_LIBS=$LIBS
+	LIBS=$psi_save_LIBS
+	PHP_EVAL_LIBLINE($psi_eval_LIBS, PSI_SHARED_LIBADD)
 	PHP_SUBST(PSI_SHARED_LIBADD)
 
 	AC_DEFINE_UNQUOTED(PHP_PSI_SHLIB_SUFFIX, ["$SHLIB_SUFFIX_NAME"], DL suffix)
 
-	AC_DEFINE_UNQUOTED([PSI_STDINC], [$PSI_STDINC], [Standard includes])
-	AC_DEFINE_UNQUOTED([PSI_TYPES], [$PSI_TYPES], [Predefined types])
-	AC_DEFINE_UNQUOTED([PSI_STRUCTS], [$PSI_STRUCTS], [Predefined structs])
-	AC_DEFINE_UNQUOTED([PSI_UNIONS], [$PSI_UNIONS], [Predefined structs])
-	AC_DEFINE_UNQUOTED([PSI_CONSTS], [$PSI_CONSTS], [Predefined constants])
-	AC_DEFINE_UNQUOTED([PSI_MACROS], [$PSI_MACROS], [Redirected Macros])
-	AC_DEFINE_UNQUOTED([PSI_REDIRS], [$PSI_REDIRS], [Redirected functions])
-	AC_DEFINE_UNQUOTED([PSI_DECLS], [$PSI_DECLS], [Predefined functions])
-	AC_DEFINE_UNQUOTED([PSI_VA_DECLS], [$PSI_VA_DECLS], [Predefined vararg functions])
+	AC_DEFINE_UNQUOTED([PSI_STDINC], ["$PSI_STDINC"], [Standard includes])
+	AC_DEFINE_UNQUOTED([PSI_TYPES], ["$PSI_TYPES"], [Predefined types])
+	AC_DEFINE_UNQUOTED([PSI_STRUCTS], ["$PSI_STRUCTS"], [Predefined structs])
+	AC_DEFINE_UNQUOTED([PSI_UNIONS], ["$PSI_UNIONS"], [Predefined structs])
+	AC_DEFINE_UNQUOTED([PSI_CONSTS], ["$PSI_CONSTS"], [Predefined constants])
+	AC_DEFINE_UNQUOTED([PSI_MACROS], ["$PSI_MACROS"], [Redirected Macros])
+	AC_DEFINE_UNQUOTED([PSI_REDIRS], ["$PSI_REDIRS"], [Redirected functions])
+	AC_DEFINE_UNQUOTED([PSI_DECLS], ["$PSI_DECLS"], [Predefined functions])
+	AC_DEFINE_UNQUOTED([PSI_VA_DECLS], ["$PSI_VA_DECLS"], [Predefined vararg functions])
 
 	PHP_ADD_INCLUDE($PHP_PSI_SRCDIR/src)
 	PHP_ADD_INCLUDE($PHP_PSI_SRCDIR/src/types)

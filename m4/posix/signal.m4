@@ -123,14 +123,14 @@ PSI_CHECK_SIGNAL() {
 		int ss_flags]
 	)
 	
-	PSI_FUNCTOR_TYPE(void sa_handler, [(int signo)])
-	PSI_FUNCTOR_TYPE(void sa_sigaction, [(int signo, siginfo_t *info, ucontext_t *context)])
+	PSI_FUNCTOR_TYPE(void sighandler_t, [(int signo)])
+	PSI_FUNCTOR_TYPE(void sigaction_t, [(int signo, siginfo_t *info, ucontext_t *context)])
 	
 	PSI_STRUCT(struct sigaction, [
-		sa_handler sa_handler,
+		sighandler_t sa_handler,
 		sigset_t sa_mask,
 		int sa_flags,
-		sa_sigaction sa_sigaction]
+		sigaction_t sa_sigaction]
 	)
 	
 	PSI_STRUCT(ucontext_t, [
@@ -173,13 +173,13 @@ PSI_CHECK_SIGNAL() {
 	PSI_DECL(int sigignore, [(int sig)])
 	PSI_DECL(int siginterrupt, [(int sig, int flag)])
 	PSI_DECL(int sigismember, [(const sigset_t *set, int signum)])
-	PSI_DECL(void *signal, [(int sig, void *func)])
+	PSI_DECL(sighandler_t signal, [(int sig, sighandler_t *func)])
 	PSI_DECL(int sigpause, [(int sig)])
 	PSI_DECL(int sigpending, [(sigset_t *set)])
 	PSI_DECL(int sigprocmask, [(int how, const sigset_t *set, sigset_t *oset)])
 	PSI_DECL(int sigqueue, [(pid_t pid, int sig, const union sigval value)])
 	PSI_DECL(int sigrelse, [(int sig)])
-	PSI_DECL(void *sigset, [(int sig, void *disp)])
+	PSI_DECL(sighandler_t sigset, [(int sig, sighandler_t disp)])
 	PSI_DECL(int sigsuspend, [(const sigset_t *sigmask)])
 	PSI_DECL(int sigtimedwait, [(const sigset_t *set, siginfo_t *info, const struct timespec *timeout)])
 	PSI_DECL(int sigwait, [(const sigset_t *set, int *sig)])
