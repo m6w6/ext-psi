@@ -180,22 +180,12 @@ static inline jit_type_t psi_jit_decl_arg_type(decl_arg *darg) {
 struct psi_jit_context {
 	jit_context_t jit;
 	jit_type_t signature;
-	struct {
-		struct psi_jit_data **list;
-		size_t count;
-	} data;
 };
 
 struct psi_jit_call {
 	void *closure;
 	jit_type_t signature;
 	void *params[1]; /* [type1, type2, NULL, arg1, arg2] ... */
-};
-
-struct psi_jit_data {
-	struct psi_jit_context *context;
-	impl *impl;
-	zend_internal_arg_info *arginfo;
 };
 
 static inline struct psi_jit_call *psi_jit_call_alloc(struct psi_context *C, decl *decl) {
@@ -388,12 +378,12 @@ static zend_function_entry *psi_jit_compile(struct psi_context *C)
 		if (!impl->decl) {
 			continue;
 		}
-
-		if ((call = psi_jit_call_alloc(C, impl->decl))) {
-			if (!psi_jit_call_init_closure(C, call, impl)) {
-				psi_jit_call_free(call);
-				continue;
-			}
+		if (!(call = psi_jit_call_alloc(C, impl->decl))) {
+			continue;
+		}
+		if (!psi_jit_call_init_closure(C, call, impl)) {
+			psi_jit_call_free(call);
+			continue;
 		}
 
 		zf->fname = impl->func->name + (impl->func->name[0] == '\\');

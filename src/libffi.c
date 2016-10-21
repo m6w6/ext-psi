@@ -449,12 +449,12 @@ static zend_function_entry *psi_ffi_compile(struct psi_context *C)
 		if (!impl->decl) {
 			continue;
 		}
-
-		if ((call = psi_ffi_call_alloc(C, impl->decl))) {
-			if (FFI_OK != psi_ffi_call_init_closure(C, call, impl)) {
-				psi_ffi_call_free(call);
-				continue;
-			}
+		if (!(call = psi_ffi_call_alloc(C, impl->decl))) {
+			continue;
+		}
+		if (FFI_OK != psi_ffi_call_init_closure(C, call, impl)) {
+			psi_ffi_call_free(call);
+			continue;
 		}
 
 		zf->fname = impl->func->name + (impl->func->name[0] == '\\');
