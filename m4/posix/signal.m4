@@ -173,7 +173,7 @@ PSI_CHECK_SIGNAL() {
 	PSI_DECL(int sigignore, [(int sig)])
 	PSI_DECL(int siginterrupt, [(int sig, int flag)])
 	PSI_DECL(int sigismember, [(const sigset_t *set, int signum)])
-	PSI_DECL(sighandler_t signal, [(int sig, sighandler_t *func)])
+	PSI_DECL(sighandler_t signal, [(int sig, sighandler_t func)])
 	PSI_DECL(int sigpause, [(int sig)])
 	PSI_DECL(int sigpending, [(sigset_t *set)])
 	PSI_DECL(int sigprocmask, [(int how, const sigset_t *set, sigset_t *oset)])

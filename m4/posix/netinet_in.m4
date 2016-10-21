@@ -62,5 +62,5 @@ PSI_CHECK_NETINET_IN() {
 	PSI_MACRO(int IN6_IS_ADDR_MC_ORGLOCAL, [(const struct in6_addr *a)])
 	PSI_MACRO(int IN6_IS_ADDR_MC_GLOBAL, [(const struct in6_addr *a)])
 
-	PSI_EXTVAR(struct in6_addr in6addr_loopback)
+	PSI_MACRO(struct in6_addr in6addr_loopback)
 }

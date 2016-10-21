@@ -57,6 +57,7 @@ PSI_CHECK_TIME() {
 	PSI_DECL(int timer_settime, [(timer_t t, int flags, struct itimerspec *value, struct itimerspec *ovalue)], [], [-lrt])
 	PSI_DECL(void tzset, [()])
 
+	PSI_MACRO(int getdate_err)
 	PSI_EXTVAR(int daylight)
 	PSI_EXTVAR(long timezone)
 	PSI_EXTVAR(char **tzname)

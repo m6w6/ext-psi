@@ -61,6 +61,7 @@ AC_DEFUN(PSI_DECL_ARGS, [
 	m4_case([$2],
 		[(void)], [],
 		[()], [],
+		[], [],
 		[m4_map_args_sep([PSI_DECL_ARG(m4_normalize(], [))], [], m4_bregexp([$2], [(\(.*\))], [\1]))])
 ])
 
