@@ -108,12 +108,12 @@ static inline size_t psi_t_size(token_t t)
 static inline const char *psi_t_indent(unsigned level) {
 	static const char indent[] =
 			"\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t";
-	return &indent[32 - MAX(0, MIN(32, level))];
+	return &indent[32 - MIN(32, level)];
 }
 
 static inline const char *psi_t_indirection(unsigned pointer_level) {
 	static const char indir[] = "********************************";
-	return &indir[32 - MAX(0, MIN(32, pointer_level))];
+	return &indir[32 - MIN(32, pointer_level)];
 }
 
 struct psi_token {

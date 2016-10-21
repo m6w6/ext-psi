@@ -93,8 +93,16 @@ struct psi_token *psi_token_cat(unsigned argc, ...) {
 
 		if (T) {
 			size_t token_len = T->size, fname_len = strlen(T->file);
+			struct psi_token *tmp = realloc(T, psi_token_alloc_size(T->size += arg->size + 1, fname_len));
 
-			T = realloc(T, psi_token_alloc_size(T->size += arg->size + 1, fname_len));
+			if (tmp) {
+				T = tmp;
+			} else {
+				free(T);
+				va_end(argv);
+				return NULL;
+			}
+
 			T->text = &T->buf[0];
 			T->file = &T->buf[T->size + 1];
 			T->buf[token_len] = ' ';
@@ -139,29 +147,29 @@ struct psi_token *psi_token_translit(struct psi_token *T, char *from, char *to) 
 
 static inline uint64_t psi_hash(char *digest_buf, ...)
 {
-    uint64_t hash = 5381;
-    uint8_t c;
-    const uint8_t *ptr;
-    va_list argv;
+	uint64_t hash = 5381;
+	uint8_t c;
+	const uint8_t *ptr;
+	va_list argv;
 
-    va_start(argv, digest_buf);
-    while ((ptr = va_arg(argv, const uint8_t *))) {
+	va_start(argv, digest_buf);
+	while ((ptr = va_arg(argv, const uint8_t *))) {
 		while ((c = *ptr++)) {
 			hash = ((hash << 5) + hash) + c;
 		}
-    }
-    va_end(argv);
+	}
+	va_end(argv);
 
-    if (digest_buf) {
-    	sprintf(digest_buf, "%" PRIx64, hash);
-    }
+	if (digest_buf) {
+		sprintf(digest_buf, "%" PRIx64, hash);
+	}
 
-    return hash;
+	return hash;
 }
 
 uint64_t psi_token_hash(struct psi_token *t, char *digest_buf) {
 	char loc_buf[48];
 
 	sprintf(loc_buf, "%u%u", t->line, t->col);
-	return psi_hash(digest_buf, t->file, loc_buf, NULL);
+	return psi_hash(digest_buf, t->file, loc_buf, (char *) NULL);
 }
