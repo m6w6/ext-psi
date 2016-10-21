@@ -58,6 +58,8 @@ if test "$PHP_PSI" != no; then
 	PHP_ARG_WITH(psi-libffi, where to find libffi,
 	[  --with-psi-libffi=DIR   PSI: path to libffi], [ ], [ ])
 
+	AC_HEADER_ASSERT dnl # adds --disable-assert to define NDEBUG
+	
 	psi_save_LIBS=$LIBS
 	LIBS=
 
