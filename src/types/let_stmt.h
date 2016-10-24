@@ -30,11 +30,11 @@
 #include "let_val.h"
 
 typedef struct let_stmt {
-	decl_var *var;
+	struct psi_token *token;
 	let_val *val;
 } let_stmt;
 
-let_stmt *init_let_stmt(decl_var *var, let_val *val);
+let_stmt *init_let_stmt(let_val *val);
 void free_let_stmt(let_stmt *stmt);
 void dump_let_stmt(int fd, let_stmt *let);
 

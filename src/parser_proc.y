@@ -22,14 +22,15 @@
 %syntax_error { ++P->errors; if (TOKEN && TOKEN->type != PSI_T_EOF) { psi_error(PSI_WARNING, TOKEN->file, TOKEN->line, "PSI syntax error: Unexpected token '%s' at pos %u", TOKEN->text, TOKEN->col); } else { psi_error(PSI_WARNING, P->psi.file.fn, P->line, "PSI syntax error: Unexpected end of input"); } }
 %nonassoc NAME.
 %left PLUS MINUS.
-%left SLASH ASTERISK.
-%fallback NAME TEMP FREE SET LET RETURN CALLOC CALLBACK ZVAL LIB STRING.
+%left ASTERISK SLASH.
+%nonassoc AMPERSAND.
+%fallback NAME TEMP FREE SET LET RETURN CALLOC CALLBACK ZVAL LIB STRING COUNT.
 %token_class const_type_token BOOL INT FLOAT STRING.
 %token_class decl_type_token FLOAT DOUBLE INT8 UINT8 INT16 UINT16 INT32 UINT32 INT64 UINT64 NAME.
 %token_class impl_def_val_token NULL NUMBER TRUE FALSE QUOTED_STRING.
 %token_class num_exp_token NUMBER NSNAME.
 %token_class num_exp_op_token PLUS MINUS ASTERISK SLASH.
-%token_class let_func_token ZVAL OBJVAL ARRVAL PATHVAL STRLEN STRVAL FLOATVAL INTVAL BOOLVAL.
+%token_class let_func_token ZVAL OBJVAL ARRVAL PATHVAL STRLEN STRVAL FLOATVAL INTVAL BOOLVAL COUNT.
 %token_class set_func_token TO_OBJECT TO_ARRAY TO_STRING TO_INT TO_FLOAT TO_BOOL ZVAL VOID.
 %token_class impl_type_token VOID MIXED BOOL INT FLOAT STRING ARRAY OBJECT CALLABLE.
 %type decl_enum {decl_enum *}
@@ -376,14 +377,25 @@ decl_abi(abi) ::= NAME(T). {
  abi = init_decl_abi(T->text);
  abi->token = T;
 }
-decl_var(var) ::= indirection(p) NAME(T). {
- var = init_decl_var(T->text, p, 0);
+decl_var(var) ::= NAME(T) decl_var_array_size(as). {
+ var = init_decl_var(T->text, 0, as?atol(as->text):0);
  var->token = T;
+ if (as) {
+  free(as);
+ }
 }
-decl_var(var) ::= indirection(p) NAME(T) LBRACKET NUMBER(D) RBRACKET. {
- var = init_decl_var(T->text, p+1, atol(D->text));
+decl_var(var) ::= pointers(p) NAME(T) decl_var_array_size(as). {
+ var = init_decl_var(T->text, p+!!as, as?atol(as->text):0);
  var->token = T;
- free(D);
+ if (as) {
+  free(as);
+ }
+}
+decl_var_array_size(as) ::= . {
+ as = NULL;
+}
+decl_var_array_size(as) ::= LBRACKET NUMBER(D) RBRACKET. {
+ as = D;
 }
 decl_vars(vars) ::= decl_var(var). {
  vars = init_decl_vars(var);
@@ -652,33 +664,81 @@ num_exp(exp) ::= num_exp(exp_) num_exp_op_token(operator_) num_exp(operand_). {
  exp = exp_;
  free(operator_);
 }
-let_stmt(let) ::= LET decl_var(var) EOS. {
- let = init_let_stmt(var, init_let_val(PSI_LET_NULL, NULL));
+%type let_exp {let_val*}
+%destructor let_exp {free_let_val($$);}
+%type let_callback {let_callback*}
+%destructor let_callback {free_let_callback($$);}
+let_val(val) ::= NULL. {
+ val = init_let_val(PSI_LET_NULL, NULL);
 }
-let_stmt(let) ::= LET decl_var(var) EQUALS reference(r) let_val(val) EOS. {
- val->flags.one.is_reference = r ? 1 : 0;
- let = init_let_stmt(var, val);
+let_val(val) ::= AMPERSAND NULL. {
+ val = init_let_val(PSI_LET_NULL, NULL);
+ val->is_reference = 1;
 }
-let_stmt(let) ::= TEMP decl_var(var) EQUALS decl_var(val) EOS. {
- let = init_let_stmt(var, init_let_val(PSI_LET_TMP, val));
+let_val(val) ::= let_callback(cb). {
+ val = init_let_val(PSI_LET_CALLBACK, cb);
 }
-let_calloc(alloc) ::= num_exp(nmemb) COMMA num_exp(size). {
+let_val(val) ::= let_calloc(ca). {
+ val = init_let_val(PSI_LET_CALLOC, ca);
+}
+let_val(val) ::= AMPERSAND let_calloc(ca). {
+ val = init_let_val(PSI_LET_CALLOC, ca);
+ val->is_reference = 1;
+}
+let_val(val) ::= let_func(fn). {
+ val = init_let_val_ex(NULL, PSI_LET_FUNC, fn);
+}
+let_val(val) ::= AMPERSAND let_func(fn). {
+ val = init_let_val_ex(NULL, PSI_LET_FUNC, fn);
+ val->is_reference = 1;
+}
+let_val(val) ::= num_exp(exp). {
+ val = init_let_val_ex(NULL, PSI_LET_NUMEXP, exp);
+}
+let_val(val) ::= AMPERSAND num_exp(exp). {
+ val = init_let_val_ex(NULL, PSI_LET_NUMEXP, exp);
+ val->is_reference = 1;
+}
+let_exp(exp) ::= decl_var(var_) EQUALS let_val(val). {
+ exp = val;
+ exp->var = var_;
+}
+let_stmt(let) ::= LET(T) let_exp(val) EOS. {
+ let = init_let_stmt(val);
+ let->token = T;
+}
+let_stmt(let) ::= TEMP(T) decl_var(var) EQUALS reference(r) decl_var(val_) EOS. {
+ let = init_let_stmt(init_let_val_ex(var, PSI_LET_TMP, val_));
+ let->token = T;
+ let->val->is_reference = r ? 1 : 0;
+}
+let_callback(cb) ::= CALLBACK callback_rval(F) LPAREN impl_var(var) LPAREN callback_arg_list(args_) RPAREN RPAREN. {
+ cb = init_let_callback(init_let_func(F->type, F->text, var), args_);
+ free(F);
+}
+let_calloc(alloc) ::= CALLOC LPAREN num_exp(nmemb) COMMA num_exp(size) RPAREN. {
  alloc = init_let_calloc(nmemb, size);
 }
 let_func(func) ::= let_func_token(T) LPAREN impl_var(var) RPAREN. {
  func = init_let_func(T->type, T->text, var);
  free(T);
 }
-let_vals(vals) ::= let_val(val). {
- vals = init_let_vals(val);
-}
-let_vals(vals) ::= let_vals(vals_) COMMA let_val(val). {
- vals = add_let_val(vals_, val);
-}
 let_func(func) ::= let_func_token(T) LPAREN impl_var(var) COMMA let_vals(vals) RPAREN. {
  func = init_let_func(T->type, T->text, var);
  func->inner = vals;
  free(T);
+}
+let_vals(vals) ::= let_exp(val). {
+ vals = init_let_vals(val);
+}
+let_vals(vals) ::= let_val(val). {
+ vals = init_let_vals(val);
+}
+let_vals(vals) ::= let_vals(vals_) COMMA let_exp(val). {
+ vals = add_let_val(vals_, val);
+}
+let_vals(vals) ::= let_vals(vals_) COMMA let_val(val). {
+ vals = add_let_val(vals_, val);
 }
 callback_arg_list ::= .
 callback_arg_list(args) ::= callback_args(args_). {
@@ -695,23 +755,6 @@ callback_rval(rval) ::= let_func_token(F). {
 }
 callback_rval(rval) ::= VOID(V). {
  rval = V;
-}
-let_val(val) ::= NULL. {
- val = init_let_val(PSI_LET_NULL, NULL);
-}
-let_val(val) ::= num_exp(exp). {
- val = init_let_val(PSI_LET_NUMEXP, exp);
-}
-let_val(val) ::= CALLOC LPAREN let_calloc(alloc) RPAREN. {
- val = init_let_val(PSI_LET_CALLOC, alloc);
-}
-let_val(val) ::= let_func(func_). {
- val = init_let_val(PSI_LET_FUNC, func_);
-}
-let_val(val) ::= CALLBACK callback_rval(F) LPAREN impl_var(var) LPAREN callback_arg_list(args_) RPAREN RPAREN. {
- val = init_let_val(PSI_LET_CALLBACK, init_let_callback(
-  init_let_func(F->type, F->text, var), args_));
- free(F);
 }
 set_stmt(set) ::= SET impl_var(var) EQUALS set_value(val) EOS. {
  set = init_set_stmt(var, val);

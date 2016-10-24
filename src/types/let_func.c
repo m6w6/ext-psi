@@ -83,6 +83,7 @@ static inline int validate_let_func_type(struct psi_data *data, let_func *func, 
 	case PSI_T_OBJVAL:
 	case PSI_T_ZVAL:
 	case PSI_T_VOID:
+	case PSI_T_COUNT:
 		return 1;
 	default:
 		data->error(data, func->var->token, PSI_WARNING,
@@ -92,44 +93,66 @@ static inline int validate_let_func_type(struct psi_data *data, let_func *func, 
 	}
 }
 
-static inline int validate_let_func_inner(struct psi_data *data, let_func *func, decl_var *let_var, impl *impl) {
+static inline int validate_let_func_inner(struct psi_data *data, let_val *val, let_func *func, decl_var *let_var, impl *impl) {
+
 	if (func->inner) {
 		size_t i;
 		decl_type *var_typ;
 		decl_args *sub_args = extract_decl_type_args(let_var->arg->type, &var_typ);
 
-		if (!sub_args) {
+		if (func->type == PSI_T_ARRVAL && sub_args) {
+			/* struct = arrval($array,
+			 * 	member = strval($member) ...)
+			 */
+			size_t i;
+
+			for (i = 0; i < func->inner->count; ++i) {
+				let_val *inner = func->inner->vals[i];
+				const char *name = locate_let_val_varname(inner);
+				let_func *fn = locate_let_val_func(inner);
+				decl_arg *sub_arg;
+
+				if (name) {
+					sub_arg = locate_decl_arg(sub_args, name);
+				}
+				if (!name || !sub_arg) {
+					data->error(data, let_var->token, PSI_WARNING,
+							"Unknown variable '%s'", name);
+					return 0;
+				}
+
+				fn->outer = val;
+				fn->ref = sub_arg;
+
+				if (!validate_let_val(data, inner, sub_arg->var, impl)) {
+					return 0;
+				}
+			}
+		} else if (func->type == PSI_T_ARRVAL && func->inner->count == 1 && let_var->arg->var->pointer_level) {
+			/* array = arrval($array,
+			 * 	strval($array)) // cast foreach entry
+			 */
+			impl_var *sub_var = locate_let_val_impl_var(val);
+			impl_var *sub_ref = locate_let_val_impl_var(func->inner->vals[0]);
+
+			if (strcmp(sub_var->name, sub_ref->name)) {
+				data->error(data, sub_var->token, E_WARNING, "Inner `set` statement casts on pointers must reference the same variable");
+				return 0;
+			}
+			if (!validate_let_val(data, func->inner->vals[0], let_var, impl)) {
+				return 0;
+			}
+		} else {
 			data->error(data, let_var->token, PSI_WARNING,
-					"Inner let statement's values must refer to a structure type,"
-					" got '%s' for '%s'",
-					var_typ->name, let_var->name);
+					"Inner let statement's values must refer to a structure or array type, got '%s%s' for '%s'",
+					var_typ->name, psi_t_indirection(let_var->arg->var->pointer_level), let_var->name);
 			return 0;
-		}
-
-		for (i = 0; i < func->inner->count; ++i) {
-			let_val *inner = func->inner->vals[i];
-			let_val *outer = func->outer;
-			const char *name = locate_let_val_varname(inner);
-			decl_arg *sub_arg;
-
-			if (name) {
-				sub_arg = locate_decl_arg(sub_args, name);
-			}
-			if (!name || !sub_arg) {
-				data->error(data, let_var->token, PSI_WARNING,
-						"Unknown variable '%s' of '%s'",
-						name, var_typ->real.strct->name);
-				return 0;
-			}
-			if (!validate_let_val(data, inner, sub_arg->var, impl)) {
-				return 0;
-			}
 		}
 	}
 	return 1;
 }
 
-int validate_let_func(struct psi_data *data, let_func *func, decl_var *let_var, impl *impl) {
+int validate_let_func(struct psi_data *data, let_val *val, let_func *func, decl_var *let_var, impl *impl) {
 	if (func->outer) {
 
 	}
@@ -147,7 +170,7 @@ int validate_let_func(struct psi_data *data, let_func *func, decl_var *let_var, 
 	if (!validate_let_func_type(data, func, impl)) {
 		return 0;
 	}
-	if (!validate_let_func_inner(data, func, let_var, impl)) {
+	if (!validate_let_func_inner(data, val, func, let_var, impl)) {
 		return 0;
 	}
 	return 1;

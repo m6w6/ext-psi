@@ -34,30 +34,26 @@
 
 #include "data.h"
 
-let_stmt *init_let_stmt(decl_var *var, let_val *val) {
+let_stmt *init_let_stmt(let_val *val) {
 	let_stmt *let = calloc(1, sizeof(*let));
-	let->var = var;
 	let->val = val;
+
 	return let;
 }
 
 void free_let_stmt(let_stmt *stmt) {
 	if (stmt->val) {
-		if (stmt->val->kind == PSI_LET_TMP && stmt->var->arg) {
-			free_decl_arg(stmt->var->arg);
-		}
 		free_let_val(stmt->val);
 	}
-	free_decl_var(stmt->var);
+	if (stmt->token) {
+		free(stmt->token);
+	}
 	free(stmt);
 }
 
 void dump_let_stmt(int fd, let_stmt *let) {
-	dprintf(fd, "\tlet %s", let->var->name);
-	if (let->val) {
-		dprintf(fd, " = ");
-		dump_let_val(fd, let->val, 1, 1);
-	}
+	dprintf(fd, "\t%s ", let->val->kind == PSI_LET_TMP ? "temp" : "let");
+	dump_let_val(fd, let->val, 1, 1);
 }
 
 int validate_let_stmts(struct psi_data *data, impl *impl) {
@@ -73,7 +69,7 @@ int validate_let_stmts(struct psi_data *data, impl *impl) {
 		if (let->val && let->val->kind == PSI_LET_TMP) {
 			let_var = let->val->data.var;
 		} else {
-			let_var = let->var;
+			let_var = let->val->var;
 		}
 
 		if (!locate_decl_var_arg(let_var, impl->decl->args, impl->decl->func)) {
@@ -97,7 +93,7 @@ int validate_let_stmts(struct psi_data *data, impl *impl) {
 			return 0;
 		}
 
-		if (!validate_let_val(data, let->val, let->var, impl)) {
+		if (!validate_let_val(data, let->val, let->val->var, impl)) {
 			return 0;
 		}
 	}
@@ -109,7 +105,7 @@ int validate_let_stmts(struct psi_data *data, impl *impl) {
 		for (j = 0; j < impl->stmts->let.count; ++j) {
 			let_stmt *let = impl->stmts->let.list[j];
 
-			if (!strcmp(let->var->name, darg->var->name)) {
+			if (!strcmp(let->val->var->name, darg->var->name)) {
 				check = 1;
 				break;
 			}

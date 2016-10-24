@@ -57,7 +57,7 @@
 static inline impl_val *deref_impl_val(impl_val *ret_val, decl_var *var) {
 	unsigned i;
 
-	ZEND_ASSERT(var->arg->var != var);
+	ZEND_ASSERT(!var->arg || var->arg->var != var);
 #if 0
 	fprintf(stderr, "deref: %s pl=%u:%u as=%u:%u %p\n",
 			var->name, var->pointer_level, var->arg->var->pointer_level,

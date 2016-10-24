@@ -8,6 +8,7 @@
 #include "php_psi.h"
 #include "parser.h"
 #include "marshal.h"
+#include "engine.h"
 #include "calc.h"
 
 void psi_to_void(zval *return_value, set_value *set, impl_val *ret_val)
@@ -244,11 +245,14 @@ impl_val *psi_let_strval(impl_val *tmp, decl_type *spec, token_t impl_type, impl
 {
 	if (ival && impl_type == PSI_T_STRING) {
 		if (ival->zend.str) {
-			tmp->ptr = estrndup(ival->zend.str->val, ival->zend.str->len);
-			*to_free = tmp->ptr;
+			/*tmp->ptr = estrndup(ival->zend.str->val, ival->zend.str->len);
+			*to_free = tmp->ptr;*/
+			tmp->ptr = ival->zend.str->val;
 		} else {
 			tmp->ptr = "";
 		}
+	} else if (0 && Z_TYPE_P(zvalue) == IS_STRING) {
+		tmp->ptr = Z_STRVAL_P(zvalue);
 	} else {
 		zend_string *zs = zval_get_string(zvalue);
 		tmp->ptr = estrdup(zs->val);
@@ -290,7 +294,7 @@ impl_val *psi_let_strlen(impl_val *tmp, decl_type *spec, token_t impl_type, impl
 static impl_val *iterate(impl_val *val, size_t size, unsigned i, impl_val *tmp)
 {
 	memset(tmp, 0, sizeof(*tmp));
-	memcpy(tmp, ((void*) val) + size * i, size);
+	memcpy(tmp, ((char *) val) + size * i, size);
 	return tmp;
 }
 
@@ -472,7 +476,7 @@ void psi_to_array(zval *return_value, set_value *set, impl_val *r_val)
 		/* to_array(foo[NUMBER]) */
 		for (i = 0; i < var->arg->var->array_size; ++i) {
 			size_t size = psi_t_size(var->arg->var->pointer_level > 1 ? PSI_T_POINTER : t);
-			impl_val *ptr = iterate(ret_val, size, i, &tmp);
+			impl_val *ptr = iterate(ret_val->ptr, size, i, &tmp);
 			zval ele;
 
 			switch (t) {
@@ -520,10 +524,13 @@ void psi_to_array(zval *return_value, set_value *set, impl_val *r_val)
 	}
 }
 
-impl_val *psi_let_arrval(impl_val *tmp, decl_type *spec, token_t impl_type, impl_val *ival, zval *zvalue, void **to_free)
+impl_val *psi_let_arrval(impl_val *tmp, decl_type *spec, decl_var *spec_var, token_t impl_type, impl_val *ival, zval *zvalue, void **to_free)
 {
 	decl_type *real = real_decl_type(spec);
 	HashTable *arr;
+	zval *zv;
+	size_t i, sz;
+	decl_arg tmp_arg = {0};
 
 	if (impl_type != PSI_T_ARRAY) {
 		SEPARATE_ARG_IF_REF(zvalue);
@@ -538,11 +545,27 @@ impl_val *psi_let_arrval(impl_val *tmp, decl_type *spec, token_t impl_type, impl
 	case PSI_T_UNION:
 		*to_free = tmp = psi_array_to_union(real->real.unn, arr);
 		break;
-	EMPTY_SWITCH_DEFAULT_CASE();
+	default:
+		sz = psi_t_size(real->type);
+		tmp = *to_free = ecalloc(zend_hash_num_elements(arr), sz);
+		tmp_arg.type = spec;
+		tmp_arg.var = spec_var;
+		ZEND_HASH_FOREACH_VAL_IND(arr, zv)
+		{
+			void *ptr = ((char *) tmp) + (i++ * sz);
+			psi_from_zval_ex(NULL, (impl_val **) &ptr, &tmp_arg, 0, zv, NULL);
+		}
+		ZEND_HASH_FOREACH_END();
 	}
 
 	return tmp;
 }
+
+impl_val *psi_let_count(impl_val *tmp, decl_type *spec, token_t impl_type, impl_val *ival, zval *zvalue, void **to_free)
+{
+	return psi_val_intval(tmp, real_decl_type(spec)->type, psi_zval_count(zvalue));
+}
+
 
 void psi_to_object(zval *return_value, set_value *set, impl_val *r_val)
 {

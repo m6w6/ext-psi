@@ -52,10 +52,6 @@ int validate_let_callback(struct psi_data *data, decl_var *cb_var, let_callback 
 	decl *cb_func;
 	decl_type *cb_type = real_decl_type(cb_var->arg->type);
 
-	if (!validate_let_func(data, cb->func, cb_var, impl)) {
-		return 0;
-	}
-
 	if (cb_type->type != PSI_T_FUNCTION) {
 		data->error(data, cb_var->token, PSI_WARNING, "Not a function: %s", cb_var->name);
 		return 0;

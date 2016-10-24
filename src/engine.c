@@ -8,6 +8,8 @@
 #include "php_psi.h"
 
 #include "zend_exceptions.h"
+#include "zend_interfaces.h"
+#include "ext/spl/spl_iterators.h"
 
 #include "parser.h"
 #include "engine.h"
@@ -39,6 +41,43 @@ int psi_internal_type(impl_type *type)
 	default:
 		return 0;
 	}
+}
+
+zend_long psi_zval_count(zval *zvalue)
+{
+	/* mimic PHP count() */
+	zend_long count;
+	zval retval;
+
+	switch (Z_TYPE_P(zvalue)) {
+	default:
+		count = 1;
+		break;
+	case IS_NULL:
+		count = 0;
+		break;
+	case IS_ARRAY:
+		count = zend_array_count(Z_ARRVAL_P(zvalue));
+		break;
+	case IS_OBJECT:
+		count = 1;
+		if (Z_OBJ_HT_P(zvalue)->count_elements) {
+			if (SUCCESS == Z_OBJ_HT_P(zvalue)->count_elements(zvalue, &count)) {
+				break;
+			}
+		}
+
+		if (instanceof_function(Z_OBJCE_P(zvalue), spl_ce_Countable)) {
+			zend_call_method_with_0_params(zvalue, NULL, NULL, "count", &retval);
+			if (Z_TYPE(retval) != IS_UNDEF) {
+				count = zval_get_long(&retval);
+				zval_ptr_dtor(&retval);
+			}
+		}
+		break;
+	}
+
+	return count;
 }
 
 zend_internal_arg_info *psi_internal_arginfo(impl *impl)
@@ -251,29 +290,14 @@ static inline void *psi_let_val(let_val *val, decl_arg *darg)
 		break;
 	}
 
-	if (val && val->flags.one.is_reference) {
+	if (val && val->is_reference) {
 		return darg->let = &darg->ptr;
 	} else {
 		return darg->let = darg->ptr;
 	}
 }
 
-static void marshal_func(void *cb_ctx, impl_val **ptr, decl_arg *spec, token_t cast, zval *zv, void **tmp) {
-	let_vals *vals = cb_ctx;
-	size_t i;
-
-	for (i = 0; i < vals->count; ++i) {
-		impl_var *var = locate_let_val_impl_var(vals->vals[i]);
-
-		if (!strcmp(&var->name[1], spec->var->name)) {
-			*ptr = psi_let_val(vals->vals[i], spec);
-			*tmp = spec->mem;
-			break;
-		}
-	}
-}
-
-static inline impl_val *psi_let_func_ex(let_func *func, void *dptr, decl_type *dtype, token_t itype, impl_val *ival, zval *zvalue, void **to_free) {
+static inline impl_val *psi_let_func_ex(let_func *func, void *dptr, decl_type *dtype, decl_var *dvar, token_t itype, impl_val *ival, zval *zvalue, void **to_free) {
 	switch (func->type) {
 	case PSI_T_BOOLVAL:
 		return psi_let_boolval(dptr, dtype, itype, ival, zvalue, to_free);
@@ -293,19 +317,78 @@ static inline impl_val *psi_let_func_ex(let_func *func, void *dptr, decl_type *d
 		return psi_let_zval(dptr, dtype, itype, ival, zvalue, to_free);
 	case PSI_T_VOID:
 		return psi_let_void(dptr, dtype, itype, ival, zvalue, to_free);
-		break;
+	case PSI_T_COUNT:
+		return psi_let_count(dptr, dtype, itype, ival, zvalue, to_free);
 	case PSI_T_ARRVAL:
 		if (func->inner) {
-			decl_type *real = real_decl_type(dtype);
+			char *mem = NULL;
+			size_t i, j = 0;
+			decl_type *real;
+			decl_args *args = extract_decl_type_args(dtype, &real);
 
 			if (itype != PSI_T_ARRAY) {
 				SEPARATE_ARG_IF_REF(zvalue);
 				convert_to_array(zvalue);
 			}
 
-			return *to_free = psi_array_to_struct_ex(real->real.strct, Z_ARRVAL_P(zvalue), marshal_func, func->inner);
+			if (args) {
+				size_t size = extract_decl_type_size(real, NULL);
+
+				mem = ecalloc(1, size + args->count * sizeof(void *));
+
+				for (i = 0; i < args->count; ++i) {
+					decl_arg *darg = args->args[i];
+					let_val *lval = locate_let_vals_val(func->inner, darg->var->name);
+					impl_val *ptr = NULL;
+
+					if (lval) {
+						if ((ptr = psi_let_val(lval, darg))) {
+							memcpy(mem + darg->layout->pos, ptr, darg->layout->len);
+							if (darg->mem) {
+								((void **)(mem + size))[j++] = darg->mem;
+							}
+						}
+						if (real->type == PSI_T_UNION) {
+							break;
+						}
+					}
+				}
+			} else {
+				zval *zv;
+				let_val *inner = func->inner->vals[0];
+				decl_var *sub_var;
+				size_t size;
+
+				if (inner->var) {
+					sub_var = inner->var;
+				} else {
+					sub_var = copy_decl_var(dvar);
+					assert(sub_var->pointer_level);
+					--sub_var->pointer_level;
+				}
+
+				size = sub_var->pointer_level ? SIZEOF_VOID_P : extract_decl_type_size(real, NULL);
+				mem = ecalloc(1, size * (1 + zend_array_count(Z_ARRVAL_P(zvalue))));
+
+				ZEND_HASH_FOREACH_VAL_IND(Z_ARRVAL_P(zvalue), zv)
+				{
+					void *tmp = NULL;
+					impl_val val = {0}, *ptr, *sub;
+
+					ptr = psi_let_func_ex(inner->data.func, &val, real, dvar, 0, NULL, zv, &tmp);
+					sub = deref_impl_val(ptr, sub_var);
+
+					memcpy(&mem[size * j++], &sub, size);
+				}
+				ZEND_HASH_FOREACH_END();
+
+				if (sub_var != inner->var) {
+					free_decl_var(sub_var);
+				}
+			}
+			return *to_free = mem;
 		} else {
-			return psi_let_arrval(dptr, dtype, itype, ival, zvalue, to_free);
+			return psi_let_arrval(dptr, dtype, dvar, itype, ival, zvalue, to_free);
 		}
 		break;
 	default:
@@ -315,25 +398,41 @@ static inline impl_val *psi_let_func_ex(let_func *func, void *dptr, decl_type *d
 }
 
 static inline impl_val *psi_let_func(let_func *func, decl_arg *darg) {
-	impl_arg *iarg = func->var->arg;
 
-	if (func->outer && !iarg) {
-		impl_arg *outer_arg = locate_let_val_impl_var(func->outer)->arg;
-		iarg = init_impl_arg(
+	if (func->var->arg) {
+		return darg->ptr = psi_let_func_ex(func,
+				darg->ptr, darg->type, darg->var,
+				func->var->arg->type->type,
+				&func->var->arg->val,
+				func->var->arg->_zv,
+				&darg->mem);
+	} else {
+		impl_var *ivar = locate_let_val_impl_var(func->outer);
+		zval *entry = zend_symtable_str_find(Z_ARRVAL_P(ivar->arg->_zv), func->var->name+1, strlen(func->var->name)-1);
+		impl_arg *iarg = init_impl_arg(
 				init_impl_type(PSI_T_MIXED, "mixed"),
 				copy_impl_var(func->var), NULL);
 
+		func->var->arg = iarg;
+		if (entry) {
+			iarg->_zv = entry;
+		} else {
+			zval ztmp;
 
-		if (!(iarg->_zv = zend_hash_str_find(Z_ARRVAL_P(outer_arg->_zv), &iarg->var->name[1], strlen(iarg->var->name)-1))) {
-			iarg->_zv = zend_hash_str_add_empty_element(Z_ARRVAL_P(outer_arg->_zv), &iarg->var->name[1], strlen(iarg->var->name)-1);
+			ZVAL_NULL(&ztmp);
+			iarg->_zv = zend_symtable_str_update_ind(Z_ARRVAL_P(ivar->arg->_zv), func->var->name+1, strlen(func->var->name)-1, &ztmp);
 		}
+
+		psi_let_func(func, darg);
+		free_impl_arg(iarg);
+		return darg->ptr;
 	}
-	return darg->ptr = psi_let_func_ex(func, darg->ptr, darg->type, iarg->type->type, &iarg->val, iarg->_zv, &darg->mem);
+
 }
 
 static inline void *psi_do_let(let_stmt *let)
 {
-	return psi_let_val(let->val, let->var->arg);
+	return psi_let_val(let->val, let->val->var->arg);
 }
 
 static inline void psi_do_return(zval *return_value, return_stmt *ret)
@@ -365,7 +464,6 @@ static inline void psi_clean_array_struct(let_val *val, decl_arg *darg) {
 	if (val->kind == PSI_LET_FUNC
 	&&	val->data.func->type == PSI_T_ARRVAL) {
 		decl_type *type = real_decl_type(darg->type);
-		decl_args *args = NULL;
 
 		if (type->type == PSI_T_STRUCT) {
 			void **ptr = (void **) ((char *) darg->mem + type->real.strct->size);
@@ -373,15 +471,16 @@ static inline void psi_clean_array_struct(let_val *val, decl_arg *darg) {
 			while (*ptr) {
 				efree(*ptr++);
 			}
-			args = type->real.strct->args;
+			// args = type->real.strct->args;
 		} else if (type->type == PSI_T_UNION) {
 			void **ptr = (void **) ((char *) darg->mem + type->real.unn->size);
 
 			if (*ptr) {
 				efree(*ptr);
 			}
-			args = type->real.unn->args;
+			// args = type->real.unn->args;
 		}
+#if 0
 		if (args && val->data.func->inner) {
 			size_t i;
 
@@ -392,12 +491,39 @@ static inline void psi_clean_array_struct(let_val *val, decl_arg *darg) {
 
 				if (subarg) {
 					psi_clean_array_struct(val->data.func->inner->vals[i], subarg);
-					if (subarg && subarg->mem) {
+					if (subarg->mem) {
 						efree(subarg->mem);
 						subarg->mem = NULL;
 					}
 				}
 			}
+		}
+#endif
+	}
+}
+
+static inline void psi_clean_let_val(let_val *val) {
+
+	let_func *func = locate_let_val_func(val);
+
+	if (func && func->inner) {
+		size_t i;
+
+		for (i = 0; i < func->inner->count; ++i) {
+			let_val *inner = func->inner->vals[i];
+			psi_clean_let_val(inner);
+		}
+	}
+	if (val->var) {
+		decl_arg *darg = val->var->arg;
+		if (darg) {
+			if (darg->mem) {
+				psi_clean_array_struct(val, darg);
+				efree(darg->mem);
+				darg->mem = NULL;
+			}
+			darg->ptr = &darg->val;
+			darg->let = darg->ptr;
 		}
 	}
 }
@@ -433,15 +559,7 @@ static inline void psi_do_clean(impl *impl)
 
 	for (i = 0; i < impl->stmts->let.count; ++i) {
 		let_stmt *let = impl->stmts->let.list[i];
-		decl_arg *darg = let->var->arg;
-
-		if (darg->mem) {
-			psi_clean_array_struct(let->val, darg);
-			efree(darg->mem);
-			darg->mem = NULL;
-		}
-		darg->ptr = &darg->val;
-		darg->let = darg->ptr;
+		psi_clean_let_val(let->val);
 	}
 
 	if (impl->func->args->vararg.args) {
@@ -477,14 +595,16 @@ static inline void psi_do_args(impl *impl) {
 	}
 
 	if (!impl->decl->func->var->pointer_level) {
-		decl_type *real = real_decl_type(impl->decl->func->type);
+		decl_type *real;
+		decl_args *args = extract_decl_type_args(impl->decl->func->type, &real);
 
 		switch (real->type) {
 		case PSI_T_STRUCT:
-			impl->decl->func->ptr = psi_array_to_struct(real->real.strct, NULL);
-			break;
 		case PSI_T_UNION:
-			impl->decl->func->ptr = psi_array_to_union(real->real.unn, NULL);
+			impl->decl->func->ptr = ecalloc(1,
+					extract_decl_type_size(real, NULL) + args->count * sizeof(void*));
+			break;
+		default:
 			break;
 		}
 	}
@@ -631,7 +751,7 @@ ZEND_RESULT_CODE psi_callback(let_callback *cb, void *retval, unsigned argc, voi
 	case PSI_T_STRING:	zend_parse_arg_str(iarg->_zv, &iarg->val.zend.str, 0);				break;
 	}
 	*/
-	result = psi_let_func_ex(cb->func, retval, decl_cb->func->type, 0, &iarg->val, iarg->_zv, &to_free);
+	result = psi_let_func_ex(cb->func, retval, decl_cb->func->type, decl_cb->func->var, 0, &iarg->val, iarg->_zv, &to_free);
 	// result = cb->func->handler(retval, decl_cb->func->type, iarg, &to_free);
 
 	if (result != retval) {

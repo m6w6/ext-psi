@@ -71,6 +71,23 @@ decl_args *extract_decl_type_args(decl_type *dtyp, decl_type **real_typ_ptr) {
 	}
 }
 
+size_t extract_decl_type_size(decl_type *dtyp, decl_type **real_typ_ptr) {
+	decl_type *var_typ;
+	var_typ = real_decl_type(dtyp);
+	if (real_typ_ptr) {
+		*real_typ_ptr = var_typ;
+	}
+	switch (var_typ->type) {
+	case PSI_T_STRUCT:
+		return var_typ->real.strct->size;
+	case PSI_T_UNION:
+		return var_typ->real.unn->size;
+	default:
+		return psi_t_size(var_typ->type);
+	}
+}
+
+
 
 int locate_decl_type_alias(decl_typedefs *defs, decl_type *type) {
 	size_t i;
@@ -244,7 +261,7 @@ int weak_decl_type(decl_type *type) {
 }
 
 decl_type *real_decl_type(decl_type *type) {
-	while (weak_decl_type(type)) {
+	while (weak_decl_type(type) && type->real.def) {
 		type = type->real.def->type;
 	}
 	return type;

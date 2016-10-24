@@ -53,15 +53,12 @@ typedef struct let_val {
 		let_func *func;
 		decl_var *var;
 	} data;
-	union {
-		struct {
-			unsigned is_reference:1;
-		} one;
-		unsigned all;
-	} flags;
+	unsigned is_reference:1;
 } let_val;
 
+
 let_val* init_let_val(enum let_val_kind kind, void* data);
+let_val* init_let_val_ex(decl_var *var, enum let_val_kind kind, void* data);
 void free_let_val(let_val* let);
 void dump_let_val(int fd, let_val *val, unsigned level, int last);
 
@@ -70,42 +67,43 @@ struct impl;
 
 int validate_let_val(struct psi_data *data, let_val *val, decl_var *let_var, struct impl *impl);
 
-static inline decl_arg *locate_let_val_inner_ref(let_val *val) {
-	decl_arg *ref = NULL;
-
-	switch (val->kind) {
-	case PSI_LET_CALLBACK:
-		ref = val->data.callback->func->ref;
-		break;
-	case PSI_LET_FUNC:
-		ref = val->data.func->ref;
-		break;
-	default:
-		break;
-	}
-	return ref;
-}
-static inline impl_var *locate_let_val_impl_var(let_val *val) {
+static inline let_func *locate_let_val_func(let_val *val) {
 	if (val) {
 		switch (val->kind) {
 		case PSI_LET_CALLBACK:
-			return val->data.callback->func->var;
+			return val->data.callback->func;
 		case PSI_LET_FUNC:
-			return val->data.func->var;
+			return val->data.func;
 		default:
 			break;
 		}
 	}
+
 	return NULL;
 }
 
+static inline decl_arg *locate_let_val_inner_ref(let_val *val) {
+	let_func *fn = locate_let_val_func(val);
+	return fn ? fn->ref: NULL;
+}
+
+static inline impl_var *locate_let_val_impl_var(let_val *val) {
+	let_func *fn = locate_let_val_func(val);
+	return fn ? fn->var : NULL;
+}
+
 static inline const char *locate_let_val_varname(let_val *val) {
-	impl_var *var = locate_let_val_impl_var(val);
+	impl_var *var;
+
+	if (val->var) {
+		return val->var->name;
+	}
+
+	var = locate_let_val_impl_var(val);
 
 	if (var) {
 		return &var->name[1];
 	}
 	return NULL;
 }
-
 #endif

@@ -1,0 +1,24 @@
+function psi\opterr() : int {
+	return to_int(opterr);
+}
+function psi\optind() : int {
+	return to_int(optind);
+}
+function psi\optopt() : int {
+	return to_int(optopt);
+}
+function psi\optarg() : string {
+	return to_string(optarg);
+}
+
+function psi\getopt(array &$argv, string $options) : int {
+	let argc = count($argv);
+	let argv = &arrval($argv,
+		*argv = strval($argv)
+	);
+	let optstring = strval($options);
+	return to_int(getopt); 
+	set $argv = to_array(argv,
+		to_string(argv)
+	);
+}

@@ -100,9 +100,9 @@ int validate_set_stmts(struct psi_data *data, impl *impl) {
 
 					/* check temp vars */
 					if (let->val && let->val->kind == PSI_LET_TMP) {
-						if (!strcmp(set_var->name, let->var->name)) {
+						if (!strcmp(set_var->name, let->val->var->name)) {
 							check = 1;
-							set_var->arg = let->var->arg;
+							set_var->arg = let->val->var->arg;
 							if (!validate_set_value(data, set->val, 1, &set_var->arg, 1, &impl->decl->func, impl->decl->args->count, impl->decl->args->args, 0)) {
 								return 0;
 							}

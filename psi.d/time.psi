@@ -1,3 +1,4 @@
+// extern time_t time(time_t *t);
 function psi\time() : int {
 	let t = NULL;
 	return to_int(time);

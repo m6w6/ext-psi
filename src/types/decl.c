@@ -29,8 +29,14 @@
 # include "php_config.h"
 #endif
 
+#if __GNUC__ >= 5
+# pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#endif
 #include "php_psi_macros.h"
 #include "php_psi_redirs.h"
+#if __GNUC__ >= 5
+# pragma GCC diagnostic pop
+#endif
 
 #include <stdlib.h>
 #include <stdio.h>

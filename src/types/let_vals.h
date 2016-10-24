@@ -37,4 +37,18 @@ let_vals *init_let_vals(struct let_val *val);
 let_vals *add_let_val(let_vals *vals, struct let_val *val);
 void free_let_vals(let_vals *vals);
 
+static inline let_val *locate_let_vals_val(let_vals *vals, const char *name) {
+	size_t i;
+
+	for (i = 0; i < vals->count; ++i) {
+		let_val *val = vals->vals[i];
+		const char *var = locate_let_val_varname(val);
+
+		if (!strcmp(var, name)) {
+			return val;
+		}
+	}
+
+	return NULL;
+}
 #endif

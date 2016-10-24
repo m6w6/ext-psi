@@ -24,15 +24,15 @@ void psi_from_zval_ex(void *cb_ctx, impl_val **ptr, decl_arg *spec, token_t cast
 void *psi_array_to_struct_ex(decl_struct *s, HashTable *arr, psi_marshal_zval cb, void *cb_ctx);
 void *psi_array_to_union_ex(decl_union *u, HashTable *arr, psi_marshal_zval cb, void *cb_ctx);
 
-impl_val *psi_let_void(impl_val *tmp, decl_type *decl_type, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
-impl_val *psi_let_boolval(impl_val *tmp, decl_type *decl_type, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
-impl_val *psi_let_intval(impl_val *tmp, decl_type *decl_type, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
-impl_val *psi_let_floatval(impl_val *tmp, decl_type *decl_type, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
-impl_val *psi_let_strval(impl_val *tmp, decl_type *decl_type, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
-impl_val *psi_let_pathval(impl_val *tmp, decl_type *decl_type, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
-impl_val *psi_let_strlen(impl_val *tmp, decl_type *decl_type, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
-impl_val *psi_let_arrval(impl_val *tmp, decl_type *decl_type, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
-impl_val *psi_let_objval(impl_val *tmp, decl_type *decl_type, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
-impl_val *psi_let_zval(impl_val *tmp, decl_type *decl_type, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
-
+impl_val *psi_let_void(impl_val *tmp, decl_type *spec, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
+impl_val *psi_let_boolval(impl_val *tmp, decl_type *spec, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
+impl_val *psi_let_intval(impl_val *tmp, decl_type *spec, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
+impl_val *psi_let_floatval(impl_val *tmp, decl_type *spec, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
+impl_val *psi_let_strval(impl_val *tmp, decl_type *spec, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
+impl_val *psi_let_pathval(impl_val *tmp, decl_type *spec, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
+impl_val *psi_let_strlen(impl_val *tmp, decl_type *spec, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
+impl_val *psi_let_arrval(impl_val *tmp, decl_type *spec, decl_var *spec_var, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
+impl_val *psi_let_objval(impl_val *tmp, decl_type *spec, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
+impl_val *psi_let_zval(impl_val *tmp, decl_type *spec, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
+impl_val *psi_let_count(impl_val *tmp, decl_type *spec, token_t impl_type, impl_val *ival, zval *zvalue, void **to_free);
 #endif

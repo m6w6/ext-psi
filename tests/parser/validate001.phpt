@@ -7,6 +7,7 @@ extension_loaded("psi") or die("skip - need ext/psi");
 --FILE--
 ===TEST===
 <?php 
+
 function validate($check, $psi) {
 	$file = __DIR__."/001.psi";
 	file_put_contents($file, $psi);
@@ -96,4 +97,6 @@ Warning: Cannot compute size of empty struct 'a' in %s001.psi on line 1
 Warning: Unknown variable 'X' in numeric expression in %s001.psi on line 4
 
 Warning: PSI syntax error: Unexpected token '(' at pos 26 in %s001.psi on line 1
+
+Warning: PSI syntax error: Unexpected token '(' at pos 32 in %s001.psi on line 1
 ===DONE===

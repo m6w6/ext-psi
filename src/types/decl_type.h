@@ -49,6 +49,8 @@ void free_decl_type(decl_type *type);
 void dump_decl_type(int fd, decl_type *t, unsigned level);
 
 struct decl_args *extract_decl_type_args(decl_type *dtyp, decl_type** real_typ_ptr);
+size_t extract_decl_type_size(decl_type *dtyp, decl_type **real_typ_ptr);
+
 int weak_decl_type(decl_type *type);
 decl_type *real_decl_type(decl_type *type);
 

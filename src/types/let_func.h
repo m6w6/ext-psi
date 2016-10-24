@@ -46,7 +46,8 @@ void dump_let_func(int fd, let_func *func, unsigned level);
 
 struct psi_data;
 struct impl;
+struct let_val;
 
-int validate_let_func(struct psi_data *data, let_func *func, decl_var *let_var, struct impl *impl);
+int validate_let_func(struct psi_data *data, struct let_val *val, let_func *func, decl_var *let_var, struct impl *impl);
 
 #endif

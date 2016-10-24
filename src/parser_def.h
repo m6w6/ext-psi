@@ -4,7 +4,7 @@
 
 #ifdef GENERATE
 #define DEF(dn, dv) dn dv
-#define LET(nt, rule) nt ::= rule.
+#define PASS(nt, rule) nt ::= rule.
 #define PARSE(nt, rule) nt ::= rule.
 #define PARSE_NAMED(nt, nt_name, rule) NAMED(nt, nt_name) ::= rule.
 #define PARSE_TYPED(nt, nt_name, rule) TYPED(nt, nt_name) ::= rule.
@@ -18,7 +18,10 @@
 #include "parser.h"
 #endif
 #define DEF(dn, dv)
-#define LET(nt, rule)
+#define PASS(nt, rule) \
+	static void COUNTED(nt) (struct psi_parser *P) { \
+		(void) #rule; \
+	}
 #define PARSE(nt, rule) \
 	static void COUNTED(nt) (struct psi_parser *P rule)
 #define PARSE_NAMED(nt, nt_name, rule) \
@@ -28,7 +31,7 @@
 #define TOKEN(t)
 #define NAMED(t, name) , struct psi_token *name
 #define TYPED(t, name) , TOKEN_TYPE_NAME(t) name
-#define TOKEN_TYPE_NAME(token) _##token##_type
+#define TOKEN_TYPE_NAME(token) ##token##_parse_t
 #define TOKEN_TYPE(token, type) typedef type TOKEN_TYPE_NAME(token);
 #define TOKEN_DTOR(token, dtor)
 #endif
@@ -52,15 +55,16 @@ DEF(%syntax_error, {
 
 DEF(%nonassoc, NAME.)
 DEF(%left, PLUS MINUS.)
-DEF(%left, SLASH ASTERISK.)
-DEF(%fallback, NAME TEMP FREE SET LET RETURN CALLOC CALLBACK ZVAL LIB STRING.)
+DEF(%left, ASTERISK SLASH.)
+DEF(%nonassoc, AMPERSAND.)
+DEF(%fallback, NAME TEMP FREE SET LET RETURN CALLOC CALLBACK ZVAL LIB STRING COUNT.)
 
 DEF(%token_class, const_type_token BOOL INT FLOAT STRING.)
 DEF(%token_class, decl_type_token FLOAT DOUBLE INT8 UINT8 INT16 UINT16 INT32 UINT32 INT64 UINT64 NAME.)
 DEF(%token_class, impl_def_val_token NULL NUMBER TRUE FALSE QUOTED_STRING.)
 DEF(%token_class, num_exp_token NUMBER NSNAME.)
 DEF(%token_class, num_exp_op_token PLUS MINUS ASTERISK SLASH.)
-DEF(%token_class, let_func_token ZVAL OBJVAL ARRVAL PATHVAL STRLEN STRVAL FLOATVAL INTVAL BOOLVAL.)
+DEF(%token_class, let_func_token ZVAL OBJVAL ARRVAL PATHVAL STRLEN STRVAL FLOATVAL INTVAL BOOLVAL COUNT.)
 DEF(%token_class, set_func_token TO_OBJECT TO_ARRAY TO_STRING TO_INT TO_FLOAT TO_BOOL ZVAL VOID.)
 DEF(%token_class, impl_type_token VOID MIXED BOOL INT FLOAT STRING ARRAY OBJECT CALLABLE.)
 
@@ -173,12 +177,12 @@ TOKEN_TYPE(reference, char)
 TOKEN_TYPE(indirection, unsigned)
 TOKEN_TYPE(pointers, unsigned)
 
-LET(file, blocks)
-LET(blocks, block)
-LET(blocks, blocks block)
+PASS(file, blocks)
+PASS(blocks, block)
+PASS(blocks, blocks block)
 
-LET(block, EOF)
-LET(block, EOS)
+PASS(block, EOF)
+PASS(block, EOS)
 
 PARSE(block, NAMED(LIB, token) NAMED(QUOTED_STRING, libname) TOKEN(EOS)) {
 	if (P->psi.file.ln) {
@@ -537,20 +541,32 @@ PARSE_TYPED(decl_abi, abi,
 }
 
 PARSE_TYPED(decl_var, var,
-		TYPED(indirection, p)
-		NAMED(NAME, T)) {
-	var = init_decl_var(T->text, p, 0);
+		NAMED(NAME, T)
+		NAMED(decl_var_array_size, as)) {
+	var = init_decl_var(T->text, 0, as?atol(as->text):0);
 	var->token = T;
+	if (as) {
+		free(as);
+	}
 }
 PARSE_TYPED(decl_var, var,
-		TYPED(indirection, p)
+		TYPED(pointers, p)
 		NAMED(NAME, T)
+		NAMED(decl_var_array_size, as)) {
+	var = init_decl_var(T->text, p+!!as, as?atol(as->text):0);
+	var->token = T;
+	if (as) {
+		free(as);
+	}
+}
+PARSE_NAMED(decl_var_array_size, as, ) {
+	as = NULL;
+}
+PARSE_NAMED(decl_var_array_size, as,
 		TOKEN(LBRACKET)
 		NAMED(NUMBER, D)
 		TOKEN(RBRACKET)) {
-	var = init_decl_var(T->text, p+1, atol(D->text));
-	var->token = T;
-	free(D);
+	as = D;
 }
 
 PARSE_TYPED(decl_vars, vars,
@@ -620,8 +636,8 @@ PARSE_TYPED(decl_arg, arg_,
 	arg_->token = N;
 }
 
-LET(decl_args, )
-LET(decl_args, VOID)
+PASS(decl_args, )
+PASS(decl_args, VOID)
 PARSE_TYPED(decl_args, args,
 		TYPED(decl_arg, arg)) {
 	args = init_decl_args(arg);
@@ -965,38 +981,153 @@ PARSE_TYPED(num_exp, exp,
 	free(operator_);
 }
 
-PARSE_TYPED(let_stmt, let,
-		TOKEN(LET)
-		TYPED(decl_var, var)
-		TOKEN(EOS)) {
-	let = init_let_stmt(var, init_let_val(PSI_LET_NULL, NULL));
+TOKEN_TYPE(let_exp, let_val*)
+TOKEN_DTOR(let_exp, free_let_val($$);)
+
+TOKEN_TYPE(let_callback, let_callback*)
+TOKEN_DTOR(let_callback, free_let_callback($$);)
+
+/*
+ * let_val: NULL
+ */
+PARSE_TYPED(let_val, val,
+		TOKEN(NULL)) {
+	val = init_let_val(PSI_LET_NULL, NULL);
 }
+/*
+ * let_val: &NULL
+ */
+PARSE_TYPED(let_val, val,
+		TOKEN(AMPERSAND)
+		TOKEN(NULL)) {
+	val = init_let_val(PSI_LET_NULL, NULL);
+	val->is_reference = 1;
+}
+/*
+ * let_val: callback
+ */
+PARSE_TYPED(let_val, val,
+		TYPED(let_callback, cb)) {
+	val = init_let_val(PSI_LET_CALLBACK, cb);
+}
+/*
+ * let_val: calloc
+ */
+PARSE_TYPED(let_val, val,
+		TYPED(let_calloc, ca)) {
+	val = init_let_val(PSI_LET_CALLOC, ca);
+}
+/*
+ * let_val: &calloc
+ */
+PARSE_TYPED(let_val, val,
+		TOKEN(AMPERSAND)
+		TYPED(let_calloc, ca)) {
+	val = init_let_val(PSI_LET_CALLOC, ca);
+	val->is_reference = 1;
+}
+/*
+ * let_val: func
+ */
+PARSE_TYPED(let_val, val,
+		TYPED(let_func, fn)) {
+	val = init_let_val_ex(NULL, PSI_LET_FUNC, fn);
+}
+/*
+ * let_val: &func
+ */
+PARSE_TYPED(let_val, val,
+		TOKEN(AMPERSAND)
+		TYPED(let_func, fn)) {
+	val = init_let_val_ex(NULL, PSI_LET_FUNC, fn);
+	val->is_reference = 1;
+}
+/*
+ * let_val: 1234
+ */
+PARSE_TYPED(let_val, val,
+		TYPED(num_exp, exp)) {
+	val = init_let_val_ex(NULL, PSI_LET_NUMEXP, exp);
+}
+/*
+ * let_val: &1234
+ */
+PARSE_TYPED(let_val, val,
+		TOKEN(AMPERSAND)
+		TYPED(num_exp, exp)) {
+	val = init_let_val_ex(NULL, PSI_LET_NUMEXP, exp);
+	val->is_reference = 1;
+}
+
+/*
+ * let_exp: var = val
+ */
+PARSE_TYPED(let_exp, exp,
+		TYPED(decl_var, var_)
+		TOKEN(EQUALS)
+		TYPED(let_val, val)) {
+	exp = val;
+	exp->var = var_;
+}
+
+/*
+ * let_stmt: LET exp ;
+ */
 PARSE_TYPED(let_stmt, let,
-		TOKEN(LET)
+		NAMED(LET, T)
+		TYPED(let_exp, val)
+		TOKEN(EOS)) {
+	let = init_let_stmt(val);
+	let->token = T;
+}
+
+/*
+ * let_stmt: TEMP foo = bar ;
+ */
+PARSE_TYPED(let_stmt, let,
+		NAMED(TEMP, T)
 		TYPED(decl_var, var)
 		TOKEN(EQUALS)
 		TYPED(reference, r)
-		TYPED(let_val, val)
+		TYPED(decl_var, val_)
 		TOKEN(EOS)) {
-	val->flags.one.is_reference = r ? 1 : 0;
-	let = init_let_stmt(var, val);
-}
-PARSE_TYPED(let_stmt, let,
-		TOKEN(TEMP)
-		TYPED(decl_var, var)
-		TOKEN(EQUALS)
-		TYPED(decl_var, val)
-		TOKEN(EOS)) {
-	let = init_let_stmt(var, init_let_val(PSI_LET_TMP, val));
+	let = init_let_stmt(init_let_val_ex(var, PSI_LET_TMP, val_));
+	let->token = T;
+	let->val->is_reference = r ? 1 : 0;
 }
 
+/*
+ * let_callback: CALLBACK cast($var($args))
+ */
+PARSE_TYPED(let_callback, cb,
+		TOKEN(CALLBACK)
+		NAMED(callback_rval, F)
+		TOKEN(LPAREN)
+		TYPED(impl_var, var)
+		TOKEN(LPAREN)
+		TYPED(callback_arg_list, args_)
+		TOKEN(RPAREN)
+		TOKEN(RPAREN)) {
+	cb = init_let_callback(init_let_func(F->type, F->text, var), args_);
+	free(F);
+}
+
+/*
+ * let_calloc: CALLOC ( num_exp nmemb , num_exp size )
+ */
 PARSE_TYPED(let_calloc, alloc,
+		TOKEN(CALLOC)
+		TOKEN(LPAREN)
 		TYPED(num_exp, nmemb)
 		TOKEN(COMMA)
-		TYPED(num_exp, size)) {
+		TYPED(num_exp, size)
+		TOKEN(RPAREN)) {
 	alloc = init_let_calloc(nmemb, size);
 }
 
+/*
+ * let_func: FUNC ( $var )
+ */
 PARSE_TYPED(let_func, func,
 		NAMED(let_func_token, T)
 		TOKEN(LPAREN)
@@ -1005,18 +1136,9 @@ PARSE_TYPED(let_func, func,
 	func = init_let_func(T->type, T->text, var);
 	free(T);
 }
-
-PARSE_TYPED(let_vals, vals,
-		TYPED(let_val, val)) {
-	vals = init_let_vals(val);
-}
-PARSE_TYPED(let_vals, vals,
-		TYPED(let_vals, vals_)
-		TOKEN(COMMA)
-		TYPED(let_val, val)) {
-	vals = add_let_val(vals_, val);
-}
-
+/*
+ * let_func: FUNC ( $var (,exps)? )
+ */
 PARSE_TYPED(let_func, func,
 		NAMED(let_func_token, T)
 		TOKEN(LPAREN)
@@ -1028,8 +1150,34 @@ PARSE_TYPED(let_func, func,
 	func->inner = vals;
 	free(T);
 }
+/*
+ * let_vals: exps = exp
+ */
+PARSE_TYPED(let_vals, vals,
+		TYPED(let_exp, val)) {
+	vals = init_let_vals(val);
+}
+PARSE_TYPED(let_vals, vals,
+		TYPED(let_val, val)) {
+	vals = init_let_vals(val);
+}
+/*
+ * let_vals: exps = exps, exp
+ */
+PARSE_TYPED(let_vals, vals,
+		TYPED(let_vals, vals_)
+		TOKEN(COMMA)
+		TYPED(let_exp, val)) {
+	vals = add_let_val(vals_, val);
+}
+PARSE_TYPED(let_vals, vals,
+		TYPED(let_vals, vals_)
+		TOKEN(COMMA)
+		TYPED(let_val, val)) {
+	vals = add_let_val(vals_, val);
+}
 
-LET(callback_arg_list, )
+PASS(callback_arg_list, )
 PARSE_TYPED(callback_arg_list, args,
 		TYPED(callback_args, args_)) {
 	args = args_;
@@ -1052,39 +1200,6 @@ PARSE_NAMED(callback_rval, rval,
 PARSE_NAMED(callback_rval, rval,
 		NAMED(VOID, V)) {
 	rval = V;
-}
-
-PARSE_TYPED(let_val, val,
-		TOKEN(NULL)) {
-	val = init_let_val(PSI_LET_NULL, NULL);
-}
-PARSE_TYPED(let_val, val,
-		TYPED(num_exp, exp)) {
-	val = init_let_val(PSI_LET_NUMEXP, exp);
-}
-PARSE_TYPED(let_val, val,
-		TOKEN(CALLOC)
-		TOKEN(LPAREN)
-		TYPED(let_calloc, alloc)
-		TOKEN(RPAREN)) {
-	val = init_let_val(PSI_LET_CALLOC, alloc);
-}
-PARSE_TYPED(let_val, val,
-		TYPED(let_func, func_)) {
-	val = init_let_val(PSI_LET_FUNC, func_);
-}
-PARSE_TYPED(let_val, val,
-		TOKEN(CALLBACK)
-		NAMED(callback_rval, F)
-		TOKEN(LPAREN)
-		TYPED(impl_var, var)
-		TOKEN(LPAREN)
-		TYPED(callback_arg_list, args_)
-		TOKEN(RPAREN)
-		TOKEN(RPAREN)) {
-	val = init_let_val(PSI_LET_CALLBACK, init_let_callback(
-		init_let_func(F->type, F->text, var), args_));
-	free(F);
 }
 
 PARSE_TYPED(set_stmt, set,

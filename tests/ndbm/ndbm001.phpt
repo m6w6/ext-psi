@@ -24,13 +24,7 @@ class db {
 	}
 
 	function __set($k, $v) {
-		return psi\dbm_store($this->db, [
-				"dptr" => $k,
-				"dsize" => strlen($k)
-			], [
-				"dptr" => $v,
-				"dsize" => strlen($v)
-			], psi\DBM_REPLACE);
+		return psi\dbm_store($this->db, $k, $v, psi\DBM_REPLACE);
 	}
 
 	function __get($k) {

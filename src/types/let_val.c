@@ -35,10 +35,17 @@
 
 #include "data.h"
 
+let_val *init_let_val_ex(decl_var *var, enum let_val_kind kind, void *data) {
+	let_val *val = init_let_val(kind, data);
+	val->var = var;
+	return val;
+}
+
 let_val *init_let_val(enum let_val_kind kind, void *data) {
 	let_val *let = calloc(1, sizeof(*let));
 	switch (let->kind = kind) {
 	case PSI_LET_NULL:
+		assert(!data);
 		break;
 	case PSI_LET_NUMEXP:
 		let->data.num = data;
@@ -78,10 +85,16 @@ void free_let_val(let_val *let) {
 		free_let_func(let->data.func);
 		break;
 	case PSI_LET_TMP:
+		if (let->var->arg) {
+			free_decl_arg(let->var->arg);
+		}
 		free_decl_var(let->data.var);
 		break;
 	default:
 		assert(0);
+	}
+	if (let->var) {
+		free_decl_var(let->var);
 	}
 	free(let);
 }
@@ -92,7 +105,13 @@ void dump_let_val(int fd, let_val *val, unsigned level, int last) {
 		dprintf(fd, "%s", psi_t_indent(level));
 	}
 
-	dprintf(fd, "%s", val->flags.one.is_reference ? "&" : "");
+	if (val->var) {
+		dump_decl_var(fd, val->var);
+		dprintf(fd, " = ");
+	}
+	if (val->is_reference) {
+		dprintf(fd, "&");
+	}
 
 	switch (val->kind) {
 	case PSI_LET_NULL:
@@ -152,7 +171,7 @@ int validate_let_val(struct psi_data *data, let_val *val, decl_var *let_var, imp
 	case PSI_LET_TMP:
 		if (!let_var) {
 			data->error(data, NULL, PSI_WARNING,
-					"Ivalid let statement value of implementation '%s'",
+					"Ivalid temp statement value of implementation '%s'",
 					impl->func->name);
 			return 0;
 		}
@@ -188,85 +207,15 @@ int validate_let_val(struct psi_data *data, let_val *val, decl_var *let_var, imp
 					impl->func->name);
 			return 0;
 		}
-		if (val->data.callback->func->inner) {
-			size_t i;
-			decl_type *var_typ = real_decl_type(let_var->arg->type);
-			decl_args *sub_args;
-
-			switch (var_typ->type) {
-			case PSI_T_STRUCT:
-				sub_args = var_typ->real.strct->args;
-				break;
-			case PSI_T_UNION:
-				sub_args = var_typ->real.unn->args;
-				break;
-			default:
-				data->error(data, let_var->token, PSI_WARNING,
-						"Inner let statement's values must refer to a structure type, got '%s' for '%s'",
-						real_decl_type(let_var->arg->type)->name, let_var->name);
-				return 0;
-			}
-			for (i = 0; i < val->data.callback->func->inner->count; ++i) {
-				let_val *inner = val->data.callback->func->inner->vals[i];
-				switch (inner->kind) {
-				case PSI_LET_FUNC:
-					inner->data.func->outer = val;
-					inner->data.func->ref = locate_decl_arg(sub_args,
-							&inner->data.func->var->name[1]);
-					break;
-
-					break;
-				case PSI_LET_CALLBACK:
-					inner->data.callback->func->outer = val;
-					inner->data.callback->func->ref = locate_decl_arg(sub_args,
-							&inner->data.callback->func->var->name[1]);
-					break;
-				}
-			}
+		if (!validate_let_func(data, val, val->data.callback->func, let_var, impl)) {
+			return 0;
 		}
 		if (!validate_let_callback(data, let_var, val->data.callback, impl)) {
 			return 0;
 		}
 		break;
 	case PSI_LET_FUNC:
-		if (val->data.func->inner) {
-			size_t i;
-			decl_type *var_typ = real_decl_type(let_var->arg->type);
-			decl_args *sub_args;
-
-			switch (var_typ->type) {
-			case PSI_T_STRUCT:
-				sub_args = var_typ->real.strct->args;
-				break;
-			case PSI_T_UNION:
-				sub_args = var_typ->real.unn->args;
-				break;
-			default:
-				data->error(data, let_var->token, PSI_WARNING,
-						"Inner let statement's values must refer to a structure type, got '%s' for '%s'",
-						real_decl_type(let_var->arg->type)->name, let_var->name);
-				return 0;
-			}
-			for (i = 0; i < val->data.func->inner->count; ++i) {
-				let_val *inner = val->data.func->inner->vals[i];
-				switch (inner->kind) {
-				case PSI_LET_FUNC:
-					inner->data.func->outer = val;
-					inner->data.func->ref = locate_decl_arg(sub_args,
-							&inner->data.func->var->name[1]);
-					break;
-				case PSI_LET_CALLBACK:
-					inner->data.callback->func->outer = val;
-					inner->data.callback->func->ref = locate_decl_arg(sub_args,
-							&inner->data.callback->func->var->name[1]);
-					break;
-				}
-			}
-		}
-
-		val->data.func->var;
-
-		if (!validate_let_func(data, val->data.func, let_var, impl)) {
+		if (!validate_let_func(data, val, val->data.func, let_var, impl)) {
 			return 0;
 		}
 		break;

@@ -91,7 +91,7 @@ ssize_t psi_parser_fill(struct psi_parser *P, size_t n)
 		}
 	}
 	if (P->flags & PSI_PARSER_DEBUG) {
-		fprintf(stderr, "PSI> Fill: avail=%zd\n", P->lim - P->cur);
+		fprintf(stderr, "PSI> Fill: avail=%td\n", P->lim - P->cur);
 	}
 	return P->lim - P->cur;
 }
@@ -171,7 +171,7 @@ token_t psi_parser_scan(struct psi_parser *P)
 		W = [a-zA-Z0-9_];
 		NAME = [a-zA-Z_]W*;
 		NSNAME = (NAME)? ("\\" NAME)+;
-		DOLLAR_NAME = '$' NAME;
+		DOLLAR_NAME = '$' W+;
 		QUOTED_STRING = "\"" ([^\"])+ "\"";
 		NUMBER = [+-]? [0-9]* "."? [0-9]+ ([eE] [+-]? [0-9]+)?;
 
@@ -243,6 +243,7 @@ token_t psi_parser_scan(struct psi_parser *P)
 		'ARRVAL' {RETURN(PSI_T_ARRVAL);}
 		'OBJVAL' {RETURN(PSI_T_OBJVAL);}
 		'ZVAL' {RETURN(PSI_T_ZVAL);}
+		'COUNT' {RETURN(PSI_T_COUNT);}
 		'CALLOC' {RETURN(PSI_T_CALLOC);}
 		'TO_OBJECT' {RETURN(PSI_T_TO_OBJECT);}
 		'TO_ARRAY' {RETURN(PSI_T_TO_ARRAY);}
