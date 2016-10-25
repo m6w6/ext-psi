@@ -19,6 +19,8 @@ $args = [
 
 $opts = "v::x:s:";
 
+psi\opterr(0);
+
 while (($opt = chr(psi\getopt($args, $opts)))) {
 	switch ($opt) {
 	case "v":

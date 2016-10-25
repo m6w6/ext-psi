@@ -1,5 +1,6 @@
-function psi\opterr() : int {
-	return to_int(opterr);
+function psi\opterr(int $value) : void {
+	let _v = intval($value);
+	return void(opterr_set);
 }
 function psi\optind() : int {
 	return to_int(optind);
