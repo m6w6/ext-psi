@@ -26,22 +26,38 @@
 #ifndef PSI_TYPES_IMPL_H
 #define PSI_TYPES_IMPL_H
 
-#include "impl_func.h"
-#include "impl_stmts.h"
-#include "decl.h"
-
-typedef struct impl {
-	impl_func *func;
-	impl_stmts *stmts;
-	decl *decl;
-} impl;
-
-impl *init_impl(impl_func *func, impl_stmts *stmts);
-void free_impl(impl *impl);
-void dump_impl(int fd, impl *impl);
-
 struct psi_data;
+struct psi_token;
+struct psi_plist;
+struct psi_decl;
+struct psi_decl_var;
+struct psi_impl_var;
+struct psi_impl_func;
 
-int validate_impl(struct psi_data *data, impl *impl);
+struct psi_impl {
+	struct psi_impl_func *func;
+	struct psi_decl *decl;
+	struct {
+		struct psi_plist *ret;
+		struct psi_plist *let;
+		struct psi_plist *set;
+		struct psi_plist *fre;
+	} stmts;
+};
+
+struct psi_impl *psi_impl_init(struct psi_impl_func *func, struct psi_plist *stmts);
+void psi_impl_free(struct psi_impl **impl_ptr);
+void psi_impl_dump(int fd, struct psi_impl *impl);
+bool psi_impl_validate(struct psi_data *data, struct psi_impl *impl);
+
+size_t psi_impl_num_min_args(struct psi_impl *impl);
+
+void psi_impl_stmt_free(struct psi_token ***abstract_stm);
+
+struct psi_let_stmt *psi_impl_get_let(struct psi_impl *impl, struct psi_decl_var *var);
+struct psi_impl_arg *psi_impl_get_arg(struct psi_impl *impl, struct psi_impl_var *var);
+
+struct psi_decl_arg *psi_impl_get_temp_let_arg(struct psi_impl *impl,
+		struct psi_decl_var *var);
 
 #endif

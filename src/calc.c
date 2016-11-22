@@ -1,96 +1,32 @@
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#else
-# include "php_config.h"
-#endif
+/*******************************************************************************
+ Copyright (c) 2016, Michael Wallner <mike@php.net>.
+ All rights reserved.
 
-#include "php.h"
-#include "php_psi.h"
-#include "parser.h"
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+
+     * Redistributions of source code must retain the above copyright notice,
+       this list of conditions and the following disclaimer.
+     * Redistributions in binary form must reproduce the above copyright
+       notice, this list of conditions and the following disclaimer in the
+       documentation and/or other materials provided with the distribution.
+
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*******************************************************************************/
+
+#include "php_psi_stdinc.h"
+
+#include "token.h"
 #include "calc.h"
-
-static inline int psi_calc_num_exp_value(num_exp *exp, impl_val *strct, impl_val *res) {
-	impl_val *ref, *tmp = NULL;
-
-	switch (exp->t) {
-	case PSI_T_NUMBER:
-		switch (is_numeric_string(exp->u.numb, strlen(exp->u.numb), (zend_long *) res, (double *) res, 0)) {
-		case IS_LONG:
-			return PSI_T_INT64;
-		case IS_DOUBLE:
-			return PSI_T_DOUBLE;
-		}
-		break;
-
-	case PSI_T_NSNAME:
-		switch (exp->u.cnst->type->type) {
-		case PSI_T_INT:
-			res->i64 = zend_get_constant_str(exp->u.cnst->name, strlen(exp->u.cnst->name))->value.lval;
-			return PSI_T_INT64;
-		case PSI_T_FLOAT:
-			res->dval = zend_get_constant_str(exp->u.cnst->name, strlen(exp->u.cnst->name))->value.dval;
-			return PSI_T_DOUBLE;
-		default:
-			return 0;
-		}
-		break;
-
-	case PSI_T_ENUM:
-		return psi_calc_num_exp(exp->u.enm->num ?: &exp->u.enm->inc, NULL, res);
-		break;
-
-	case PSI_T_NAME:
-		if (strct) {
-			ref = struct_member_ref(exp->u.dvar->arg, strct, &tmp);
-		} else {
-			ref = exp->u.dvar->arg->let;
-		}
-		switch (real_decl_type(exp->u.dvar->arg->type)->type) {
-		case PSI_T_INT8:
-		case PSI_T_UINT8:
-		case PSI_T_INT16:
-		case PSI_T_UINT16:
-		case PSI_T_INT32:
-		case PSI_T_UINT32:
-		case PSI_T_INT64:
-		case PSI_T_UINT64:
-			memcpy(res, deref_impl_val(ref, exp->u.dvar), sizeof(*res));
-			if (tmp) {
-				free(tmp);
-			}
-			return real_decl_type(exp->u.dvar->arg->type)->type;
-
-		case PSI_T_FLOAT:
-		case PSI_T_DOUBLE:
-			memcpy(res, deref_impl_val(ref, exp->u.dvar), sizeof(*res));
-			if (tmp) {
-				free(tmp);
-			}
-			return real_decl_type(exp->u.dvar->arg->type)->type;
-
-		EMPTY_SWITCH_DEFAULT_CASE();
-		}
-		break;
-
-	EMPTY_SWITCH_DEFAULT_CASE();
-	}
-	return  0;
-}
-
-int psi_calc_num_exp(num_exp *exp, impl_val *strct, impl_val *res) {
-	impl_val num = {0};
-	int num_type = psi_calc_num_exp_value(exp, strct, &num);
-
-	if (exp->operand) {
-		impl_val tmp = {0};
-		int tmp_type = psi_calc_num_exp(exp->operand, strct, &tmp);
-
-		return exp->calculator(num_type, &num, tmp_type, &tmp, res);
-	}
-
-	memcpy(res, &num, sizeof(*res));
-	return num_type;
-}
 
 #define PRIfval "f"
 #define PRIdval "lf"
@@ -108,18 +44,18 @@ int psi_calc_num_exp(num_exp *exp, impl_val *strct, impl_val *res) {
 } while(0)
 
 #ifdef HAVE_LONG_DOUBLE
-#define PSI_CALC_NO_LD
-#define PSI_CALC_OP_LD PSI_CALC_OP(ldval)
-#define PSI_CALC_OP2_LD2(var1) PSI_CALC_OP2(ldval, var1, ldval)
-#define PSI_CALC_OP2_LD1(var2) PSI_CALC_OP2(ldval, ldval, var2)
+# define PSI_CALC_NO_LD
+# define PSI_CALC_OP_LD PSI_CALC_OP(ldval)
+# define PSI_CALC_OP2_LD2(var1) PSI_CALC_OP2(ldval, var1, ldval)
+# define PSI_CALC_OP2_LD1(var2) PSI_CALC_OP2(ldval, ldval, var2)
 #else
-#define PSI_CALC_NO_LD abort()
-#define PSI_CALC_OP_LD PSI_CALC_NO_LD
-#define PSI_CALC_OP2_LD2(var) PSI_CALC_NO_LD
-#define PSI_CALC_OP2_LD1(var) PSI_CALC_NO_LD
+# define PSI_CALC_NO_LD abort()
+# define PSI_CALC_OP_LD PSI_CALC_NO_LD
+# define PSI_CALC_OP2_LD2(var) PSI_CALC_NO_LD
+# define PSI_CALC_OP2_LD1(var) PSI_CALC_NO_LD
 #endif
 
-#define PSI_CALC_FN(op) int psi_calc_##op(int t1, impl_val *v1, int t2, impl_val *v2, impl_val *res) \
+#define PSI_CALC_FN(op) token_t psi_calc_##op(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res) \
 { \
 	if (t1 == t2) { \
 		switch (t1) { \

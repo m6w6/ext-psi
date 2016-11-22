@@ -23,28 +23,24 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef PSI_TYPES_IMPL_STMT_H
-#define PSI_TYPES_IMPL_STMT_H
+#ifndef PSI_TYPES_CONST_H
+#define PSI_TYPES_CONST_H
 
-#include "token.h"
+struct psi_data;
+struct psi_token;
+struct psi_const_type;
+struct psi_impl_def_val;
 
-#include "let_stmt.h"
-#include "set_stmt.h"
-#include "return_stmt.h"
-#include "free_stmt.h"
+struct psi_const {
+	struct psi_token *token;
+	struct psi_const_type *type;
+	char *name;
+	struct psi_impl_def_val *val;
+};
 
-typedef struct impl_stmt {
-	token_t type;
-	union {
-		let_stmt *let;
-		set_stmt *set;
-		return_stmt *ret;
-		free_stmt *fre;
-		void *ptr;
-	} s;
-} impl_stmt;
-
-impl_stmt *init_impl_stmt(token_t type, void *ptr);
-void free_impl_stmt(impl_stmt *stmt);
+struct psi_const *psi_const_init(struct psi_const_type *type, const char *name, struct psi_impl_def_val *val);
+void psi_const_free(struct psi_const **constant_ptr);
+void psi_const_dump(int fd, struct psi_const *cnst);
+bool psi_const_validate(struct psi_data *data, struct psi_const *c);
 
 #endif

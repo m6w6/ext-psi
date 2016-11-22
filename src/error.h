@@ -28,15 +28,16 @@
 
 #include <stdarg.h>
 
-#include "token.h"
-
 #define PSI_ERROR 16
 #define PSI_WARNING 32
 
-typedef void (*psi_error_cb)(void *context, struct psi_token *token, int type, const char *msg, ...);
+struct psi_data;
+struct psi_token;
 
-void psi_error_wrapper(void *context, struct psi_token *t, int type, const char *msg, ...);
+typedef void (*psi_error_cb)(struct psi_data *context, struct psi_token *token, int type, const char *msg, ...);
+
+void psi_error_wrapper(struct psi_data *context, struct psi_token *t, int type, const char *msg, ...);
 void psi_error(int type, const char *fn, unsigned ln, const char *msg, ...);
 void psi_verror(int type, const char *fn, unsigned ln, const char *msg, va_list argv);
 
-#endif /* EXT_PSI_SRC_ERROR_H */
+#endif /* PSI_ERROR_H */

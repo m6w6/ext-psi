@@ -1,3 +1,28 @@
+/*******************************************************************************
+ Copyright (c) 2016, Michael Wallner <mike@php.net>.
+ All rights reserved.
+
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+
+     * Redistributions of source code must retain the above copyright notice,
+       this list of conditions and the following disclaimer.
+     * Redistributions in binary form must reproduce the above copyright
+       notice, this list of conditions and the following disclaimer in the
+       documentation and/or other materials provided with the distribution.
+
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*******************************************************************************/
+
 #ifndef PHP_PSI_H
 #define PHP_PSI_H
 
@@ -18,8 +43,6 @@ extern zend_module_entry psi_module_entry;
 #include "TSRM.h"
 #endif
 
-#include "context.h"
-
 static inline int psi_check_env(const char *var) {
 	char *set = getenv(var);
 	return (set && *set && '0' != *set);
@@ -27,6 +50,7 @@ static inline int psi_check_env(const char *var) {
 
 typedef struct psi_object {
 	void *data;
+	void (*dtor)(void *data);
 	size_t size;
 	zend_object std;
 } psi_object;
@@ -38,12 +62,14 @@ static inline psi_object *PSI_OBJ(zval *zv, zend_object *zo) {
 	return (void *) (((char *) zo) - zo->handlers->offset);
 }
 
+PHP_PSI_API zend_object *psi_object_init(zend_class_entry *ce);
+PHP_PSI_API zend_object *psi_object_init_ex(zend_class_entry *ce, void *data, void (*dtor)(void *));
 PHP_PSI_API zend_class_entry *psi_object_get_class_entry();
 
 ZEND_BEGIN_MODULE_GLOBALS(psi)
 	char *engine;
 	char *directory;
-	struct psi_context context;
+	struct psi_context *context;
 ZEND_END_MODULE_GLOBALS(psi);
 
 ZEND_EXTERN_MODULE_GLOBALS(psi);

@@ -2,8 +2,12 @@ function psi\opterr(int $value) : void {
 	let _v = intval($value);
 	return void(opterr_set);
 }
-function psi\optind() : int {
-	return to_int(optind);
+function psi\optind\get() : int {
+	return to_int(optind_get);
+}
+function psi\optind\set(int $v) : void {
+	let _v = intval($v);
+	return void(optind_set);
 }
 function psi\optopt() : int {
 	return to_int(optopt);
@@ -11,15 +15,22 @@ function psi\optopt() : int {
 function psi\optarg() : string {
 	return to_string(optarg);
 }
-
-function psi\getopt(array &$argv, string $options) : int {
+/* OSX
+function psi\optreset() : void {
+	let _v = 1;
+	return void(optreset_set);
+}
+*/
+static function psi\getopt(array &$argv, string $options) : int {
 	let argc = count($argv);
 	let argv = &arrval($argv,
 		*argv = strval($argv)
 	);
 	let optstring = strval($options);
-	return to_int(getopt); 
-	set $argv = to_array(argv,
-		to_string(argv)
+	return to_int(getopt);
+	set $argv = to_array(
+		*argv,
+		argc,
+		to_string(*argv)
 	);
 }

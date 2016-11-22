@@ -5,11 +5,11 @@
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
 
-     * Redistributions of source code must retain the above copyright notice,
-       this list of conditions and the following disclaimer.
-     * Redistributions in binary form must reproduce the above copyright
-       notice, this list of conditions and the following disclaimer in the
-       documentation and/or other materials provided with the distribution.
+ * Redistributions of source code must retain the above copyright notice,
+ this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright
+ notice, this list of conditions and the following disclaimer in the
+ documentation and/or other materials provided with the distribution.
 
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -21,44 +21,186 @@
  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*******************************************************************************/
+ *******************************************************************************/
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#else
-# include "php_config.h"
-#endif
-
-#include <stdlib.h>
-#include <stdio.h>
-
+#include "php_psi_stdinc.h"
 #include "data.h"
 
-impl *init_impl(impl_func *func, impl_stmts *stmts) {
-	impl *i = calloc(1, sizeof(*i));
-	i->func = func;
-	i->stmts = stmts;
+#include <assert.h>
+
+struct psi_impl *psi_impl_init(struct psi_impl_func *func,
+		struct psi_plist *stmts)
+{
+	struct psi_impl *impl = calloc(1, sizeof(*impl));
+	size_t i = 0;
+	struct psi_token **abstract_stmt;
+
+	impl->stmts.ret = psi_plist_init((psi_plist_dtor) psi_return_stmt_free);
+	impl->stmts.let = psi_plist_init((psi_plist_dtor) psi_let_stmt_free);
+	impl->stmts.set = psi_plist_init((psi_plist_dtor) psi_set_stmt_free);
+	impl->stmts.fre = psi_plist_init((psi_plist_dtor) psi_free_stmt_free);
+
+	while (psi_plist_get(stmts, i++, &abstract_stmt)) {
+		switch ((*abstract_stmt)->type) {
+		case PSI_T_RETURN:
+			impl->stmts.ret = psi_plist_add(impl->stmts.ret, &abstract_stmt);
+			break;
+		case PSI_T_LET:
+		case PSI_T_TEMP:
+			impl->stmts.let = psi_plist_add(impl->stmts.let, &abstract_stmt);
+			break;
+		case PSI_T_SET:
+			impl->stmts.set = psi_plist_add(impl->stmts.set, &abstract_stmt);
+			break;
+		case PSI_T_FREE:
+			impl->stmts.fre = psi_plist_add(impl->stmts.fre, &abstract_stmt);
+			break;
+		default:
+			assert(0);
+		}
+	}
+	free(stmts);
+
+	impl->func = func;
+
+	return impl;
+}
+
+void psi_impl_free(struct psi_impl **impl_ptr)
+{
+	if (*impl_ptr) {
+		struct psi_impl *impl = *impl_ptr;
+
+		*impl_ptr = NULL;
+		psi_impl_func_free(&impl->func);
+		psi_plist_free(impl->stmts.ret);
+		psi_plist_free(impl->stmts.let);
+		psi_plist_free(impl->stmts.set);
+		psi_plist_free(impl->stmts.fre);
+		free(impl);
+	}
+}
+
+void psi_impl_dump(int fd, struct psi_impl *impl)
+{
+	size_t i;
+	struct psi_return_stmt *ret;
+	struct psi_let_stmt *let;
+	struct psi_set_stmt *set;
+	struct psi_free_stmt *fre;
+
+	psi_impl_func_dump(fd, impl->func);
+	dprintf(fd, " {\n");
+	for (i = 0; psi_plist_get(impl->stmts.let, i, &let); ++i) {
+		psi_let_stmt_dump(fd, let);
+	}
+	for (i = 0; psi_plist_get(impl->stmts.ret, i, &ret); ++i) {
+		psi_return_stmt_dump(fd, ret);
+	}
+	for (i = 0; psi_plist_get(impl->stmts.set, i, &set); ++i) {
+		psi_set_stmt_dump(fd, set);
+	}
+	for (i = 0; psi_plist_get(impl->stmts.fre, i, &fre); ++i) {
+		psi_free_stmt_dump(fd, fre);
+	}
+	dprintf(fd, "}\n");
+}
+
+bool psi_impl_validate(struct psi_data *data, struct psi_impl *impl)
+{
+	if (!psi_impl_func_validate(data, impl->func)) {
+		return false;
+	}
+	if (!psi_return_stmt_validate(data, impl)) {
+		return false;
+	}
+	if (!psi_let_stmts_validate(data, impl)) {
+		return false;
+	}
+	if (!psi_set_stmts_validate(data, impl)) {
+		return false;
+	}
+	if (!psi_free_stmts_validate(data, impl)) {
+		return false;
+	}
+	return true;
+}
+
+size_t psi_impl_num_min_args(struct psi_impl *impl)
+{
+	size_t i;
+	struct psi_impl_arg *arg;
+
+	for (i = 0; psi_plist_get(impl->func->args, i, &arg); ++i) {
+		if (arg->def) {
+			break;
+		}
+	}
 	return i;
 }
 
-void free_impl(impl *impl) {
-	free_impl_func(impl->func);
-	free_impl_stmts(impl->stmts);
-	free(impl);
+void psi_impl_stmt_free(struct psi_token ***abstract_stmt)
+{
+	switch ((**abstract_stmt)->type) {
+	case PSI_T_LET:
+		psi_let_stmt_free((void *) abstract_stmt);
+		break;
+	case PSI_T_SET:
+		psi_set_stmt_free((void *) abstract_stmt);
+		break;
+	case PSI_T_RETURN:
+		psi_return_stmt_free((void *) abstract_stmt);
+		break;
+	case PSI_T_FREE:
+		psi_free_stmt_free((void *) abstract_stmt);
+		break;
+	default:
+		assert(0);
+	}
 }
 
-void dump_impl(int fd, impl *impl) {
-	dump_impl_func(fd, impl->func);
-	dprintf(fd, " {\n");
-	if (impl->stmts) {
-		dump_impl_stmts(fd, impl->stmts);
+struct psi_let_stmt *psi_impl_get_let(struct psi_impl *impl,
+		struct psi_decl_var* var)
+{
+	size_t i = 0;
+	struct psi_let_stmt *let;
+
+	while (psi_plist_get(impl->stmts.let, i++, &let)) {
+		if (let->exp->var->arg == var->arg) {
+			return let;
+		}
 	}
-	dprintf(fd, "}");
+	return NULL;
 }
 
-int validate_impl(struct psi_data *data, impl *impl) {
-	if (!validate_impl_args(data, impl)) {
-		return 0;
+struct psi_impl_arg *psi_impl_get_arg(struct psi_impl *impl,
+		struct psi_impl_var* var)
+{
+	size_t i = 0;
+	struct psi_impl_arg *iarg;
+
+	while (psi_plist_get(impl->func->args, i++, &iarg)) {
+		if (!strcmp(var->name, iarg->var->name)) {
+			return var->arg = iarg;
+		}
 	}
-	return validate_impl_stmts(data, impl);
+	return NULL;
+}
+
+struct psi_decl_arg *psi_impl_get_temp_let_arg(struct psi_impl *impl,
+		struct psi_decl_var* var)
+{
+	size_t j = 0;
+	struct psi_let_stmt *let = NULL;
+
+	while (psi_plist_get(impl->stmts.let, j++, &let)) {
+		if (let->exp->kind != PSI_LET_TMP) {
+			continue;
+		}
+		if (strcmp(let->exp->var->name, var->name)) {
+			continue;
+		}
+		return var->arg = let->exp->var->arg;
+	}
+	return NULL;
 }

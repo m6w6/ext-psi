@@ -5,11 +5,11 @@
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
 
-     * Redistributions of source code must retain the above copyright notice,
-       this list of conditions and the following disclaimer.
-     * Redistributions in binary form must reproduce the above copyright
-       notice, this list of conditions and the following disclaimer in the
-       documentation and/or other materials provided with the distribution.
+ * Redistributions of source code must retain the above copyright notice,
+ this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright
+ notice, this list of conditions and the following disclaimer in the
+ documentation and/or other materials provided with the distribution.
 
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -21,13 +21,9 @@
  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*******************************************************************************/
+ *******************************************************************************/
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#else
-# include "php_config.h"
-#endif
+#include "php_psi_stdinc.h"
 
 #if __GNUC__ >= 5
 # pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
@@ -38,96 +34,122 @@
 # pragma GCC diagnostic pop
 #endif
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <sys/param.h>
 #include <dlfcn.h>
 
 #include "data.h"
 
-decl *init_decl(decl_abi *abi, decl_arg *func, decl_args *args) {
-	decl *d = calloc(1, sizeof(*d));
+struct psi_decl *psi_decl_init(struct psi_decl_abi *abi,
+		struct psi_decl_arg *func, struct psi_plist *args)
+{
+	struct psi_decl *d = calloc(1, sizeof(*d));
 	d->abi = abi;
 	d->func = func;
 	d->args = args;
 	return d;
 }
 
-void free_decl(decl *d) {
-	free_decl_abi(d->abi);
-	free_decl_arg(d->func);
-	if (d->args) {
-		free_decl_args(d->args);
+void psi_decl_free(struct psi_decl **d_ptr)
+{
+	if (*d_ptr) {
+		struct psi_decl *d = *d_ptr;
+
+		*d_ptr = NULL;
+
+		psi_decl_abi_free(&d->abi);
+		psi_decl_arg_free(&d->func);
+		if (d->args) {
+			psi_plist_free(d->args);
+		}
+		free(d);
 	}
-	free(d);
 }
 
-void dump_decl(int fd, decl *decl) {
-	dump_decl_abi(fd, decl->abi);
+void psi_decl_dump(int fd, struct psi_decl *decl)
+{
+	psi_decl_abi_dump(fd, decl->abi);
 	dprintf(fd, " ");
-	dump_decl_arg(fd, decl->func, 0);
+	psi_decl_arg_dump(fd, decl->func, 0);
 	dprintf(fd, "(");
 	if (decl->args) {
-		dump_decl_args(fd, decl->args, 0);
+		size_t i;
+		struct psi_decl_arg *arg;
+
+		for (i = 0; psi_plist_get(decl->args, i, &arg); ++i) {
+			if (i) {
+				dprintf(fd, ", ");
+			}
+			psi_decl_arg_dump(fd, arg, 0);
+		}
+		if (decl->varargs) {
+			dprintf(fd, ", ...");
+		}
 	}
 	dprintf(fd, ");");
 }
 
-static inline int validate_decl_func(struct psi_data *data, void *dl, decl *decl, decl_arg *func)
+static inline bool psi_decl_validate_func(struct psi_data *data,
+		struct psi_decl *decl, struct psi_decl_arg *func, void *dl)
 {
 	struct psi_func_redir *redir;
 
 	if (!strcmp(func->var->name, "dlsym")) {
-		data->error(data, func->token, PSI_WARNING, "Cannot dlsym dlsym (sic!)");
-		return 0;
+		data->error(data, func->token, PSI_WARNING,
+				"Cannot dlsym dlsym (sic!)");
+		return false;
 	}
 
 	for (redir = &psi_func_redirs[0]; redir->name; ++redir) {
 		if (!strcmp(func->var->name, redir->name)) {
-			decl->call.sym = redir->func;
+			decl->sym = redir->func;
 		}
 	}
-	if (!decl->call.sym) {
+	if (!decl->sym) {
 #ifndef RTLD_NEXT
 # define RTLD_NEXT ((void *) -1l)
 #endif
-		decl->call.sym = dlsym(dl ?: RTLD_NEXT, func->var->name);
-		if (!decl->call.sym) {
+		decl->sym = dlsym(dl ?: RTLD_NEXT, func->var->name);
+		if (!decl->sym) {
 			data->error(data, func->token, PSI_WARNING,
-				"Failed to locate symbol '%s': %s",
-				func->var->name, dlerror() ?: "not found");
+					"Failed to locate symbol '%s': %s", func->var->name,
+					dlerror() ?: "not found");
+			return false;
 		}
 	}
-	return 1;
+	return true;
 }
 
-int validate_decl(struct psi_data *data, void *dl, decl *decl) {
-	if (!validate_decl_nodl(data, decl)) {
-		return 0;
+bool psi_decl_validate(struct psi_data *data, struct psi_decl *decl, void *dl)
+{
+	if (!psi_decl_validate_nodl(data, decl)) {
+		return false;
 	}
-	if (!validate_decl_func(data, dl, decl, decl->func)) {
-		return 0;
+	if (!psi_decl_validate_func(data, decl, decl->func, dl)) {
+		return false;
 	}
-	return 1;
+
+	return true;
 }
 
-int validate_decl_nodl(struct psi_data *data, decl *decl) {
-	if (!validate_decl_abi(data, decl->abi)) {
+bool psi_decl_validate_nodl(struct psi_data *data, struct psi_decl *decl)
+{
+	if (!psi_decl_abi_validate(data, decl->abi)) {
 		data->error(data, decl->abi->token, PSI_WARNING,
 				"Invalid calling convention: '%s'", decl->abi->token->text);
-		return 0;
+		return false;
 	}
-	if (!validate_decl_arg(data, decl->func)) {
-		return 0;
+	if (!psi_decl_arg_validate(data, decl->func)) {
+		return false;
 	}
 	if (decl->args) {
-		size_t i;
+		size_t i = 0;
+		struct psi_decl_arg *arg;
 
-		for (i = 0; i < decl->args->count; ++i) {
-			if (!validate_decl_arg(data, decl->args->args[i])) {
-				return 0;
+		while (psi_plist_get(decl->args, i++, &arg)) {
+			if (!psi_decl_arg_validate(data, arg)) {
+				return false;
 			}
 		}
 	}
-	return 1;
+
+	return true;
 }

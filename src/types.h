@@ -1,60 +1,67 @@
-#ifndef _PSI_TYPES_H
-#define _PSI_TYPES_H
+/*******************************************************************************
+ Copyright (c) 2016, Michael Wallner <mike@php.net>.
+ All rights reserved.
+
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+
+     * Redistributions of source code must retain the above copyright notice,
+       this list of conditions and the following disclaimer.
+     * Redistributions in binary form must reproduce the above copyright
+       notice, this list of conditions and the following disclaimer in the
+       documentation and/or other materials provided with the distribution.
+
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*******************************************************************************/
+
+#ifndef PSI_TYPES_H
+#define PSI_TYPES_H
 
 #include "token.h"
-
 #include "types/impl_val.h"
 #include "types/decl_type.h"
 #include "types/decl_var.h"
-#include "types/decl_struct_layout.h"
 #include "types/decl_arg.h"
-#include "types/decl_typedefs.h"
-#include "types/decl_vars.h"
-#include "types/decl_args.h"
 #include "types/decl_abi.h"
-#include "types/decl_callinfo.h"
 #include "types/decl.h"
-#include "types/decls.h"
 #include "types/decl_struct.h"
-#include "types/decl_structs.h"
 #include "types/decl_union.h"
-#include "types/decl_unions.h"
 #include "types/impl_type.h"
 #include "types/impl_var.h"
 #include "types/impl_def_val.h"
 #include "types/const_type.h"
-#include "types/constant.h"
-#include "types/constants.h"
+#include "types/const.h"
 #include "types/impl_arg.h"
-#include "types/impl_args.h"
 #include "types/impl_func.h"
 #include "types/num_exp.h"
 #include "types/decl_enum_item.h"
-#include "types/decl_enum_items.h"
 #include "types/decl_enum.h"
-#include "types/decl_enums.h"
 #include "types/let_calloc.h"
 #include "types/let_callback.h"
 #include "types/let_func.h"
-#include "types/let_val.h"
-#include "types/let_vals.h"
+#include "types/let_exp.h"
 #include "types/let_stmt.h"
 #include "types/set_func.h"
-#include "types/set_value.h"
-#include "types/set_values.h"
+#include "types/set_exp.h"
 #include "types/set_stmt.h"
 #include "types/return_stmt.h"
-#include "types/free_call.h"
-#include "types/free_calls.h"
 #include "types/free_stmt.h"
-#include "types/impl_stmt.h"
-#include "types/impl_stmts.h"
 #include "types/impl.h"
-#include "types/impls.h"
 #include "types/decl_file.h"
-#include "types/decl_libs.h"
+#include "types/free_exp.h"
+#include "types/free_stmt.h"
+#include "types/layout.h"
 
-static inline impl_val *deref_impl_val(impl_val *ret_val, decl_var *var) {
+static inline impl_val *deref_impl_val(impl_val *ret_val, struct psi_decl_var *var) {
 	unsigned i;
 
 	ZEND_ASSERT(!var->arg || var->arg->var != var);
@@ -72,7 +79,7 @@ static inline impl_val *deref_impl_val(impl_val *ret_val, decl_var *var) {
 	return ret_val;
 }
 
-static inline impl_val *enref_impl_val(void *ptr, decl_var *var) {
+static inline impl_val *enref_impl_val(void *ptr, struct psi_decl_var *var) {
 	impl_val *val, *val_ptr;
 	unsigned i;
 
@@ -98,7 +105,7 @@ static inline impl_val *enref_impl_val(void *ptr, decl_var *var) {
 	return val;
 }
 
-static inline impl_val *struct_member_ref(decl_arg *set_arg, impl_val *struct_ptr, impl_val **to_free) {
+static inline impl_val *struct_member_ref(struct psi_decl_arg *set_arg, impl_val *struct_ptr, impl_val **to_free) {
 	void *ptr = (char *) struct_ptr + set_arg->layout->pos;
 #if 0
 	fprintf(stderr, "struct member %s: %p\n", set_arg->var->name, ptr);

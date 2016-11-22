@@ -1,33 +1,37 @@
-#ifndef _PSI_CALC_H
-#define _PSI_CALC_H
+/*******************************************************************************
+ Copyright (c) 2016, Michael Wallner <mike@php.net>.
+ All rights reserved.
 
-#include "num_exp.h"
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+
+     * Redistributions of source code must retain the above copyright notice,
+       this list of conditions and the following disclaimer.
+     * Redistributions in binary form must reproduce the above copyright
+       notice, this list of conditions and the following disclaimer in the
+       documentation and/or other materials provided with the distribution.
+
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*******************************************************************************/
+
+#ifndef PSI_CALC_H
+#define PSI_CALC_H
+
+#include "token.h"
 #include "impl_val.h"
 
-int psi_calc_num_exp(num_exp *exp, impl_val *strct, impl_val *res);
-
-static inline zend_long psi_long_num_exp(num_exp *exp, impl_val *strct) {
-	impl_val val = {0};
-
-	switch (psi_calc_num_exp(exp, strct, &val)) {
-	case PSI_T_UINT8:	return val.u8;
-	case PSI_T_UINT16:	return val.u16;
-	case PSI_T_UINT32:	return val.u32;
-	case PSI_T_UINT64:	return val.u64; /* FIXME */
-	case PSI_T_INT8:	return val.i8;
-	case PSI_T_INT16:	return val.i16;
-	case PSI_T_INT32:	return val.i32;
-	case PSI_T_INT64:	return val.i64;
-	case PSI_T_FLOAT:	return val.fval;
-	case PSI_T_DOUBLE:	return val.dval;
-	EMPTY_SWITCH_DEFAULT_CASE();
-	}
-	return 0;
-}
-
-int psi_calc_add(int t1, impl_val *v1, int t2, impl_val *v2, impl_val *res);
-int psi_calc_sub(int t1, impl_val *v1, int t2, impl_val *v2, impl_val *res);
-int psi_calc_mul(int t1, impl_val *v1, int t2, impl_val *v2, impl_val *res);
-int psi_calc_div(int t1, impl_val *v1, int t2, impl_val *v2, impl_val *res);
+token_t psi_calc_add(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
+token_t psi_calc_sub(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
+token_t psi_calc_mul(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
+token_t psi_calc_div(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
 
 #endif

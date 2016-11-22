@@ -23,14 +23,72 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#else
-# include "php_config.h"
-#endif
+#include "php_psi_stdinc.h"
+#include "data.h"
 
-#include <stdlib.h>
-#include <stdio.h>
+/* zend_error_cb */
+#include "Zend/zend.h"
+/* is executing/compiling query API */
+#include "Zend/zend_compile.h"
+#include "Zend/zend_execute.h"
 
-#include "error.h"
+/* PG(), strlcpy, vslprintf */
+#include "php.h"
 
+void psi_error_wrapper(struct psi_data *context, struct psi_token *t, int type, const char *msg, ...)
+{
+	va_list argv;
+	const char *fn = NULL;
+	unsigned ln = 0;
+
+	if (context) {
+		if (context->flags & PSI_SILENT) {
+			/* context->last_error may be an argument to print */
+			char error[sizeof(context->last_error)];
+
+			va_start(argv, msg);
+			vslprintf(error, sizeof(error), msg, argv);
+			va_end(argv);
+
+			memcpy(context->last_error, error,
+					sizeof(context->last_error));
+			return;
+		}
+	}
+
+	if (t) {
+		fn = t->file;
+		ln = t->line;
+	} else if (zend_is_executing()) {
+		fn = zend_get_executed_filename();
+		ln = zend_get_executed_lineno();
+	} else if (zend_is_compiling()) {
+		fn = zend_get_compiled_filename()->val;
+		ln = zend_get_compiled_lineno();
+	} else {
+		fn = "PSI module startup";
+	}
+
+	va_start(argv, msg);
+	psi_verror(type, fn, ln, msg, argv);
+	va_end(argv);
+
+	if (context) {
+		strlcpy(context->last_error, PG(last_error_message),
+				sizeof(context->last_error));
+	}
+}
+
+void psi_error(int type, const char *fn, unsigned ln, const char *msg, ...)
+{
+	va_list argv;
+
+	va_start(argv, msg);
+	psi_verror(type, fn, ln, msg, argv);
+	va_end(argv);
+}
+
+void psi_verror(int type, const char *fn, unsigned ln, const char *msg, va_list argv)
+{
+	zend_error_cb(type, fn, ln, msg, argv);
+}

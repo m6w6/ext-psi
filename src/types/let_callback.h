@@ -26,20 +26,23 @@
 #ifndef PSI_TYPES_LET_CALLBACK_H
 #define PSI_TYPES_LET_CALLBACK_H
 
-#include "decl.h"
-
-typedef struct let_callback {
-	struct let_func *func;
-	struct set_values *args;
-	decl *decl;
-} let_callback;
-
-let_callback *init_let_callback(struct let_func *func, struct set_values *args);
-void free_let_callback(let_callback *cb);
-
 struct psi_data;
-struct impl;
+struct psi_impl;
+struct psi_decl;
+struct psi_plist;
+struct psi_let_exp;
+struct psi_let_func;
 
-int validate_let_callback(struct psi_data *data, decl_var *cb_var, let_callback *cb, struct impl *impl);
+struct psi_let_callback {
+	struct psi_token *token;
+	struct psi_let_func *func;
+	struct psi_plist *args;
+	struct psi_decl *decl;
+};
+
+struct psi_let_callback *psi_let_callback_init(struct psi_let_func *func, struct psi_plist *args);
+void psi_let_callback_free(struct psi_let_callback **cb_ptr);
+void psi_let_callback_dump(int fd, struct psi_let_callback *cb, unsigned level);
+bool psi_let_callback_validate(struct psi_data *data, struct psi_let_exp *exp, struct psi_let_callback *cb, struct psi_impl *impl);
 
 #endif

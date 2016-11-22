@@ -23,18 +23,31 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef PSI_TYPES_DECL_UNOINS_H
-#define PSI_TYPES_DECL_UNOINS_H
+#ifndef PSI_TYPES_FREE_EXP_H
+#define PSI_TYPES_FREE_EXP_H
 
-#include "decl_union.h"
+struct psi_data;
+struct psi_token;
+struct psi_plist;
+struct psi_impl;
+struct psi_decl;
+struct psi_let_stmt;
+struct psi_call_frame;
 
-typedef struct decl_unions {
-	decl_union **list;
-	size_t count;
-} decl_unions;
+struct psi_free_exp {
+	struct psi_token *token;
+	char *func;
+	struct psi_plist *vars;
+	struct psi_decl *decl;
+	struct psi_let_stmt **let;
+};
 
-decl_unions *add_decl_union(decl_unions *uu, decl_union *u);
-void free_decl_unions(decl_unions *uu);
-void dump_decl_unions(int fd, decl_unions *unions);
+struct psi_free_exp *psi_free_exp_init(const char *func, struct psi_plist *vars);
+void psi_free_exp_free(struct psi_free_exp **f_ptr);
+void psi_free_exp_dump(int fd, struct psi_free_exp *call);
+
+bool psi_free_exp_validate(struct psi_data *data, struct psi_free_exp *fc, struct psi_impl *impl);
+
+void psi_free_exp_exec(struct psi_free_exp *f, struct psi_call_frame *frame);
 
 #endif

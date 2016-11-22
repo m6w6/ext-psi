@@ -5,11 +5,11 @@
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
 
-     * Redistributions of source code must retain the above copyright notice,
-       this list of conditions and the following disclaimer.
-     * Redistributions in binary form must reproduce the above copyright
-       notice, this list of conditions and the following disclaimer in the
-       documentation and/or other materials provided with the distribution.
+ * Redistributions of source code must retain the above copyright notice,
+ this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright
+ notice, this list of conditions and the following disclaimer in the
+ documentation and/or other materials provided with the distribution.
 
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -21,74 +21,73 @@
  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*******************************************************************************/
+ *******************************************************************************/
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#else
-# include "php_config.h"
-#endif
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
+#include "php_psi_stdinc.h"
 #include "data.h"
 
-decl_enum *init_decl_enum(const char *name, decl_enum_items *l) {
-	decl_enum *e = calloc(1, sizeof(*e));
+struct psi_decl_enum *psi_decl_enum_init(const char *name, struct psi_plist *l)
+{
+	struct psi_decl_enum *e = calloc(1, sizeof(*e));
 	e->name = strdup(name);
 	e->items = l;
 	return e;
 }
 
-void free_decl_enum(decl_enum *e) {
-	if (e->token) {
-		free(e->token);
+void psi_decl_enum_free(struct psi_decl_enum **e_ptr)
+{
+	if (*e_ptr) {
+		struct psi_decl_enum *e = *e_ptr;
+
+		*e_ptr = NULL;
+		if (e->token) {
+			free(e->token);
+		}
+		if (e->items) {
+			psi_plist_free(e->items);
+		}
+		free(e->name);
+		free(e);
 	}
-	if (e->items) {
-		free_decl_enum_items(e->items);
-	}
-	free(e->name);
-	free(e);
 }
 
-void dump_decl_enum(int fd, decl_enum *e, unsigned level) {
+void psi_decl_enum_dump(int fd, struct psi_decl_enum *e, unsigned level)
+{
 	dprintf(fd, "enum %s {\n", e->name);
 	if (e->items) {
-		dump_decl_enum_items(fd, e->items, level);
+		size_t i = 0;
+		struct psi_decl_enum_item *item;
+
+		++level;
+		while (psi_plist_get(e->items, i++, &item)) {
+			if (i > 1) {
+				dprintf(fd, ",\n");
+			}
+			dprintf(fd, "%s", psi_t_indent(level));
+			psi_decl_enum_item_dump(fd, item);
+		}
+		--level;
 	}
 	dprintf(fd, "\n}");
 }
 
-int validate_decl_enum(struct psi_data *data, decl_enum *e) {
-	size_t j;
+bool psi_decl_enum_validate(struct psi_data *data, struct psi_decl_enum *e)
+{
+	size_t seq;
+	struct psi_decl_enum_item *i, *p = NULL;
 
-	if (!e->items || !e->items->count) {
+	if (!psi_plist_count(e->items)) {
 		data->error(data, e->token, PSI_WARNING, "Empty enum '%s'", e->name);
-		return 0;
+		return false;
 	}
 
-	for (j = 0; j < e->items->count; ++j) {
-		decl_enum_item *i = e->items->list[j];
-
-		if (!i->num) {
-			if (j) {
-				i->inc.t = PSI_T_NUMBER;
-				i->inc.u.numb = "1";
-				i->inc.operator = PSI_T_PLUS;
-				i->inc.operand = i->prev->num ?: &i->prev->inc;
-				i->num = &i->inc;
-			} else {
-				i->inc.t = PSI_T_NUMBER;
-				i->inc.u.numb = "0";
-				i->num = &i->inc;
-			}
+	for (seq = 0; psi_plist_get(e->items, seq, &i); ++seq) {
+		i->prev = p;
+		if (!psi_decl_enum_item_validate(data, e, i, seq)) {
+			return false;
 		}
-		if (!validate_num_exp(data, i->num, NULL, NULL, e)) {
-			return 0;
-		}
+		p = i;
 	}
 
-	return 1;
+	return true;
 }

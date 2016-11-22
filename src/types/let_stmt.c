@@ -5,11 +5,11 @@
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
 
-     * Redistributions of source code must retain the above copyright notice,
-       this list of conditions and the following disclaimer.
-     * Redistributions in binary form must reproduce the above copyright
-       notice, this list of conditions and the following disclaimer in the
-       documentation and/or other materials provided with the distribution.
+ * Redistributions of source code must retain the above copyright notice,
+ this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright
+ notice, this list of conditions and the following disclaimer in the
+ documentation and/or other materials provided with the distribution.
 
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -21,104 +21,115 @@
  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*******************************************************************************/
+ *******************************************************************************/
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#else
-# include "php_config.h"
-#endif
-
-#include <stdlib.h>
-#include <stdio.h>
-
+#include "php_psi_stdinc.h"
 #include "data.h"
 
-let_stmt *init_let_stmt(let_val *val) {
-	let_stmt *let = calloc(1, sizeof(*let));
-	let->val = val;
+struct psi_let_stmt *psi_let_stmt_init(struct psi_let_exp *exp)
+{
+	struct psi_let_stmt *let = calloc(1, sizeof(*let));
+	let->exp = exp;
 
 	return let;
 }
 
-void free_let_stmt(let_stmt *stmt) {
-	if (stmt->val) {
-		free_let_val(stmt->val);
+void psi_let_stmt_free(struct psi_let_stmt **stmt_ptr)
+{
+	if (*stmt_ptr) {
+		struct psi_let_stmt *stmt = *stmt_ptr;
+
+		*stmt_ptr = NULL;
+		if (stmt->exp) {
+			psi_let_exp_free(&stmt->exp);
+		}
+		if (stmt->token) {
+			free(stmt->token);
+		}
+		free(stmt);
 	}
-	if (stmt->token) {
-		free(stmt->token);
-	}
-	free(stmt);
 }
 
-void dump_let_stmt(int fd, let_stmt *let) {
-	dprintf(fd, "\t%s ", let->val->kind == PSI_LET_TMP ? "temp" : "let");
-	dump_let_val(fd, let->val, 1, 1);
+void psi_let_stmt_dump(int fd, struct psi_let_stmt *let)
+{
+	dprintf(fd, "\t%s ", let->exp->kind == PSI_LET_TMP ? "temp" : "let");
+	psi_let_exp_dump(fd, let->exp, 1, 1);
+	dprintf(fd, "\n");
 }
 
-int validate_let_stmts(struct psi_data *data, impl *impl) {
-	size_t i, j;
+bool psi_let_stmts_validate(struct psi_data *data, struct psi_impl *impl)
+{
+	size_t i = 0;
+	struct psi_let_stmt *let;
+
 	/* we can have multiple let stmts */
-
 	/* check that we have a decl arg and impl arg for every let stmt */
-	for (i = 0; i < impl->stmts->let.count; ++i) {
-		let_stmt *let = impl->stmts->let.list[i];
-		decl_var *let_var;
-		impl_var *let_ivar = NULL;
+	while (psi_plist_get(impl->stmts.let, i++, &let)) {
+		struct psi_decl_var *let_var;
+		struct psi_impl_var *let_ivar = NULL;
 
-		if (let->val && let->val->kind == PSI_LET_TMP) {
-			let_var = let->val->data.var;
+		if (let->exp->kind == PSI_LET_TMP) {
+			let_var = let->exp->data.var;
 		} else {
-			let_var = let->val->var;
+			let_var = let->exp->var;
 		}
 
-		if (!locate_decl_var_arg(let_var, impl->decl->args, impl->decl->func)) {
-			data->error(data, let_var->token, PSI_WARNING, "Unknown variable '%s' in `let` statement"
-					" of implementation '%s'", let_var->name, impl->func->name);
-			return 0;
+		if (!let->exp->var) {
+			data->error(data, let->token, PSI_WARNING,
+					"Missing variable in `let` statement for implementation %s",
+					impl->func->name);
+			return false;
 		}
-		switch (let->val->kind) {
+
+		if (!psi_decl_get_arg(impl->decl, let_var)) {
+			data->error(data, let_var->token, PSI_WARNING,
+					"Unknown variable '%s' in `let` statement  of implementation '%s'",
+					let_var->name, impl->func->name);
+			return false;
+		}
+		switch (let->exp->kind) {
 		case PSI_LET_CALLBACK:
-			let_ivar = let->val->data.callback->func->var;
+			let_ivar = let->exp->data.callback->func->var;
 			break;
 		case PSI_LET_FUNC:
-			let_ivar = let->val->data.func->var;
+			let_ivar = let->exp->data.func->var;
 			break;
 		default:
 			break;
 		}
-		if (let_ivar && !locate_impl_var_arg(let_ivar, impl->func->args)) {
-			data->error(data, let_var->token, PSI_WARNING, "Unknown variable '%s' in `let` statement"
-					" of implementation '%s'", let_ivar->name, impl->func->name);
-			return 0;
+		if (let_ivar && !psi_impl_get_arg(impl, let_ivar)) {
+			data->error(data, let_var->token, PSI_WARNING,
+					"Unknown variable '%s' in `let` statement of implementation '%s'",
+					let_ivar->name, impl->func->name);
+			return false;
 		}
 
-		if (!validate_let_val(data, let->val, let->val->var, impl)) {
-			return 0;
+		if (!psi_let_exp_validate(data, let->exp, impl)) {
+			return false;
 		}
 	}
 	/* check that we have a let stmt for every decl arg */
-	if (impl->decl->args) for (i = 0; i < impl->decl->args->count; ++i) {
-		decl_arg *darg = impl->decl->args->args[i];
-		int check = 0;
+	if (impl->decl->args) {
+		struct psi_decl_arg *darg;
 
-		for (j = 0; j < impl->stmts->let.count; ++j) {
-			let_stmt *let = impl->stmts->let.list[j];
-
-			if (!strcmp(let->val->var->name, darg->var->name)) {
-				check = 1;
-				break;
+		for (i = 0; psi_plist_get(impl->decl->args, i, &darg); ++i) {
+			if (!psi_impl_get_let(impl, darg->var)) {
+				data->error(data, impl->func->token, PSI_WARNING,
+						"Missing `let` statement for arg '%s %s%s'"
+								" of declaration '%s' for implementation '%s'",
+						darg->type->name,
+						psi_t_indirection(darg->var->pointer_level),
+						darg->var->name, impl->decl->func->var->name,
+						impl->func->name);
+				return false;
 			}
-		}
-		if (!check) {
-			data->error(data, impl->func->token, PSI_WARNING,
-					"Missing `let` statement for arg '%s %.*s%s'"
-					" of declaration '%s' for implementation '%s'",
-					darg->type->name, (int) darg->var->pointer_level, "*****",
-					darg->var->name, impl->decl->func->var->name, impl->func->name);
-			return 0;
 		}
 	}
 
-	return 1;
+	return true;
+}
+
+void *psi_let_stmt_exec(struct psi_let_stmt *let, struct psi_call_frame *frame)
+{
+	return psi_let_exp_exec(let->exp, let->exp->var->arg, NULL, 0, frame);
 }

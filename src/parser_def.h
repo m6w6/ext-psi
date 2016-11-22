@@ -1,39 +1,65 @@
-#define _CONCAT(x,y) x##y
-#define CONCAT(x,y) _CONCAT(x,y)
-#define COUNTED(x) CONCAT(parse_ ##x## _, __LINE__)
+/*******************************************************************************
+ Copyright (c) 2016, Michael Wallner <mike@php.net>.
+ All rights reserved.
+
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+
+     * Redistributions of source code must retain the above copyright notice,
+       this list of conditions and the following disclaimer.
+     * Redistributions in binary form must reproduce the above copyright
+       notice, this list of conditions and the following disclaimer in the
+       documentation and/or other materials provided with the distribution.
+
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*******************************************************************************/
+
+#define CONCAT2(x,y) x##y
+#define CONCAT1(x,y) CONCAT2(x,y)
+#define COUNTED(x) CONCAT1(parse_ ##x## _, __LINE__)
 
 #ifdef GENERATE
-#define DEF(dn, dv) dn dv
-#define PASS(nt, rule) nt ::= rule.
-#define PARSE(nt, rule) nt ::= rule.
-#define PARSE_NAMED(nt, nt_name, rule) NAMED(nt, nt_name) ::= rule.
-#define PARSE_TYPED(nt, nt_name, rule) TYPED(nt, nt_name) ::= rule.
-#define TOKEN(t) t
-#define NAMED(t, name) t(name)
-#define TYPED(t, name) t(name)
-#define TOKEN_TYPE(token, type_) %type token {type_}
-#define TOKEN_DTOR(token, dtor) %destructor token {dtor}
+# define DEF(dn, dv) dn dv
+# define PASS(nt, rule) nt ::= rule.
+# define PARSE(nt, rule) nt ::= rule.
+# define PARSE_NAMED(nt, nt_name, rule) NAMED(nt, nt_name) ::= rule.
+# define PARSE_TYPED(nt, nt_name, rule) TYPED(nt, nt_name) ::= rule.
+# define TOKEN(t) t
+# define NAMED(t, name) t(name)
+# define TYPED(t, name) t(name)
+# define TOKEN_TYPE(token, type_) %type token {type_}
+# define TOKEN_DTOR(token, dtor) %destructor token {dtor}
 #else
-#ifndef TEST
-#include "parser.h"
-#endif
-#define DEF(dn, dv)
-#define PASS(nt, rule) \
+# ifndef TEST
+#  include "parser.h"
+#  include "plist.h"
+# endif
+# define DEF(dn, dv)
+# define PASS(nt, rule) \
 	static void COUNTED(nt) (struct psi_parser *P) { \
 		(void) #rule; \
 	}
-#define PARSE(nt, rule) \
+# define PARSE(nt, rule) \
 	static void COUNTED(nt) (struct psi_parser *P rule)
-#define PARSE_NAMED(nt, nt_name, rule) \
+# define PARSE_NAMED(nt, nt_name, rule) \
 	static void COUNTED(nt) (struct psi_parser *P NAMED(nt, nt_name) rule)
-#define PARSE_TYPED(nt, nt_name, rule) \
+# define PARSE_TYPED(nt, nt_name, rule) \
 	static void COUNTED(nt) (struct psi_parser *P TYPED(nt, nt_name) rule)
-#define TOKEN(t)
-#define NAMED(t, name) , struct psi_token *name
-#define TYPED(t, name) , TOKEN_TYPE_NAME(t) name
-#define TOKEN_TYPE_NAME(token) ##token##_parse_t
-#define TOKEN_TYPE(token, type) typedef type TOKEN_TYPE_NAME(token);
-#define TOKEN_DTOR(token, dtor)
+# define TOKEN(t)
+# define NAMED(t, name) , struct psi_token *name
+# define TYPED(t, name) , TOKEN_TYPE_NAME(t) name
+# define TOKEN_TYPE_NAME(token) token##_parse_t
+# define TOKEN_TYPE(token, type) typedef type TOKEN_TYPE_NAME(token);
+# define TOKEN_DTOR(token, dtor)
 #endif
 
 DEF(%name, psi_parser_proc_)
@@ -49,7 +75,7 @@ DEF(%syntax_error, {
 	if (TOKEN && TOKEN->type != PSI_T_EOF) {
 		psi_error(PSI_WARNING, TOKEN->file, TOKEN->line, "PSI syntax error: Unexpected token '%s' at pos %u", TOKEN->text, TOKEN->col);
 	} else {
-		psi_error(PSI_WARNING, P->psi.file.fn, P->line, "PSI syntax error: Unexpected end of input");
+		psi_error(PSI_WARNING, P->file.fn, P->line, "PSI syntax error: Unexpected end of input");
 	}
 })
 
@@ -68,111 +94,111 @@ DEF(%token_class, let_func_token ZVAL OBJVAL ARRVAL PATHVAL STRLEN STRVAL FLOATV
 DEF(%token_class, set_func_token TO_OBJECT TO_ARRAY TO_STRING TO_INT TO_FLOAT TO_BOOL ZVAL VOID.)
 DEF(%token_class, impl_type_token VOID MIXED BOOL INT FLOAT STRING ARRAY OBJECT CALLABLE.)
 
-TOKEN_TYPE(decl_enum, decl_enum *)
-TOKEN_DTOR(decl_enum, free_decl_enum($$);)
-TOKEN_TYPE(decl_enum_items, decl_enum_items*)
-TOKEN_DTOR(decl_enum_items, free_decl_enum_items($$);)
-TOKEN_TYPE(decl_enum_item, decl_enum_item*)
-TOKEN_DTOR(decl_enum_item, free_decl_enum_item($$);)
-TOKEN_TYPE(decl_struct_args_block, decl_args*)
-TOKEN_DTOR(decl_struct_args_block, free_decl_args($$);) /* there was a typo */
-TOKEN_TYPE(decl_struct_args, decl_args*)
-TOKEN_DTOR(decl_struct_args, free_decl_args($$);)
-TOKEN_TYPE(decl_struct, decl_struct*)
-TOKEN_DTOR(decl_struct, free_decl_struct($$);)
-TOKEN_TYPE(align_and_size, decl_struct_layout)
-TOKEN_TYPE(decl_union, decl_union*)
-TOKEN_DTOR(decl_union, free_decl_union($$);)
-TOKEN_TYPE(const_type, const_type*)
-TOKEN_DTOR(const_type, free_const_type($$);)
-TOKEN_TYPE(constant, constant*)
-TOKEN_DTOR(constant, free_constant($$);)
-TOKEN_TYPE(decl_typedef, decl_arg*)
-TOKEN_DTOR(decl_typedef, free_decl_arg($$);)
-TOKEN_TYPE(decl_typedef_body_ex, decl_arg*)
-TOKEN_DTOR(decl_typedef_body_ex, free_decl_arg($$);)
-TOKEN_TYPE(decl_typedef_body, decl_arg*)
-TOKEN_DTOR(decl_typedef_body, free_decl_arg($$);)
-TOKEN_TYPE(decl_typedef_body_fn_args, decl_args *)
-TOKEN_DTOR(decl_typedef_body_fn_args, free_decl_args($$);)
-TOKEN_TYPE(decl, decl*)
-TOKEN_DTOR(decl, free_decl($$);)
-TOKEN_TYPE(decl_func, decl_arg*)
-TOKEN_DTOR(decl_func, free_decl_arg($$);)
-TOKEN_TYPE(decl_abi, decl_abi*)
-TOKEN_DTOR(decl_abi, free_decl_abi($$);)
-TOKEN_TYPE(decl_var, decl_var*)
-TOKEN_DTOR(decl_var, free_decl_var($$);)
-TOKEN_TYPE(decl_vars, decl_vars*)
-TOKEN_DTOR(decl_vars, free_decl_vars($$);)
-TOKEN_TYPE(decl_arg, decl_arg*)
-TOKEN_DTOR(decl_arg, free_decl_arg($$);)
-TOKEN_TYPE(decl_args, decl_args*)
-TOKEN_DTOR(decl_args, free_decl_args($$);)
-TOKEN_TYPE(struct_args, decl_args*)
-TOKEN_DTOR(struct_args, free_decl_args($$);)
-TOKEN_TYPE(struct_arg, decl_arg*)
-TOKEN_DTOR(struct_arg, free_decl_arg($$);)
-TOKEN_TYPE(struct_layout, decl_struct_layout*)
-TOKEN_DTOR(struct_layout, free_decl_struct_layout($$);)
-TOKEN_TYPE(decl_type, decl_type*)
-TOKEN_DTOR(decl_type, free_decl_type($$);)
-TOKEN_TYPE(const_decl_type, decl_type*)
-TOKEN_DTOR(const_decl_type, free_decl_type($$);)
-TOKEN_TYPE(impl, impl*)
-TOKEN_DTOR(impl, free_impl($$);)
-TOKEN_TYPE(impl_func, impl_func*)
-TOKEN_DTOR(impl_func, free_impl_func($$);)
-TOKEN_TYPE(impl_def_val, impl_def_val*)
-TOKEN_DTOR(impl_def_val, free_impl_def_val($$);)
-TOKEN_TYPE(impl_var, impl_var*)
-TOKEN_DTOR(impl_var, free_impl_var($$);)
-TOKEN_TYPE(impl_arg, impl_arg*)
-TOKEN_DTOR(impl_arg, free_impl_arg($$);)
-TOKEN_TYPE(impl_args, impl_args*)
-TOKEN_DTOR(impl_args, free_impl_args($$);)
-TOKEN_TYPE(impl_vararg, impl_arg*)
-TOKEN_DTOR(impl_vararg, free_impl_arg($$);)
-TOKEN_TYPE(impl_arg_list, impl_args*)
-TOKEN_DTOR(impl_arg_list, free_impl_args($$);)
-TOKEN_TYPE(impl_stmts, impl_stmts*)
-TOKEN_DTOR(impl_stmts, free_impl_stmts($$);)
-TOKEN_TYPE(impl_stmt, impl_stmt*)
-TOKEN_DTOR(impl_stmt, free_impl_stmt($$);)
-TOKEN_TYPE(num_exp, num_exp*)
-TOKEN_DTOR(num_exp, free_num_exp($$);)
-TOKEN_TYPE(let_stmt, let_stmt*)
-TOKEN_DTOR(let_stmt, free_let_stmt($$);)
-TOKEN_TYPE(let_calloc, let_calloc*)
-TOKEN_DTOR(let_calloc, free_let_calloc($$);)
-TOKEN_TYPE(let_func, let_func*)
-TOKEN_DTOR(let_func, free_let_func($$);)
-TOKEN_TYPE(callback_arg_list, set_values *)
-TOKEN_DTOR(callback_arg_list, free_set_values($$);)
-TOKEN_TYPE(callback_args, set_values *)
-TOKEN_DTOR(callback_args, free_set_values($$);)
-TOKEN_TYPE(let_val, let_val*)
-TOKEN_DTOR(let_val, free_let_val($$);)
-TOKEN_TYPE(let_vals, let_vals*)
-TOKEN_DTOR(let_vals, free_let_vals($$);)
-TOKEN_TYPE(set_stmt, set_stmt*)
-TOKEN_DTOR(set_stmt, free_set_stmt($$);)
-TOKEN_TYPE(set_value, set_value*)
-TOKEN_DTOR(set_value, free_set_value($$);)
-TOKEN_TYPE(set_vals, set_value*)
-TOKEN_DTOR(set_vals, free_set_value($$);)
-TOKEN_TYPE(set_func, set_func*)
-TOKEN_DTOR(set_func, free_set_func($$);)
-TOKEN_TYPE(return_stmt, return_stmt*)
-TOKEN_DTOR(return_stmt, free_return_stmt($$);)
-TOKEN_TYPE(free_stmt, free_stmt*)
-TOKEN_DTOR(free_stmt, free_free_stmt($$);)
-TOKEN_TYPE(free_calls, free_calls*)
-TOKEN_DTOR(free_calls, free_free_calls($$);)
-TOKEN_TYPE(free_call, free_call*)
-TOKEN_DTOR(free_call, free_free_call($$);)
-TOKEN_TYPE(impl_type, impl_type*)
-TOKEN_DTOR(impl_type, free_impl_type($$);)
+TOKEN_TYPE(decl_enum, struct psi_decl_enum *)
+TOKEN_DTOR(decl_enum, psi_decl_enum_free(&$$);)
+TOKEN_TYPE(decl_enum_items, struct psi_plist*)
+TOKEN_DTOR(decl_enum_items, psi_plist_free($$);)
+TOKEN_TYPE(decl_enum_item, struct psi_decl_enum_item*)
+TOKEN_DTOR(decl_enum_item, psi_decl_enum_item_free(&$$);)
+TOKEN_TYPE(decl_struct_args_block, struct psi_plist*)
+TOKEN_DTOR(decl_struct_args_block, psi_plist_free($$);) /* there was a typo */
+TOKEN_TYPE(decl_struct_args, struct psi_plist*)
+TOKEN_DTOR(decl_struct_args, psi_plist_free($$);)
+TOKEN_TYPE(decl_struct, struct psi_decl_struct*)
+TOKEN_DTOR(decl_struct, psi_decl_struct_free(&$$);)
+TOKEN_TYPE(align_and_size, struct psi_layout)
+TOKEN_TYPE(decl_union, struct psi_decl_union*)
+TOKEN_DTOR(decl_union, psi_decl_union_free(&$$);)
+TOKEN_TYPE(const_type, struct psi_const_type*)
+TOKEN_DTOR(const_type, psi_const_type_free(&$$);)
+TOKEN_TYPE(constant, struct psi_const*)
+TOKEN_DTOR(constant, psi_const_free(&$$);)
+TOKEN_TYPE(decl_typedef, struct psi_decl_arg*)
+TOKEN_DTOR(decl_typedef, psi_decl_arg_free(&$$);)
+TOKEN_TYPE(decl_typedef_body_ex, struct psi_decl_arg*)
+TOKEN_DTOR(decl_typedef_body_ex, psi_decl_arg_free(&$$);)
+TOKEN_TYPE(decl_typedef_body, struct psi_decl_arg*)
+TOKEN_DTOR(decl_typedef_body, psi_decl_arg_free(&$$);)
+TOKEN_TYPE(decl_typedef_body_fn_args, struct psi_plist*)
+TOKEN_DTOR(decl_typedef_body_fn_args, psi_plist_free($$);)
+TOKEN_TYPE(decl, struct psi_decl*)
+TOKEN_DTOR(decl, psi_decl_free(&$$);)
+TOKEN_TYPE(decl_func, struct psi_decl_arg*)
+TOKEN_DTOR(decl_func, psi_decl_arg_free(&$$);)
+TOKEN_TYPE(decl_abi, struct psi_decl_abi*)
+TOKEN_DTOR(decl_abi, psi_decl_abi_free(&$$);)
+TOKEN_TYPE(decl_var, struct psi_decl_var*)
+TOKEN_DTOR(decl_var, psi_decl_var_free(&$$);)
+TOKEN_TYPE(decl_vars, struct psi_plist*)
+TOKEN_DTOR(decl_vars, psi_plist_free($$);)
+TOKEN_TYPE(decl_arg, struct psi_decl_arg*)
+TOKEN_DTOR(decl_arg, psi_decl_arg_free(&$$);)
+TOKEN_TYPE(decl_args, struct psi_plist*)
+TOKEN_DTOR(decl_args, psi_plist_free($$);)
+TOKEN_TYPE(struct_args, struct psi_plist*)
+TOKEN_DTOR(struct_args, psi_plist_free($$);)
+TOKEN_TYPE(struct_arg, struct psi_decl_arg*)
+TOKEN_DTOR(struct_arg, psi_decl_arg_free(&$$);)
+TOKEN_TYPE(decl_layout, struct psi_layout*)
+TOKEN_DTOR(decl_layout, psi_layout_free(&$$);)
+TOKEN_TYPE(decl_type, struct psi_decl_type*)
+TOKEN_DTOR(decl_type, psi_decl_type_free(&$$);)
+TOKEN_TYPE(const_decl_type, struct psi_decl_type*)
+TOKEN_DTOR(const_decl_type, psi_decl_type_free(&$$);)
+TOKEN_TYPE(impl, struct psi_impl*)
+TOKEN_DTOR(impl, psi_impl_free(&$$);)
+TOKEN_TYPE(impl_func, struct psi_impl_func*)
+TOKEN_DTOR(impl_func, psi_impl_func_free(&$$);)
+TOKEN_TYPE(impl_def_val, struct psi_impl_def_val*)
+TOKEN_DTOR(impl_def_val, psi_impl_def_val_free(&$$);)
+TOKEN_TYPE(impl_var, struct psi_impl_var*)
+TOKEN_DTOR(impl_var, psi_impl_var_free(&$$);)
+TOKEN_TYPE(impl_arg, struct psi_impl_arg*)
+TOKEN_DTOR(impl_arg, psi_impl_arg_free(&$$);)
+TOKEN_TYPE(impl_args, struct psi_plist*)
+TOKEN_DTOR(impl_args, psi_plist_free($$);)
+TOKEN_TYPE(impl_vararg, struct psi_impl_arg*)
+TOKEN_DTOR(impl_vararg, psi_impl_arg_free(&$$);)
+TOKEN_TYPE(impl_stmts, struct psi_plist*)
+TOKEN_DTOR(impl_stmts, psi_plist_free($$);)
+TOKEN_TYPE(impl_stmt, struct psi_token**)
+TOKEN_DTOR(impl_stmt, psi_impl_stmt_free(&$$);)
+TOKEN_TYPE(num_exp, struct psi_num_exp*)
+TOKEN_DTOR(num_exp, psi_num_exp_free(&$$);)
+TOKEN_TYPE(let_stmt, struct psi_let_stmt*)
+TOKEN_DTOR(let_stmt, psi_let_stmt_free(&$$);)
+TOKEN_TYPE(let_calloc, struct psi_let_calloc*)
+TOKEN_DTOR(let_calloc, psi_let_calloc_free(&$$);)
+TOKEN_TYPE(let_func, struct psi_let_func*)
+TOKEN_DTOR(let_func, psi_let_func_free(&$$);)
+TOKEN_TYPE(callback_arg_list, struct psi_plist *)
+TOKEN_DTOR(callback_arg_list, psi_plist_free($$);)
+TOKEN_TYPE(callback_args, struct psi_plist *)
+TOKEN_DTOR(callback_args, psi_plist_free($$);)
+TOKEN_TYPE(let_callback, struct psi_let_callback*)
+TOKEN_DTOR(let_callback, psi_let_callback_free(&$$);)
+TOKEN_TYPE(let_exp, struct psi_let_exp*)
+TOKEN_DTOR(let_exp, psi_let_exp_free(&$$);)
+TOKEN_TYPE(let_exps, struct psi_plist*)
+TOKEN_DTOR(let_exps, psi_plist_free($$);)
+TOKEN_TYPE(set_stmt, struct psi_set_stmt*)
+TOKEN_DTOR(set_stmt, psi_set_stmt_free(&$$);)
+TOKEN_TYPE(set_exp, struct psi_set_exp*)
+TOKEN_DTOR(set_exp, psi_set_exp_free(&$$);)
+TOKEN_TYPE(set_exps, struct psi_plist*)
+TOKEN_DTOR(set_exps, psi_plist_free($$);)
+TOKEN_TYPE(set_func, struct psi_set_func*)
+TOKEN_DTOR(set_func, psi_set_func_free(&$$);)
+TOKEN_TYPE(return_stmt, struct psi_return_stmt*)
+TOKEN_DTOR(return_stmt, psi_return_stmt_free(&$$);)
+TOKEN_TYPE(free_stmt, struct psi_free_stmt*)
+TOKEN_DTOR(free_stmt, psi_free_stmt_free(&$$);)
+TOKEN_TYPE(free_exps, struct psi_plist*)
+TOKEN_DTOR(free_exps, psi_plist_free($$);)
+TOKEN_TYPE(free_exp, struct psi_free_exp*)
+TOKEN_DTOR(free_exp, psi_free_exp_free(&$$);)
+TOKEN_TYPE(impl_type, struct psi_impl_type*)
+TOKEN_DTOR(impl_type, psi_impl_type_free(&$$);)
 TOKEN_TYPE(reference, char)
 TOKEN_TYPE(indirection, unsigned)
 TOKEN_TYPE(pointers, unsigned)
@@ -184,174 +210,121 @@ PASS(blocks, blocks block)
 PASS(block, EOF)
 PASS(block, EOS)
 
+/*
+ * lib: LIB "soname" ;
+ */
 PARSE(block, NAMED(LIB, token) NAMED(QUOTED_STRING, libname) TOKEN(EOS)) {
-	if (P->psi.file.ln) {
-		P->error(P, token, PSI_WARNING, "Extra 'lib %s' statement has no effect", libname->text);
+	if (P->file.ln) {
+		P->error(PSI_DATA(P), token, PSI_WARNING, "Extra 'lib %s' statement has no effect", libname->text);
 	} else {
-		P->psi.file.ln = strndup(libname->text + 1, libname->size - 2);
+		P->file.ln = strndup(libname->text + 1, libname->size - 2);
 	}
 	free(libname);
 	free(token);
 }
+
 PARSE(block, TYPED(decl, decl)) {
-	P->decls = add_decl(P->decls, decl);
+	if (!P->decls) {
+		P->decls = psi_plist_init((psi_plist_dtor) psi_decl_free);
+	}
+	P->decls = psi_plist_add(P->decls, &decl);
 }
 
 PARSE(block, TYPED(impl, impl)) {
-	P->impls = add_impl(P->impls, impl);
+	if (!P->impls) {
+		P->impls = psi_plist_init((psi_plist_dtor) psi_impl_free);
+	}
+	P->impls = psi_plist_add(P->impls, &impl);
 }
 
 PARSE(block, TYPED(decl_typedef, def)) {
-	P->defs = add_decl_typedef(P->defs, def);
+	if (!P->types) {
+		P->types = psi_plist_init((psi_plist_dtor) psi_decl_arg_free);
+	}
+	P->types = psi_plist_add(P->types, &def);
+
 	switch (def->type->type) {
 	case PSI_T_STRUCT:
 		if (def->type->real.strct) {
-			P->structs = add_decl_struct(P->structs, def->type->real.strct);
+			if (!P->structs) {
+				P->structs = psi_plist_init((psi_plist_dtor) psi_decl_struct_free);
+			}
+			P->structs = psi_plist_add(P->structs, &def->type->real.strct);
 		}
 		break;
 	case PSI_T_UNION:
 		if (def->type->real.unn) {
-			P->unions = add_decl_union(P->unions, def->type->real.unn);
+			if (!P->unions) {
+				P->unions = psi_plist_init((psi_plist_dtor) psi_decl_union_free);
+			}
+			P->unions = psi_plist_add(P->unions, &def->type->real.unn);
 		}
 		break;
 	case PSI_T_ENUM:
 		if (def->type->real.enm) {
-			P->enums = add_decl_enum(P->enums, def->type->real.enm);
+			if (!P->enums) {
+				P->enums = psi_plist_init((psi_plist_dtor) psi_decl_enum_free);
+			}
+			P->enums = psi_plist_add(P->enums, &def->type->real.enm);
 		}
 		break;
 	}
 }
 
 PARSE(block, TYPED(constant, constant)) {
-	P->consts = add_constant(P->consts, constant);
+	if (!P->consts) {
+		P->consts = psi_plist_init((psi_plist_dtor) psi_const_free);
+	}
+	P->consts = psi_plist_add(P->consts, &constant);
 }
 
 PARSE(block, TYPED(decl_struct, strct)) {
-	P->structs = add_decl_struct(P->structs, strct);
+	if (!P->structs) {
+		P->structs = psi_plist_init((psi_plist_dtor) psi_decl_struct_free);
+	}
+	P->structs = psi_plist_add(P->structs, &strct);
 }
 
 PARSE(block, TYPED(decl_union, u)) {
-	P->unions = add_decl_union(P->unions, u);
+	if (!P->unions) {
+		P->unions = psi_plist_init((psi_plist_dtor) psi_decl_union_free);
+	}
+	P->unions = psi_plist_add(P->unions, &u);
 }
 
 PARSE(block, TYPED(decl_enum, e)) {
-	P->enums = add_decl_enum(P->enums, e);
+	if (!P->enums) {
+		P->enums = psi_plist_init((psi_plist_dtor) psi_decl_enum_free);
+	}
+	P->enums = psi_plist_add(P->enums, &e);
 }
 
+/*
+ * optional_name: <empty>
+ */
 PARSE_NAMED(optional_name, n, ) {
 	n = NULL;
 }
 
+/*
+ * optional_name: NAME
+ */
 PARSE_NAMED(optional_name, n,
 		NAMED(NAME, N)) {
 	n = N;
 }
 
-PARSE_NAMED(enum_name, n,
-		NAMED(ENUM, E) NAMED(optional_name, N)) {
-	if (N) {
-		n = N;
-		free(E);
-	} else {
-		char digest[17];
-
-		psi_token_hash(E, digest);
-		n = psi_token_translit(psi_token_append(E, 1, digest), " ", "@");
-	}
-}
-
-PARSE_TYPED(decl_enum, e,
-		NAMED(enum_name, N)
-		TOKEN(LBRACE)
-		TYPED(decl_enum_items, list)
-		TOKEN(RBRACE)) {
-	e = init_decl_enum(N->text, list);
-	e->token = N;
-}
-
-PARSE_TYPED(decl_enum_items, l,
-		TYPED(decl_enum_item, i)) {
-	l = init_decl_enum_items(i);
-}
-PARSE_TYPED(decl_enum_items, l,
-		TYPED(decl_enum_items, l_)
-		TOKEN(COMMA)
-		TYPED(decl_enum_item, i)) {
-	l = add_decl_enum_item(l_, i);
-}
-
-PARSE_TYPED(decl_enum_item, i,
-		NAMED(NAME, N)
-		TOKEN(EQUALS)
-		TYPED(num_exp, num)) {
-	i = init_decl_enum_item(N->text, num);
-	i->token = N;
-}
-PARSE_TYPED(decl_enum_item, i,
-		NAMED(NAME, N)) {
-	i = init_decl_enum_item(N->text, NULL);
-	i->token = N;
-}
-
-PARSE_NAMED(union_name, n,
-		NAMED(UNION, U)
-		NAMED(optional_name, N)) {
-	if (N) {
-		n = N;
-		free(U);
-	} else {
-		char digest[17];
-
-		psi_token_hash(U, digest);
-		n = psi_token_translit(psi_token_append(U, 1, digest), " ", "@");
-	}
-}
-
-PARSE_NAMED(struct_name, n,
-		NAMED(STRUCT, S)
-		NAMED(optional_name, N)) {
-	if (N) {
-		n = N;
-		free(S);
-	} else {
-		char digest[17];
-
-		psi_token_hash(S, digest);
-		n = psi_token_translit(psi_token_append(S, 1, digest), " ", "@");
-	}
-}
-
-PARSE_TYPED(decl_struct_args_block, args_,
-		TOKEN(LBRACE)
-		TYPED(struct_args, args)
-		TOKEN(RBRACE)) {
-	args_ = args;
-}
-
-PARSE_TYPED(decl_struct_args, args_,
-		TYPED(decl_struct_args_block, args)) {
-	args_ = args;
-}
-PARSE_TYPED(decl_struct_args, args_,
-		TOKEN(EOS)) {
-	args_ = init_decl_args(NULL);
-}
-
-PARSE_TYPED(decl_struct, strct,
-		TOKEN(STRUCT)
-		NAMED(NAME, N)
-		TYPED(align_and_size, as)
-		TYPED(decl_struct_args, args)) {
-	strct = init_decl_struct(N->text, args);
-	strct->align = as.pos;
-	strct->size = as.len;
-	strct->token = N;
-}
-
+/*
+ * align_and_size: <empty>
+ */
 PARSE_TYPED(align_and_size, as, ) {
 	as.pos = 0;
 	as.len = 0;
 }
+
+/*
+ * align_and_size: :: ( NUMBER , NUMBER )
+ */
 PARSE_TYPED(align_and_size, as,
 		TOKEN(COLON)
 		TOKEN(COLON)
@@ -366,23 +339,175 @@ PARSE_TYPED(align_and_size, as,
 	free(S);
 }
 
+/*
+ * enum_name: ENUM optional_name
+ */
+PARSE_NAMED(enum_name, n,
+		NAMED(ENUM, E)
+		NAMED(optional_name, N)) {
+	if (N) {
+		n = N;
+		free(E);
+	} else {
+		char digest[17];
+
+		psi_token_hash(E, digest);
+		n = psi_token_translit(psi_token_append(E, 1, digest), " ", "@");
+	}
+}
+
+/*
+ * struct_name: STRUCT optional_name
+ */
+PARSE_NAMED(struct_name, n,
+		NAMED(STRUCT, S)
+		NAMED(optional_name, N)) {
+	if (N) {
+		n = N;
+		free(S);
+	} else {
+		char digest[17];
+
+		psi_token_hash(S, digest);
+		n = psi_token_translit(psi_token_append(S, 1, digest), " ", "@");
+	}
+}
+
+/*
+ * union_name: UNION optional_name
+ */
+PARSE_NAMED(union_name, n,
+		NAMED(UNION, U)
+		NAMED(optional_name, N)) {
+	if (N) {
+		n = N;
+		free(U);
+	} else {
+		char digest[17];
+
+		psi_token_hash(U, digest);
+		n = psi_token_translit(psi_token_append(U, 1, digest), " ", "@");
+	}
+}
+
+/*
+ * decl_enum: enum_name { items }
+ */
+PARSE_TYPED(decl_enum, e,
+		NAMED(enum_name, N)
+		TOKEN(LBRACE)
+		TYPED(decl_enum_items, list)
+		TOKEN(RBRACE)) {
+	e = psi_decl_enum_init(N->text, list);
+	e->token = N;
+}
+
+/*
+ * decl_enum_items: item
+ */
+PARSE_TYPED(decl_enum_items, l,
+		TYPED(decl_enum_item, i)) {
+	l = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_decl_enum_item_free),
+			&i);
+}
+
+/*
+ * decl_enum_items: items , item
+ */
+PARSE_TYPED(decl_enum_items, l,
+		TYPED(decl_enum_items, l_)
+		TOKEN(COMMA)
+		TYPED(decl_enum_item, i)) {
+	l = psi_plist_add(l_, &i);
+}
+
+/*
+ * decl_enum_item: name = num_exp
+ */
+PARSE_TYPED(decl_enum_item, i,
+		NAMED(NAME, N)
+		TOKEN(EQUALS)
+		TYPED(num_exp, num)) {
+	i = psi_decl_enum_item_init(N->text, num);
+	i->token = N;
+}
+
+/*
+ * decl_enum_item: name
+ */
+PARSE_TYPED(decl_enum_item, i,
+		NAMED(NAME, N)) {
+	i = psi_decl_enum_item_init(N->text, NULL);
+	i->token = N;
+}
+
+
+/*
+ * decl_struct_args_block: { args }
+ */
+PARSE_TYPED(decl_struct_args_block, args_,
+		TOKEN(LBRACE)
+		TYPED(struct_args, args)
+		TOKEN(RBRACE)) {
+	args_ = args;
+}
+
+/*
+ * decl_struct_args: args_block
+ */
+PARSE_TYPED(decl_struct_args, args_,
+		TYPED(decl_struct_args_block, args)) {
+	args_ = args;
+}
+
+/*
+ * decl_struct_args: ;
+ */
+PARSE_TYPED(decl_struct_args, args_,
+		TOKEN(EOS)) {
+	args_ = psi_plist_init((psi_plist_dtor) psi_decl_arg_free);
+}
+
+/*
+ * decl_struct: STRUCT name align_and_size struct_args
+ */
+PARSE_TYPED(decl_struct, strct,
+		TOKEN(STRUCT)
+		NAMED(NAME, N)
+		TYPED(align_and_size, as)
+		TYPED(decl_struct_args, args)) {
+	strct = psi_decl_struct_init(N->text, args);
+	strct->align = as.pos;
+	strct->size = as.len;
+	strct->token = N;
+}
+
+/*
+ * decl_union: UNION name align_and_size struct_args
+ */
 PARSE_TYPED(decl_union, u,
 		TOKEN(UNION)
 		NAMED(NAME, N)
 		TYPED(align_and_size, as)
 		TYPED(decl_struct_args, args)) {
-	u = init_decl_union(N->text, args);
+	u = psi_decl_union_init(N->text, args);
 	u->align = as.pos;
 	u->size = as.len;
 	u->token = N;
 }
 
+/*
+ * const_type: const_type_token
+ */
 PARSE_TYPED(const_type, type_,
 		NAMED(const_type_token, T)) {
-	type_ = init_const_type(T->type, T->text);
+	type_ = psi_const_type_init(T->type, T->text);
 	free(T);
 }
 
+/*
+ * constant: CONST const_type NSNAME = def_val ;
+ */
 PARSE_TYPED(constant, constant,
 		TOKEN(CONST)
 		TYPED(const_type, type)
@@ -390,10 +515,13 @@ PARSE_TYPED(constant, constant,
 		TOKEN(EQUALS)
 		TYPED(impl_def_val, val)
 		TOKEN(EOS)) {
-	constant = init_constant(type, T->text, val);
-	free(T);
+	constant = psi_const_init(type, T->text, val);
+	constant->token = T;
 }
 
+/*
+ * decl_typdef: TYPEDEF typedef_body ;
+ */
 PARSE_TYPED(decl_typedef, def,
 		NAMED(TYPEDEF, T)
 		TYPED(decl_typedef_body, def_)
@@ -402,62 +530,90 @@ PARSE_TYPED(decl_typedef, def,
 	def->token = T;
 }
 
+/*
+ * decl_typedef_body_ex: struct_name align_and_size struct_args_block decl_var
+ */
 PARSE_TYPED(decl_typedef_body_ex, def,
 		NAMED(struct_name, N)
 		TYPED(align_and_size, as)
 		TYPED(decl_struct_args_block, args)
 		TYPED(decl_var, var)) {
-	def = init_decl_arg(init_decl_type(PSI_T_STRUCT, N->text), var);
+	def = psi_decl_arg_init(psi_decl_type_init(PSI_T_STRUCT, N->text), var);
 	def->type->token = psi_token_copy(N);
-	def->type->real.strct = init_decl_struct(N->text, args);
+	def->type->real.strct = psi_decl_struct_init(N->text, args);
 	def->type->real.strct->token = N;
 	def->type->real.strct->align = as.pos;
 	def->type->real.strct->size = as.len;
 }
+
+/*
+ * decl_typedef_body_ex: union_name align_and_size struct_args_block decl_var
+ */
 PARSE_TYPED(decl_typedef_body_ex, def,
 		NAMED(union_name, N)
 		TYPED(align_and_size, as)
 		TYPED(decl_struct_args_block, args)
 		TYPED(decl_var, var)) {
-	def = init_decl_arg(init_decl_type(PSI_T_UNION, N->text), var);
+	def = psi_decl_arg_init(psi_decl_type_init(PSI_T_UNION, N->text), var);
 	def->type->token = psi_token_copy(N);
-	def->type->real.unn = init_decl_union(N->text, args);
+	def->type->real.unn = psi_decl_union_init(N->text, args);
 	def->type->real.unn->token = N;
 	def->type->real.unn->align = as.pos;
 	def->type->real.unn->size = as.len;
 }
+
+/*
+ * decl_typedef_body_ex: decl_enum NAME
+ */
 PARSE_TYPED(decl_typedef_body_ex, def,
 		TYPED(decl_enum, e)
 		NAMED(NAME, ALIAS)) {
-	def = init_decl_arg(init_decl_type(PSI_T_ENUM, e->name), init_decl_var(ALIAS->text, 0, 0));
+	def = psi_decl_arg_init(psi_decl_type_init(PSI_T_ENUM, e->name), psi_decl_var_init(ALIAS->text, 0, 0));
 	def->var->token = ALIAS;
 	def->type->token = psi_token_copy(e->token);
 	def->type->real.enm = e;
 }
 
+/*
+ * decl_typedef_body: decl_typedef_body_ex
+ */
 PARSE_TYPED(decl_typedef_body, def,
 		TYPED(decl_typedef_body_ex, def_)) {
 	def = def_;
 }
 
+/*
+ * decl_typedef_body_fn_args: ( decl_args )
+ */
 PARSE_TYPED(decl_typedef_body_fn_args, args,
 		TOKEN(LPAREN)
 		TYPED(decl_args, args_)
 		TOKEN(RPAREN)) {
 	args = args_;
 }
+
+/*
+ * decl_typedef_body: decl_func decl_typedef_body_fn_args
+ */
 PARSE_TYPED(decl_typedef_body, def,
 		TYPED(decl_func, func_)
 		TYPED(decl_typedef_body_fn_args, args)) {
-	def = init_decl_arg(init_decl_type(PSI_T_FUNCTION, func_->var->name), copy_decl_var(func_->var));
+	def = psi_decl_arg_init(psi_decl_type_init(PSI_T_FUNCTION, func_->var->name), psi_decl_var_copy(func_->var));
 	def->type->token = psi_token_copy(func_->token);
-	def->type->real.func = init_decl(init_decl_abi("default"), func_, args);
+	def->type->real.func = psi_decl_init(psi_decl_abi_init("default"), func_, args);
 }
+
+/*
+ * decl_typedef_body: decl_arg
+ */
 PARSE_TYPED(decl_typedef_body, def,
 		TYPED(decl_arg, arg)) {
 	def = arg;
 }
 
+/*
+ * decl: decl_abi decl_func ( decl_args ) ;
+ */
 PARSE_TYPED(decl, decl,
 		TYPED(decl_abi, abi)
 		TYPED(decl_func, func)
@@ -465,25 +621,52 @@ PARSE_TYPED(decl, decl,
 		TYPED(decl_args, args)
 		TOKEN(RPAREN)
 		TOKEN(EOS)) {
-	decl = init_decl(abi, func, args);
+	decl = psi_decl_init(abi, func, args);
 }
 
+/*
+ * decl: decl_abi decl_func ( decl_args , ... ) ;
+ */
+PARSE_TYPED(decl, decl,
+		TYPED(decl_abi, abi)
+		TYPED(decl_func, func)
+		TOKEN(LPAREN)
+		TYPED(decl_args, args)
+		TOKEN(COMMA)
+		TOKEN(ELLIPSIS)
+		TOKEN(RPAREN)
+		TOKEN(EOS)) {
+	decl = psi_decl_init(abi, func, args);
+	decl->varargs = 1;
+}
+
+/*
+ * decl_func: decl_arg
+ */
 PARSE_TYPED(decl_func, func,
 		TYPED(decl_arg, arg)) {
 	func = arg;
 }
+
 /* special case for void functions */
+/*
+ * decl_func: VOID NAME
+ */
 PARSE_TYPED(decl_func, func,
 		NAMED(VOID, T)
 		NAMED(NAME, N)) {
-	func = init_decl_arg(
-		init_decl_type(T->type, T->text),
-		init_decl_var(N->text, 0, 0)
+	func = psi_decl_arg_init(
+		psi_decl_type_init(T->type, T->text),
+		psi_decl_var_init(N->text, 0, 0)
 	);
 	func->type->token = T;
 	func->var->token = N;
 	func->token = N;
 }
+
+/*
+ * decl_typedef_body: VOID indirection ( indirection NAME ) decl_typedef_body_fn_args
+ */
 PARSE_TYPED(decl_typedef_body, def,
 		NAMED(VOID, T)
 		TYPED(indirection, decl_i)
@@ -492,22 +675,26 @@ PARSE_TYPED(decl_typedef_body, def,
 		NAMED(NAME, N)
 		TOKEN(RPAREN)
 		TYPED(decl_typedef_body_fn_args, args)) {
-	decl_arg *func_ = init_decl_arg(
-		init_decl_type(T->type, T->text),
-		init_decl_var(N->text, decl_i, 0)
+	struct psi_decl_arg *func_ = psi_decl_arg_init(
+		psi_decl_type_init(T->type, T->text),
+		psi_decl_var_init(N->text, decl_i, 0)
 	);
 	func_->type->token = T;
 	func_->var->token = N;
 	func_->token = N;
 
-	def = init_decl_arg(
-		init_decl_type(PSI_T_FUNCTION, func_->var->name),
-		copy_decl_var(func_->var)
+	def = psi_decl_arg_init(
+		psi_decl_type_init(PSI_T_FUNCTION, func_->var->name),
+		psi_decl_var_copy(func_->var)
 	);
 	def->var->pointer_level = type_i;
 	def->type->token = psi_token_copy(func_->token);
-	def->type->real.func = init_decl(init_decl_abi("default"), func_, args);
+	def->type->real.func = psi_decl_init(psi_decl_abi_init("default"), func_, args);
 }
+
+/*
+ * decl_typedef_body: CONST VOID pointers ( indirection NAME ) decl_typdef_body_fn_args
+ */
 PARSE_TYPED(decl_typedef_body, def,
 		TOKEN(CONST)
 		NAMED(VOID, T)
@@ -517,51 +704,42 @@ PARSE_TYPED(decl_typedef_body, def,
 		NAMED(NAME, N)
 		TOKEN(RPAREN)
 		TYPED(decl_typedef_body_fn_args, args)) {
-	decl_arg *func_ = init_decl_arg(
-		init_decl_type(T->type, T->text),
-		init_decl_var(N->text, decl_i, 0)
+	struct psi_decl_arg *func_ = psi_decl_arg_init(
+		psi_decl_type_init(T->type, T->text),
+		psi_decl_var_init(N->text, decl_i, 0)
 	);
 	func_->type->token = T;
 	func_->var->token = N;
 	func_->token = N;
 
-	def = init_decl_arg(
-		init_decl_type(PSI_T_FUNCTION, func_->var->name),
-		copy_decl_var(func_->var)
+	def = psi_decl_arg_init(
+		psi_decl_type_init(PSI_T_FUNCTION, func_->var->name),
+		psi_decl_var_copy(func_->var)
 	);
 	def->var->pointer_level = type_i;
 	def->type->token = psi_token_copy(func_->token);
-	def->type->real.func = init_decl(init_decl_abi("default"), func_, args);
+	def->type->real.func = psi_decl_init(psi_decl_abi_init("default"), func_, args);
 }
 
+/*
+ * decl_abi: NAME
+ */
 PARSE_TYPED(decl_abi, abi,
 		NAMED(NAME, T)) {
-	abi = init_decl_abi(T->text);
+	abi = psi_decl_abi_init(T->text);
 	abi->token = T;
 }
 
-PARSE_TYPED(decl_var, var,
-		NAMED(NAME, T)
-		NAMED(decl_var_array_size, as)) {
-	var = init_decl_var(T->text, 0, as?atol(as->text):0);
-	var->token = T;
-	if (as) {
-		free(as);
-	}
-}
-PARSE_TYPED(decl_var, var,
-		TYPED(pointers, p)
-		NAMED(NAME, T)
-		NAMED(decl_var_array_size, as)) {
-	var = init_decl_var(T->text, p+!!as, as?atol(as->text):0);
-	var->token = T;
-	if (as) {
-		free(as);
-	}
-}
+/*
+ * decl_var_array_size: <empty>
+ */
 PARSE_NAMED(decl_var_array_size, as, ) {
 	as = NULL;
 }
+
+/*
+ * decl_var_array_size: [ NUMBER ]
+ */
 PARSE_NAMED(decl_var_array_size, as,
 		TOKEN(LBRACKET)
 		NAMED(NUMBER, D)
@@ -569,22 +747,64 @@ PARSE_NAMED(decl_var_array_size, as,
 	as = D;
 }
 
+/*
+ * decl_var: NAME decl_var_array_size
+ */
+PARSE_TYPED(decl_var, var,
+		NAMED(NAME, T)
+		NAMED(decl_var_array_size, as)) {
+	var = psi_decl_var_init(T->text, 0, as?atol(as->text):0);
+	var->token = T;
+	if (as) {
+		free(as);
+	}
+}
+
+/*
+ * decl_var: pointers NAME
+ */
+PARSE_TYPED(decl_var, var,
+		TYPED(pointers, p)
+		NAMED(NAME, T)
+		NAMED(decl_var_array_size, as)) {
+	var = psi_decl_var_init(T->text, p+!!as, as?atol(as->text):0);
+	var->token = T;
+	if (as) {
+		free(as);
+	}
+}
+
+/*
+ * decl_vars: decl_var
+ */
 PARSE_TYPED(decl_vars, vars,
 		TYPED(decl_var, var)) {
-	vars = init_decl_vars(var);
+	vars = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_decl_var_free),
+			&var);
 }
+
+/*
+ * decl_vars: decl_vars , decl_var
+ */
 PARSE_TYPED(decl_vars, vars,
 		TYPED(decl_vars, vars_)
 		TOKEN(COMMA)
 		TYPED(decl_var, var)) {
-	vars = add_decl_var(vars_, var);
+	vars = psi_plist_add(vars_, &var);
 }
 
+/*
+ * decl_arg: const_decl_type decl_var
+ */
 PARSE_TYPED(decl_arg, arg_,
 		TYPED(const_decl_type, type)
 		TYPED(decl_var, var)) {
-	arg_ = init_decl_arg(type, var);
+	arg_ = psi_decl_arg_init(type, var);
 }
+
+/*
+ * decl_typedef_body: const_decl_type indirection ( indirection NAME ) decl_typedef_body_fn_args
+ */
 PARSE_TYPED(decl_typedef_body, def,
 		TYPED(const_decl_type, type_)
 		TYPED(indirection, decl_i)
@@ -593,79 +813,106 @@ PARSE_TYPED(decl_typedef_body, def,
 		NAMED(NAME, N)
 		TOKEN(RPAREN)
 		TYPED(decl_typedef_body_fn_args, args)) {
-	decl_arg *func_ = init_decl_arg(
+	struct psi_decl_arg *func_ = psi_decl_arg_init(
 		type_,
-		init_decl_var(N->text, decl_i, 0)
+		psi_decl_var_init(N->text, decl_i, 0)
 	);
 	func_->var->token = N;
 	func_->token = N;
 
-	def = init_decl_arg(
-		init_decl_type(PSI_T_FUNCTION, func_->var->name),
-		copy_decl_var(func_->var)
+	def = psi_decl_arg_init(
+		psi_decl_type_init(PSI_T_FUNCTION, func_->var->name),
+		psi_decl_var_copy(func_->var)
 	);
 	def->var->pointer_level = type_i;
 	def->type->token = psi_token_copy(func_->token);
-	def->type->real.func = init_decl(init_decl_abi("default"), func_, args);
+	def->type->real.func = psi_decl_init(psi_decl_abi_init("default"), func_, args);
 }
 
 /* void pointers need a specific rule */
+/*
+ * decl_arg: VOID pointers NAME
+ */
 PARSE_TYPED(decl_arg, arg_,
 		NAMED(VOID, T)
 		TYPED(pointers, p)
 		NAMED(NAME, N)) {
-	arg_ = init_decl_arg(
-		init_decl_type(T->type, T->text),
-		init_decl_var(N->text, p, 0)
+	arg_ = psi_decl_arg_init(
+		psi_decl_type_init(T->type, T->text),
+		psi_decl_var_init(N->text, p, 0)
 	);
 	arg_->type->token = T;
 	arg_->var->token = N;
 	arg_->token = N;
 }
+
+/*
+ * decl_args: CONST VOID pointers NAME
+ */
 PARSE_TYPED(decl_arg, arg_,
 		TOKEN(CONST)
 		NAMED(VOID, T)
 		TYPED(pointers, p)
 		NAMED(NAME, N)) {
-	arg_ = init_decl_arg(
-		init_decl_type(T->type, T->text),
-		init_decl_var(N->text, p, 0)
+	arg_ = psi_decl_arg_init(
+		psi_decl_type_init(T->type, T->text),
+		psi_decl_var_init(N->text, p, 0)
 	);
 	arg_->type->token = T;
 	arg_->var->token = N;
 	arg_->token = N;
 }
 
+/*
+ * decl_args: <empty>
+ */
 PASS(decl_args, )
+
+/*
+ * decl_args: VOID
+ */
 PASS(decl_args, VOID)
+
+/*
+ * decl_args: decl_arg
+ */
 PARSE_TYPED(decl_args, args,
 		TYPED(decl_arg, arg)) {
-	args = init_decl_args(arg);
-}
-PARSE_TYPED(decl_args, args,
-		TYPED(decl_args, args_)
-		TOKEN(COMMA)
-		TYPED(decl_arg, arg)) {
-	args = add_decl_arg(args_, arg);
-}
-PARSE_TYPED(decl_args, args,
-		TYPED(decl_args, args_)
-		TOKEN(COMMA)
-		TOKEN(ELLIPSIS)) {
-	args = args_;
-	args->varargs = 1;
+	args = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_decl_arg_free),
+			&arg);
 }
 
+/*
+ * decl_args: decl_args , decl_arg
+ */
+PARSE_TYPED(decl_args, args,
+		TYPED(decl_args, args_)
+		TOKEN(COMMA)
+		TYPED(decl_arg, arg)) {
+	args = psi_plist_add(args_, &arg);
+}
+
+/*
+ * struct_args: struct_arg
+ */
 PARSE_TYPED(struct_args, args,
 		TYPED(struct_arg, arg)) {
-	args = init_decl_args(arg);
+	args = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_decl_arg_free),
+			&arg);
 }
+
+/*
+ * struct_args: struct_args , struct_arg
+ */
 PARSE_TYPED(struct_args, args,
 		TYPED(struct_args, args_)
 		TYPED(struct_arg, arg)) {
-	args = add_decl_arg(args_, arg);
+	args = psi_plist_add(args_, &arg);
 }
 
+/*
+ * struct_arg: decl_typedef_body_ex ;
+ */
 PARSE_TYPED(struct_arg, arg_,
 		TYPED(decl_typedef_body_ex, def)
 		TOKEN(EOS)) {
@@ -673,33 +920,53 @@ PARSE_TYPED(struct_arg, arg_,
 	switch (def->type->type) {
 	case PSI_T_STRUCT:
 		if (def->type->real.strct) {
-			P->structs = add_decl_struct(P->structs, def->type->real.strct);
+			if (!P->structs) {
+				P->structs = psi_plist_init((psi_plist_dtor) psi_decl_struct_free);
+			}
+			P->structs = psi_plist_add(P->structs, &def->type->real.strct);
 		}
 		break;
 	case PSI_T_UNION:
 		if (def->type->real.unn) {
-			P->unions = add_decl_union(P->unions, def->type->real.unn);
+			if (!P->unions) {
+				P->unions = psi_plist_init((psi_plist_dtor) psi_decl_union_free);
+			}
+			P->unions = psi_plist_add(P->unions, &def->type->real.unn);
 		}
 		break;
 	case PSI_T_ENUM:
 		if (def->type->real.enm) {
-			P->enums = add_decl_enum(P->enums, def->type->real.enm);
+			if (!P->enums) {
+				P->enums = psi_plist_init((psi_plist_dtor) psi_decl_enum_free);
+			}
+			P->enums = psi_plist_add(P->enums, &def->type->real.enm);
 		}
 		break;
 	}
 }
+
+/*
+ * struct_arg: decl_arg decl_layout ;
+ */
 PARSE_TYPED(struct_arg, arg,
 		TYPED(decl_arg, arg_)
-		TYPED(struct_layout, layout_)
+		TYPED(decl_layout, layout_)
 		TOKEN(EOS)) {
 	arg_->layout = layout_;
 	arg = arg_;
 }
 
-PARSE_TYPED(struct_layout, layout, ) {
+/*
+ * decl_layout: <empty>
+ */
+PARSE_TYPED(decl_layout, layout, ) {
 	layout = NULL;
 }
-PARSE_TYPED(struct_layout, layout,
+
+/*
+ * decl_layout: :: ( NUMBER , NUMBER )
+ */
+PARSE_TYPED(decl_layout, layout,
 		TOKEN(COLON)
 		TOKEN(COLON)
 		TOKEN(LPAREN)
@@ -707,16 +974,23 @@ PARSE_TYPED(struct_layout, layout,
 		TOKEN(COMMA)
 		NAMED(NUMBER, SIZ)
 		TOKEN(RPAREN)) {
-	layout = init_decl_struct_layout(atol(POS->text), atol(SIZ->text));
+	layout = psi_layout_init(atol(POS->text), atol(SIZ->text));
 	free(POS);
 	free(SIZ);
 }
 
 /* un/signed, urgh */
+/*
+ * decl_scalar_type: CHAR
+ */
 PARSE_NAMED(decl_scalar_type, type_,
 		NAMED(CHAR, C)) {
 	type_ = C;
 }
+
+/*
+ * decl_scalar_type: SHORT decl_scalar_type_short
+ */
 PARSE_NAMED(decl_scalar_type, type_,
 		NAMED(SHORT, S)
 		NAMED(decl_scalar_type_short, s)) {
@@ -728,18 +1002,33 @@ PARSE_NAMED(decl_scalar_type, type_,
 		type_ = S;
 	}
 }
+
+/*
+ * decl_scalar_type_short: <empty>
+ */
 PARSE_NAMED(decl_scalar_type_short, s, ) {
 	s = NULL;
 }
 
+/*
+ * decl_scalar_type_short: INT
+ */
 PARSE_NAMED(decl_scalar_type_short, s,
 		NAMED(INT, I)) {
 	s = I;
 }
+
+/*
+ * decl_sclara_type: INT
+ */
 PARSE_NAMED(decl_scalar_type, type_,
 		NAMED(INT, I)) {
 	type_ = I;
 }
+
+/*
+ * decl_scalar_type: LONG decl_scalar_type_long
+ */
 PARSE_NAMED(decl_scalar_type, type_,
 		NAMED(LONG, L)
 		NAMED(decl_scalar_type_long, l)) {
@@ -751,13 +1040,25 @@ PARSE_NAMED(decl_scalar_type, type_,
 		type_ = L;
 	}
 }
+
+/*
+ * decl_scalar_type_long: <empty>
+ */
 PARSE_NAMED(decl_scalar_type_long, l, ) {
 	l = NULL;
 }
+
+/*
+ * decl_scalar_type_long: DOUBLE
+ */
 PARSE_NAMED(decl_scalar_type_long, l,
 		NAMED(DOUBLE, D)) {
 	l = D;
 }
+
+/*
+ * decl_scalar_type_long: LONG decl_scalar_type_long_long
+ */
 PARSE_NAMED(decl_scalar_type_long, l,
 		NAMED(LONG, L)
 		NAMED(decl_scalar_type_long_long, ll)) {
@@ -769,320 +1070,468 @@ PARSE_NAMED(decl_scalar_type_long, l,
 		l = L;
 	}
 }
+
+/*
+ * decl_scalar_type_long_long: <empty>
+ */
 PARSE_NAMED(decl_scalar_type_long_long, ll, ) {
 	ll = NULL;
 }
+
+/*
+ * decl_scalar_type_long_long: INT
+ */
 PARSE_NAMED(decl_scalar_type_long_long, ll,
 		NAMED(INT, I)) {
 	ll = I;
 }
+
+/*
+ * decl_type: UNSIGNED decl_scalar_type
+ */
 PARSE_TYPED(decl_type, type_,
 		NAMED(UNSIGNED, U)
 		NAMED(decl_scalar_type, N)) {
 	struct psi_token *T = psi_token_cat(2, U, N);
-	type_ = init_decl_type(T->type, T->text);
+	type_ = psi_decl_type_init(T->type, T->text);
 	type_->token = T;
 	free(U);
 	free(N);
 }
+
+/*
+ * decl_type: SIGNED decl_scalar_type
+ */
 PARSE_TYPED(decl_type, type_,
 		NAMED(SIGNED, S)
 		NAMED(decl_scalar_type, N)) {
 	struct psi_token *T = psi_token_cat(2, S, N);
-	type_ = init_decl_type(T->type, T->text);
+	type_ = psi_decl_type_init(T->type, T->text);
 	type_->token = T;
 	free(S);
 	free(N);
 }
+
+/*
+ * decl_type: UNSIGNED
+ */
 PARSE_TYPED(decl_type, type_,
 		NAMED(UNSIGNED, U)) {
-	type_ = init_decl_type(PSI_T_NAME, U->text);
+	type_ = psi_decl_type_init(PSI_T_NAME, U->text);
 	type_->token = U;
 }
+
+/*
+ * decl_type: SIGNED
+ */
 PARSE_TYPED(decl_type, type_,
 		NAMED(SIGNED, S)) {
-	type_ = init_decl_type(PSI_T_NAME, S->text);
+	type_ = psi_decl_type_init(PSI_T_NAME, S->text);
 	type_->token = S;
 }
+
+/*
+ * decl_type: decl_scalar_type
+ */
 PARSE_TYPED(decl_type, type_,
 		NAMED(decl_scalar_type, N)) {
-	type_ = init_decl_type(N->type, N->text);
+	type_ = psi_decl_type_init(N->type, N->text);
 	type_->token = N;
 }
+
 /* structs ! */
+/*
+ * decl_type: STRUCT NAME
+ */
 PARSE_TYPED(decl_type, type_,
 		NAMED(STRUCT, S)
 		NAMED(NAME, T)) {
-	type_ = init_decl_type(S->type, T->text);
+	type_ = psi_decl_type_init(S->type, T->text);
 	type_->token = T;
 	free(S);
 }
+
+/*
+ * decl_type: UNION NAME
+ */
 PARSE_TYPED(decl_type, type_,
 		NAMED(UNION, U)
 		NAMED(NAME, T)) {
-	type_ = init_decl_type(U->type, T->text);
+	type_ = psi_decl_type_init(U->type, T->text);
 	type_->token = T;
 	free(U);
 }
+
+/*
+ * decl_type: ENUM NAME
+ */
 PARSE_TYPED(decl_type, type_,
 		NAMED(ENUM, E)
 		NAMED(NAME, T)) {
-	type_ = init_decl_type(E->type, T->text);
+	type_ = psi_decl_type_init(E->type, T->text);
 	type_->token = T;
 	free(E);
 }
+
+/*
+ * decl_type: decl_type_token
+ */
 PARSE_TYPED(decl_type, type_,
 		NAMED(decl_type_token, T)) {
-	type_ = init_decl_type(T->type, T->text);
+	type_ = psi_decl_type_init(T->type, T->text);
 	type_->token = T;
 }
 
-
+/*
+ * const_decl_type: decl_type
+ */
 PARSE_TYPED(const_decl_type, type,
 		TYPED(decl_type, type_)) {
 	type = type_;
 }
+
+/*
+ * const_decl_type: CONST decl_type
+ */
 PARSE_TYPED(const_decl_type, type,
 		TOKEN(CONST)
 		TYPED(decl_type, type_)) {
 	type = type_;
 }
 
+/*
+ * impl: impl_func { impl_stmts }
+ */
 PARSE_TYPED(impl, impl,
 		TYPED(impl_func, func)
 		TOKEN(LBRACE)
 		TYPED(impl_stmts, stmts)
 		TOKEN(RBRACE)) {
-	impl = init_impl(func, stmts);
+	impl = psi_impl_init(func, stmts);
 }
 
+/*
+ * impl: STATIC impl_func { impl_stmts }
+ */
+PARSE_TYPED(impl, impl,
+		TOKEN(STATIC)
+		TYPED(impl_func, func)
+		TOKEN(LBRACE)
+		TYPED(impl_stmts, stmts)
+		TOKEN(RBRACE)) {
+	func->static_memory = 1;
+	impl = psi_impl_init(func, stmts);
+}
+
+/*
+ * impl_func: FUNCTION reference NSNAME ( ) : impl_type
+ */
 PARSE_TYPED(impl_func, func,
 		TOKEN(FUNCTION)
 		TYPED(reference, r)
 		NAMED(NSNAME, NAME)
-		TYPED(impl_args, args)
+		TOKEN(LPAREN)
+		TOKEN(RPAREN)
 		TOKEN(COLON)
 		TYPED(impl_type, type)) {
-	func = init_impl_func(NAME->text, args, type, r);
+	func = psi_impl_func_init(NAME->text, NULL, type);
 	func->token = NAME;
+	func->return_reference = r;
 }
 
-PARSE_TYPED(impl_def_val, def,
-		NAMED(impl_def_val_token, T)) {
-	def = init_impl_def_val(T->type, T->text);
+/*
+ * impl_func: FUNCTION reference NSNAME ( impl_args ) : impl_type
+ */
+PARSE_TYPED(impl_func, func,
+		TOKEN(FUNCTION)
+		TYPED(reference, r)
+		NAMED(NSNAME, NAME)
+		TOKEN(LPAREN)
+		TYPED(impl_args, args)
+		TOKEN(RPAREN)
+		TOKEN(COLON)
+		TYPED(impl_type, type)) {
+	func = psi_impl_func_init(NAME->text, args, type);
+	func->token = NAME;
+	func->return_reference = r;
+}
+
+/*
+ * impl_func: FUNCTION reference NSNAME ( impl_args , impl_type reference ... DOLLAR_NAME ) : impl_type
+ */
+PARSE_TYPED(impl_func, func,
+		TOKEN(FUNCTION)
+		TYPED(reference, func_r)
+		NAMED(NSNAME, NAME)
+		TOKEN(LPAREN)
+		TYPED(impl_args, args)
+		TOKEN(COMMA)
+		TYPED(impl_type, va_type)
+		TYPED(reference, va_r)
+		TOKEN(ELLIPSIS)
+		NAMED(DOLLAR_NAME, T)
+		TOKEN(RPAREN)
+		TOKEN(COLON)
+		TYPED(impl_type, func_type)) {
+	func = psi_impl_func_init(NAME->text, args, func_type);
+	func->token = NAME;
+	func->return_reference = func_r;
+	func->vararg = psi_impl_arg_init(va_type, psi_impl_var_init(T->text, va_r), NULL);
 	free(T);
 }
 
+/*
+ * impl_def_val: impl_def_val_token
+ */
+PARSE_TYPED(impl_def_val, def,
+		NAMED(impl_def_val_token, T)) {
+	def = psi_impl_def_val_init(T->type, T->text);
+	def->token = T;
+}
+
+/*
+ * impl_var: reference DOLLAR_NAME
+ */
 PARSE_TYPED(impl_var, var,
 		TYPED(reference, r)
 		NAMED(DOLLAR_NAME, T)) {
-	var = init_impl_var(T->text, r);
+	var = psi_impl_var_init(T->text, r);
 	var->token = T;
 }
 
+/*
+ * impl_type: impl_type_token
+ */
+PARSE_TYPED(impl_type, type_,
+		NAMED(impl_type_token, T)) {
+	type_ = psi_impl_type_init(T->type, T->text);
+	free(T);
+}
+
+/*
+ * impl_arg: impl_type impl_var
+ */
 PARSE_TYPED(impl_arg, arg,
 		TYPED(impl_type, type)
 		TYPED(impl_var, var)) {
-	arg = init_impl_arg(type, var, NULL);
+	arg = psi_impl_arg_init(type, var, NULL);
 }
+
+/*
+ * impl_arg: impl_type impl_var = impl_def_val
+ */
 PARSE_TYPED(impl_arg, arg,
 		TYPED(impl_type, type)
 		TYPED(impl_var, var)
 		TOKEN(EQUALS)
 		TYPED(impl_def_val, def)) {
-	arg = init_impl_arg(type, var, def);
+	arg = psi_impl_arg_init(type, var, def);
 }
 
+/*
+ * impl_args: impl_arg
+ */
 PARSE_TYPED(impl_args, args,
-		TOKEN(LPAREN)
-		TOKEN(RPAREN)) {
-	args = NULL;
-}
-PARSE_TYPED(impl_args, args,
-		TOKEN(LPAREN)
-		TYPED(impl_arg_list, args_)
-		TOKEN(RPAREN)) {
-	args = args_;
-}
-PARSE_TYPED(impl_args, args,
-		TOKEN(LPAREN)
-		TYPED(impl_arg_list, args_)
-		TOKEN(COMMA)
-		TYPED(impl_vararg, va)
-		TOKEN(RPAREN)) {
-	args = args_;
-	args->vararg.name = va;
-}
-
-PARSE_TYPED(impl_vararg, va,
-		TYPED(impl_type, type)
-		TYPED(reference, r)
-		TOKEN(ELLIPSIS)
-		NAMED(DOLLAR_NAME, T)) {
-	va = init_impl_arg(type, init_impl_var(T->text, r), NULL);
-	free(T);
-}
-
-PARSE_TYPED(impl_arg_list, args,
 		TYPED(impl_arg, arg)) {
-	args = init_impl_args(arg);
+	args = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_impl_arg_free),
+			&arg);
 }
-PARSE_TYPED(impl_arg_list, args,
-		TYPED(impl_arg_list, args_)
+
+/*
+ * impl_args: impl_args , impl_arg
+ */
+PARSE_TYPED(impl_args, args,
+		TYPED(impl_args, args_)
 		TOKEN(COMMA)
 		TYPED(impl_arg, arg)) {
-	args = add_impl_arg(args_, arg);
+	args = psi_plist_add(args_, &arg);
 }
 
+/*
+ * impl_stmts: impl_stmt
+ */
 PARSE_TYPED(impl_stmts, stmts,
 		TYPED(impl_stmt, stmt)) {
-	stmts = init_impl_stmts(stmt);
+	stmts = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_impl_stmt_free),
+			&stmt);
 }
+
+/*
+ * impl_stmts: impl_stmts , impl_stmt
+ */
 PARSE_TYPED(impl_stmts, stmts,
 		TYPED(impl_stmts, stmts_)
 		TYPED(impl_stmt, stmt)) {
-	stmts = add_impl_stmt(stmts_, stmt);
+	stmts = psi_plist_add(stmts_, &stmt);
 }
 
-PARSE_TYPED(impl_stmt, stmt,
-		TYPED(let_stmt, let)) {
-	stmt = init_impl_stmt(PSI_T_LET, let);
-}
-PARSE_TYPED(impl_stmt, stmt,
-		TYPED(set_stmt, set)) {
-	stmt = init_impl_stmt(PSI_T_SET, set);
-}
-PARSE_TYPED(impl_stmt, stmt,
-		TYPED(return_stmt, ret)) {
-	stmt = init_impl_stmt(PSI_T_RETURN, ret);
-}
-PARSE_TYPED(impl_stmt, stmt,
-		TYPED(free_stmt, free)) {
-	stmt = init_impl_stmt(PSI_T_FREE, free);
+/*
+ * impl_stmt: return_stmt
+ */
+PARSE_TYPED(impl_stmt, i,
+		TYPED(return_stmt, r)) {
+	i = (struct psi_token**) r;
 }
 
+/*
+ * impl_stmt: let_stmt
+ */
+PARSE_TYPED(impl_stmt, i,
+		TYPED(let_stmt, l)) {
+	i = (struct psi_token**) l;
+}
+
+/*
+ * impl_stmt: set_stmt
+ */
+PARSE_TYPED(impl_stmt, i,
+		TYPED(set_stmt, s)) {
+	i = (struct psi_token**) s;
+}
+
+/*
+ * impl_stmt: free_stmt
+ */
+PARSE_TYPED(impl_stmt, i,
+		TYPED(free_stmt, f)) {
+	i = (struct psi_token**) f;
+}
+
+/*
+ * num_exp: num_exp_token
+ */
 PARSE_TYPED(num_exp, exp,
 		NAMED(num_exp_token, tok)) {
-	exp = init_num_exp(tok->type, tok->text);
+	exp = psi_num_exp_init(tok->type, tok->text);
 	exp->token = tok;
 }
+
+/*
+ * num_exp: decl_var
+ */
 PARSE_TYPED(num_exp, exp,
 		TYPED(decl_var, var)) {
-	exp = init_num_exp(PSI_T_NAME, var);
+	exp = psi_num_exp_init(PSI_T_NAME, var);
 	exp->token = psi_token_copy(var->token);
 }
+
+/*
+ * num_exp: num_exp num_exp_op_token num_exp
+ */
 PARSE_TYPED(num_exp, exp,
 		TYPED(num_exp, exp_)
 		NAMED(num_exp_op_token, operator_)
 		TYPED(num_exp, operand_)) {
-	exp_->operator = operator_->type;
+	exp_->op = operator_->type;
 	exp_->operand = operand_;
 	exp = exp_;
 	free(operator_);
 }
 
-TOKEN_TYPE(let_exp, let_val*)
-TOKEN_DTOR(let_exp, free_let_val($$);)
-
-TOKEN_TYPE(let_callback, let_callback*)
-TOKEN_DTOR(let_callback, free_let_callback($$);)
-
 /*
- * let_val: NULL
+ * let_exp: NULL
  */
-PARSE_TYPED(let_val, val,
+PARSE_TYPED(let_exp, val,
 		TOKEN(NULL)) {
-	val = init_let_val(PSI_LET_NULL, NULL);
+	val = psi_let_exp_init(PSI_LET_NULL, NULL);
 }
+
 /*
- * let_val: &NULL
+ * let_exp: & NULL
  */
-PARSE_TYPED(let_val, val,
+PARSE_TYPED(let_exp, val,
 		TOKEN(AMPERSAND)
 		TOKEN(NULL)) {
-	val = init_let_val(PSI_LET_NULL, NULL);
+	val = psi_let_exp_init(PSI_LET_NULL, NULL);
 	val->is_reference = 1;
 }
+
 /*
- * let_val: callback
+ * let_exp: callback
  */
-PARSE_TYPED(let_val, val,
+PARSE_TYPED(let_exp, val,
 		TYPED(let_callback, cb)) {
-	val = init_let_val(PSI_LET_CALLBACK, cb);
+	val = psi_let_exp_init(PSI_LET_CALLBACK, cb);
 }
+
 /*
- * let_val: calloc
+ * let_exp: calloc
  */
-PARSE_TYPED(let_val, val,
+PARSE_TYPED(let_exp, val,
 		TYPED(let_calloc, ca)) {
-	val = init_let_val(PSI_LET_CALLOC, ca);
+	val = psi_let_exp_init(PSI_LET_CALLOC, ca);
 }
+
 /*
- * let_val: &calloc
+ * let_exp: & calloc
  */
-PARSE_TYPED(let_val, val,
+PARSE_TYPED(let_exp, val,
 		TOKEN(AMPERSAND)
 		TYPED(let_calloc, ca)) {
-	val = init_let_val(PSI_LET_CALLOC, ca);
-	val->is_reference = 1;
-}
-/*
- * let_val: func
- */
-PARSE_TYPED(let_val, val,
-		TYPED(let_func, fn)) {
-	val = init_let_val_ex(NULL, PSI_LET_FUNC, fn);
-}
-/*
- * let_val: &func
- */
-PARSE_TYPED(let_val, val,
-		TOKEN(AMPERSAND)
-		TYPED(let_func, fn)) {
-	val = init_let_val_ex(NULL, PSI_LET_FUNC, fn);
-	val->is_reference = 1;
-}
-/*
- * let_val: 1234
- */
-PARSE_TYPED(let_val, val,
-		TYPED(num_exp, exp)) {
-	val = init_let_val_ex(NULL, PSI_LET_NUMEXP, exp);
-}
-/*
- * let_val: &1234
- */
-PARSE_TYPED(let_val, val,
-		TOKEN(AMPERSAND)
-		TYPED(num_exp, exp)) {
-	val = init_let_val_ex(NULL, PSI_LET_NUMEXP, exp);
+	val = psi_let_exp_init(PSI_LET_CALLOC, ca);
 	val->is_reference = 1;
 }
 
 /*
- * let_exp: var = val
+ * let_exp: func
+ */
+PARSE_TYPED(let_exp, val,
+		TYPED(let_func, fn)) {
+	val = psi_let_exp_init_ex(NULL, PSI_LET_FUNC, fn);
+}
+
+/*
+ * let_exp: & func
+ */
+PARSE_TYPED(let_exp, val,
+		TOKEN(AMPERSAND)
+		TYPED(let_func, fn)) {
+	val = psi_let_exp_init_ex(NULL, PSI_LET_FUNC, fn);
+	val->is_reference = 1;
+}
+
+/*
+ * let_exp: num_exp
+ */
+PARSE_TYPED(let_exp, val,
+		TYPED(num_exp, exp)) {
+	val = psi_let_exp_init_ex(NULL, PSI_LET_NUMEXP, exp);
+}
+
+/*
+ * let_exp: & num_exp
+ */
+PARSE_TYPED(let_exp, val,
+		TOKEN(AMPERSAND)
+		TYPED(num_exp, exp)) {
+	val = psi_let_exp_init_ex(NULL, PSI_LET_NUMEXP, exp);
+	val->is_reference = 1;
+}
+
+/* FIXME
+ * let_exp: decl_var = let_exp
  */
 PARSE_TYPED(let_exp, exp,
 		TYPED(decl_var, var_)
 		TOKEN(EQUALS)
-		TYPED(let_val, val)) {
+		TYPED(let_exp, val)) {
 	exp = val;
 	exp->var = var_;
 }
 
 /*
- * let_stmt: LET exp ;
+ * let_stmt: LET let_exp ;
  */
 PARSE_TYPED(let_stmt, let,
 		NAMED(LET, T)
 		TYPED(let_exp, val)
 		TOKEN(EOS)) {
-	let = init_let_stmt(val);
+	let = psi_let_stmt_init(val);
 	let->token = T;
 }
 
 /*
- * let_stmt: TEMP foo = bar ;
+ * let_stmt: TEMP decl_var = reference decl_var ;
  */
 PARSE_TYPED(let_stmt, let,
 		NAMED(TEMP, T)
@@ -1091,16 +1540,16 @@ PARSE_TYPED(let_stmt, let,
 		TYPED(reference, r)
 		TYPED(decl_var, val_)
 		TOKEN(EOS)) {
-	let = init_let_stmt(init_let_val_ex(var, PSI_LET_TMP, val_));
+	let = psi_let_stmt_init(psi_let_exp_init_ex(var, PSI_LET_TMP, val_));
 	let->token = T;
-	let->val->is_reference = r ? 1 : 0;
+	let->exp->is_reference = r ? 1 : 0;
 }
 
 /*
- * let_callback: CALLBACK cast($var($args))
+ * let_callback: CALLBACK callback_rval ( impl_var ( callback_arg_lists ) )
  */
 PARSE_TYPED(let_callback, cb,
-		TOKEN(CALLBACK)
+		NAMED(CALLBACK, T)
 		NAMED(callback_rval, F)
 		TOKEN(LPAREN)
 		TYPED(impl_var, var)
@@ -1108,241 +1557,309 @@ PARSE_TYPED(let_callback, cb,
 		TYPED(callback_arg_list, args_)
 		TOKEN(RPAREN)
 		TOKEN(RPAREN)) {
-	cb = init_let_callback(init_let_func(F->type, F->text, var), args_);
+	cb = psi_let_callback_init(psi_let_func_init(F->type, F->text, var), args_);
+	cb->token = T;
 	free(F);
 }
 
 /*
- * let_calloc: CALLOC ( num_exp nmemb , num_exp size )
+ * let_calloc: CALLOC ( num_exp , num_exp )
  */
 PARSE_TYPED(let_calloc, alloc,
-		TOKEN(CALLOC)
+		NAMED(CALLOC, T)
 		TOKEN(LPAREN)
 		TYPED(num_exp, nmemb)
 		TOKEN(COMMA)
 		TYPED(num_exp, size)
 		TOKEN(RPAREN)) {
-	alloc = init_let_calloc(nmemb, size);
+	alloc = psi_let_calloc_init(nmemb, size);
+	alloc->token = T;
 }
 
 /*
- * let_func: FUNC ( $var )
+ * let_func: let_func_token ( impl_var )
  */
 PARSE_TYPED(let_func, func,
 		NAMED(let_func_token, T)
 		TOKEN(LPAREN)
 		TYPED(impl_var, var)
 		TOKEN(RPAREN)) {
-	func = init_let_func(T->type, T->text, var);
-	free(T);
+	func = psi_let_func_init(T->type, T->text, var);
+	func->token = T;
 }
 /*
- * let_func: FUNC ( $var (,exps)? )
+ * let_func: let_func_token ( impl_var , let_exps )
  */
 PARSE_TYPED(let_func, func,
 		NAMED(let_func_token, T)
 		TOKEN(LPAREN)
 		TYPED(impl_var, var)
 		TOKEN(COMMA)
-		TYPED(let_vals, vals)
+		TYPED(let_exps, vals)
 		TOKEN(RPAREN)) {
-	func = init_let_func(T->type, T->text, var);
+	func = psi_let_func_init(T->type, T->text, var);
+	func->token = T;
 	func->inner = vals;
-	free(T);
 }
 /*
- * let_vals: exps = exp
+ * let_exps: let_exp
  */
-PARSE_TYPED(let_vals, vals,
-		TYPED(let_exp, val)) {
-	vals = init_let_vals(val);
-}
-PARSE_TYPED(let_vals, vals,
-		TYPED(let_val, val)) {
-	vals = init_let_vals(val);
+PARSE_TYPED(let_exps, exps,
+		TYPED(let_exp, exp)) {
+	exps = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_let_exp_free),
+			&exp);
 }
 /*
- * let_vals: exps = exps, exp
+ * let_exps: let_exps , let_exp
  */
-PARSE_TYPED(let_vals, vals,
-		TYPED(let_vals, vals_)
+PARSE_TYPED(let_exps, exps,
+		TYPED(let_exps, exps_)
 		TOKEN(COMMA)
-		TYPED(let_exp, val)) {
-	vals = add_let_val(vals_, val);
-}
-PARSE_TYPED(let_vals, vals,
-		TYPED(let_vals, vals_)
-		TOKEN(COMMA)
-		TYPED(let_val, val)) {
-	vals = add_let_val(vals_, val);
+		TYPED(let_exp, exp)) {
+	exps = psi_plist_add(exps_, &exp);
 }
 
+/*
+ * callback_arg_list: <empty>
+ */
 PASS(callback_arg_list, )
+
+/*
+ * callback_arg_list: callback_args
+ */
 PARSE_TYPED(callback_arg_list, args,
 		TYPED(callback_args, args_)) {
 	args = args_;
 }
 
+/*
+ * callback_args: set_exp
+ */
 PARSE_TYPED(callback_args, args,
-		TYPED(set_value, val)) {
-	args = init_set_values(val);
+		TYPED(set_exp, val)) {
+	args = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_set_exp_free),
+			&val);
 }
+
+/*
+ * callback_args: callback_args , set_exp
+ */
 PARSE_TYPED(callback_args, args,
 		TYPED(callback_args, args_)
 		TOKEN(COMMA)
-		TYPED(set_value, val)) {
-	args = add_set_value(args_, val);
+		TYPED(set_exp, val)) {
+	args = psi_plist_add(args_, &val);
 }
+
+/*
+ * callback_rval: let_func_token
+ */
 PARSE_NAMED(callback_rval, rval,
 		NAMED(let_func_token, F)) {
 	rval = F;
 }
+
+/*
+ * callback_rval: VOID
+ */
 PARSE_NAMED(callback_rval, rval,
 		NAMED(VOID, V)) {
 	rval = V;
 }
 
-PARSE_TYPED(set_stmt, set,
-		TOKEN(SET)
-		TYPED(impl_var, var)
-		TOKEN(EQUALS)
-		TYPED(set_value, val)
-		TOKEN(EOS)) {
-	set = init_set_stmt(var, val);
-}
 
-PARSE_TYPED(set_value, val,
-		TYPED(set_func, func)
-		TOKEN(LPAREN)
-		TYPED(decl_var, var)
-		TOKEN(RPAREN)) {
-	val = init_set_value(func, init_decl_vars(var));
-}
-PARSE_TYPED(set_value, val,
-		TYPED(set_func, func)
-		TOKEN(LPAREN)
-		TYPED(decl_var, var)
-		TOKEN(COMMA)
-		TYPED(num_exp, num_)
-		TOKEN(RPAREN)) {
-	val = init_set_value(func, init_decl_vars(var));
-	val->num = num_;
-}
-PARSE_TYPED(set_value, val,
-		TYPED(set_func, func_)
-		TOKEN(LPAREN)
-		TYPED(decl_var, var)
-		TOKEN(COMMA)
-		NAMED(ELLIPSIS, T)
-		TOKEN(RPAREN)) {
-	free_set_func(func_);
-	val = init_set_value(init_set_func(T->type, T->text), init_decl_vars(var));
-	val->func->token = T;
-}
-PARSE_TYPED(set_value, val,
-		TYPED(set_func, func_)
-		TOKEN(LPAREN)
-		TYPED(decl_var, var)
-		TOKEN(COMMA)
-		TYPED(set_vals, vals)
-		TOKEN(RPAREN)) {
-	val = vals;
-	val->func = func_;
-	val->vars = init_decl_vars(var);
-}
-PARSE_TYPED(set_value, val,
-		TYPED(set_func, func_)
-		TOKEN(LPAREN)
-		TYPED(decl_var, var)
-		TOKEN(COMMA)
-		TYPED(num_exp, num_)
-		TOKEN(COMMA)
-		TYPED(set_vals, vals)
-		TOKEN(RPAREN)) {
-	val = vals;
-	val->func = func_;
-	val->num = num_;
-	val->vars = init_decl_vars(var);
-}
-
-PARSE_TYPED(set_vals, vals,
-		TYPED(set_value, val)) {
-	vals = add_inner_set_value(init_set_value(NULL, NULL), val);
-}
-PARSE_TYPED(set_vals, vals,
-		TYPED(set_vals, vals_)
-		TOKEN(COMMA)
-		TYPED(set_value, val)) {
-	vals = add_inner_set_value(vals_, val);
-}
-
+/*
+ * set_func: set_func_token ( decl_var )
+ */
 PARSE_TYPED(set_func, func,
-		NAMED(set_func_token, T)) {
-	func = init_set_func(T->type, T->text);
+		NAMED(set_func_token, T)
+		TOKEN(LPAREN)
+		TYPED(decl_var, var)
+		TOKEN(RPAREN)) {
+	func = psi_set_func_init(T->type, T->text, var);
 	func->token = T;
 }
 
+/*
+ * set_func: set_func_token ( decl_var , set_exps )
+ */
+PARSE_TYPED(set_func, func,
+		NAMED(set_func_token, T)
+		TOKEN(LPAREN)
+		TYPED(decl_var, var)
+		TOKEN(COMMA)
+		TYPED(set_exps, vals)
+		TOKEN(RPAREN)) {
+	func = psi_set_func_init(T->type, T->text, var);
+	func->token = T;
+	func->inner = vals;
+}
+
+/*
+ * set_func: set_func_token ( decl_var , ... )
+ */
+PARSE_TYPED(set_func, func,
+		NAMED(set_func_token, T)
+		TOKEN(LPAREN)
+		TYPED(decl_var, var)
+		TOKEN(COMMA)
+		TOKEN(ELLIPSIS)
+		TOKEN(RPAREN)) {
+	func = psi_set_func_init(T->type, T->text, var);
+	func->token = T;
+	func->recursive = 1;
+}
+
+/*
+ * set_exp: set_func
+ */
+PARSE_TYPED(set_exp, val,
+		TYPED(set_func, fn)) {
+	val = psi_set_exp_init(PSI_SET_FUNC, fn);
+}
+
+/*
+ * set_exp: num_exp
+ */
+PARSE_TYPED(set_exp, val,
+		TYPED(num_exp, num)) {
+	val = psi_set_exp_init(PSI_SET_NUMEXP, num);
+}
+
+/*
+ * set_exps: set_exp
+ */
+PARSE_TYPED(set_exps, exps,
+		TYPED(set_exp, exp)) {
+	exps = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_set_exp_free),
+			&exp);
+}
+
+/*
+ * set_exps: set_exps , set_exp
+ */
+PARSE_TYPED(set_exps, exps,
+		TYPED(set_exps, exps_)
+		TOKEN(COMMA)
+		TYPED(set_exp, exp)) {
+	exps = psi_plist_add(exps_, &exp);
+}
+
+/* FIXME
+ * set_exp: impl_var = set_exp
+ */
+PARSE_TYPED(set_exp, exp,
+		TYPED(impl_var, var_)
+		TOKEN(EQUALS)
+		TYPED(set_exp, val)) {
+	exp = val;
+	exp->var = var_;
+}
+
+/*
+ * set_stmt: SET set_exp ;
+ */
+PARSE_TYPED(set_stmt, set,
+		NAMED(SET, T)
+		TYPED(set_exp, exp)
+		TOKEN(EOS)) {
+	set = psi_set_stmt_init(exp);
+	set->token = T;
+}
+
+/*
+ * return_stmt: RETURN set_exp ;
+ */
 PARSE_TYPED(return_stmt, ret,
 		NAMED(RETURN, T)
-		TYPED(set_value, val)
+		TYPED(set_func, func)
 		TOKEN(EOS)) {
-	ret = init_return_stmt(val);
+	ret = psi_return_stmt_init(psi_set_exp_init(PSI_SET_FUNC, func));
 	ret->token = T;
 }
 
+/*
+ * free_stmt: FREE free_exps ;
+ */
 PARSE_TYPED(free_stmt, free,
 		TOKEN(FREE)
-		TYPED(free_calls, calls)
+		TYPED(free_exps, calls)
 		TOKEN(EOS)) {
-	free = init_free_stmt(calls);
+	free = psi_free_stmt_init(calls);
 }
 
-PARSE_TYPED(free_calls, calls,
-		TYPED(free_call, call)) {
-	calls = init_free_calls(call);
+/*
+ * free_exps: free_exp
+ */
+PARSE_TYPED(free_exps, calls,
+		TYPED(free_exp, call)) {
+	calls = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_free_exp_free),
+			&call);
 }
-PARSE_TYPED(free_calls, calls,
-		TYPED(free_calls, calls_)
+
+/*
+ * free_exps: free_exps , free_exp
+ */
+PARSE_TYPED(free_exps, calls,
+		TYPED(free_exps, calls_)
 		TOKEN(COMMA)
-		TYPED(free_call, call)) {
-	calls = add_free_call(calls_, call);
+		TYPED(free_exp, call)) {
+	calls = psi_plist_add(calls_, &call);
 }
 
-PARSE_TYPED(free_call, call,
+/*
+ * free_exp: NAME ( decl_vars )
+ */
+PARSE_TYPED(free_exp, call,
 		NAMED(NAME, F)
 		TOKEN(LPAREN)
 		TYPED(decl_vars, vars)
 		TOKEN(RPAREN)) {
-	call = init_free_call(F->text, vars);
+	call = psi_free_exp_init(F->text, vars);
 	call->token = F;
 }
 
-PARSE_TYPED(impl_type, type_,
-		NAMED(impl_type_token, T)) {
-	type_ = init_impl_type(T->type, T->text);
-	free(T);
-}
-
+/*
+ * reference: <empty>
+ */
 PARSE_TYPED(reference, r, ) {
 	r = 0;
 }
+
+/*
+ * reference: &
+ */
 PARSE_TYPED(reference, r,
 		TOKEN(AMPERSAND)) {
 	r = 1;
 }
 
+/*
+ * indirection: <empty>
+ */
 PARSE_TYPED(indirection, i, ){
 	i = 0;
 }
+
+/*
+ * indirection: pointers
+ */
 PARSE_TYPED(indirection, i,
 		TYPED(pointers, p)) {
 	i = p;
 }
 
+/*
+ * pointers: *
+ */
 PARSE_TYPED(pointers, p,
 		TOKEN(ASTERISK)) {
 	p = 1;
 }
+
+/*
+ * pointers: pointers *
+ */
 PARSE_TYPED(pointers, p,
 		TYPED(pointers, p_)
 		TOKEN(ASTERISK)) {

@@ -26,19 +26,20 @@
 #ifndef PSI_TYPES_FREE_STMT_H
 #define PSI_TYPES_FREE_STMT_H
 
-#include "free_calls.h"
-
-typedef struct free_stmt {
-	free_calls *calls;
-} free_stmt;
-
-free_stmt *init_free_stmt(free_calls *calls);
-void free_free_stmt(free_stmt *f);
-void dump_free_stmt(int fd, free_stmt *fre);
-
 struct psi_data;
-struct impl;
+struct psi_plist;
+struct psi_impl;
+struct psi_call_frame;
 
-int validate_free_stmts(struct psi_data *data, struct impl *impl);
+struct psi_free_stmt {
+	struct psi_plist *exps;
+};
+
+struct psi_free_stmt *psi_free_stmt_init(struct psi_plist *calls);
+void psi_free_stmt_free(struct psi_free_stmt **f_ptr);
+void psi_free_stmt_dump(int fd, struct psi_free_stmt *fre);
+
+bool psi_free_stmts_validate(struct psi_data *data, struct psi_impl *impl);
+void psi_free_stmt_exec(struct psi_free_stmt *fre, struct psi_call_frame *frame);
 
 #endif

@@ -26,23 +26,21 @@
 #ifndef PSI_TYPES_SET_STMT_H
 #define PSI_TYPES_SET_STMT_H
 
-#include "impl_var.h"
-#include "impl_arg.h"
-#include "set_value.h"
-
-typedef struct set_stmt {
-	impl_var *var;
-	set_value *val;
-	impl_arg *arg;
-} set_stmt;
-
-set_stmt *init_set_stmt(impl_var *var, set_value *val);
-void free_set_stmt(set_stmt *set);
-void dump_set_stmt(int fd, set_stmt *set);
-
 struct psi_data;
-struct impl;
+struct psi_token;
+struct psi_call_frame;
+struct psi_impl;
+struct psi_set_exp;
 
-int validate_set_stmts(struct psi_data *data, struct impl *impl);
+struct psi_set_stmt {
+	struct psi_token *token;
+	struct psi_set_exp *exp;
+};
+
+struct psi_set_stmt *psi_set_stmt_init(struct psi_set_exp *val);
+void psi_set_stmt_free(struct psi_set_stmt **set_ptr);
+void psi_set_stmt_dump(int fd, struct psi_set_stmt *set);
+void psi_set_stmt_exec(struct psi_set_stmt *set, struct psi_call_frame *frame);
+bool psi_set_stmts_validate(struct psi_data *data, struct psi_impl *impl);
 
 #endif

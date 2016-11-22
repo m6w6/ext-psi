@@ -26,22 +26,23 @@
 #ifndef PSI_TYPES_RETURN_STMT_H
 #define PSI_TYPES_RETURN_STMT_H
 
-#include "set_value.h"
-#include "decl_arg.h"
-
-typedef struct return_stmt {
-	struct psi_token *token;
-	set_value *set;
-	decl_arg *decl;
-} return_stmt;
-
-return_stmt *init_return_stmt(set_value *val);
-void free_return_stmt(return_stmt *ret);
-void dump_return_stmt(int fd, return_stmt *ret);
+#include "Zend/zend_types.h"
 
 struct psi_data;
-struct impl;
+struct psi_token;
+struct psi_call_frame;
+struct psi_impl;
+struct psi_set_exp;
 
-int validate_return_stmt(struct psi_data *data, struct impl *impl);
+struct psi_return_stmt {
+	struct psi_token *token;
+	struct psi_set_exp *set;
+};
+
+struct psi_return_stmt *psi_return_stmt_init(struct psi_set_exp *val);
+void psi_return_stmt_free(struct psi_return_stmt **ret_ptr);
+void psi_return_stmt_dump(int fd, struct psi_return_stmt *ret);
+void psi_return_stmt_exec(struct psi_return_stmt *ret, zval *return_value, struct psi_call_frame *frame);
+bool psi_return_stmt_validate(struct psi_data *data, struct psi_impl *impl);
 
 #endif

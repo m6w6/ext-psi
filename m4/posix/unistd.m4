@@ -1,6 +1,6 @@
 PSI_CHECK_UNISTD() {
 	PSI_CONFIG_POSIX(unistd, unistd.h)
-	
+
 	PSI_CONST(F_LOCK, int)
 	PSI_CONST(F_TEST, int)
 	PSI_CONST(F_TLOCK, int)
@@ -277,12 +277,13 @@ PSI_CHECK_UNISTD() {
 	PSI_CONST(_XOPEN_UNIX, int)
 	PSI_CONST(_XOPEN_UUCP, int)
 	PSI_CONST(_XOPEN_VERSION, int)
-	
+
 	PSI_EXTVAR(char *optarg)
 	PSI_EXTVAR(int opterr)
 	PSI_EXTVAR(int optind)
 	PSI_EXTVAR(int optopt)
-	
+	PSI_EXTVAR(int optreset)
+
 	PSI_DECL(int access, [(const char *path, int amode)])
 	PSI_DECL(unsigned alarm, [(unsigned seconds)])
 	PSI_DECL(int chdir, [(const char *path)])

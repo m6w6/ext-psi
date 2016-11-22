@@ -94,13 +94,14 @@ static inline size_t psi_t_size(token_t t)
 		return SIZEOF_FLOAT;
 	case PSI_T_DOUBLE:
 		return SIZEOF_DOUBLE;
+	case PSI_T_VOID:
 	case PSI_T_POINTER:
 	case PSI_T_FUNCTION:
 		return SIZEOF_VOID_P;
 	case PSI_T_ENUM:
 		return SIZEOF_INT;
 	default:
-		assert(0);
+		assert(!t);
 	}
 	return 0;
 }

@@ -1,8 +1,29 @@
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#else
-# include "php_config.h"
-#endif
+/*******************************************************************************
+ Copyright (c) 2016, Michael Wallner <mike@php.net>.
+ All rights reserved.
+
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+
+     * Redistributions of source code must retain the above copyright notice,
+       this list of conditions and the following disclaimer.
+     * Redistributions in binary form must reproduce the above copyright
+       notice, this list of conditions and the following disclaimer in the
+       documentation and/or other materials provided with the distribution.
+
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*******************************************************************************/
+
+#include "php_psi_stdinc.h"
 
 #include "php.h"
 #include "php_ini.h"
@@ -40,68 +61,41 @@ zend_class_entry *psi_object_get_class_entry()
 	return psi_class_entry;
 }
 
-void psi_error_wrapper(void *context, struct psi_token *t, int type, const char *msg, ...)
-{
-	va_list argv;
-	const char *fn = NULL;
-	unsigned ln = 0;
-
-	if (context) {
-		if (PSI_DATA(context)->flags & PSI_PARSER_SILENT) {
-			return;
-		}
-	}
-
-	if (t) {
-		fn = t->file;
-		ln = t->line;
-	} else if (zend_is_executing()) {
-		fn = zend_get_executed_filename();
-		ln = zend_get_executed_lineno();
-	} else if (zend_is_compiling()) {
-		fn = zend_get_compiled_filename()->val;
-		ln = zend_get_compiled_lineno();
-	}
-
-	va_start(argv, msg);
-	psi_verror(type, fn, ln, msg, argv);
-	va_end(argv);
-}
-
-void psi_error(int type, const char *fn, unsigned ln, const char *msg, ...)
-{
-	va_list argv;
-
-	va_start(argv, msg);
-	psi_verror(type, fn, ln, msg, argv);
-	va_end(argv);
-}
-
-void psi_verror(int type, const char *fn, unsigned ln, const char *msg, va_list argv)
-{
-	zend_error_cb(type, fn, ln, msg, argv);
-}
-
 static void psi_object_free(zend_object *o)
 {
 	psi_object *obj = PSI_OBJ(NULL, o);
 
 	if (obj->data) {
-		/* FIXME: how about registering a destructor?
-		// free(obj->data); */
+		if (obj->dtor) {
+			obj->dtor(obj->data);
+		}
 		obj->data = NULL;
 	}
 	zend_object_std_dtor(o);
 }
 
-static zend_object *psi_object_init(zend_class_entry *ce)
+zend_object *psi_object_init_ex(zend_class_entry *ce, void *data, void (*dtor)(void *))
 {
-	psi_object *o = ecalloc(1, sizeof(*o) + zend_object_properties_size(ce));
+	psi_object *o;
+
+	if (!ce) {
+		ce = psi_class_entry;
+	}
+
+	o = ecalloc(1, sizeof(*o) + zend_object_properties_size(ce));
+
+	o->data = data;
+	o->dtor = dtor;
 
 	zend_object_std_init(&o->std, ce);
 	object_properties_init(&o->std, ce);
 	o->std.handlers = &psi_object_handlers;
 	return &o->std;
+}
+
+zend_object *psi_object_init(zend_class_entry *ce)
+{
+	return psi_object_init_ex(ce, NULL, NULL);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_psi_dump, 0, 0, 0)
@@ -122,7 +116,7 @@ static PHP_FUNCTION(psi_dump) {
 			RETURN_FALSE;
 		}
 	}
-	psi_context_dump(&PSI_G(context), fd);
+	psi_context_dump(PSI_G(context), fd);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_psi_validate, 0, 0, 1)
@@ -131,6 +125,7 @@ ZEND_END_ARG_INFO();
 static PHP_FUNCTION(psi_validate) {
 	zend_string *file;
 	struct psi_parser P;
+	struct psi_data D = {0};
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "P", &file)) {
 		return;
@@ -148,11 +143,10 @@ static PHP_FUNCTION(psi_validate) {
 	}
 	psi_parser_parse(&P, NULL);
 
-	if (0 == psi_context_validate_data(NULL, PSI_DATA(&P)) && !P.errors) {
-		RETVAL_TRUE;
-	} else {
-		RETVAL_FALSE;
-	}
+	psi_data_ctor(&D, P.error, P.flags);
+	RETVAL_BOOL(psi_data_validate(&D, PSI_DATA(&P)) && !P.errors);
+	psi_data_dtor(&D);
+
 	psi_parser_dtor(&P);
 }
 
@@ -160,8 +154,14 @@ static PHP_MINIT_FUNCTION(psi)
 {
 	struct psi_context_ops *ops = NULL;
 	zend_class_entry ce = {0};
-	unsigned flags = psi_check_env("PSI_DEBUG") ? PSI_PARSER_DEBUG : (
-			psi_check_env("PSI_SILENT") ? PSI_PARSER_SILENT : 0);
+	unsigned flags = 0;
+
+	if (psi_check_env("PSI_DEBUG")) {
+		flags |= PSI_DEBUG;
+	}
+	if (psi_check_env("PSI_SILENT")) {
+		flags |= PSI_SILENT;
+	}
 
 	REGISTER_INI_ENTRIES();
 
@@ -188,11 +188,11 @@ static PHP_MINIT_FUNCTION(psi)
 		return FAILURE;
 	}
 
-	psi_context_init(&PSI_G(context), ops, psi_error_wrapper, flags);
-	psi_context_build(&PSI_G(context), PSI_G(directory));
+	PSI_G(context) = psi_context_init(NULL, ops, psi_error_wrapper, flags);
+	psi_context_build(PSI_G(context), PSI_G(directory));
 
 	if (psi_check_env("PSI_DUMP")) {
-		psi_context_dump(&PSI_G(context), STDOUT_FILENO);
+		psi_context_dump(PSI_G(context), STDOUT_FILENO);
 	}
 
 	return SUCCESS;
@@ -200,7 +200,7 @@ static PHP_MINIT_FUNCTION(psi)
 
 static PHP_MSHUTDOWN_FUNCTION(psi)
 {
-	psi_context_dtor(&PSI_G(context));
+	psi_context_free(&PSI_G(context));
 
 	UNREGISTER_INI_ENTRIES();
 
@@ -218,8 +218,28 @@ static PHP_RINIT_FUNCTION(psi)
 static PHP_MINFO_FUNCTION(psi)
 {
 	php_info_print_table_start();
-	php_info_print_table_header(2, "psi support", "enabled");
+	php_info_print_table_header(2, "PSI Support", "enabled");
+	php_info_print_table_row(2, "Extension Version", PHP_PSI_VERSION);
 	php_info_print_table_end();
+	php_info_print_table_start();
+	php_info_print_table_header(3, "Used Library", "Compiled", "Linked");
+	php_info_print_table_row(3, "libffi",
+#ifndef PHP_PSI_LIBFFI_VERSION
+# define PHP_PSI_LIBFFI_VERSION "unknown"
+#endif
+#ifdef HAVE_LIBFFI
+			PHP_PSI_LIBFFI_VERSION, "unknown"
+#else
+			"disabled", "disabled"
+#endif
+	);
+	php_info_print_table_row(3, "libjit",
+#ifdef HAVE_LIBJIT
+			"unknown", "unknown"
+#else
+			"disabled", "disabled"
+#endif
+	);
 
 	DISPLAY_INI_ENTRIES();
 }

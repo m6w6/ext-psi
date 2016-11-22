@@ -5,11 +5,11 @@
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
 
-     * Redistributions of source code must retain the above copyright notice,
-       this list of conditions and the following disclaimer.
-     * Redistributions in binary form must reproduce the above copyright
-       notice, this list of conditions and the following disclaimer in the
-       documentation and/or other materials provided with the distribution.
+ * Redistributions of source code must retain the above copyright notice,
+ this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright
+ notice, this list of conditions and the following disclaimer in the
+ documentation and/or other materials provided with the distribution.
 
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -21,88 +21,86 @@
  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*******************************************************************************/
+ *******************************************************************************/
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#else
-# include "php_config.h"
-#endif
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <assert.h>
-
+#include "php_psi_stdinc.h"
 #include "data.h"
 
-decl_union* init_decl_union(const char* name, decl_args* args) {
-	decl_union* u = calloc(1, sizeof(*u));
+#include <assert.h>
+
+struct psi_decl_union* psi_decl_union_init(const char *name,
+		struct psi_plist *args)
+{
+	struct psi_decl_union *u = calloc(1, sizeof(*u));
 	u->name = strdup(name);
 	u->args = args;
 	return u;
 }
 
-void free_decl_union(decl_union* u) {
-	if (u->token) {
-		free(u->token);
+void psi_decl_union_free(struct psi_decl_union **u_ptr)
+{
+	if (*u_ptr) {
+		struct psi_decl_union *u = *u_ptr;
+
+		*u_ptr = NULL;
+		if (u->token) {
+			free(u->token);
+		}
+		if (u->args) {
+			psi_plist_free(u->args);
+		}
+		free(u->name);
+		free(u);
 	}
-	if (u->args) {
-		free_decl_args(u->args);
-	}
-	free(u->name);
-	free(u);
 }
 
-void dump_decl_union(int fd, decl_union *unn) {
+void psi_decl_union_dump(int fd, struct psi_decl_union *unn)
+{
 	dprintf(fd, "union %s::(%zu, %zu)", unn->name, unn->align, unn->size);
-	if (unn->args && unn->args->count) {
-		dump_decl_args_with_layout(fd, unn->args, 0);
+	if (psi_plist_count(unn->args)) {
+		psi_decl_type_dump_args_with_layout(fd, unn->args, 0);
 	} else {
 		dprintf(fd, ";");
 	}
 }
 
-decl_arg *locate_decl_union_member(decl_union *u, decl_var *var) {
+struct psi_decl_arg *psi_decl_union_get_arg(struct psi_decl_union *u,
+		struct psi_decl_var *var)
+{
 	if (u->args) {
-		return locate_decl_var_arg(var, u->args, NULL);
+		return psi_decl_arg_get_by_var(var, u->args, NULL);
 	}
 
 	return NULL;
 }
 
-int validate_decl_union(struct psi_data *data, decl_union *u) {
+bool psi_decl_union_validate(struct psi_data *data, struct psi_decl_union *u)
+{
 	size_t i, pos, len, size = 0, align;
+	struct psi_decl_arg *darg;
 
-	if (!u->size && !u->args->count) {
+	if (!u->size && !psi_plist_count(u->args)) {
 		data->error(data, u->token, PSI_WARNING,
-				"Cannot compute size of empty union %s",
-				u->name);
-		return 0;
+				"Cannot compute size of empty union %s", u->name);
+		return false;
 	}
 
-	for (i = 0; i < u->args->count; ++i) {
-		decl_arg *darg = u->args->args[i];
-
-		if (!validate_decl_arg(data, darg)) {
-			return 0;
-		}
-
-		assert(!darg->var->arg || darg->var->arg == darg);
-
+	for (i = 0; psi_plist_get(u->args, i, &darg); ++i) {
 		darg->var->arg = darg;
 
-		if (!validate_decl_arg_args(data, darg, u)) {
-			return 0;
-		} else if (darg->layout) {
+		if (!psi_decl_arg_validate(data, darg)) {
+			return false;
+		}
+
+		if (darg->layout) {
 			pos = darg->layout->pos;
 
-			align = align_decl_arg(darg, &pos, &len);
+			align = psi_decl_arg_align(darg, &pos, &len);
 
 			if (darg->layout->pos != 0) {
 				data->error(data, darg->token, PSI_WARNING,
-						"Offset of %s.%s should be 0",
-						u->name, darg->var->name);
+						"Offset of %s.%s should be 0", u->name,
+						darg->var->name);
 				darg->layout->pos = 0;
 			}
 			if (darg->layout->len != len) {
@@ -115,9 +113,8 @@ int validate_decl_union(struct psi_data *data, decl_union *u) {
 		} else {
 			pos = 0;
 
-			align = align_decl_arg(darg, &pos, &len);
-			darg->layout = init_decl_struct_layout(pos, len);
-
+			align = psi_decl_arg_align(darg, &pos, &len);
+			darg->layout = psi_layout_init(pos, len);
 		}
 		if (len > size) {
 			size = len;
@@ -127,18 +124,19 @@ int validate_decl_union(struct psi_data *data, decl_union *u) {
 		}
 	}
 
-	sort_decl_args(u->args);
+	psi_plist_sort(u->args, psi_layout_sort_cmp, NULL);
 
 	if (u->size < size) {
 		u->size = psi_align(size, u->align);
 	}
 
-	return 1;
+	return true;
 }
 
-size_t alignof_decl_union(decl_union *u) {
+size_t psi_decl_union_get_align(struct psi_decl_union *u)
+{
 	if (!u->align) {
-		u->align = alignof_decl_args(u->args);
+		u->align = psi_decl_type_get_args_align(u->args);
 	}
 	return u->align;
 }

@@ -728,14 +728,14 @@ num_exp(exp) ::= num_exp(exp_) num_exp_op_token(operator_) num_exp(operand_). {
 %type let_stmt {let_stmt*}
 %destructor let_stmt {free_let_stmt($$);}
 let_stmt(let) ::= LET decl_var(var) EOS. {
-	let = init_let_stmt(var, init_let_val(PSI_LET_NULL, NULL));
+	let = init_let_stmt(var, init_let_exp(PSI_LET_NULL, NULL));
 }
-let_stmt(let) ::= LET decl_var(var) EQUALS reference(r) let_val(val) EOS. {
+let_stmt(let) ::= LET decl_var(var) EQUALS reference(r) let_exp(val) EOS. {
 	val->flags.one.is_reference = r ? 1 : 0;
 	let = init_let_stmt(var, val);
 }
 let_stmt(let) ::= TEMP decl_var(var) EQUALS decl_var(val) EOS. {
-	let = init_let_stmt(var, init_let_val(PSI_LET_TMP, val));
+	let = init_let_stmt(var, init_let_exp(PSI_LET_TMP, val));
 }
 
 %type let_calloc {let_calloc*}
@@ -767,22 +767,22 @@ callback_args(args) ::= callback_args(args_) COMMA set_value(val). {
 	args = add_set_value(args_, val);
 }
 
-%type let_val {let_val*}
-%destructor let_val {free_let_val($$);}
-let_val(val) ::= NULL. {
-	val = init_let_val(PSI_LET_NULL, NULL);
+%type let_exp {let_exp*}
+%destructor let_exp {free_let_exp($$);}
+let_exp(val) ::= NULL. {
+	val = init_let_exp(PSI_LET_NULL, NULL);
 }
-let_val(val) ::= num_exp(exp). {
-	val = init_let_val(PSI_LET_NUMEXP, exp);
+let_exp(val) ::= num_exp(exp). {
+	val = init_let_exp(PSI_LET_NUMEXP, exp);
 }
-let_val(val) ::= CALLOC LPAREN let_calloc(alloc) RPAREN. {
-	val = init_let_val(PSI_LET_CALLOC, alloc);
+let_exp(val) ::= CALLOC LPAREN let_calloc(alloc) RPAREN. {
+	val = init_let_exp(PSI_LET_CALLOC, alloc);
 }
-let_val(val) ::= let_func(func). {
-	val = init_let_val(PSI_LET_FUNC, func);
+let_exp(val) ::= let_func(func). {
+	val = init_let_exp(PSI_LET_FUNC, func);
 }
-let_val(val) ::= CALLBACK let_func_token(F) LPAREN impl_var(var) LPAREN callback_arg_list(args_) RPAREN RPAREN. {
-	val = init_let_val(PSI_LET_CALLBACK, init_let_callback(
+let_exp(val) ::= CALLBACK let_func_token(F) LPAREN impl_var(var) LPAREN callback_arg_list(args_) RPAREN RPAREN. {
+	val = init_let_exp(PSI_LET_CALLBACK, init_let_callback(
 		init_let_func(F->type, F->text, var), args_));
 	free(F);
 }

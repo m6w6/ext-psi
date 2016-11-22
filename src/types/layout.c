@@ -5,11 +5,11 @@
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
 
-     * Redistributions of source code must retain the above copyright notice,
-       this list of conditions and the following disclaimer.
-     * Redistributions in binary form must reproduce the above copyright
-       notice, this list of conditions and the following disclaimer in the
-       documentation and/or other materials provided with the distribution.
+ * Redistributions of source code must retain the above copyright notice,
+ this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright
+ notice, this list of conditions and the following disclaimer in the
+ documentation and/or other materials provided with the distribution.
 
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -21,22 +21,16 @@
  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*******************************************************************************/
+ *******************************************************************************/
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#else
-# include "php_config.h"
-#endif
+#include "php_psi_stdinc.h"
+#include "data.h"
 
-#include <stdlib.h>
-#include <stdio.h>
 #include <assert.h>
 
-#include "decl_struct_layout.h"
-
-decl_struct_layout *init_decl_struct_layout(size_t pos, size_t len) {
-	decl_struct_layout *l = calloc(1, sizeof(*l));
+struct psi_layout *psi_layout_init(size_t pos, size_t len)
+{
+	struct psi_layout *l = calloc(1, sizeof(*l));
 
 	assert(pos + len);
 
@@ -46,6 +40,30 @@ decl_struct_layout *init_decl_struct_layout(size_t pos, size_t len) {
 	return l;
 }
 
-void free_decl_struct_layout(decl_struct_layout *l) {
-	free(l);
+void psi_layout_free(struct psi_layout **l_ptr)
+{
+	if (*l_ptr) {
+		free(*l_ptr);
+		*l_ptr = NULL;
+	}
+}
+
+int psi_layout_sort_cmp(const void *_a, const void *_b)
+{
+	struct psi_decl_arg *a = *(struct psi_decl_arg **) _a;
+	struct psi_decl_arg *b = *(struct psi_decl_arg **) _b;
+
+	if (a->layout->pos == b->layout->pos) {
+		if (a->layout->len == b->layout->len) {
+			return 0;
+		} else if (a->layout->len > b->layout->len) {
+			return -1;
+		} else {
+			return 1;
+		}
+	} else if (a->layout->pos > b->layout->pos) {
+		return 1;
+	} else {
+		return -1;
+	}
 }

@@ -5,11 +5,11 @@
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
 
-     * Redistributions of source code must retain the above copyright notice,
-       this list of conditions and the following disclaimer.
-     * Redistributions in binary form must reproduce the above copyright
-       notice, this list of conditions and the following disclaimer in the
-       documentation and/or other materials provided with the distribution.
+ * Redistributions of source code must retain the above copyright notice,
+ this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright
+ notice, this list of conditions and the following disclaimer in the
+ documentation and/or other materials provided with the distribution.
 
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -21,109 +21,69 @@
  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*******************************************************************************/
+ *******************************************************************************/
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#else
-# include "php_config.h"
-#endif
-
-#include <stdlib.h>
-#include <stdio.h>
-
+#include "php_psi_stdinc.h"
 #include "data.h"
 
-free_stmt *init_free_stmt(free_calls *calls) {
-	free_stmt *f = calloc(1, sizeof(*f));
-	f->calls = calls;
+struct psi_free_stmt *psi_free_stmt_init(struct psi_plist *exps)
+{
+	struct psi_free_stmt *f = calloc(1, sizeof(*f));
+	f->exps = exps;
 	return f;
 }
 
-void free_free_stmt(free_stmt *f) {
-	free_free_calls(f->calls);
-	free(f);
+void psi_free_stmt_free(struct psi_free_stmt **f_ptr)
+{
+	if (*f_ptr) {
+		struct psi_free_stmt *f = *f_ptr;
+
+		*f_ptr = NULL;
+		psi_plist_free(f->exps);
+		free(f);
+	}
 }
 
-void dump_free_stmt(int fd, free_stmt *fre) {
-	size_t k;
+void psi_free_stmt_dump(int fd, struct psi_free_stmt *fre)
+{
+	size_t i;
+	struct psi_free_exp *exp;
 
 	dprintf(fd, "\tfree ");
-	for (k = 0; k < fre->calls->count; ++k) {
-		free_call *call = fre->calls->list[k];
-
-		if (k) {
+	for (i = 0; psi_plist_get(fre->exps, i, &exp); ++i) {
+		if (i) {
 			dprintf(fd, ", ");
 		}
-		dump_free_call(fd, call);
-		dprintf(fd, "\n");
+		psi_free_exp_dump(fd, exp);
 	}
+	dprintf(fd, ";\n");
 }
 
-static inline decl *locate_free_decl(decls *decls, free_call *f) {
-	if (decls)  {
-		size_t i;
+bool psi_free_stmts_validate(struct psi_data *data, struct psi_impl *impl)
+{
+	size_t i;
+	struct psi_free_stmt *fre;
 
-		for (i = 0; i < decls->count; ++i) {
-			if (!strcmp(decls->list[i]->func->var->name, f->func)) {
-				f->decl = decls->list[i];
-				return decls->list[i];
-			}
-		}
-	}
-
-	return NULL;
-}
-
-int validate_free_stmts(struct psi_data *data, impl *impl) {
-	size_t i, j, k, l;
 	/* we can have any count of free stmts; freeing any out vars */
-	for (i = 0; i < impl->stmts->fre.count; ++i) {
-		free_stmt *fre = impl->stmts->fre.list[i];
+	for (i = 0; psi_plist_get(impl->stmts.fre, i, &fre); ++i) {
+		size_t j;
+		struct psi_free_exp *exp;
 
-		for (j = 0; j < fre->calls->count; ++j) {
-			free_call *free_call = fre->calls->list[j];
-
-			/* first find the decl of the free func */
-			if (!locate_free_decl(data->decls, free_call)) {
-				data->error(data, free_call->token, PSI_WARNING,
-						"Missing declaration '%s' in `free` statement"
-						" of implementation '%s'",
-						free_call->func, impl->func->name);
-				return 0;
-			}
-
-
-
-			/* now check for known vars */
-			for (l = 0; l < free_call->vars->count; ++l) {
-				int check = 0;
-				decl_var *free_var = free_call->vars->vars[l];
-
-				if (!strcmp(free_var->name, impl->decl->func->var->name)) {
-					check = 1;
-					free_var->arg = impl->decl->func;
-				} else if (impl->decl->args) {
-					for (k = 0; k < impl->decl->args->count; ++k) {
-						decl_arg *free_arg = impl->decl->args->args[k];
-
-						if (!strcmp(free_var->name, free_arg->var->name)) {
-							check = 1;
-							free_var->arg = free_arg;
-							break;
-						}
-					}
-				}
-
-				if (!check) {
-					data->error(data, free_var->token, PSI_WARNING,
-							"Unknown variable '%s' of `free` statement"
-							" of implementation '%s'",
-							free_var->name, impl->func->name);
-					return 0;
-				}
+		for (j = 0; psi_plist_get(fre->exps, j, &exp); ++j) {
+			if (!psi_free_exp_validate(data, exp, impl)) {
+				return false;
 			}
 		}
 	}
-	return 1;
+	return true;
+}
+
+void psi_free_stmt_exec(struct psi_free_stmt *fre, struct psi_call_frame *frame)
+{
+	size_t i = 0;
+	struct psi_free_exp *exp;
+
+	while (psi_plist_get(fre->exps, i++, &exp)) {
+		psi_free_exp_exec(exp, frame);
+	}
 }

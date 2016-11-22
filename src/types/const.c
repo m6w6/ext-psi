@@ -5,11 +5,11 @@
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
 
-     * Redistributions of source code must retain the above copyright notice,
-       this list of conditions and the following disclaimer.
-     * Redistributions in binary form must reproduce the above copyright
-       notice, this list of conditions and the following disclaimer in the
-       documentation and/or other materials provided with the distribution.
+ * Redistributions of source code must retain the above copyright notice,
+ this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright
+ notice, this list of conditions and the following disclaimer in the
+ documentation and/or other materials provided with the distribution.
 
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -21,44 +21,48 @@
  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*******************************************************************************/
+ *******************************************************************************/
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-# else
-# include "php_config.h"
-#endif
+#include "php_psi_stdinc.h"
+#include "data.h"
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
-#include "constant.h"
-
-constant *init_constant(const_type *type, const char *name, impl_def_val *val) {
-	constant *c = calloc(1, sizeof(*c));
+struct psi_const *psi_const_init(struct psi_const_type *type, const char *name,
+		struct psi_impl_def_val *val)
+{
+	struct psi_const *c = calloc(1, sizeof(*c));
 	c->type = type;
 	c->name = strdup(name);
 	c->val = val;
 	return c;
 }
 
-void free_constant(constant *constant) {
-	free_const_type(constant->type);
-	free(constant->name);
-	free_impl_def_val(constant->val);
-	free(constant);
+void psi_const_free(struct psi_const **constant_ptr)
+{
+	if (*constant_ptr) {
+		struct psi_const *constant = *constant_ptr;
+
+		*constant_ptr = NULL;
+		if (constant->token) {
+			free(constant->token);
+		}
+		psi_const_type_free(&constant->type);
+		free(constant->name);
+		psi_impl_def_val_free(&constant->val);
+		free(constant);
+	}
 }
 
-void dump_constant(int fd, constant *cnst) {
+void psi_const_dump(int fd, struct psi_const *cnst)
+{
 	dprintf(fd, "const ");
-	dump_const_type(fd, cnst->type);
+	psi_const_type_dump(fd, cnst->type);
 	dprintf(fd, " %s = ", cnst->name);
-	dump_impl_def_val(fd, cnst->val);
+	psi_impl_def_val_dump(fd, cnst->val);
 	dprintf(fd, ";");
 }
 
-int validate_constant(struct psi_data *data, constant *c) {
+bool psi_const_validate(struct psi_data *data, struct psi_const *c)
+{
 	/* FIXME */
-	return 1;
+	return true;
 }

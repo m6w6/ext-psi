@@ -5,11 +5,11 @@
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
 
-     * Redistributions of source code must retain the above copyright notice,
-       this list of conditions and the following disclaimer.
-     * Redistributions in binary form must reproduce the above copyright
-       notice, this list of conditions and the following disclaimer in the
-       documentation and/or other materials provided with the distribution.
+ * Redistributions of source code must retain the above copyright notice,
+ this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright
+ notice, this list of conditions and the following disclaimer in the
+ documentation and/or other materials provided with the distribution.
 
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -21,34 +21,68 @@
  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*******************************************************************************/
+ *******************************************************************************/
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#else
-# include "php_config.h"
-#endif
+#include "php_psi_stdinc.h"
+#include "data.h"
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
-#include "decl_enum_item.h"
-
-decl_enum_item *init_decl_enum_item(const char *name, num_exp *num) {
-	decl_enum_item *i = calloc(1, sizeof(*i));
+struct psi_decl_enum_item *psi_decl_enum_item_init(const char *name,
+		struct psi_num_exp *num)
+{
+	struct psi_decl_enum_item *i = calloc(1, sizeof(*i));
 	i->name = strdup(name);
 	i->num = num;
 	return i;
 }
 
-void free_decl_enum_item(decl_enum_item *i) {
-	if (i->token) {
-		free(i->token);
+void psi_decl_enum_item_free(struct psi_decl_enum_item **i_ptr)
+{
+	if (*i_ptr) {
+		struct psi_decl_enum_item *i = *i_ptr;
+
+		*i_ptr = NULL;
+		if (i->token) {
+			free(i->token);
+		}
+		if (i->num && i->num != &i->inc) {
+			psi_num_exp_free(&i->num);
+		}
+		free(i->name);
+		free(i);
 	}
-	if (i->num && i->num != &i->inc) {
-		free_num_exp(i->num);
+}
+
+void psi_decl_enum_item_dump(int fd, struct psi_decl_enum_item *item)
+{
+	dprintf(fd, "%s", item->name);
+	if (item->num && item->num != &item->inc) {
+		dprintf(fd, " = ");
+		psi_num_exp_dump(fd, item->num);
 	}
-	free(i->name);
-	free(i);
+}
+
+bool psi_decl_enum_item_validate(struct psi_data *data,
+		struct psi_decl_enum *enm, struct psi_decl_enum_item *item, size_t seq)
+{
+	if (!item->num) {
+		if (seq) {
+			item->inc.type = PSI_T_INT64;
+			item->inc.data.ival.i64 = 1;
+			item->inc.op = PSI_T_PLUS;
+			item->inc.operand = item->prev->num ? : &item->prev->inc;
+			item->num = &item->inc;
+		} else {
+			item->inc.type = PSI_T_INT64;
+			item->inc.data.ival.i64 = 0;
+			item->num = &item->inc;
+		}
+	}
+
+	if (!psi_num_exp_validate(data, item->num, NULL, NULL, NULL, NULL, enm)) {
+		return false;
+	}
+
+	item->val = psi_long_num_exp(item->num, NULL);
+
+	return true;
 }

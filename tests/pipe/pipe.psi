@@ -4,5 +4,5 @@
 function \pipe(array &$fds = null) : int {
 	return to_int(pipe);
 	let fildes = calloc(2, psi\SIZEOF_INT);
-	set $fds = to_array(fildes[2]);
+	set $fds = to_array(*fildes, 2, to_int(*fildes));
 }

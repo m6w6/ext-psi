@@ -26,32 +26,33 @@
 #ifndef PSI_TYPES_DECL_ARG_H
 #define PSI_TYPES_DECL_ARG_H
 
-#include "decl_type.h"
-#include "decl_var.h"
-#include "decl_struct_layout.h"
-#include "impl_val.h"
-
-typedef struct decl_arg {
-	struct psi_token *token;
-	decl_type *type;
-	decl_var *var;
-	decl_struct_layout *layout;
-	impl_val val;
-	void *ptr;
-	void *let;
-	void *mem;
-} decl_arg;
-
-decl_arg *init_decl_arg(decl_type *type, decl_var *var);
-void free_decl_arg(decl_arg *arg);
-void dump_decl_arg(int fd, decl_arg *arg, unsigned level);
-
 struct psi_data;
+struct psi_token;
+struct psi_plist;
+struct psi_decl_type;
+struct psi_decl_var;
+struct psi_layout;
 
-int validate_decl_arg(struct psi_data *data, decl_arg *arg);
+struct psi_decl_arg {
+	struct psi_token *token;
+	struct psi_decl_type *type;
+	struct psi_decl_var *var;
+	struct psi_layout *layout;
+};
 
-size_t align_decl_arg(decl_arg *darg, size_t *pos, size_t *len);
-size_t alignof_decl_arg(decl_arg *darg);
-size_t sizeof_decl_arg(decl_arg *darg);
+struct psi_decl_arg *psi_decl_arg_init(struct psi_decl_type *type, struct psi_decl_var *var);
+void psi_decl_arg_free(struct psi_decl_arg **arg_ptr);
+void psi_decl_arg_dump(int fd, struct psi_decl_arg *arg, unsigned level);
+
+bool psi_decl_arg_validate(struct psi_data *data, struct psi_decl_arg *arg);
+bool psi_decl_arg_validate_typedef(struct psi_data *data, struct psi_decl_arg *def);
+
+size_t psi_decl_arg_align(struct psi_decl_arg *darg, size_t *pos, size_t *len);
+size_t psi_decl_arg_get_align(struct psi_decl_arg *darg);
+size_t psi_decl_arg_get_size(struct psi_decl_arg *darg);
+
+struct psi_decl_arg *psi_decl_arg_get_by_name(struct psi_plist *args, const char *name);
+struct psi_decl_arg *psi_decl_arg_get_by_var(struct psi_decl_var *var, struct psi_plist *args, struct psi_decl_arg *func);
+
 
 #endif

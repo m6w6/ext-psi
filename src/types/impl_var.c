@@ -5,11 +5,11 @@
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
 
-     * Redistributions of source code must retain the above copyright notice,
-       this list of conditions and the following disclaimer.
-     * Redistributions in binary form must reproduce the above copyright
-       notice, this list of conditions and the following disclaimer in the
-       documentation and/or other materials provided with the distribution.
+ * Redistributions of source code must retain the above copyright notice,
+ this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright
+ notice, this list of conditions and the following disclaimer in the
+ documentation and/or other materials provided with the distribution.
 
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -21,55 +21,73 @@
  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*******************************************************************************/
+ *******************************************************************************/
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#else
-# include "php_config.h"
-#endif
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
+#include "php_psi_stdinc.h"
 #include "data.h"
 
-impl_var *init_impl_var(const char *name, int is_reference) {
-	impl_var *var = calloc(1, sizeof(*var));
+struct psi_impl_var *psi_impl_var_init(const char *name, bool is_reference)
+{
+	struct psi_impl_var *var = calloc(1, sizeof(*var));
+
 	var->name = strdup(name);
+	var->fqn = strdup(name);
+
 	var->reference = is_reference;
 	return var;
 }
 
-impl_var *copy_impl_var(impl_var *var) {
-	impl_var *cpy = malloc(sizeof(*cpy));
-	memcpy(cpy, var, sizeof(*cpy));
+struct psi_impl_var *psi_impl_var_copy(struct psi_impl_var *var)
+{
+	struct psi_impl_var *cpy = malloc(sizeof(*cpy));
+
+	*cpy = *var;
+
 	cpy->name = strdup(cpy->name);
+	cpy->fqn = strdup(cpy->fqn);
+
 	if (cpy->token) {
 		cpy->token = psi_token_copy(cpy->token);
 	}
 	return cpy;
 }
 
-void free_impl_var(impl_var *var) {
-	if (var->token) {
-		free(var->token);
+void psi_impl_var_free(struct psi_impl_var **var_ptr)
+{
+	if (*var_ptr) {
+		struct psi_impl_var *var = *var_ptr;
+
+		*var_ptr = NULL;
+		if (var->token) {
+			free(var->token);
+		}
+		free(var->name);
+		free(var->fqn);
+		free(var);
 	}
-	free(var->name);
-	free(var);
 }
 
-impl_arg *locate_impl_var_arg(impl_var *var, impl_args *args) {
-	size_t i;
 
-	for (i = 0; i < args->count; ++i) {
-		impl_arg *iarg = args->args[i];
+bool psi_impl_var_validate(struct psi_data *data, struct psi_impl_var *ivar,
+		struct psi_impl *impl, struct psi_let_exp *let_exp,
+		struct psi_set_exp *set_exp)
+{
+	struct psi_let_exp *current_let_exp = let_exp;
+	struct psi_set_exp *current_set_exp = set_exp;
 
-		if (!strcmp(var->name, iarg->var->name)) {
-			return var->arg = iarg;
+	if (current_let_exp) {
+		while ((current_let_exp = current_let_exp->outer)) {
+			struct psi_impl_var *svar = psi_let_exp_get_impl_var(current_let_exp);
+
+			ivar->fqn = psi_impl_var_name_prepend(ivar->fqn, svar->name + 1);
+		}
+	} else if (current_set_exp) {
+		while ((current_set_exp = current_set_exp->outer)) {
+			struct psi_impl_var *svar = psi_set_exp_get_impl_var(current_set_exp);
+
+			ivar->fqn = psi_impl_var_name_prepend(ivar->fqn, svar->name + 1);
 		}
 	}
 
-	return NULL;
+	return true;
 }

@@ -26,19 +26,46 @@
 #ifndef PSI_TYPES_IMPL_VAR_H
 #define PSI_TYPES_IMPL_VAR_H
 
-typedef struct impl_var {
+struct psi_token;
+struct psi_impl;
+struct psi_impl_arg;
+
+struct psi_impl_var {
 	struct psi_token *token;
-	char *name;
-	struct impl_arg *arg;
+	char *name, *fqn;
+	struct psi_impl_arg *arg;
 	unsigned reference:1;
-} impl_var;
+};
 
-impl_var *init_impl_var(const char *name, int is_reference);
-impl_var *copy_impl_var(impl_var *var);
-void free_impl_var(impl_var *var);
+struct psi_impl_var *psi_impl_var_init(const char *name, bool is_reference);
+struct psi_impl_var *psi_impl_var_copy(struct psi_impl_var *var);
+void psi_impl_var_free(struct psi_impl_var **var_ptr);
 
-struct impl_args;
+#include <string.h>
 
-struct impl_arg *locate_impl_var_arg(impl_var *var, struct impl_args *args);
+static inline char *psi_impl_var_name_prepend(char *current, const char *prepend) {
+	size_t c_len = strlen(current);
+	size_t p_len = strlen(prepend);
+
+	current = realloc(current, p_len
+			+ c_len // includes '$'
+			+ 1 // connecting dot
+			+ 1 // terminating 0
+	);
+	if (current) {
+		if (c_len > 1) {
+			memmove(current + p_len + 1 + 1, current + 1, c_len - 1 + 1);
+			current[p_len + 1] = '.';
+		} else {
+			/* just '$' */
+			current[p_len + 1] = '\0';
+		}
+		memcpy(current + 1, prepend, p_len);
+	}
+	return current;
+}
+
+bool psi_impl_var_validate(struct psi_data *data, struct psi_impl_var *ivar, struct psi_impl *impl,
+		struct psi_let_exp *current_let_exp, struct psi_set_exp *current_set_exp);
 
 #endif

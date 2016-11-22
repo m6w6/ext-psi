@@ -23,15 +23,42 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef PSI_TYPES_DECL_STRUCT_LAYOUT_H
-#define PSI_TYPES_DECL_STRUCT_LAYOUT_H
+#ifndef PSI_TYPES_SET_EXP_H
+#define PSI_TYPES_SET_EXP_H
 
-typedef struct decl_struct_layout {
-	size_t pos;
-	size_t len;
-} decl_struct_layout;
+struct psi_data;
+struct psi_plist;
+struct psi_call_frame;
+struct psi_let_exp;
+struct psi_set_func;
+struct psi_num_exp;
+struct psi_impl;
+struct psi_decl;
 
-decl_struct_layout *init_decl_struct_layout(size_t pos, size_t len);
-void free_decl_struct_layout(decl_struct_layout *l);
+enum psi_set_exp_kind {
+	PSI_SET_FUNC,
+	PSI_SET_NUMEXP,
+};
+
+struct psi_set_exp {
+	enum psi_set_exp_kind kind;
+	struct psi_impl_var *var;
+	struct psi_set_exp *outer;
+	struct psi_plist *inner;
+	union {
+		struct psi_set_func *func;
+		struct psi_num_exp *num;
+	} data;
+};
+
+struct psi_set_exp *psi_set_exp_init(enum psi_set_exp_kind kind, void *data);
+void psi_set_exp_free(struct psi_set_exp **exp_ptr);
+void psi_set_exp_dump(int fd, struct psi_set_exp *set, unsigned level, int last);
+void psi_set_exp_exec(struct psi_set_exp *val, struct psi_call_frame *frame);
+void psi_set_exp_exec_ex(struct psi_set_exp *val, zval *zv, impl_val *iv, struct psi_call_frame *frame);
+bool psi_set_exp_validate(struct psi_data *data, struct psi_set_exp *set, struct psi_impl *impl, struct psi_decl *cb_decl);
+
+struct psi_impl_var *psi_set_exp_get_impl_var(struct psi_set_exp *exp);
+struct psi_decl_var *psi_set_exp_get_decl_var(struct psi_set_exp *exp);
 
 #endif

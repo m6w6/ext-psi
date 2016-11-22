@@ -28,13 +28,13 @@
 
 #include "token.h"
 
-typedef struct const_type {
+struct psi_const_type {
 	token_t type;
 	char *name;
-} const_type;
+};
 
-const_type *init_const_type(token_t type, const char *name);
-void free_const_type(const_type *type);
-void dump_const_type(int fd, const_type *type);
+struct psi_const_type *psi_const_type_init(token_t type, const char *name);
+void psi_const_type_free(struct psi_const_type **type_tr);
+void psi_const_type_dump(int fd, struct psi_const_type *type);
 
 #endif

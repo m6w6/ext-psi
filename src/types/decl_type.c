@@ -5,11 +5,11 @@
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
 
-     * Redistributions of source code must retain the above copyright notice,
-       this list of conditions and the following disclaimer.
-     * Redistributions in binary form must reproduce the above copyright
-       notice, this list of conditions and the following disclaimer in the
-       documentation and/or other materials provided with the distribution.
+ * Redistributions of source code must retain the above copyright notice,
+ this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright
+ notice, this list of conditions and the following disclaimer in the
+ documentation and/or other materials provided with the distribution.
 
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -21,46 +21,48 @@
  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*******************************************************************************/
+ *******************************************************************************/
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#else
-# include "php_config.h"
-#endif
-
-#include <stdlib.h>
-#include <stdio.h>
-
+#include "php_psi_stdinc.h"
 #include "token.h"
 #include "php_psi_stdtypes.h"
-
 #include "data.h"
 
-decl_type *init_decl_type(token_t type, const char *name) {
-	decl_type *t = calloc(1, sizeof(*t));
+struct psi_decl_type *psi_decl_type_init(token_t type, const char *name)
+{
+	struct psi_decl_type *t = calloc(1, sizeof(*t));
 	t->type = type;
 	t->name = strdup(name);
 	return t;
 }
 
-void free_decl_type(decl_type *type) {
-	if (type->token) {
-		free(type->token);
+void psi_decl_type_free(struct psi_decl_type **type_ptr)
+{
+	if (*type_ptr) {
+		struct psi_decl_type *type = *type_ptr;
+
+		*type_ptr = NULL;
+		if (type->token) {
+			free(type->token);
+		}
+		if (type->type == PSI_T_FUNCTION) {
+			psi_decl_free(&type->real.func);
+		}
+		free(type->name);
+		free(type);
 	}
-	if (type->type == PSI_T_FUNCTION) {
-		free_decl(type->real.func);
-	}
-	free(type->name);
-	free(type);
 }
 
-decl_args *extract_decl_type_args(decl_type *dtyp, decl_type **real_typ_ptr) {
-	decl_type *var_typ;
-	var_typ = real_decl_type(dtyp);
+struct psi_plist *psi_decl_type_get_args(struct psi_decl_type *dtyp,
+		struct psi_decl_type **real_typ_ptr)
+{
+	struct psi_decl_type *var_typ;
+
+	var_typ = psi_decl_type_get_real(dtyp);
 	if (real_typ_ptr) {
 		*real_typ_ptr = var_typ;
 	}
+
 	switch (var_typ->type) {
 	case PSI_T_STRUCT:
 		return var_typ->real.strct->args;
@@ -71,12 +73,16 @@ decl_args *extract_decl_type_args(decl_type *dtyp, decl_type **real_typ_ptr) {
 	}
 }
 
-size_t extract_decl_type_size(decl_type *dtyp, decl_type **real_typ_ptr) {
-	decl_type *var_typ;
-	var_typ = real_decl_type(dtyp);
+size_t psi_decl_type_get_size(struct psi_decl_type *dtyp,
+		struct psi_decl_type **real_typ_ptr)
+{
+	struct psi_decl_type *var_typ;
+
+	var_typ = psi_decl_type_get_real(dtyp);
 	if (real_typ_ptr) {
 		*real_typ_ptr = var_typ;
 	}
+
 	switch (var_typ->type) {
 	case PSI_T_STRUCT:
 		return var_typ->real.strct->size;
@@ -87,134 +93,183 @@ size_t extract_decl_type_size(decl_type *dtyp, decl_type **real_typ_ptr) {
 	}
 }
 
-
-
-int locate_decl_type_alias(decl_typedefs *defs, decl_type *type) {
-	size_t i;
+bool psi_decl_type_get_alias(struct psi_decl_type *type, struct psi_plist *defs)
+{
+	size_t i = 0;
 	struct psi_std_type *stdtyp;
+	struct psi_decl_arg *def;
 
 	if (type->real.def) {
-		return 1;
+		return true;
 	}
-	if (defs) for (i = 0; i < defs->count; ++i) {
-		decl_arg *def = defs->list[i];
-
-		if (def->type->type != type->type && !strcmp(def->var->name, type->name)) {
-			type->real.def = def;
-			return 1;
+	if (defs)
+		while (psi_plist_get(defs, i++, &def)) {
+			if (def->type->type != type->type
+					&& !strcmp(def->var->name, type->name)) {
+				type->real.def = def;
+				return true;
+			}
 		}
-	}
 	for (stdtyp = &psi_std_types[0]; stdtyp->type_tag; ++stdtyp) {
 		if (!strcmp(type->name, stdtyp->alias ?: stdtyp->type_name)) {
 			type->type = stdtyp->type_tag;
-			return 1;
+			return true;
 		}
 	}
 
-	return 0;
+	return false;
 }
 
-int locate_decl_type_struct(decl_structs *structs, decl_type *type) {
-	size_t i;
+bool psi_decl_type_get_struct(struct psi_decl_type *type, struct psi_plist *structs)
+{
+	size_t i = 0;
+	struct psi_decl_struct *s;
 
 	if (type->real.strct) {
-		return 1;
+		return true;
 	}
-	if (structs) for (i = 0; i < structs->count; ++i) {
-		if (!strcmp(structs->list[i]->name, type->name)) {
-			type->real.strct = structs->list[i];
-			return 1;
+	if (structs) {
+		while (psi_plist_get(structs, i++, &s)) {
+			if (!strcmp(s->name, type->name)) {
+				type->real.strct = s;
+				return true;
+			}
 		}
 	}
-	return 0;
+	return false;
 }
 
-int locate_decl_type_union(decl_unions *unions, decl_type *type) {
-	size_t i;
+bool psi_decl_type_get_union(struct psi_decl_type *type, struct psi_plist *unions)
+{
+	size_t i = 0;
+	struct psi_decl_union *u;
 
 	if (type->real.unn) {
-		return 1;
+		return true;
 	}
-	if (unions) for (i = 0; i < unions->count; ++i) {
-		if (!strcmp(unions->list[i]->name, type->name)) {
-			type->real.unn = unions->list[i];
-			return 1;
+	if (unions) {
+		while (psi_plist_get(unions, i++, &u)) {
+			if (!strcmp(u->name, type->name)) {
+				type->real.unn = u;
+				return true;
+			}
 		}
 	}
-	return 0;
+	return false;
 }
 
-int locate_decl_type_enum(decl_enums *enums, decl_type *type) {
-	size_t i;
+bool psi_decl_type_get_enum(struct psi_decl_type *type, struct psi_plist *enums)
+{
+	size_t i = 0;
+	struct psi_decl_enum *e;
 
 	if (type->real.enm) {
-		return 1;
+		return true;
 	}
-	if (enums) for (i = 0; i < enums->count; ++i) {
-		if (!strcmp(enums->list[i]->name, type->name)) {
-			type->real.enm = enums->list[i];
-			return 1;
+	if (enums) {
+		while (psi_plist_get(enums, i++, &e)) {
+			if (!strcmp(e->name, type->name)) {
+				type->real.enm = e;
+				return true;
+			}
 		}
 	}
-	return 0;
+	return false;
 }
 
-int locate_decl_type_decl(decls *decls, decl_type *type) {
-	size_t i;
+bool psi_decl_type_get_decl(struct psi_decl_type *type, struct psi_plist *decls)
+{
+	size_t i = 0;
+	struct psi_decl *decl;
 
 	if (type->real.func) {
-		return 1;
+		return true;
 	}
-	if (decls) for (i = 0; i < decls->count; ++i) {
-		if (!strcmp(decls->list[i]->func->var->name, type->name)) {
-			type->real.func = decls->list[i];
-			return 1;
+	if (decls) {
+		while (psi_plist_get(decls, i++, &decl)) {
+			if (!strcmp(decl->func->var->name, type->name)) {
+				type->real.func = decl;
+				return true;
+			}
 		}
 	}
-
-	return 0;
+	return false;
 }
 
-int validate_decl_type(struct psi_data *data, decl_type *type, decl_arg *def) {
-	if (weak_decl_type(type)) {
-		if (!locate_decl_type_alias(data->defs, type)) {
-			return 0;
+bool psi_decl_type_validate(struct psi_data *data, struct psi_decl_type *type,
+		struct psi_decl_arg *def)
+{
+	if (psi_decl_type_is_weak(type)) {
+		if (!psi_decl_type_get_alias(type, data->types)) {
+			return false;
 		}
 		if (type->real.def) {
-			return validate_decl_type(data, type->real.def->type, type->real.def);
+			return psi_decl_type_validate(data, type->real.def->type,
+					type->real.def);
 		}
-		return 1;
+		return true;
 	}
 
 	switch (type->type) {
 	case PSI_T_STRUCT:
-		if (!locate_decl_type_struct(data->structs, type)) {
-			return 0;
+		if (!psi_decl_type_get_struct(type, data->structs) && !def) {
+			data->error(data, type->token, PSI_WARNING,
+					"Unknown struct '%s'", type->name);
+			return false;
 		}
 		break;
 	case PSI_T_UNION:
-		if (!locate_decl_type_union(data->unions, type)) {
-			return 0;
+		if (!psi_decl_type_get_union(type, data->unions) && !def) {
+			data->error(data, type->token, PSI_WARNING,
+					"Unknown union '%s'", type->name);
+			return false;
 		}
 		break;
 	case PSI_T_ENUM:
-		if (!locate_decl_type_enum(data->enums, type)) {
-			return 0;
+		if (!psi_decl_type_get_enum(type, data->enums) && !def) {
+			data->error(data, type->token, PSI_WARNING,
+					"Unknown enum '%s'", type->name);
+			return false;
 		}
 		break;
 	case PSI_T_FUNCTION:
-		if (!locate_decl_type_decl(data->decls, type)) {
-			return 0;
+		if (!psi_decl_type_get_decl(type, data->decls)) {
+			data->error(data, type->token, PSI_WARNING,
+					"Unknown decl '%s'", type->name);
+			return false;
 		}
-		if (!validate_decl_nodl(data, type->real.func)) {
-			return 0;
+		if (!psi_decl_validate_nodl(data, type->real.func)) {
+			return false;
 		}
 		break;
 	}
-	return 1;
+	return true;
 }
 
-void dump_decl_type(int fd, decl_type *t, unsigned level) {
+void psi_decl_type_dump_args_with_layout(int fd, struct psi_plist *args,
+		unsigned level)
+{
+	size_t i = 0;
+
+	dprintf(fd, " {\n");
+	if (args) {
+		struct psi_decl_arg *sarg;
+
+		++level;
+		while (psi_plist_get(args, i++, &sarg)) {
+			dprintf(fd, "%s", psi_t_indent(level));
+			psi_decl_arg_dump(fd, sarg, level);
+			dprintf(fd, "::(%zu, %zu);\n", sarg->layout->pos,
+					sarg->layout->len);
+		}
+		--level;
+	}
+	dprintf(fd, "%s", psi_t_indent(level));
+	dprintf(fd, "}");
+}
+
+void psi_decl_type_dump(int fd, struct psi_decl_type *t, unsigned level)
+{
 	switch (t->type) {
 	case PSI_T_POINTER:
 		dprintf(fd, "%s *", t->name);
@@ -222,24 +277,37 @@ void dump_decl_type(int fd, decl_type *t, unsigned level) {
 
 	case PSI_T_ENUM:
 		dprintf(fd, "enum ");
-		if (is_anon_type(t->name, "enum")) {
-			dump_decl_enum_items(fd, t->real.enm->items, level);
+		if (psi_decl_type_is_anon(t->name, "enum")) {
+			size_t i = 0, c = psi_plist_count(t->real.enm->items);
+			struct psi_decl_enum_item *item;
+
+			dprintf(fd, "{\n");
+			++level;
+			while (psi_plist_get(t->real.enm->items, i++, &item)) {
+				dprintf(fd, "%s", psi_t_indent(level));
+				psi_decl_enum_item_dump(fd, item);
+				if (i < c) {
+					dprintf(fd, "%s\n", i < c ? "," : "");
+				}
+			}
+			--level;
+			dprintf(fd, "%s} ", psi_t_indent(level));
 			return;
 		}
 		break;
 
 	case PSI_T_STRUCT:
 		dprintf(fd, "struct ");
-		if (is_anon_type(t->name, "struct")) {
-			dump_decl_args_with_layout(fd, t->real.strct->args, level);
+		if (psi_decl_type_is_anon(t->name, "struct")) {
+			psi_decl_type_dump_args_with_layout(fd, t->real.strct->args, level);
 			return;
 		}
 		break;
 
 	case PSI_T_UNION:
 		dprintf(fd, "union ");
-		if (is_anon_type(t->name, "union")) {
-			dump_decl_args_with_layout(fd, t->real.unn->args, level);
+		if (psi_decl_type_is_anon(t->name, "union")) {
+			psi_decl_type_dump_args_with_layout(fd, t->real.unn->args, level);
 			return;
 		}
 		break;
@@ -247,7 +315,8 @@ void dump_decl_type(int fd, decl_type *t, unsigned level) {
 	dprintf(fd, "%s", t->name);
 }
 
-int weak_decl_type(decl_type *type) {
+int psi_decl_type_is_weak(struct psi_decl_type *type)
+{
 	switch (type->type) {
 	case PSI_T_CHAR:
 	case PSI_T_SHORT:
@@ -260,23 +329,25 @@ int weak_decl_type(decl_type *type) {
 	}
 }
 
-decl_type *real_decl_type(decl_type *type) {
-	while (weak_decl_type(type) && type->real.def) {
+struct psi_decl_type *psi_decl_type_get_real(struct psi_decl_type *type)
+{
+	while (psi_decl_type_is_weak(type) && type->real.def) {
 		type = type->real.def->type;
 	}
 	return type;
 }
 
-size_t alignof_decl_type(decl_type *t) {
-	decl_type *real = real_decl_type(t);
+size_t psi_decl_type_get_align(struct psi_decl_type *t)
+{
+	struct psi_decl_type *real = psi_decl_type_get_real(t);
 	size_t align;
 
 	switch (real->type) {
 	case PSI_T_STRUCT:
-		align = alignof_decl_struct(real->real.strct);
+		align = psi_decl_struct_get_align(real->real.strct);
 		break;
 	case PSI_T_UNION:
-		align = alignof_decl_union(real->real.unn);
+		align = psi_decl_union_get_align(real->real.unn);
 		break;
 	case PSI_T_ENUM:
 	default:
@@ -285,3 +356,20 @@ size_t alignof_decl_type(decl_type *t) {
 
 	return align;
 }
+
+size_t psi_decl_type_get_args_align(struct psi_plist *args)
+{
+	size_t i = 0, maxalign = 0;
+	struct psi_decl_arg *darg;
+
+	while (psi_plist_get(args, i++, &darg)) {
+		size_t align = psi_decl_arg_get_align(darg);
+
+		if (align > maxalign) {
+			maxalign = align;
+		}
+	}
+
+	return maxalign;
+}
+

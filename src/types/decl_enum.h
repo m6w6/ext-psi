@@ -26,21 +26,19 @@
 #ifndef PSI_TYPES_DECL_ENUM_H
 #define PSI_TYPES_DECL_ENUM_H
 
-#include "token.h"
-#include "decl_enum_items.h"
+struct psi_data;
+struct psi_token;
+struct psi_plist;
 
-typedef struct decl_enum {
+struct psi_decl_enum {
 	struct psi_token *token;
 	char *name;
-	decl_enum_items *items;
-} decl_enum;
+	struct psi_plist *items;
+};
 
-decl_enum *init_decl_enum(const char *name, decl_enum_items *l);
-void free_decl_enum(decl_enum *e);
-void dump_decl_enum(int fd, decl_enum *e, unsigned level);
-
-struct psi_data;
-
-int validate_decl_enum(struct psi_data *data, decl_enum *e);
+struct psi_decl_enum *psi_decl_enum_init(const char *name, struct psi_plist *l);
+void psi_decl_enum_free(struct psi_decl_enum **e_ptr);
+void psi_decl_enum_dump(int fd, struct psi_decl_enum *e, unsigned level);
+bool psi_decl_enum_validate(struct psi_data *data, struct psi_decl_enum *e);
 
 #endif

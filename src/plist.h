@@ -23,42 +23,28 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#else
-# include "php_config.h"
+#ifndef PSI_PLIST_H
+#define PSI_PLIST_H
+
+struct psi_plist;
+
+typedef void (*psi_plist_dtor)(void *);
+
+struct psi_plist *psi_plist_init(void (*dtor)(void *));
+struct psi_plist *psi_plist_init_ex(size_t size, void (*dtor)(void *));
+void psi_plist_free(struct psi_plist *list);
+
+size_t psi_plist_count(struct psi_plist *list);
+
+struct psi_plist *psi_plist_add(struct psi_plist *list, void *ptr);
+bool psi_plist_get(struct psi_plist *list, size_t index, void *ptr);
+bool psi_plist_del(struct psi_plist *list, size_t index, void *ptr);
+bool psi_plist_shift(struct psi_plist *list, void *ptr);
+bool psi_plist_pop(struct psi_plist *list, void *ptr);
+
+#include "Zend/zend.h"
+#include "Zend/zend_sort.h"
+
+void psi_plist_sort(struct psi_plist *list, compare_func_t cmp, swap_func_t swp);
+
 #endif
-
-#include <stdlib.h>
-#include <stdio.h>
-
-#include "impls.h"
-
-impls *add_impl(impls *impls, impl *impl) {
-	if (!impls) {
-		impls = calloc(1, sizeof(*impls));
-	}
-	impls->list = realloc(impls->list, ++impls->count * sizeof(*impls->list));
-	impls->list[impls->count - 1] = impl;
-	return impls;
-}
-
-void free_impls(impls *impls) {
-	size_t i;
-	for (i = 0; i < impls->count; ++i) {
-		free_impl(impls->list[i]);
-	}
-	free(impls->list);
-	free(impls);
-}
-
-void dump_impls(int fd, impls *impls) {
-	size_t i;
-
-	for (i = 0; i < impls->count; ++i) {
-		impl *impl = impls->list[i];
-
-		dump_impl(fd, impl);
-		dprintf(fd, "\n");
-	}
-}

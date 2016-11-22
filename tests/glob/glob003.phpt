@@ -21,15 +21,15 @@ var_dump($glob);
 int(0)
 array(5) {
   ["gl_matchc"]=>
-  int(4)
+  int(5)
   ["gl_pathc"]=>
-  int(4)
+  int(5)
   ["gl_offs"]=>
   int(3)
   ["gl_flags"]=>
   int(386)
   ["gl_pathv"]=>
-  array(7) {
+  array(8) {
     [0]=>
     string(0) ""
     [1]=>
@@ -44,6 +44,8 @@ array(5) {
     string(12) "glob002.phpt"
     [6]=>
     string(12) "glob003.phpt"
+    [7]=>
+    string(12) "glob004.phpt"
   }
 }
 ===DONE===

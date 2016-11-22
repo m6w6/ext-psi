@@ -8,7 +8,9 @@ extension_loaded("psi") or die("skip - need ext/psi");
 ?>
 --FILE--
 ===TEST===
-<?php 
+<?php
+for ($i=0; $i<1e6; ++$i) {
+}
 var_dump(psi\times($times), $times);
 ?>
 ===DONE===

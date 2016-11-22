@@ -1,9 +1,7 @@
-* move numbers to the lexer
 * avoid allocs inside structures by reallocating the whole structure
 * let the various list types be hashtables where appropriate
 * check out jit-dynamic
 * fix arginfo with nullable types
 * pemalloc
-* unions
-* callbacks and function pointers
-* let impl_Var point to impl_arg, just like decl_var?
+* CPP style #if(def(ined)) support in parser.re with a HashTable
+* think about a better system for EXTVARs, separate \set and \get functions are clunky

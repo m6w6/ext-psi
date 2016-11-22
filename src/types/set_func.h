@@ -27,18 +27,25 @@
 #define PSI_TYPES_SET_FUNC_H
 
 #include "token.h"
-#include "impl_val.h"
+#include "marshal.h"
 
-struct set_value;
+struct psi_plist;
+struct psi_decl_var;
 
-typedef struct set_func {
+struct psi_set_func {
 	struct psi_token *token;
 	token_t type;
 	char *name;
-	void (*handler)(zval *, struct set_value *set, impl_val *ret_val);
-} set_func;
+	struct psi_decl_var *var;
+	psi_marshal_set handler;
+	struct psi_plist *inner;
+	unsigned recursive:1;
+};
 
-set_func *init_set_func(token_t type, const char *name);
-void free_set_func(set_func *func);
+struct psi_set_func *psi_set_func_init(token_t type, const char *name, struct psi_decl_var *var);
+void psi_set_func_free(struct psi_set_func **func_ptr);
+void psi_set_func_dump(int fd, struct psi_set_func *func, unsigned level);
+bool psi_set_func_validate(struct psi_data *data, struct psi_set_func *func,
+		struct psi_set_exp *set, struct psi_impl *impl, struct psi_decl *cb_decl);
 
 #endif

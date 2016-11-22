@@ -26,21 +26,22 @@
 #ifndef PSI_TYPES_LET_STMT_H
 #define PSI_TYPES_LET_STMT_H
 
-#include "decl_var.h"
-#include "let_val.h"
-
-typedef struct let_stmt {
-	struct psi_token *token;
-	let_val *val;
-} let_stmt;
-
-let_stmt *init_let_stmt(let_val *val);
-void free_let_stmt(let_stmt *stmt);
-void dump_let_stmt(int fd, let_stmt *let);
-
 struct psi_data;
-struct impl;
+struct psi_token;
+struct psi_let_exp;
+struct psi_call_frame;
+struct psi_impl;
 
-int validate_let_stmts(struct psi_data *data, struct impl *impl);
+struct psi_let_stmt {
+	struct psi_token *token;
+	struct psi_let_exp *exp;
+};
+
+struct psi_let_stmt *psi_let_stmt_init(struct psi_let_exp *exp);
+void psi_let_stmt_free(struct psi_let_stmt **stmt_ptr);
+void psi_let_stmt_dump(int fd, struct psi_let_stmt *stmt);
+
+void *psi_let_stmt_exec(struct psi_let_stmt *stmt, struct psi_call_frame *frame);
+bool psi_let_stmts_validate(struct psi_data *data, struct psi_impl *impl);
 
 #endif

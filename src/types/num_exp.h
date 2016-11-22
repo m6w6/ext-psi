@@ -27,35 +27,64 @@
 #define PSI_TYPES_NUM_EXP
 
 #include "token.h"
-
-#include "constant.h"
-#include "decl_var.h"
-#include "impl_val.h"
-
-typedef struct num_exp {
-	struct psi_token *token;
-	token_t t;
-	union {
-		char *numb;
-		constant *cnst;
-		decl_var *dvar;
-		struct decl_enum_item *enm;
-	} u;
-	token_t operator;
-	int (*calculator)(int t1, impl_val *v1, int t2, impl_val *v2, impl_val *res);
-	struct num_exp *operand;
-} num_exp;
-
-num_exp *init_num_exp(token_t t, void *num);
-num_exp *copy_num_exp(num_exp *exp);
-void free_num_exp(num_exp *exp);
-void dump_num_exp(int fd, num_exp *exp);
+#include "Zend/zend_types.h"
 
 struct psi_data;
-struct decl_args;
-struct decl_arg;
-struct decl_enum;
+struct psi_token;
+struct psi_impl;
+struct psi_const;
+struct psi_decl_enum_item;
+struct psi_let_exp;
+struct psi_set_exp;
+struct psi_call_frame;
 
-int validate_num_exp(struct psi_data *data, num_exp *exp, struct decl_args *dargs, struct decl_arg *func, struct decl_enum *enm);
+struct psi_num_exp {
+	struct psi_token *token;
+	token_t type;
+	union {
+		char *numb;
+		impl_val ival;
+		struct psi_const *cnst;
+		struct psi_decl_var *dvar;
+		struct psi_decl_enum_item *enm;
+	} data;
+	token_t op;
+	struct psi_num_exp *operand;
+	token_t (*calc)(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
+};
+
+struct psi_num_exp *psi_num_exp_init(token_t t, void *num);
+struct psi_num_exp *psi_num_exp_copy(struct psi_num_exp *exp);
+void psi_num_exp_free(struct psi_num_exp **exp_ptr);
+void psi_num_exp_dump(int fd, struct psi_num_exp *exp);
+
+bool psi_num_exp_validate(struct psi_data *data, struct psi_num_exp *exp,
+		struct psi_impl *impl, struct psi_decl *cb_decl,
+		struct psi_let_exp *current_let, struct psi_set_exp *current_set,
+		struct psi_decl_enum *current_enum);
+
+token_t psi_num_exp_exec(struct psi_num_exp *exp, impl_val *res, struct psi_call_frame *frame);
+
+#include <assert.h>
+
+static inline zend_long psi_long_num_exp(struct psi_num_exp *exp, struct psi_call_frame *frame) {
+	impl_val val = {0};
+
+	switch (psi_num_exp_exec(exp, &val, frame)) {
+	case PSI_T_UINT8:	return val.u8;
+	case PSI_T_UINT16:	return val.u16;
+	case PSI_T_UINT32:	return val.u32;
+	case PSI_T_UINT64:	return val.u64; /* FIXME */
+	case PSI_T_INT8:	return val.i8;
+	case PSI_T_INT16:	return val.i16;
+	case PSI_T_INT32:	return val.i32;
+	case PSI_T_INT64:	return val.i64;
+	case PSI_T_FLOAT:	return val.fval;
+	case PSI_T_DOUBLE:	return val.dval;
+	default:
+		assert(0);
+	}
+	return 0;
+}
 
 #endif

@@ -26,22 +26,43 @@
 #ifndef PSI_TYPES_DECL_VAR_H
 #define PSI_TYPES_DECL_VAR_H
 
-typedef struct decl_var {
+struct psi_data;
+struct psi_token;
+struct psi_decl_arg;
+struct psi_let_exp;
+struct psi_set_exp;
+
+struct psi_decl_var {
 	struct psi_token *token;
-	char *name;
+	char *name, *fqn;
 	unsigned pointer_level;
 	unsigned array_size;
-	struct decl_arg *arg;
-} decl_var;
+	struct psi_decl_arg *arg;
+};
 
-decl_var *init_decl_var(const char *name, unsigned pl, unsigned as);
-decl_var *copy_decl_var(decl_var *src);
-void free_decl_var(decl_var *var);
-void dump_decl_var(int fd, decl_var *var);
+struct psi_decl_var *psi_decl_var_init(const char *name, unsigned pl, unsigned as);
+struct psi_decl_var *psi_decl_var_copy(struct psi_decl_var *src);
+void psi_decl_var_free(struct psi_decl_var **var_ptr);
+void psi_decl_var_dump(int fd, struct psi_decl_var *var);
 
-struct decl_arg;
-struct decl_args;
+#include <string.h>
 
-struct decl_arg *locate_decl_var_arg(decl_var *var, struct decl_args *args, struct decl_arg *func);
+static inline char *psi_decl_var_name_prepend(char *current, const char *prepend) {
+	size_t c_len = strlen(current);
+	size_t p_len = strlen(prepend);
+
+	current = realloc(current, p_len + 1 + c_len + 1);
+	if (current) {
+		memmove(current + p_len + 1, current, c_len + 1);
+		current[p_len] = '.';
+		memcpy(current, prepend, p_len);
+	}
+	return current;
+}
+
+bool psi_decl_var_validate(struct psi_data *data, struct psi_decl_var *dvar, struct psi_decl *decl,
+		struct psi_let_exp *current_let_exp, struct psi_set_exp *current_set_exp);
+
+size_t psi_decl_var_get_size(struct psi_decl_var *var);
 
 #endif

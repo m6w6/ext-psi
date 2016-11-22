@@ -151,8 +151,8 @@ TOKEN_TYPE(callback_arg_list, set_values *)
 TOKEN_DTOR(callback_arg_list, free_set_values($$);)
 TOKEN_TYPE(callback_args, set_values *)
 TOKEN_DTOR(callback_args, free_set_values($$);)
-TOKEN_TYPE(let_val, let_val*)
-TOKEN_DTOR(let_val, free_let_val($$);)
+TOKEN_TYPE(let_exp, let_exp*)
+TOKEN_DTOR(let_exp, free_let_exp($$);)
 TOKEN_TYPE(set_stmt, set_stmt*)
 TOKEN_DTOR(set_stmt, free_set_stmt($$);)
 TOKEN_TYPE(set_value, set_value*)
@@ -971,14 +971,14 @@ PARSE_TYPED(let_stmt, let,
 		TOKEN(LET)
 		TYPED(decl_var, var)
 		TOKEN(EOS)) {
-	let = init_let_stmt(var, init_let_val(PSI_LET_NULL, NULL));
+	let = init_let_stmt(var, init_let_exp(PSI_LET_NULL, NULL));
 }
 PARSE_TYPED(let_stmt, let,
 		TOKEN(LET)
 		TYPED(decl_var, var)
 		TOKEN(EQUALS)
 		TYPED(reference, r)
-		TYPED(let_val, val)
+		TYPED(let_exp, val)
 		TOKEN(EOS)) {
 	val->flags.one.is_reference = r ? 1 : 0;
 	let = init_let_stmt(var, val);
@@ -989,7 +989,7 @@ PARSE_TYPED(let_stmt, let,
 		TOKEN(EQUALS)
 		TYPED(decl_var, val)
 		TOKEN(EOS)) {
-	let = init_let_stmt(var, init_let_val(PSI_LET_TMP, val));
+	let = init_let_stmt(var, init_let_exp(PSI_LET_TMP, val));
 }
 
 PARSE_TYPED(let_calloc, alloc,
@@ -1025,26 +1025,26 @@ PARSE_TYPED(callback_args, args,
 	args = add_set_value(args_, val);
 }
 
-PARSE_TYPED(let_val, val,
+PARSE_TYPED(let_exp, val,
 		TOKEN(NULL)) {
-	val = init_let_val(PSI_LET_NULL, NULL);
+	val = init_let_exp(PSI_LET_NULL, NULL);
 }
-PARSE_TYPED(let_val, val,
+PARSE_TYPED(let_exp, val,
 		TYPED(num_exp, exp)) {
-	val = init_let_val(PSI_LET_NUMEXP, exp);
+	val = init_let_exp(PSI_LET_NUMEXP, exp);
 }
-PARSE_TYPED(let_val, val,
+PARSE_TYPED(let_exp, val,
 		TOKEN(CALLOC)
 		TOKEN(LPAREN)
 		TYPED(let_calloc, alloc)
 		TOKEN(RPAREN)) {
-	val = init_let_val(PSI_LET_CALLOC, alloc);
+	val = init_let_exp(PSI_LET_CALLOC, alloc);
 }
-PARSE_TYPED(let_val, val,
+PARSE_TYPED(let_exp, val,
 		TYPED(let_func, func)) {
-	val = init_let_val(PSI_LET_FUNC, func);
+	val = init_let_exp(PSI_LET_FUNC, func);
 }
-PARSE_TYPED(let_val, val,
+PARSE_TYPED(let_exp, val,
 		TOKEN(CALLBACK)
 		NAMED(let_func_token, F)
 		TOKEN(LPAREN)
@@ -1053,7 +1053,7 @@ PARSE_TYPED(let_val, val,
 		TYPED(callback_arg_list, args_)
 		TOKEN(RPAREN)
 		TOKEN(RPAREN)) {
-	val = init_let_val(PSI_LET_CALLBACK, init_let_callback(
+	val = init_let_exp(PSI_LET_CALLBACK, init_let_callback(
 		init_let_func(F->type, F->text, var), args_));
 	free(F);
 }

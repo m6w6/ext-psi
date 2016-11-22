@@ -23,32 +23,17 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef PSI_TYPES_LET_VALS_H
-#define PSI_TYPES_LET_VALS_H
+#ifndef PSI_TYPES_LAYOUT_H
+#define PSI_TYPES_LAYOUT_H
 
-#include "let_val.h"
+struct psi_layout {
+	size_t pos;
+	size_t len;
+};
 
-typedef struct let_vals {
-	struct let_val **vals;
-	size_t count;
-} let_vals;
+struct psi_layout *psi_layout_init(size_t pos, size_t len);
+void psi_layout_free(struct psi_layout **l_ptr);
 
-let_vals *init_let_vals(struct let_val *val);
-let_vals *add_let_val(let_vals *vals, struct let_val *val);
-void free_let_vals(let_vals *vals);
+int psi_layout_sort_cmp(const void *_a, const void *_b);
 
-static inline let_val *locate_let_vals_val(let_vals *vals, const char *name) {
-	size_t i;
-
-	for (i = 0; i < vals->count; ++i) {
-		let_val *val = vals->vals[i];
-		const char *var = locate_let_val_varname(val);
-
-		if (!strcmp(var, name)) {
-			return val;
-		}
-	}
-
-	return NULL;
-}
 #endif

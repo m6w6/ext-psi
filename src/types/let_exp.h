@@ -23,43 +23,53 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#else
-# include "php_config.h"
+#ifndef PSI_TYPES_LET_VAL_H
+#define PSI_TYPES_LET_VAL_H
+
+struct psi_data;
+struct psi_call_frame;
+struct psi_impl;
+struct psi_decl_var;
+struct psi_num_exp;
+struct psi_let_calloc;
+struct psi_let_callback;
+struct psi_let_func;
+
+enum psi_let_exp_kind {
+	PSI_LET_NULL,
+	PSI_LET_NUMEXP,
+	PSI_LET_CALLOC,
+	PSI_LET_CALLBACK,
+	PSI_LET_FUNC,
+	PSI_LET_TMP,
+};
+
+struct psi_let_exp {
+	enum psi_let_exp_kind kind;
+	struct psi_let_exp *outer;
+	struct psi_decl_var *var;
+	union {
+		struct psi_num_exp *num;
+		struct psi_let_calloc *alloc;
+		struct psi_let_callback *callback;
+		struct psi_let_func *func;
+		struct psi_decl_var *var;
+	} data;
+	unsigned is_reference:1;
+};
+
+
+struct psi_let_exp *psi_let_exp_init(enum psi_let_exp_kind kind, void *data);
+struct psi_let_exp *psi_let_exp_init_ex(struct psi_decl_var *var, enum psi_let_exp_kind kind, void *data);
+void psi_let_exp_free(struct psi_let_exp **let_ptr);
+void psi_let_exp_dump(int fd, struct psi_let_exp *exp, unsigned level, int last);
+
+void *psi_let_exp_exec(struct psi_let_exp *exp, struct psi_decl_arg *darg, void *actual_location, size_t actual_size, struct psi_call_frame *frame);
+bool psi_let_exp_validate(struct psi_data *data, struct psi_let_exp *exp, struct psi_impl *impl);
+
+struct psi_let_func *psi_let_exp_get_func(struct psi_let_exp *exp);
+struct psi_impl_var *psi_let_exp_get_impl_var(struct psi_let_exp *exp);
+struct psi_decl_var *psi_let_exp_get_decl_var(struct psi_let_exp *val);
+const char *psi_let_exp_get_decl_var_name(struct psi_let_exp *exp);
+
 #endif
-
-#include <stdlib.h>
-#include <stdio.h>
-
-#include "let_vals.h"
-
-let_vals *init_let_vals(struct let_val *val) {
-	let_vals *vals = calloc(1, sizeof(*vals));
-	if (val) {
-		vals->count = 1;
-		vals->vals = calloc(1, sizeof(val));
-		vals->vals[0] = val;
-	}
-	return vals;
-}
-
-let_vals *add_let_val(let_vals *vals, struct let_val *val) {
-	if (!vals) {
-		vals = calloc(1, sizeof(*vals));
-	}
-	vals->vals = realloc(vals->vals, ++vals->count * sizeof(val));
-	vals->vals[vals->count - 1] = val;
-	return vals;
-}
-
-void free_let_vals(let_vals *vals) {
-	if (vals->vals) {
-		size_t i;
-		for (i = 0; i < vals->count; ++i) {
-			free_let_val(vals->vals[i]);
-		}
-		free(vals->vals);
-	}
-	free(vals);
-}

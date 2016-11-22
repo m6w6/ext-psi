@@ -28,26 +28,46 @@
 
 #include "token.h"
 
-#include "impl_var.h"
-#include "decl_arg.h"
+struct psi_data;
+struct psi_impl;
+struct psi_decl_arg;
+struct psi_impl_var;
+struct psi_let_exp;
+struct psi_call_frame;
 
-typedef struct let_func {
+struct psi_let_func {
+	struct psi_token *token;
 	token_t type;
 	char *name;
-	impl_var *var;
-	struct let_vals *inner;
-	struct let_val *outer;
-	decl_arg *ref;
-} let_func;
+	struct psi_impl_var *var;
+	struct psi_plist *inner;
+};
 
-let_func *init_let_func(token_t type, const char *name, impl_var *var);
-void free_let_func(let_func *func);
-void dump_let_func(int fd, let_func *func, unsigned level);
+struct psi_let_func *psi_let_func_init(token_t type, const char *name, struct psi_impl_var *var);
+void psi_let_func_free(struct psi_let_func **func_ptr);
+void psi_let_func_dump(int fd, struct psi_let_func *func, unsigned level);
 
-struct psi_data;
-struct impl;
-struct let_val;
+void *psi_let_func_exec(struct psi_let_exp *func_val, struct psi_let_func *func, struct psi_decl_arg *darg, struct psi_call_frame *frame);
+bool psi_let_func_validate(struct psi_data *data, struct psi_let_exp *exp, struct psi_let_func *func, struct psi_impl *impl);
 
-int validate_let_func(struct psi_data *data, struct let_val *val, let_func *func, decl_var *let_var, struct impl *impl);
+#include "marshal.h"
+
+static inline psi_marshal_let locate_let_func_fn(token_t type) {
+	psi_marshal_let let_fn = NULL;
+
+	switch (type) {
+		case PSI_T_BOOLVAL:		let_fn = psi_let_boolval;	break;
+		case PSI_T_INTVAL:		let_fn = psi_let_intval;	break;
+		case PSI_T_FLOATVAL:	let_fn = psi_let_floatval;	break;
+		case PSI_T_STRVAL:		let_fn = psi_let_strval;	break;
+		case PSI_T_STRLEN:		let_fn = psi_let_strlen;	break;
+		case PSI_T_PATHVAL:		let_fn = psi_let_pathval;	break;
+		case PSI_T_OBJVAL:		let_fn = psi_let_objval;	break;
+		case PSI_T_ZVAL:		let_fn = psi_let_zval;		break;
+		case PSI_T_VOID:		let_fn = psi_let_void;		break;
+		case PSI_T_COUNT:		let_fn = psi_let_count;		break;
+	}
+	return let_fn;
+}
 
 #endif

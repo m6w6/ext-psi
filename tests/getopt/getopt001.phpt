@@ -3,9 +3,10 @@ getopt
 --INI--
 psi.directory={PWD}:{PWD}/../../psi.d
 --SKIPIF--
-<?php 
+<?php
 extension_loaded("psi") or die("skip - need ext/psi");
-function_exists("psi\\div") or die("skip - need psi\\div()");
+PHP_OS === "Linux" or die("skip - only for Linux");
+function_exists("psi\\getopt") or die("skip - need psi\\getopt()");
 ?>
 --ENV--
 POSIXLY_CORRECT=
@@ -19,35 +20,51 @@ $args = [
 
 $opts = "v::x:s:";
 
-psi\opterr(0);
+for ($i = 0; $i<3; ++$i) {
+	psi\opterr(0);
+	psi\optind\set(1);
 
-while (($opt = chr(psi\getopt($args, $opts)))) {
-	switch ($opt) {
-	case "v":
-		printf("got v\n");
-		break;
-	case "x":
-	case "s":
-		printf("got %s: %s\n", $opt, psi\optarg());
-		break;
-	default: 
-		printf("error '%s'\n", $opt);
-	case chr(-1):
-		break 2;
+	while (($opt = chr(psi\getopt($args, $opts)))) {
+		switch ($opt) {
+		case "v":
+			printf("got v\n");
+			break;
+		case "x":
+		case "s":
+			printf("got %s: %s\n", $opt, psi\optarg());
+			break;
+		default:
+			printf("error '%s'\n", $opt);
+		case chr(-1):
+			break 2;
+		}
+	}
+
+	$pos = psi\optind\get();
+	while ($pos < count($args)) {
+		printf("arg: %s\n", $args[$pos++]);
 	}
 }
-
-$pos = psi\optind();
-while ($pos < count($args)) {
-	printf("arg: %s\n", $args[$pos++]);
-}
-
 var_dump($args);
 
 ?>
 ===DONE===
 --EXPECT--
 ===TEST===
+got v
+got x: 1
+got s: foo
+arg: huh
+arg: -gotcha
+arg: --bar
+arg: baz
+got v
+got x: 1
+got s: foo
+arg: huh
+arg: -gotcha
+arg: --bar
+arg: baz
 got v
 got x: 1
 got s: foo

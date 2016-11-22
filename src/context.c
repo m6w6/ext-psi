@@ -1,8 +1,27 @@
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#else
-# include "php_config.h"
-#endif
+/*******************************************************************************
+ Copyright (c) 2016, Michael Wallner <mike@php.net>.
+ All rights reserved.
+
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+
+     * Redistributions of source code must retain the above copyright notice,
+       this list of conditions and the following disclaimer.
+     * Redistributions in binary form must reproduce the above copyright
+       notice, this list of conditions and the following disclaimer in the
+       documentation and/or other materials provided with the distribution.
+
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*******************************************************************************/
 
 #include "php_psi_stdinc.h"
 
@@ -30,6 +49,7 @@
 #include "php_scandir.h"
 #include "php_psi.h"
 #include "calc.h"
+#include "call.h"
 #include "libjit.h"
 #include "libffi.h"
 
@@ -58,8 +78,7 @@ struct psi_context *psi_context_init(struct psi_context *C, struct psi_context_o
 	}
 	memset(C, 0, sizeof(*C));
 
-	C->error = error;
-	C->flags = flags;
+	psi_data_ctor(PSI_DATA(C), error, flags);
 	C->ops = ops;
 
 	if (ops->init) {
@@ -71,133 +90,129 @@ struct psi_context *psi_context_init(struct psi_context *C, struct psi_context_o
 
 	/* build up predefs in a temporary PSI_Data for validation */
 	memset(&T, 0, sizeof(T));
-	T.error = error;
+	psi_data_ctor_with_dtors(&T, error, flags);
 
 	for (predef_type = &psi_predef_types[0]; predef_type->type_tag; ++predef_type) {
-		decl_type *type = init_decl_type(predef_type->type_tag, predef_type->type_name);
-		decl_var *var = init_decl_var(predef_type->alias, 0, 0); /* FIXME: indirection */
-		decl_arg *def = init_decl_arg(type, var);
+		struct psi_decl_type *type = psi_decl_type_init(predef_type->type_tag, predef_type->type_name);
+		struct psi_decl_var *var = psi_decl_var_init(predef_type->alias, 0, 0); /* FIXME: indirection */
+		struct psi_decl_arg *def = psi_decl_arg_init(type, var);
 
-		T.defs = add_decl_typedef(T.defs, def);
+		T.types = psi_plist_add(T.types, &def);
 	}
 	for (predef_const = &psi_predef_consts[0]; predef_const->type_tag; ++predef_const) {
-		impl_def_val *val = init_impl_def_val(predef_const->val_type_tag, predef_const->val_text);
-		const_type *type = init_const_type(predef_const->type_tag, predef_const->type_name);
-		constant *constant = init_constant(type, predef_const->var_name, val);
+		struct psi_impl_def_val *val = psi_impl_def_val_init(predef_const->val_type_tag, predef_const->val_text);
+		struct psi_const_type *type = psi_const_type_init(predef_const->type_tag, predef_const->type_name);
+		struct psi_const *constant = psi_const_init(type, predef_const->var_name, val);
 
-		T.consts = add_constant(T.consts, constant);
+		T.consts = psi_plist_add(T.consts, &constant);
 	}
 	for (predef_struct = &psi_predef_structs[0]; predef_struct->type_tag; ++predef_struct) {
 		struct psi_predef_struct *member;
-		decl_args *dargs = init_decl_args(NULL);
-		decl_struct *dstruct = init_decl_struct(predef_struct->var_name, dargs);
+		struct psi_plist *dargs = psi_plist_init((psi_plist_dtor) psi_decl_arg_free);
+		struct psi_decl_struct *dstruct = psi_decl_struct_init(predef_struct->var_name, dargs);
 
 		dstruct->size = predef_struct->size;
 		dstruct->align = predef_struct->offset;
 		for (member = &predef_struct[1]; member->type_tag; ++member) {
-			decl_type *type;
-			decl_var *dvar;
-			decl_arg *darg;
+			struct psi_decl_type *type;
+			struct psi_decl_var *dvar;
+			struct psi_decl_arg *darg;
 
-			type = init_decl_type(member->type_tag, member->type_name);
-			dvar = init_decl_var(member->var_name, member->pointer_level, member->array_size);
-			darg = init_decl_arg(type, dvar);
-			darg->layout = init_decl_struct_layout(member->offset, member->size);
-			dargs = add_decl_arg(dargs, darg);
+			type = psi_decl_type_init(member->type_tag, member->type_name);
+			dvar = psi_decl_var_init(member->var_name, member->pointer_level, member->array_size);
+			darg = psi_decl_arg_init(type, dvar);
+			darg->layout = psi_layout_init(member->offset, member->size);
+			dstruct->args = psi_plist_add(dstruct->args, &darg);
 		}
 
-		T.structs = add_decl_struct(T.structs, dstruct);
+		T.structs = psi_plist_add(T.structs, &dstruct);
 		predef_struct = member;
 	}
 	for (predef_union = &psi_predef_unions[0]; predef_union->type_tag; ++predef_union) {
 		struct psi_predef_union *member;
-		decl_args *dargs = init_decl_args(NULL);
-		decl_union *dunion = init_decl_union(predef_union->var_name, dargs);
+		struct psi_plist *dargs = psi_plist_init((psi_plist_dtor) psi_decl_arg_free);
+		struct psi_decl_union *dunion = psi_decl_union_init(predef_union->var_name, dargs);
 
 		dunion->size = predef_union->size;
 		dunion->align = predef_union->offset;
 		for (member = &predef_union[1]; member->type_tag; ++member) {
-			decl_type *type;
-			decl_var *dvar;
-			decl_arg *darg;
+			struct psi_decl_type *type;
+			struct psi_decl_var *dvar;
+			struct psi_decl_arg *darg;
 
-			type = init_decl_type(member->type_tag, member->type_name);
-			dvar = init_decl_var(member->var_name, member->pointer_level, member->array_size);
-			darg = init_decl_arg(type, dvar);
-			darg->layout = init_decl_struct_layout(member->offset, member->size);
-			dargs = add_decl_arg(dargs, darg);
+			type = psi_decl_type_init(member->type_tag, member->type_name);
+			dvar = psi_decl_var_init(member->var_name, member->pointer_level, member->array_size);
+			darg = psi_decl_arg_init(type, dvar);
+			darg->layout = psi_layout_init(member->offset, member->size);
+			dunion->args = psi_plist_add(dunion->args, &darg);
 		}
 
-		T.unions = add_decl_union(T.unions, dunion);
+		T.unions = psi_plist_add(T.unions, &dunion);
 		predef_union = member;
 	}
 	for (predef_decl = &psi_predef_decls[0]; predef_decl->type_tag; ++predef_decl) {
 		struct psi_predef_decl *farg;
-		decl_type *ftype = init_decl_type(predef_decl->type_tag, predef_decl->type_name);
-		decl_var *fname = init_decl_var(predef_decl->var_name, predef_decl->pointer_level, predef_decl->array_size);
-		decl_arg *func = init_decl_arg(ftype, fname);
-		decl_args *args = init_decl_args(NULL);
-		decl *decl = init_decl(init_decl_abi("default"), func, args);
+		struct psi_decl_type *ftype = psi_decl_type_init(predef_decl->type_tag, predef_decl->type_name);
+		struct psi_decl_var *fname = psi_decl_var_init(predef_decl->var_name, predef_decl->pointer_level, predef_decl->array_size);
+		struct psi_decl_arg *func = psi_decl_arg_init(ftype, fname);
+		struct psi_plist *args = psi_plist_init((psi_plist_dtor) psi_decl_arg_free);
+		struct psi_decl *decl = psi_decl_init(psi_decl_abi_init("default"), func, args);
 
 		for (farg = &predef_decl[1]; farg->type_tag; ++farg) {
-			decl_type *arg_type = init_decl_type(farg->type_tag, farg->type_name);
-			decl_var *arg_var = init_decl_var(farg->var_name, farg->pointer_level, farg->array_size);
-			decl_arg *darg = init_decl_arg(arg_type, arg_var);
-			args = add_decl_arg(args, darg);
+			struct psi_decl_type *arg_type = psi_decl_type_init(farg->type_tag, farg->type_name);
+			struct psi_decl_var *arg_var = psi_decl_var_init(farg->var_name, farg->pointer_level, farg->array_size);
+			struct psi_decl_arg *darg = psi_decl_arg_init(arg_type, arg_var);
+			decl->args = psi_plist_add(decl->args, &darg);
 		}
 
-		T.decls = add_decl(T.decls, decl);
+		T.decls = psi_plist_add(T.decls, &decl);
 		predef_decl = farg;
 	}
 
 	for (predef_decl = &psi_predef_vararg_decls[0]; predef_decl->type_tag; ++predef_decl) {
 		struct psi_predef_decl *farg;
-		decl_type *ftype = init_decl_type(predef_decl->type_tag, predef_decl->type_name);
-		decl_var *fname = init_decl_var(predef_decl->var_name, predef_decl->pointer_level, predef_decl->array_size);
-		decl_arg *func = init_decl_arg(ftype, fname);
-		decl_args *args = init_decl_args(NULL);
-		decl *decl = init_decl(init_decl_abi("default"), func, args);
+		struct psi_decl_type *ftype = psi_decl_type_init(predef_decl->type_tag, predef_decl->type_name);
+		struct psi_decl_var *fname = psi_decl_var_init(predef_decl->var_name, predef_decl->pointer_level, predef_decl->array_size);
+		struct psi_decl_arg *func = psi_decl_arg_init(ftype, fname);
+		struct psi_plist *args = psi_plist_init((psi_plist_dtor) psi_decl_arg_free);
+		struct psi_decl *decl = psi_decl_init(psi_decl_abi_init("default"), func, args);
 
 		for (farg = &predef_decl[1]; farg->type_tag; ++farg) {
-			decl_type *arg_type = init_decl_type(farg->type_tag, farg->type_name);
-			decl_var *arg_var = init_decl_var(farg->var_name, farg->pointer_level, farg->array_size);
-			decl_arg *darg = init_decl_arg(arg_type, arg_var);
-			args = add_decl_arg(args, darg);
+			struct psi_decl_type *arg_type = psi_decl_type_init(farg->type_tag, farg->type_name);
+			struct psi_decl_var *arg_var = psi_decl_var_init(farg->var_name, farg->pointer_level, farg->array_size);
+			struct psi_decl_arg *darg = psi_decl_arg_init(arg_type, arg_var);
+			decl->args = psi_plist_add(decl->args, &darg);
 		}
-		args->varargs = 1;
+		decl->varargs = 1;
 
-		T.decls = add_decl(T.decls, decl);
+		T.decls = psi_plist_add(T.decls, &decl);
 		predef_decl = farg;
 	}
 
 	for (predef_decl = &psi_predef_functor_decls[0]; predef_decl->type_tag; ++predef_decl) {
 		struct psi_predef_decl *farg;
-		decl_type *dtype, *ftype = init_decl_type(predef_decl->type_tag, predef_decl->type_name);
-		decl_var *fname = init_decl_var(predef_decl->var_name, predef_decl->pointer_level, predef_decl->array_size);
-		decl_arg *tdef, *func = init_decl_arg(ftype, fname);
-		decl_args *args = init_decl_args(NULL);
-		decl *decl = init_decl(init_decl_abi("default"), func, args);
+		struct psi_decl_type *dtype, *ftype = psi_decl_type_init(predef_decl->type_tag, predef_decl->type_name);
+		struct psi_decl_var *fname = psi_decl_var_init(predef_decl->var_name, predef_decl->pointer_level, predef_decl->array_size);
+		struct psi_decl_arg *tdef, *func = psi_decl_arg_init(ftype, fname);
+		struct psi_plist *args = psi_plist_init((psi_plist_dtor) psi_decl_arg_free);
+		struct psi_decl *decl = psi_decl_init(psi_decl_abi_init("default"), func, args);
 
 		for (farg = &predef_decl[1]; farg->type_tag; ++farg) {
-			decl_type *arg_type = init_decl_type(farg->type_tag, farg->type_name);
-			decl_var *arg_var = init_decl_var(farg->var_name, farg->pointer_level, farg->array_size);
-			decl_arg *darg = init_decl_arg(arg_type, arg_var);
-			args = add_decl_arg(args, darg);
+			struct psi_decl_type *arg_type = psi_decl_type_init(farg->type_tag, farg->type_name);
+			struct psi_decl_var *arg_var = psi_decl_var_init(farg->var_name, farg->pointer_level, farg->array_size);
+			struct psi_decl_arg *darg = psi_decl_arg_init(arg_type, arg_var);
+			decl->args = psi_plist_add(decl->args, &darg);
 		}
 
-		dtype = init_decl_type(PSI_T_FUNCTION, fname->name);
+		dtype = psi_decl_type_init(PSI_T_FUNCTION, fname->name);
 		dtype->real.func = decl;
-		tdef = init_decl_arg(dtype, copy_decl_var(fname));
-		T.defs = add_decl_typedef(T.defs, tdef);
+		tdef = psi_decl_arg_init(dtype, psi_decl_var_copy(fname));
+		T.types = psi_plist_add(T.types, &tdef);
 
 		predef_decl = farg;
 	}
 
-	psi_context_validate_data(PSI_DATA(C), &T);
-
-	C->count = 1;
-	C->data = malloc(sizeof(*C->data));
-	psi_data_exchange(C->data, &T);
+	psi_context_add_data(C, &T);
 
 	return C;
 }
@@ -205,7 +220,7 @@ struct psi_context *psi_context_init(struct psi_context *C, struct psi_context_o
 static int psi_select_dirent(const struct dirent *entry)
 {
 #ifndef FNM_CASEFOLD
-#define FNM_CASEFOLD 0
+# define FNM_CASEFOLD 0
 #endif
 	return 0 == fnmatch("*.psi", entry->d_name, FNM_CASEFOLD);
 }
@@ -232,11 +247,11 @@ void psi_context_build(struct psi_context *C, const char *paths)
 				struct psi_parser P;
 
 				if (MAXPATHLEN <= slprintf(psi, MAXPATHLEN, "%s/%s", ptr, entries[i]->d_name)) {
-					C->error(C, NULL, PSI_WARNING, "Path to PSI file too long: %s/%s",
+					C->error(PSI_DATA(C), NULL, PSI_WARNING, "Path to PSI file too long: %s/%s",
 						ptr, entries[i]->d_name);
 				}
 				if (!psi_parser_init(&P, psi, C->error, C->flags)) {
-					C->error(C, NULL, PSI_WARNING, "Failed to init PSI parser (%s): %s",
+					C->error(PSI_DATA(C), NULL, PSI_WARNING, "Failed to init PSI parser (%s): %s",
 						psi, strerror(errno));
 					continue;
 				}
@@ -249,7 +264,7 @@ void psi_context_build(struct psi_context *C, const char *paths)
 				}
 
 				psi_parser_parse(&P, NULL);
-				psi_context_validate(C, &P);
+				psi_context_add_data(C, PSI_DATA(&P));
 				psi_parser_dtor(&P);
 			}
 		}
@@ -266,25 +281,24 @@ void psi_context_build(struct psi_context *C, const char *paths)
 
 
 	if (psi_context_compile(C) && SUCCESS != zend_register_functions(NULL, C->closures, NULL, MODULE_PERSISTENT)) {
-		C->error(C, NULL, PSI_WARNING, "Failed to register functions!");
+		C->error(PSI_DATA(C), NULL, PSI_WARNING, "Failed to register functions!");
 	}
 
 	free(cpy);
-
 }
 
 zend_function_entry *psi_context_compile(struct psi_context *C)
 {
-	size_t i;
 	zend_constant zc;
 
 	zc.flags = CONST_PERSISTENT|CONST_CS;
 	zc.module_number = EG(current_module)->module_number;
 
 	if (C->consts) {
-		for (i = 0; i < C->consts->count; ++i) {
-			constant *c = C->consts->list[i];
+		size_t i = 0;
+		struct psi_const *c;
 
+		while (psi_plist_get(C->consts, i++, &c)) {
 			zc.name = zend_string_init(c->name + (c->name[0] == '\\'), strlen(c->name) - (c->name[0] == '\\'), 1);
 			ZVAL_NEW_STR(&zc.value, zend_string_init(c->val->text, strlen(c->val->text), 1));
 
@@ -308,16 +322,18 @@ zend_function_entry *psi_context_compile(struct psi_context *C)
 		}
 	}
 	if (C->enums) {
-		for (i = 0; i < C->enums->count; ++i) {
-			decl_enum *e = C->enums->list[i];
-			size_t j;
+		size_t i = 0;
+		struct psi_decl_enum *e;
 
-			for (j = 0; j < e->items->count; ++j) {
-				decl_enum_item *i = e->items->list[j];
-				zend_string *name = strpprintf(0, "psi\\%s\\%s", e->name, i->name);
+		while (psi_plist_get(C->enums, i++, &e)) {
+			size_t j = 0;
+			struct psi_decl_enum_item *item;
+
+			while (psi_plist_get(e->items, j++, &item)) {
+				zend_string *name = strpprintf(0, "psi\\%s\\%s", e->name, item->name);
 
 				zc.name = zend_string_dup(name, 1);
-				ZVAL_LONG(&zc.value, psi_long_num_exp(i->num, NULL));
+				ZVAL_LONG(&zc.value, psi_long_num_exp(item->num, NULL));
 				zend_register_constant(&zc);
 				zend_string_release(name);
 			}
@@ -328,9 +344,34 @@ zend_function_entry *psi_context_compile(struct psi_context *C)
 }
 
 
-void psi_context_call(struct psi_context *C, struct decl_callinfo *decl_call, struct impl_vararg *va)
+ZEND_RESULT_CODE psi_context_call(struct psi_context *C, zend_execute_data *execute_data, zval *return_value, struct psi_impl *impl)
 {
-	C->ops->call(C, decl_call, va);
+	struct psi_call_frame *frame;
+
+	frame = psi_call_frame_init(C, impl->decl, impl);
+
+	if (SUCCESS != psi_call_frame_parse_args(frame, execute_data)) {
+		psi_call_frame_free(frame);
+
+		return FAILURE;
+	}
+
+	psi_call_frame_enter(frame);
+
+	if (SUCCESS != psi_call_frame_do_let(frame)) {
+		psi_call_frame_do_return(frame, return_value);
+		psi_call_frame_free(frame);
+
+		return FAILURE;
+	}
+
+	psi_call_frame_do_call(frame);
+	psi_call_frame_do_return(frame, return_value);
+	psi_call_frame_do_set(frame);
+	psi_call_frame_do_free(frame);
+	psi_call_frame_free(frame);
+
+	return SUCCESS;
 }
 
 
@@ -343,7 +384,7 @@ void psi_context_dtor(struct psi_context *C)
 		C->ops->dtor(C);
 	}
 
-	free_decl_libs(&C->psi.libs);
+	psi_data_dtor(PSI_DATA(C));
 
 	if (C->data) {
 		for (i = 0; i < C->count; ++i) {
@@ -358,51 +399,6 @@ void psi_context_dtor(struct psi_context *C)
 		}
 		free(C->closures);
 	}
-
-	if (C->consts) {
-		if (C->consts->list) {
-			free(C->consts->list);
-		}
-		free(C->consts);
-	}
-	if (C->defs) {
-		if (C->defs->list) {
-			free(C->defs->list);
-		}
-		free(C->defs);
-	}
-	if (C->structs) {
-		if (C->structs->list) {
-			free(C->structs->list);
-		}
-		free(C->structs);
-	}
-	if (C->unions) {
-		if (C->unions->list) {
-			free(C->unions->list);
-		}
-		free(C->unions);
-	}
-	if (C->enums) {
-		if (C->enums->list) {
-			free(C->enums->list);
-		}
-		free(C->enums);
-	}
-	if (C->decls) {
-		if (C->decls->list) {
-			free(C->decls->list);
-		}
-		free(C->decls);
-	}
-	if (C->impls) {
-		if (C->impls->list) {
-			free(C->impls->list);
-		}
-		free(C->impls);
-	}
-
-	memset(C, 0, sizeof(*C));
 }
 
 void psi_context_free(struct psi_context **C)
@@ -414,264 +410,29 @@ void psi_context_free(struct psi_context **C)
 	}
 }
 
-int psi_context_validate(struct psi_context *C, struct psi_parser *P)
+bool psi_context_add_data(struct psi_context *C, struct psi_data *P)
 {
 	struct psi_data *D;
-	void *dlopened = NULL;
-	size_t i, count = C->count++, check_round, check_count;
-	decl_typedefs *check_defs = P->defs;
-	decl_structs *check_structs = P->structs;
-	decl_unions *check_unions = P->unions;
-	decl_enums *check_enums = P->enums;
-	unsigned flags = C->flags;
 
-	C->data = realloc(C->data, C->count * sizeof(*C->data));
-	D = psi_data_exchange(&C->data[count], PSI_DATA(P));
+	C->data = realloc(C->data, (C->count + 1) * sizeof(*C->data));
+	D = psi_data_exchange(&C->data[C->count++], P);
 
-#define REVALIDATE(what) do { \
-		if (check_round && check_ ##what) { \
-			free(check_ ##what->list); \
-			free(check_ ##what); \
-		} \
-		check_ ##what = recheck_ ##what; \
-} while (0)
-#define CHECK_TOTAL (CHECK_COUNT(defs) + CHECK_COUNT(structs) + CHECK_COUNT(enums))
-#define CHECK_COUNT(of) (check_ ##of ? check_ ##of->count : 0)
-
-	if (!(flags & PSI_PARSER_SILENT)) {
-		/* no warnings on first round */
-		C->flags |= PSI_PARSER_SILENT;
-	}
-	for (check_round = 0, check_count = 0; CHECK_TOTAL && check_count != CHECK_TOTAL; ++check_round) {
-		decl_typedefs *recheck_defs = NULL;
-		decl_structs *recheck_structs = NULL;
-		decl_unions *recheck_unions = NULL;
-		decl_enums *recheck_enums = NULL;
-
-		check_count = CHECK_TOTAL;
-
-		for (i = 0; i < CHECK_COUNT(defs); ++i) {
-			if (validate_decl_typedef(PSI_DATA(C), check_defs->list[i])) {
-				C->defs = add_decl_typedef(C->defs, check_defs->list[i]);
-			} else {
-				recheck_defs = add_decl_typedef(recheck_defs, check_defs->list[i]);
-			}
-		}
-		for (i = 0; i < CHECK_COUNT(structs); ++i) {
-			if (validate_decl_struct(PSI_DATA(C), check_structs->list[i])) {
-				C->structs = add_decl_struct(C->structs, check_structs->list[i]);
-			} else {
-				recheck_structs = add_decl_struct(recheck_structs, check_structs->list[i]);
-			}
-		}
-		for (i = 0; i < CHECK_COUNT(unions); ++i) {
-			if (validate_decl_union(PSI_DATA(C), check_unions->list[i])) {
-				C->unions = add_decl_union(C->unions, check_unions->list[i]);
-			} else {
-				recheck_unions = add_decl_union(recheck_unions, check_unions->list[i]);
-			}
-		}
-		for (i = 0; i < CHECK_COUNT(enums); ++i) {
-			if (validate_decl_enum(PSI_DATA(C), check_enums->list[i])) {
-				C->enums = add_decl_enum(C->enums, check_enums->list[i]);
-			} else {
-				recheck_enums = add_decl_enum(recheck_enums, check_enums->list[i]);
-			}
-		}
-
-		REVALIDATE(defs);
-		REVALIDATE(structs);
-		REVALIDATE(unions);
-		REVALIDATE(enums);
-
-		if (check_round == 0 && !(flags & PSI_PARSER_SILENT)) {
-			C->flags ^= PSI_PARSER_SILENT;
-		}
-	}
-
-	C->flags = flags;
-
-	if (D->consts) {
-		for (i = 0; i < D->consts->count; ++i) {
-			if (validate_constant(PSI_DATA(C), D->consts->list[i])) {
-				C->consts = add_constant(C->consts, D->consts->list[i]);
-			}
-		}
-	}
-
-	if (!validate_file(D, &dlopened)) {
-		return 0;
-	}
-
-	add_decl_lib(&C->psi.libs, dlopened);
-
-	if (D->decls) {
-		for (i = 0; i < D->decls->count; ++i) {
-			if (validate_decl(PSI_DATA(C), dlopened, D->decls->list[i])) {
-				C->decls = add_decl(C->decls, D->decls->list[i]);
-			}
-		}
-	}
-	if (D->impls) {
-		for (i = 0; i < D->impls->count; ++i) {
-			if (validate_impl(PSI_DATA(C), D->impls->list[i])) {
-				C->impls = add_impl(C->impls, D->impls->list[i]);
-			}
-		}
-	}
-
-	return 1;
-}
-
-int psi_context_validate_data(struct psi_data *dest, struct psi_data *source)
-{
-	size_t i;
-	int errors = 0;
-
-	if (source->defs) for (i = 0; i < source->defs->count; ++i) {
-		decl_arg *def = source->defs->list[i];
-
-		if (validate_decl_typedef(source, def)) {
-			if (dest) {
-				dest->defs = add_decl_typedef(dest->defs, def);
-			}
-		} else {
-			++errors;
-		}
-	}
-
-	if (source->consts) for (i = 0; i < source->consts->count; ++i) {
-		constant *constant = source->consts->list[i];
-
-		if (validate_constant(source, constant)) {
-			if (dest) {
-				dest->consts = add_constant(dest->consts, constant);
-			}
-		} else {
-			++errors;
-		}
-	}
-
-	if (source->structs) for (i = 0; i < source->structs->count; ++i) {
-		decl_struct *dstruct = source->structs->list[i];
-
-		if (validate_decl_struct(source, dstruct)) {
-			if (dest) {
-				dest->structs = add_decl_struct(dest->structs, dstruct);
-			}
-		} else {
-			++errors;
-		}
-	}
-
-	if (source->unions) for (i = 0; i < source->unions->count; ++i) {
-		decl_union *dunion = source->unions->list[i];
-
-		if (validate_decl_union(source, dunion)) {
-			if (dest) {
-				dest->unions = add_decl_union(dest->unions, dunion);
-			}
-		} else {
-			++errors;
-		}
-	}
-
-	if (source->enums) for (i = 0; i < source->enums->count; ++i) {
-		decl_enum *denum = source->enums->list[i];
-
-		if (validate_decl_enum(source, denum)) {
-			if (dest) {
-				dest->enums = add_decl_enum(dest->enums, denum);
-			}
-		} else {
-			++errors;
-		}
-	}
-
-	if (source->decls) for (i = 0; i < source->decls->count; ++i) {
-		decl *decl = source->decls->list[i];
-
-		if (validate_decl(source, NULL, decl)) {
-			if (dest) {
-				dest->decls = add_decl(dest->decls, decl);
-			}
-		} else {
-			++errors;
-		}
-	}
-
-	if (source->impls) for (i = 0; i < source->impls->count; ++i) {
-		impl *impl = source->impls->list[i];
-
-		if (validate_impl(source, impl)) {
-			if (dest) {
-				dest->impls = add_impl(dest->impls, impl);
-			}
-		} else {
-			++errors;
-		}
-	}
-
-	return errors;
-}
-
-static inline void dump_data(int fd, struct psi_data *D) {
-	if (D->psi.file.fn) {
-		dprintf(fd, "// psi.filename=%s\n", D->psi.file.fn);
-		if (D->psi.file.ln) {
-			dprintf(fd, "lib \"%s\";\n", D->psi.file.ln);
-		}
-	} else {
-		dprintf(fd, "// builtin predef\n");
-	}
-	if (D->defs) {
-		dump_decl_typedefs(fd, D->defs);
-		dprintf(fd, "\n");
-	}
-	if (D->unions) {
-		dump_decl_unions(fd, D->unions);
-		dprintf(fd, "\n");
-	}
-	if (D->structs) {
-		dump_decl_structs(fd, D->structs);
-		dprintf(fd, "\n");
-	}
-	if (D->enums) {
-		dump_decl_enums(fd, D->enums);
-		dprintf(fd, "\n");
-	}
-	if (D->consts) {
-		dump_constants(fd, D->consts);
-		dprintf(fd, "\n");
-	}
-	if (D->decls) {
-		dump_decls(fd, D->decls);
-		dprintf(fd, "\n");
-	}
-	if (D->impls) {
-		dump_impls(fd, D->impls);
-		dprintf(fd, "\n");
-	}
+	return psi_data_validate(PSI_DATA(C), D);
 }
 
 void psi_context_dump(struct psi_context *C, int fd)
 {
-	size_t i;
 
-#ifdef HAVE_LIBJIT
-	if (C->ops == psi_libjit_ops()) {
-		dprintf(fd, "// psi.engine=jit\n");
-	}
-#endif
-#ifdef HAVE_LIBFFI
-	if (C->ops == psi_libffi_ops()) {
-		dprintf(fd, "// psi.engine=ffi\n");
-	}
-#endif
-	dprintf(fd, "\n");
+	dprintf(fd, "// psi.engine=%s\n",
+			(char *) C->ops->query(C, PSI_CONTEXT_QUERY_SELF, NULL));
 
-	for (i = 0; i < C->count; ++i) {
-		dump_data(fd, &C->data[i]);
-	}
+	psi_data_dump(fd, PSI_DATA(C));
+
+//	size_t i;
+//	dprintf(fd, "/* parsed\n");
+//	for (i = 0; i < C->count; ++i) {
+//		psi_data_dump(fd, &C->data[i]);
+//	}
+//	dprintf(fd, "*/\n");
 
 }

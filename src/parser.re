@@ -1,16 +1,5 @@
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#else
-# include "php_config.h"
-#endif
-
-#include <stddef.h>
-#include <stdio.h>
+#include "php_psi_stdinc.h"
 #include <assert.h>
-#include <errno.h>
-#include <string.h>
-
-#include "parser_proc.h"
 
 #include "parser.h"
 
@@ -26,7 +15,7 @@ struct psi_parser *psi_parser_init(struct psi_parser *P, const char *filename, p
 	fp = fopen(filename, "r");
 
 	if (!fp) {
-		if (!(flags & PSI_PARSER_SILENT)) {
+		if (!(flags & PSI_SILENT)) {
 			error(NULL, NULL, PSI_WARNING, "Could not open '%s' for reading: %s",
 					filename, strerror(errno));
 		}
@@ -38,15 +27,14 @@ struct psi_parser *psi_parser_init(struct psi_parser *P, const char *filename, p
 	}
 	memset(P, 0, sizeof(*P));
 
-	P->psi.file.fn = strdup(filename);
+	psi_data_ctor_with_dtors(PSI_DATA(P), error, flags);
+	P->file.fn = strdup(filename);
 	P->fp = fp;
 	P->col = 1;
 	P->line = 1;
-	P->error = error;
-	P->flags = flags;
 	P->proc = psi_parser_proc_Alloc(malloc);
 
-	if (flags & PSI_PARSER_DEBUG) {
+	if (flags & PSI_DEBUG) {
 		psi_parser_proc_Trace(stderr, "PSI> ");
 	}
 
@@ -57,7 +45,7 @@ struct psi_parser *psi_parser_init(struct psi_parser *P, const char *filename, p
 
 ssize_t psi_parser_fill(struct psi_parser *P, size_t n)
 {
-	if (P->flags & PSI_PARSER_DEBUG) {
+	if (P->flags & PSI_DEBUG) {
 		fprintf(stderr, "PSI> Fill: n=%zu\n", n);
 	}
 	if (!n) {
@@ -85,12 +73,12 @@ ssize_t psi_parser_fill(struct psi_parser *P, size_t n)
 			P->eof = P->lim;
 		}
 
-		if (P->flags & PSI_PARSER_DEBUG) {
+		if (P->flags & PSI_DEBUG) {
 			fprintf(stderr, "PSI> Fill: consumed=%zu reserved=%zu available=%zu didread=%zu\n",
 				consumed, reserved, available, didread);
 		}
 	}
-	if (P->flags & PSI_PARSER_DEBUG) {
+	if (P->flags & PSI_DEBUG) {
 		fprintf(stderr, "PSI> Fill: avail=%td\n", P->lim - P->cur);
 	}
 	return P->lim - P->cur;
@@ -136,10 +124,10 @@ void psi_parser_free(struct psi_parser **P)
 
 #define RETURN(t) do { \
 	P->num = t; \
-	if (P->flags & PSI_PARSER_DEBUG) { \
+	if (P->flags & PSI_DEBUG) { \
 		fprintf(stderr, "PSI> TOKEN: %d %.*s (EOF=%d %s:%u:%u)\n", \
 				P->num, (int) (P->cur-P->tok), P->tok, P->num == PSI_T_EOF, \
-				P->psi.file.fn, P->line, P->col); \
+				P->file.fn, P->line, P->col); \
 	} \
 	return t; \
 } while(1)
@@ -222,6 +210,7 @@ token_t psi_parser_scan(struct psi_parser *P)
 		'ARRAY' {RETURN(PSI_T_ARRAY);}
 		'OBJECT' {RETURN(PSI_T_OBJECT);}
 		'CALLBACK' {RETURN(PSI_T_CALLBACK);}
+		'STATIC' {RETURN(PSI_T_STATIC);}
 		'FUNCTION' {RETURN(PSI_T_FUNCTION);}
 		'TYPEDEF' {RETURN(PSI_T_TYPEDEF);}
 		'STRUCT' {RETURN(PSI_T_STRUCT);}

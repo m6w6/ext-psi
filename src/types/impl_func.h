@@ -26,20 +26,26 @@
 #ifndef PSI_TYPES_IMPL_FUNC_H
 #define PSI_TYPES_IMPL_FUNC_H
 
-#include "impl_args.h"
-#include "impl_type.h"
+struct psi_data;
+struct psi_token;
+struct psi_plist;
+struct psi_impl;
+struct psi_impl_arg;
+struct psi_impl_type;
 
-typedef struct impl_func {
+struct psi_impl_func {
 	struct psi_token *token;
 	char *name;
-	impl_args *args;
-	impl_type *return_type;
+	struct psi_plist *args;
+	struct psi_impl_arg *vararg;
+	struct psi_impl_type *return_type;
 	unsigned return_reference:1;
-} impl_func;
+	unsigned static_memory:1;
+};
 
-impl_func *init_impl_func(char *name, impl_args *args, impl_type *type,
-		int ret_reference);
-void free_impl_func(impl_func *f);
-void dump_impl_func(int fd, impl_func *func);
+struct psi_impl_func *psi_impl_func_init(const char *name, struct psi_plist *args, struct psi_impl_type *return_type);
+void psi_impl_func_free(struct psi_impl_func **f_ptr);
+void psi_impl_func_dump(int fd, struct psi_impl_func *func);
+bool psi_impl_func_validate(struct psi_data *data, struct psi_impl_func *func);
 
 #endif

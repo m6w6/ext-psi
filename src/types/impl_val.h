@@ -59,6 +59,9 @@ typedef union impl_val {
 		zend_fcall *cb;
 	} zend;
 	void *ptr;
+#ifdef PHP_DEBUG
+	char _dbg[sizeof(void *)];
+#endif
 } impl_val;
 
 #endif

@@ -23,19 +23,8 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#else
-# include "php_config.h"
-#endif
+#include "php_psi_stdinc.h"
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <inttypes.h>
-#include <sys/param.h>
-
-#include "parser_proc.h"
 #include "token.h"
 #include "parser.h"
 
@@ -54,7 +43,7 @@ struct psi_token *psi_token_alloc(struct psi_parser *P) {
 
 	token_typ = P->num;
 	token_len = P->cur - P->tok;
-	fname_len = strlen(P->psi.file.fn);
+	fname_len = strlen(P->file.fn);
 
 	T = calloc(1, psi_token_alloc_size(token_len, fname_len));
 	T->type = token_typ;
@@ -65,7 +54,7 @@ struct psi_token *psi_token_alloc(struct psi_parser *P) {
 	T->col = P->col;
 
 	memcpy(T->text, P->tok, token_len);
-	memcpy(T->file, P->psi.file.fn, fname_len);
+	memcpy(T->file, P->file.fn, fname_len);
 
 	return T;
 }

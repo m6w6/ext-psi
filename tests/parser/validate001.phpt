@@ -21,7 +21,7 @@ validate(false, "typedef void foo;");
 validate(true, "typedef void *bar;");
 validate(false, "typedef long int;");
 validate(true, "typedef long foo;");
-validate(false, "typedef struct foo bar;");
+validate(true, "typedef struct foo bar;");
 validate(true, "typedef struct {int a;} foo;");
 validate(false, "struct a; \ntypedef struct a a_t;");
 validate(true, "struct a::(8,8); \ntypedef struct a a_t;");
@@ -89,8 +89,6 @@ validate(true, "typedef int bar(int baz); \ntypedef int *(*foo)(bar bar);");
 Warning: PSI syntax error: Unexpected token ';' at pos 17 in %s001.psi on line 1
 
 Warning: PSI syntax error: Unexpected token 'int' at pos 14 in %s001.psi on line 1
-
-Warning: Type 'bar' cannot be aliased to struct 'foo' in %s001.psi on line 1
 
 Warning: Cannot compute size of empty struct 'a' in %s001.psi on line 1
 

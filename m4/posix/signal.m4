@@ -163,7 +163,7 @@ PSI_CHECK_SIGNAL() {
 	])
 	
 	PSI_DECL(int raise, [(int sig)])
-	PSI_DECL(int sigaction, [(int sig, const struct sigaction *act, struct sigaction *oact)])
+	PSI_DECL(int sigaction, [(int sig, struct sigaction *act, struct sigaction *oact)])
 	PSI_DECL(int sigaddset, [(sigset_t * set, int signum)])
 	PSI_DECL(int sigaltstack, [(const stack_t *ss, stack_t *oss)])
 	PSI_DECL(int sigdelset, [(sigset_t *set, int signum)])

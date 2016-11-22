@@ -26,14 +26,17 @@
 #ifndef PSI_TYPES_LET_CALLOC_H
 #define PSI_TYPES_LET_CALLOC_H
 
-#include "num_exp.h"
+struct psi_token;
+struct psi_num_exp;
 
-typedef struct let_calloc {
-	num_exp *nmemb;
-	num_exp *size;
-} let_calloc;
+struct psi_let_calloc {
+	struct psi_token *token;
+	struct psi_num_exp *nmemb;
+	struct psi_num_exp *size;
+};
 
-let_calloc *init_let_calloc(num_exp *nmemb, num_exp *size);
-void free_let_calloc(let_calloc *alloc);
+struct psi_let_calloc *psi_let_calloc_init(struct psi_num_exp *nmemb, struct psi_num_exp *size);
+void psi_let_calloc_free(struct psi_let_calloc **alloc_ptr);
+void psi_let_calloc_dump(int fd, struct psi_let_calloc *alloc);
 
 #endif

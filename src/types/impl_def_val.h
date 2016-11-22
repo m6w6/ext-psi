@@ -27,14 +27,21 @@
 #define PSI_TYPES_IMPL_DEF_VAL_H
 
 #include "token.h"
+#include "impl_val.h"
 
-typedef struct impl_def_val {
+struct psi_data;
+struct psi_impl_type;
+
+struct psi_impl_def_val {
+	struct psi_token *token;
 	token_t type;
 	char *text;
-} impl_def_val;
+	impl_val ival;
+};
 
-impl_def_val *init_impl_def_val(token_t t, const char *text);
-void free_impl_def_val(impl_def_val *def);
-void dump_impl_def_val(int fd, impl_def_val *val);
+struct psi_impl_def_val *psi_impl_def_val_init(token_t t, const char *text);
+void psi_impl_def_val_free(struct psi_impl_def_val **def_ptr);
+void psi_impl_def_val_dump(int fd, struct psi_impl_def_val *val);
+bool psi_impl_def_val_validate(struct psi_data *data, struct psi_impl_def_val *def, struct psi_impl_type *type);
 
 #endif

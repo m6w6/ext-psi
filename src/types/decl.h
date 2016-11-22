@@ -26,26 +26,29 @@
 #ifndef PSI_TYPES_DECL_H
 #define PSI_TYPES_DECL_H
 
-#include "decl_abi.h"
-#include "decl_arg.h"
-#include "decl_args.h"
-#include "decl_callinfo.h"
-
-typedef struct decl {
-	decl_abi *abi;
-	decl_arg *func;
-	decl_args *args;
-	struct impl *impl;
-	decl_callinfo call;
-} decl;
-
-decl *init_decl(decl_abi *abi, decl_arg *func, decl_args *args);
-void free_decl(decl *d);
-void dump_decl(int fd, decl *decl);
-
 struct psi_data;
+struct psi_plist;
+struct psi_decl_abi;
+struct psi_decl_arg;
 
-int validate_decl(struct psi_data *data, void *dl, decl *decl);
-int validate_decl_nodl(struct psi_data *data, decl *decl);
+struct psi_decl {
+	struct psi_decl_abi *abi;
+	struct psi_decl_arg *func;
+	struct psi_plist *args;
+	void *sym;
+	void *info;
+	unsigned varargs:1;
+};
+
+struct psi_decl *psi_decl_init(struct psi_decl_abi *abi, struct psi_decl_arg *func, struct psi_plist *args);
+void psi_decl_free(struct psi_decl **d_ptr);
+void psi_decl_dump(int fd, struct psi_decl *decl);
+
+bool psi_decl_validate(struct psi_data *data, struct psi_decl *decl, void *dl);
+bool psi_decl_validate_nodl(struct psi_data *data, struct psi_decl *decl);
+
+static inline struct psi_decl_arg *psi_decl_get_arg(struct psi_decl *decl, struct psi_decl_var *var) {
+	return psi_decl_arg_get_by_var(var, decl->args, decl->func);
+}
 
 #endif

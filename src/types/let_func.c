@@ -5,11 +5,11 @@
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
 
-     * Redistributions of source code must retain the above copyright notice,
-       this list of conditions and the following disclaimer.
-     * Redistributions in binary form must reproduce the above copyright
-       notice, this list of conditions and the following disclaimer in the
-       documentation and/or other materials provided with the distribution.
+ * Redistributions of source code must retain the above copyright notice,
+ this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright
+ notice, this list of conditions and the following disclaimer in the
+ documentation and/or other materials provided with the distribution.
 
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -21,57 +21,69 @@
  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*******************************************************************************/
+ *******************************************************************************/
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#else
-# include "php_config.h"
-#endif
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <assert.h>
-
+#include "php_psi_stdinc.h"
 #include "data.h"
+#include "call.h"
 #include "marshal.h"
 
-let_func *init_let_func(token_t type, const char *name, impl_var *var) {
-	let_func *func = calloc(1, sizeof(*func));
+#include "php.h"
+
+#include <assert.h>
+
+struct psi_let_func *psi_let_func_init(token_t type, const char *name,
+		struct psi_impl_var *var)
+{
+	struct psi_let_func *func = calloc(1, sizeof(*func));
 	func->type = type;
 	func->name = strdup(name);
 	func->var = var;
 	return func;
 }
 
-void free_let_func(let_func *func) {
-	free_impl_var(func->var);
-	free(func->name);
-	if (func->inner) {
-		free_let_vals(func->inner);
+void psi_let_func_free(struct psi_let_func **func_ptr)
+{
+	if (*func_ptr) {
+		struct psi_let_func *func = *func_ptr;
+
+		*func_ptr = NULL;
+		if (func->token) {
+			free(func->token);
+		}
+		psi_impl_var_free(&func->var);
+		free(func->name);
+		if (func->inner) {
+			psi_plist_free(func->inner);
+		}
+		free(func);
 	}
-	free(func);
 }
 
-void dump_let_func(int fd, let_func *func, unsigned level) {
-	dprintf(fd, "%s(%s", func->name, func->var->name);
+void psi_let_func_dump(int fd, struct psi_let_func *func, unsigned level)
+{
+	dprintf(fd, "%s(%s\t/* fqn=%s */", func->name, func->var->name, func->var->fqn);
 
 	if (func->inner) {
-		size_t i;
+		size_t i = 0, count = psi_plist_count(func->inner);
+		struct psi_let_exp *inner;
 
 		dprintf(fd, ",");
-		for (i = 0; i < func->inner->count; ++i) {
+		++level;
+		while (psi_plist_get(func->inner, i++, &inner)) {
 			dprintf(fd, "\n");
-			dump_let_val(fd, func->inner->vals[i], level+1, i+1 == func->inner->count);
+			psi_let_exp_dump(fd, inner, level, i == count);
 		}
+		--level;
 		dprintf(fd, "\n");
 		dprintf(fd, "%s", psi_t_indent(level));
 	}
 	dprintf(fd, ")");
 }
 
-static inline int validate_let_func_type(struct psi_data *data, let_func *func, impl *impl) {
+static inline int validate_let_func_type(struct psi_data *data,
+		struct psi_let_func *func, struct psi_impl *impl)
+{
 	switch (func->type) {
 	case PSI_T_BOOLVAL:
 	case PSI_T_INTVAL:
@@ -79,99 +91,318 @@ static inline int validate_let_func_type(struct psi_data *data, let_func *func, 
 	case PSI_T_STRVAL:
 	case PSI_T_STRLEN:
 	case PSI_T_PATHVAL:
-	case PSI_T_ARRVAL:
 	case PSI_T_OBJVAL:
 	case PSI_T_ZVAL:
 	case PSI_T_VOID:
 	case PSI_T_COUNT:
-		return 1;
+		return true;
+
+	case PSI_T_ARRVAL:
+		if (!func->inner) {
+			data->error(data, func->token, PSI_WARNING,
+					"Expected sub-expressions in `arrval` expression");
+			return false;
+		}
+		return true;
+
 	default:
 		data->error(data, func->var->token, PSI_WARNING,
 				"Unknown `let` cast function '%s' of implementation '%s'",
 				func->name, impl->func->name);
-		return 0;
+		return false;
 	}
 }
 
-static inline int validate_let_func_inner(struct psi_data *data, let_val *val, let_func *func, decl_var *let_var, impl *impl) {
-
+static inline bool validate_let_func_inner(struct psi_data *data,
+		struct psi_let_exp *exp, struct psi_let_func *func,
+		struct psi_impl *impl)
+{
 	if (func->inner) {
-		size_t i;
-		decl_type *var_typ;
-		decl_args *sub_args = extract_decl_type_args(let_var->arg->type, &var_typ);
+		struct psi_decl_var *let_var = psi_let_exp_get_decl_var(exp);
+		struct psi_decl_type *var_typ;
+		struct psi_plist *sub_args;
+
+		sub_args = psi_decl_type_get_args(let_var->arg->type, &var_typ);
 
 		if (func->type == PSI_T_ARRVAL && sub_args) {
 			/* struct = arrval($array,
 			 * 	member = strval($member) ...)
 			 */
-			size_t i;
+			size_t i = 0;
+			struct psi_let_exp *inner;
 
-			for (i = 0; i < func->inner->count; ++i) {
-				let_val *inner = func->inner->vals[i];
-				const char *name = locate_let_val_varname(inner);
-				let_func *fn = locate_let_val_func(inner);
-				decl_arg *sub_arg;
+			while (psi_plist_get(func->inner, i++, &inner)) {
+				const char *name = psi_let_exp_get_decl_var_name(inner);
+				struct psi_decl_arg *sub_arg;
+
+				inner->outer = exp;
 
 				if (name) {
-					sub_arg = locate_decl_arg(sub_args, name);
+					sub_arg = psi_decl_arg_get_by_name(sub_args, name);
 				}
 				if (!name || !sub_arg) {
-					data->error(data, let_var->token, PSI_WARNING,
-							"Unknown variable '%s'", name);
-					return 0;
-				}
-
-				fn->outer = val;
-				fn->ref = sub_arg;
-
-				if (!validate_let_val(data, inner, sub_arg->var, impl)) {
-					return 0;
+					/* remove expr for portability with different struct members */
+					psi_plist_del(func->inner, --i, NULL);
+					psi_let_exp_free(&inner);
+				} else if (!psi_let_exp_validate(data, inner, impl)) {
+					return false;
 				}
 			}
-		} else if (func->type == PSI_T_ARRVAL && func->inner->count == 1 && let_var->arg->var->pointer_level) {
+		} else if (func->type == PSI_T_ARRVAL
+				&& psi_plist_count(func->inner) == 1
+				&& let_var->arg->var->pointer_level) {
 			/* array = arrval($array,
 			 * 	strval($array)) // cast foreach entry
 			 */
-			impl_var *sub_var = locate_let_val_impl_var(val);
-			impl_var *sub_ref = locate_let_val_impl_var(func->inner->vals[0]);
+			struct psi_let_exp *inner;
+			struct psi_impl_var *sub_var;
+			struct psi_impl_var *sub_ref;
 
+			psi_plist_get(func->inner, 0, &inner);
+			inner->outer = exp;
+
+			sub_var = psi_let_exp_get_impl_var(exp);
+			sub_ref = psi_let_exp_get_impl_var(inner);
 			if (strcmp(sub_var->name, sub_ref->name)) {
-				data->error(data, sub_var->token, E_WARNING, "Inner `set` statement casts on pointers must reference the same variable");
-				return 0;
+				data->error(data, sub_var->token, E_WARNING,
+						"Inner `set` statement casts on pointers must"
+								" reference the same variable");
+				return false;
 			}
-			if (!validate_let_val(data, func->inner->vals[0], let_var, impl)) {
-				return 0;
+			if (!psi_let_exp_validate(data, inner, impl)) {
+				return false;
 			}
 		} else {
 			data->error(data, let_var->token, PSI_WARNING,
-					"Inner let statement's values must refer to a structure or array type, got '%s%s' for '%s'",
-					var_typ->name, psi_t_indirection(let_var->arg->var->pointer_level), let_var->name);
-			return 0;
+					"Inner let statement's values must refer to a structure or"
+							" array type, got '%s%s' for '%s'", var_typ->name,
+					psi_t_indirection(let_var->arg->var->pointer_level),
+					let_var->name);
+			return false;
 		}
+
+		if (!psi_plist_count(func->inner)) {
+			data->error(data, func->token, PSI_WARNING,
+					"No valid sub-expressions left");
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool psi_let_func_validate(struct psi_data *data, struct psi_let_exp *val,
+		struct psi_let_func *func, struct psi_impl *impl)
+{
+	if (impl->func->args) {
+		/* FIXME, func->var does not need to be referring to a func arg */
+		psi_impl_get_arg(impl, func->var);
+	}
+
+	if (!psi_impl_var_validate(data, func->var, impl, val, NULL)) {
+		return false;
+	}
+
+	if (!validate_let_func_type(data, func, impl)) {
+		return false;
+	}
+	if (!validate_let_func_inner(data, val, func, impl)) {
+		return false;
 	}
 	return 1;
 }
 
-int validate_let_func(struct psi_data *data, let_val *val, let_func *func, decl_var *let_var, impl *impl) {
-	if (func->outer) {
+void exec_let_func_arrval_inner(struct psi_let_func *func,
+		struct psi_decl_arg *darg, struct psi_decl_arg *inner_decl_arg,
+		struct psi_call_frame_argument *frame_arg,
+		struct psi_let_exp *inner_let_exp, void *container,
+		struct psi_call_frame *frame)
+{
+	struct psi_let_func *inner_func = psi_let_exp_get_func(inner_let_exp);
+	struct psi_impl_var *inner_var = inner_func->var;
 
+	if (psi_decl_type_get_real(darg->type)->type == PSI_T_UNION) {
+		/* skip if there's no entry in the outer_zval;
+		 * we only want to set supplied data on unions
+		 */
+		if (!zend_symtable_str_exists(Z_ARRVAL_P(frame_arg->zval_ptr),
+				&inner_var->name[1], strlen(&inner_var->name[1]))) {
+			return;
+		}
 	}
-	if (impl->func->args) {
-		locate_impl_var_arg(func->var, impl->func->args);
+	psi_call_frame_sub_argument(frame, inner_var, frame_arg->zval_ptr,
+			inner_func->var->fqn);
+
+	/* example from dm_store/dbm_fetch with arrval($string) conversion:
+	 let key = arrval($key,
+	 dptr = strval($0),
+	 dsize = strlen($0)
+	 );
+	 # ---
+	 darg = key
+	 frame_arg = $key
+	 inner_var = $0
+	 full_func_var_name = $key.0
+	 inner_decl_arg = key.dptr
+	 */
+	psi_let_exp_exec(inner_let_exp, inner_decl_arg,
+			((char *) container) + inner_decl_arg->layout->pos,
+			inner_decl_arg->layout->len, frame);
+}
+
+static void *exec_let_func_arrval(struct psi_let_exp *val,
+		struct psi_let_func *func, struct psi_decl_arg *darg,
+		struct psi_call_frame *frame);
+
+void exec_let_func_arrval_seq(struct psi_let_func *func,
+		struct psi_decl_arg *darg, struct psi_decl_type *darg_type,
+		struct psi_call_frame_argument *frame_arg,
+		struct psi_let_exp *inner_let_exp, void *container,
+		struct psi_call_frame *frame)
+{
+	zval *zval_ptr;
+	psi_marshal_let let_fn;
+	size_t i = 0, size;
+	struct psi_decl_var *dvar;
+
+	if (inner_let_exp->var) {
+		/* arrval($foo, *foo = intval($foo)); */
+		dvar = inner_let_exp->var;
+	} else {
+		/* arrval($foo, intval($foo)); */
+		dvar = psi_decl_var_copy(darg->var);
+		assert(dvar->pointer_level);
+		--dvar->pointer_level;
 	}
-	if (!func->var->arg && !func->ref) {
-		data->error(data, func->var->token, PSI_WARNING,
-				"Unknown variable '%s%s' of `let` statement"
-				" for cast '%s' of implementation '%s'",
-				*func->var->name == '$' ? "" : "$",
-				func->var->name, func->name, impl->func->name);
-		return 0;
+
+	dvar->pointer_level += inner_let_exp->is_reference;
+	size = psi_decl_var_get_size(dvar);
+	dvar->pointer_level -= inner_let_exp->is_reference;
+
+	let_fn = locate_let_func_fn(inner_let_exp->data.func->type);
+
+	ZEND_HASH_FOREACH_VAL_IND(Z_ARRVAL_P(frame_arg->zval_ptr), zval_ptr)
+	{
+		void *temp = NULL;
+		impl_val val = {0}, *ptr, *sub;
+
+		if (let_fn) {
+			ptr = let_fn(&val, darg_type, 0, NULL, zval_ptr, &temp);
+			if (temp) {
+				psi_call_frame_push_auto(frame, temp);
+			}
+		} else if (func->type == PSI_T_ARRVAL) {
+			ptr = exec_let_func_arrval(inner_let_exp,
+					inner_let_exp->data.func, darg, frame);
+		} else {
+			assert(0);
+		}
+
+		sub = deref_impl_val(ptr, dvar);
+
+		memcpy(&((char *) container)[size * i++], &sub, size);
 	}
-	if (!validate_let_func_type(data, func, impl)) {
-		return 0;
+	ZEND_HASH_FOREACH_END();
+
+	if (dvar != inner_let_exp->var) {
+		psi_decl_var_free(&dvar);
 	}
-	if (!validate_let_func_inner(data, val, func, let_var, impl)) {
-		return 0;
+}
+
+static void *exec_let_func_arrval(struct psi_let_exp *val,
+		struct psi_let_func *func, struct psi_decl_arg *darg,
+		struct psi_call_frame *frame)
+{
+	void *container = NULL;
+	struct psi_call_frame_argument *frame_arg;
+	struct psi_decl_type *darg_type;
+	struct psi_plist *darg_members;
+
+	darg_members = psi_decl_type_get_args(darg->type, &darg_type);
+	frame_arg = psi_call_frame_get_argument(frame, func->var->fqn);
+
+	if (frame_arg->zval_ptr && Z_TYPE_P(frame_arg->zval_ptr) != IS_ARRAY) {
+		convert_to_array(frame_arg->zval_ptr);
 	}
-	return 1;
+
+	if (darg_members && func->inner) {
+		/* struct or union
+		 * arrval($foo,
+		 *  str = strval($str),
+		 *  num = intval($num));
+		 */
+		size_t i = 0, size;
+		struct psi_let_exp *inner;
+		struct psi_decl_arg *darg_member;
+
+		val->var->pointer_level += val->is_reference;
+		size = psi_decl_var_get_size(val->var);
+		container = ecalloc(1, size);
+		val->var->pointer_level -= val->is_reference;
+
+		if (frame_arg->zval_ptr) {
+			while (psi_plist_get(func->inner, i++, &inner)) {
+				darg_member = psi_decl_arg_get_by_name(darg_members,
+						psi_let_exp_get_decl_var_name(inner));
+
+				exec_let_func_arrval_inner(func, darg, darg_member, frame_arg,
+						inner, container, frame);
+			}
+		}
+	} else if (func->inner) {
+		/* array
+		 * arrval($foo, foo = intval($foo))
+		 */
+		size_t arcount;
+		struct psi_let_exp *inner;
+
+		if (!frame_arg->zval_ptr) {
+			return NULL;
+		}
+		assert(psi_plist_count(func->inner) == 1);
+
+		arcount = zend_array_count(Z_ARRVAL_P(frame_arg->zval_ptr));
+		psi_plist_get(func->inner, 0, &inner);
+
+		inner->var->pointer_level += inner->is_reference;
+		container = ecalloc(arcount + 1, psi_decl_var_get_size(inner->var));
+		inner->var->pointer_level -= inner->is_reference;
+
+		exec_let_func_arrval_seq(func, darg, darg_type, frame_arg, inner,
+				container, frame);
+	} else {
+		assert(0);
+	}
+
+	return *psi_call_frame_push_auto(frame, container);
+}
+
+void *psi_let_func_exec(struct psi_let_exp *val, struct psi_let_func *func,
+		struct psi_decl_arg *darg, struct psi_call_frame *frame)
+{
+	struct psi_call_frame_symbol *frame_sym;
+	psi_marshal_let let_fn = locate_let_func_fn(func->type);
+
+	frame_sym = psi_call_frame_fetch_symbol(frame, val->var);
+
+	if (let_fn) {
+		void *temp = NULL;
+		struct psi_call_frame_argument *iarg;
+
+		iarg = psi_call_frame_get_argument(frame, func->var->fqn);
+
+		assert(iarg);
+
+		frame_sym->ival_ptr = let_fn(&frame_sym->temp_val,
+				psi_decl_type_get_real(darg->type),
+				iarg->spec ? iarg->spec->type->type : 0, iarg->ival_ptr,
+				iarg->zval_ptr, &temp);
+		if (temp) {
+			psi_call_frame_push_auto(frame, temp);
+		}
+	} else if (func->type == PSI_T_ARRVAL) {
+		frame_sym->ival_ptr = exec_let_func_arrval(val, func, darg, frame);
+	}
+
+	return frame_sym->ival_ptr;
 }

@@ -23,26 +23,29 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#else
-# include "php_config.h"
-#endif
+#include "php_psi_stdinc.h"
+#include "data.h"
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+struct psi_impl_type *psi_impl_type_init(token_t type, const char *name)
+{
+	struct psi_impl_type *t = calloc(1, sizeof(*t));
 
-#include "impl_type.h"
-
-impl_type *init_impl_type(token_t type, const char *name) {
-	impl_type *t = calloc(1, sizeof(*t));
 	t->type = type;
 	t->name = strdup(name);
+
 	return t;
 }
 
-void free_impl_type(impl_type *type) {
-	free(type->name);
-	free(type);
+void psi_impl_type_free(struct psi_impl_type **type_ptr)
+{
+	if (*type_ptr) {
+		struct psi_impl_type *type = *type_ptr;
+
+		*type_ptr = NULL;
+		if (type->token) {
+			free(type->token);
+		}
+		free(type->name);
+		free(type);
+	}
 }

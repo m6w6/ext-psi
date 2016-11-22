@@ -5,11 +5,11 @@
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
 
-     * Redistributions of source code must retain the above copyright notice,
-       this list of conditions and the following disclaimer.
-     * Redistributions in binary form must reproduce the above copyright
-       notice, this list of conditions and the following disclaimer in the
-       documentation and/or other materials provided with the distribution.
+ * Redistributions of source code must retain the above copyright notice,
+ this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright
+ notice, this list of conditions and the following disclaimer in the
+ documentation and/or other materials provided with the distribution.
 
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -21,61 +21,60 @@
  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*******************************************************************************/
+ *******************************************************************************/
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#else
-# include "php_config.h"
-#endif
+#include "php_psi_stdinc.h"
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include <assert.h>
 
 #include "data.h"
+#include "call.h"
 #include "calc.h"
 
-num_exp *init_num_exp(token_t t, void *num) {
-	num_exp *exp = calloc(1, sizeof(*exp));
-	switch (exp->t = t) {
+struct psi_num_exp *psi_num_exp_init(token_t t, void *num)
+{
+	struct psi_num_exp *exp = calloc(1, sizeof(*exp));
+
+	switch (exp->type = t) {
 	case PSI_T_NUMBER:
 	case PSI_T_NSNAME:
-		exp->u.numb = strdup(num);
+		exp->data.numb = strdup(num);
 		break;
 	case PSI_T_NAME:
-		exp->u.dvar = num;
+		exp->data.dvar = num;
 		break;
 	default:
 		assert(0);
 	}
+
 	return exp;
 }
 
-num_exp *copy_num_exp(num_exp *exp) {
-	decl_var *dvar;
-	num_exp *num = calloc(1, sizeof(*num));
-	memcpy(num, exp, sizeof(*num));
+struct psi_num_exp *psi_num_exp_copy(struct psi_num_exp *exp)
+{
+	struct psi_num_exp *num = calloc(1, sizeof(*num));
+
+	*num = *exp;
+
 	if (num->token) {
 		num->token = psi_token_copy(num->token);
 	}
 	if (num->operand) {
-		num->operand = copy_num_exp(num->operand);
+		num->operand = psi_num_exp_copy(num->operand);
 	}
-	switch (num->t) {
+
+	switch (num->type) {
+	case PSI_T_INT64:
+	case PSI_T_DOUBLE:
+	case PSI_T_ENUM:
+	case PSI_T_CONST:
+		break;
 	case PSI_T_NUMBER:
 	case PSI_T_NSNAME:
-		num->u.numb = strdup(num->u.numb);
+		num->data.numb = strdup(num->data.numb);
 		break;
 	case PSI_T_NAME:
-		dvar = init_decl_var(num->u.dvar->name, num->u.dvar->pointer_level,
-				num->u.dvar->array_size);
-		dvar->arg = num->u.dvar->arg;
-		if (num->u.dvar->token) {
-			dvar->token = psi_token_copy(num->u.dvar->token);
-		}
-		num->u.dvar = dvar;
+		num->data.dvar = psi_decl_var_copy(num->data.dvar);
 		break;
 	default:
 		assert(0);
@@ -83,151 +82,306 @@ num_exp *copy_num_exp(num_exp *exp) {
 	return num;
 }
 
-void free_num_exp(num_exp *exp) {
-	if (exp->token) {
-		free(exp->token);
-	}
-	switch (exp->t) {
-	case PSI_T_NUMBER:
-		free(exp->u.numb);
-		break;
-	case PSI_T_NSNAME:
-		break;
-	case PSI_T_NAME:
-		free_decl_var(exp->u.dvar);
-		break;
-	case PSI_T_ENUM:
-		break;
-	default:
-		assert(0);
-	}
-	if (exp->operand) {
-		free_num_exp(exp->operand);
-	}
-	free(exp);
-}
+void psi_num_exp_free(struct psi_num_exp **exp_ptr)
+{
+	if (*exp_ptr) {
+		struct psi_num_exp *exp = *exp_ptr;
 
-void dump_num_exp(int fd, num_exp *exp) {
-	while (exp) {
-		switch (exp->t) {
-		case PSI_T_NUMBER:
-			dprintf(fd, "%s", exp->u.numb);
+		*exp_ptr = NULL;
+		if (exp->token) {
+			free(exp->token);
+		}
+		switch (exp->type) {
+		case PSI_T_INT64:
+		case PSI_T_DOUBLE:
+		case PSI_T_ENUM:
+		case PSI_T_CONST:
 			break;
 		case PSI_T_NSNAME:
-			dprintf(fd, "%s", exp->u.cnst->name);
+		case PSI_T_NUMBER:
+			free(exp->data.numb);
 			break;
 		case PSI_T_NAME:
-			dump_decl_var(fd, exp->u.dvar);
-			break;
-		case PSI_T_ENUM:
-			dprintf(fd, "%s", exp->u.enm->name);
+			psi_decl_var_free(&exp->data.dvar);
 			break;
 		default:
 			assert(0);
 		}
 		if (exp->operand) {
+			psi_num_exp_free(&exp->operand);
+		}
+		free(exp);
+	}
+}
+
+void psi_num_exp_dump(int fd, struct psi_num_exp *exp)
+{
+	while (exp) {
+		switch (exp->type) {
+		case PSI_T_INT64:
+			dprintf(fd, "%" PRId64, exp->data.ival.i64);
+			break;
+		case PSI_T_DOUBLE:
+			dprintf(fd, "%F", exp->data.ival.dval);
+			break;
+		case PSI_T_NUMBER:
+		case PSI_T_NSNAME:
+			dprintf(fd, "%s", exp->data.numb);
+			break;
+		case PSI_T_CONST:
+			dprintf(fd, "%s", exp->data.cnst->name);
+			break;
+		case PSI_T_ENUM:
+			dprintf(fd, "%s", exp->data.enm->name);
+			break;
+		case PSI_T_NAME:
+			psi_decl_var_dump(fd, exp->data.dvar);
+			break;
+		default:
+			assert(0);
+		}
+
+		if (exp->operand) {
 			char op;
 
-			switch (exp->operator) {
-			case PSI_T_PLUS:	op = '+'; break;
-			case PSI_T_MINUS:	op = '-'; break;
-			case PSI_T_ASTERISK:op = '*'; break;
-			case PSI_T_SLASH:	op = '/'; break;
+			switch (exp->op) {
+			case PSI_T_PLUS:
+				op = '+';
+				break;
+			case PSI_T_MINUS:
+				op = '-';
+				break;
+			case PSI_T_ASTERISK:
+				op = '*';
+				break;
+			case PSI_T_SLASH:
+				op = '/';
+				break;
 			default:
 				assert(0);
 			}
 			dprintf(fd, " %c ", op);
 		}
+
 		exp = exp->operand;
 	}
 }
 
-static inline constant *locate_num_exp_constant(num_exp *exp, constants *consts) {
-	size_t i;
+static inline bool psi_num_exp_validate_enum(struct psi_data *data, struct psi_num_exp *exp,
+		struct psi_decl_enum *enm)
+{
+	size_t i = 0;
+	struct psi_decl_enum_item *itm;
 
-	for (i = 0; i < consts->count; ++i) {
-		constant *cnst = consts->list[i];
-
-		if (!strcmp(cnst->name, exp->u.numb)) {
-			free(exp->u.numb);
-			return exp->u.cnst = cnst;
+	while (psi_plist_get(enm->items, i++, &itm)) {
+		if (!strcmp(itm->name, exp->data.dvar->name)) {
+			psi_decl_var_free(&exp->data.dvar);
+			exp->type = PSI_T_ENUM;
+			exp->data.enm = itm;
+			return psi_num_exp_validate(data, exp, NULL, NULL, NULL, NULL, enm);
 		}
 	}
 
-	return NULL;
-}
-static inline decl_enum_item *locate_num_exp_enum_item_ex(num_exp *exp, decl_enum *e) {
-	size_t k;
-
-	if (e) for (k = 0; k < e->items->count; ++k) {
-		decl_enum_item *i = e->items->list[k];
-
-		if (!strcmp(i->name, exp->u.dvar->name)) {
-			free_decl_var(exp->u.dvar);
-			exp->t = PSI_T_ENUM;
-			exp->u.enm = i;
-			return i;
-		}
-	}
-	return NULL;
-}
-static inline decl_enum_item *locate_num_exp_enum_item(num_exp *exp, decl_enums *enums) {
-	size_t j;
-
-	if (enums) for (j = 0; j < enums->count; ++j) {
-		decl_enum *e = enums->list[j];
-		decl_enum_item *i = locate_num_exp_enum_item_ex(exp, e);
-
-		if (i) {
-			return i;
-		}
-	}
-	return NULL;
+	return false;
 }
 
-int validate_num_exp(struct psi_data *data, num_exp *exp, decl_args *dargs, decl_arg *func, decl_enum *enm) {
+bool psi_num_exp_validate(struct psi_data *data, struct psi_num_exp *exp,
+		struct psi_impl *impl, struct psi_decl *cb_decl, struct psi_let_exp *current_let,
+		struct psi_set_exp *current_set, struct psi_decl_enum *current_enum)
+{
+	size_t i = 0;
+	impl_val tmp = {0};
+	struct psi_const *cnst;
+	struct psi_decl_enum *enm;
+
 	if (exp->operand) {
-		switch (exp->operator) {
+		switch (exp->op) {
 		case PSI_T_PLUS:
-			exp->calculator = psi_calc_add;
+			exp->calc = psi_calc_add;
 			break;
 		case PSI_T_MINUS:
-			exp->calculator = psi_calc_sub;
+			exp->calc = psi_calc_sub;
 			break;
 		case PSI_T_ASTERISK:
-			exp->calculator = psi_calc_mul;
+			exp->calc = psi_calc_mul;
 			break;
 		case PSI_T_SLASH:
-			exp->calculator = psi_calc_div;
+			exp->calc = psi_calc_div;
 			break;
 		default:
-			assert(0);
+			data->error(data, exp->token, PSI_WARNING,
+					"Unknown numeric operator (%d)", exp->op);
+			return false;
 		}
-		if (!validate_num_exp(data, exp->operand, dargs, func, enm)) {
-			return 0;
+		if (!psi_num_exp_validate(data, exp->operand, impl, cb_decl, current_let,
+				current_set, current_enum)) {
+			return false;
 		}
 	}
-	switch (exp->t) {
+
+	switch (exp->type) {
+	case PSI_T_CONST:
+	case PSI_T_INT64:
+	case PSI_T_DOUBLE:
+	case PSI_T_ENUM:
+		return true;
+
 	case PSI_T_NAME:
-		if (!locate_decl_var_arg(exp->u.dvar, dargs, func)) {
-			if (!locate_num_exp_enum_item(exp, data->enums) && !locate_num_exp_enum_item_ex(exp, enm)) {
-				data->error(data, exp->token, PSI_WARNING, "Unknown variable '%s' in numeric expression",
-						exp->u.dvar->name);
-				return 0;
+		if (current_enum && psi_num_exp_validate_enum(data, exp, current_enum)) {
+			return true;
+		}
+		while (psi_plist_get(data->enums, i++, &enm)) {
+			if (psi_num_exp_validate_enum(data, exp, enm)) {
+				return true;
 			}
 		}
-		return 1;
-	case PSI_T_NSNAME:
-		if (!locate_num_exp_constant(exp, data->consts)) {
-			data->error(data, exp->token, PSI_WARNING, "Unknown constant '%s' in numeric expression",
-					exp->u.numb);
-			return 0;
+		if (exp->data.dvar->arg) {
+			return true;
 		}
-		return 1;
+		if (psi_decl_var_validate(data, exp->data.dvar, impl ? impl->decl : NULL,
+				current_let, current_set)) {
+			return true;
+		}
+		if (cb_decl && psi_decl_var_validate(data, exp->data.dvar, cb_decl, NULL, NULL)) {
+			return true;
+		}
+		data->error(data, exp->token, PSI_WARNING,
+				"Unknown variable '%s' in numeric expression",
+				exp->data.dvar->name);
+		return false;
+
+	case PSI_T_NSNAME:
+		while (psi_plist_get(data->consts, i++, &cnst)) {
+			if (!strcmp(cnst->name, exp->data.numb)) {
+				free(exp->data.numb);
+				exp->type = PSI_T_CONST;
+				exp->data.cnst = cnst;
+				return true;
+			}
+		}
+		data->error(data, exp->token, PSI_WARNING,
+				"Unknown constant '%s' in numeric expression",
+				exp->data.numb);
+		return false;
+
 	case PSI_T_NUMBER:
-	case PSI_T_ENUM:
-		return 1;
+		switch (is_numeric_string(exp->data.numb, strlen(exp->data.numb), (zend_long *) &tmp, (double *) &tmp, 0)) {
+		case IS_LONG:
+			free(exp->data.numb);
+			exp->type = PSI_T_INT64;
+			exp->data.ival.i64 = tmp.zend.lval;
+			return true;
+
+		case IS_DOUBLE:
+			free(exp->data.numb);
+			exp->type = PSI_T_DOUBLE;
+			exp->data.ival.dval = tmp.dval;
+			return true;
+		}
+		data->error(data, exp->token, PSI_WARNING, "Expected numeric entity (parser error?)");
+		return false;
+
+	default:
+		assert(0);
+	}
+
+	return false;
+}
+
+#include "Zend/zend_constants.h"
+
+static inline token_t psi_num_exp_eval_constant(struct psi_num_exp *exp,
+		impl_val *res, struct psi_call_frame *frame)
+{
+	switch (exp->data.cnst->type->type) {
+	case PSI_T_INT:
+		res->i64 = zend_get_constant_str(exp->data.cnst->name,
+				strlen(exp->data.cnst->name))->value.lval;
+		return PSI_T_INT64;
+	case PSI_T_FLOAT:
+		res->dval = zend_get_constant_str(exp->data.cnst->name,
+				strlen(exp->data.cnst->name))->value.dval;
+		return PSI_T_DOUBLE;
 	default:
 		return 0;
 	}
+}
+
+static inline token_t psi_num_exp_eval_decl_var(struct psi_num_exp *exp,
+		impl_val *res, struct psi_call_frame *frame)
+{
+	impl_val *ref;
+	struct psi_call_frame_symbol *sym;
+	struct psi_decl_type *real;
+	size_t size;
+
+	real = psi_decl_type_get_real(exp->data.dvar->arg->type);
+	size = psi_decl_arg_get_size(exp->data.dvar->arg);
+	sym = psi_call_frame_fetch_symbol(frame, exp->data.dvar);
+	ref = deref_impl_val(sym->ptr, exp->data.dvar);
+
+	memcpy(res, ref, size);
+
+	switch (real->type) {
+	case PSI_T_INT8:
+	case PSI_T_UINT8:
+	case PSI_T_INT16:
+	case PSI_T_UINT16:
+	case PSI_T_INT32:
+	case PSI_T_UINT32:
+	case PSI_T_INT64:
+	case PSI_T_UINT64:
+	case PSI_T_FLOAT:
+	case PSI_T_DOUBLE:
+		break;
+	default:
+		assert(0);
+	}
+
+	return real->type;
+}
+
+static inline token_t psi_num_exp_eval(struct psi_num_exp *exp, impl_val *res,
+		struct psi_call_frame *frame)
+{
+	switch (exp->type) {
+	case PSI_T_INT64:
+	case PSI_T_DOUBLE:
+		*res = exp->data.ival;
+		return exp->type;
+
+	case PSI_T_ENUM:
+		res->i64 = exp->data.enm->val;
+		return PSI_T_INT64;
+
+	case PSI_T_CONST:
+		return psi_num_exp_eval_constant(exp, res, frame);
+		break;
+
+	case PSI_T_NAME:
+		return psi_num_exp_eval_decl_var(exp, res, frame);
+		break;
+
+	default:
+		assert(0);
+	}
+	return 0;
+}
+
+token_t psi_num_exp_exec(struct psi_num_exp *exp, impl_val *res,
+		struct psi_call_frame *frame)
+{
+	impl_val num = {0};
+	token_t num_type = psi_num_exp_eval(exp, &num, frame);
+
+	/* FIXME operator precedence */
+	if (exp->operand) {
+		impl_val tmp = {0};
+		token_t tmp_type = psi_num_exp_exec(exp->operand, &tmp, frame);
+
+		return exp->calc(num_type, &num, tmp_type, &tmp, res);
+	}
+
+	*res = num;
+	return num_type;
 }

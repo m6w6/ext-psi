@@ -25,26 +25,26 @@
 #ifndef PSI_TYPES_DECL_UNION_H
 #define PSI_TYPES_DECL_UNION_H
 
-#include "decl_args.h"
+struct psi_data;
+struct psi_token;
+struct psi_plist;
+struct psi_decl_var;
 
-typedef struct decl_union {
+struct psi_decl_union {
 	struct psi_token *token;
 	char *name;
-	decl_args *args;
+	struct psi_plist *args;
 	size_t size;
 	size_t align;
-} decl_union;
+};
 
-decl_union *init_decl_union(const char *name, decl_args *args);
-void free_decl_union(decl_union *u);
-void dump_decl_union(int fd, decl_union *unn);
+struct psi_decl_union *psi_decl_union_init(const char *name, struct psi_plist *args);
+void psi_decl_union_free(struct psi_decl_union **u_ptr);
+void psi_decl_union_dump(int fd, struct psi_decl_union *unn);
 
-decl_arg *locate_decl_union_member(decl_union *u, decl_var *var);
+bool psi_decl_union_validate(struct psi_data *data, struct psi_decl_union *u);
 
-struct psi_data;
-
-int validate_decl_union(struct psi_data *data, decl_union *u);
-
-size_t alignof_decl_union(decl_union *u);
+size_t psi_decl_union_get_align(struct psi_decl_union *u);
+struct psi_decl_arg *psi_decl_union_get_arg(struct psi_decl_union *u, struct psi_decl_var *var);
 
 #endif

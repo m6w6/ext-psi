@@ -5,11 +5,11 @@
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
 
-     * Redistributions of source code must retain the above copyright notice,
-       this list of conditions and the following disclaimer.
-     * Redistributions in binary form must reproduce the above copyright
-       notice, this list of conditions and the following disclaimer in the
-       documentation and/or other materials provided with the distribution.
+ * Redistributions of source code must retain the above copyright notice,
+ this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright
+ notice, this list of conditions and the following disclaimer in the
+ documentation and/or other materials provided with the distribution.
 
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -21,67 +21,90 @@
  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*******************************************************************************/
+ *******************************************************************************/
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#else
-# include "php_config.h"
-#endif
+#include "php_psi_stdinc.h"
+#include "data.h"
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+struct psi_impl_func *psi_impl_func_init(const char *name,
+		struct psi_plist *args, struct psi_impl_type *type)
+{
+	struct psi_impl_func *func = calloc(1, sizeof(*func));
 
-#include "impl_func.h"
-
-impl_func *init_impl_func(char *name, impl_args *args, impl_type *type,
-		int ret_reference) {
-	impl_func *func = calloc(1, sizeof(*func));
 	func->name = strdup(name);
-	func->args = args ? args : init_impl_args(NULL);
+	func->args = args ? : psi_plist_init((psi_plist_dtor) psi_impl_arg_free);
+
 	func->return_type = type;
-	func->return_reference = ret_reference;
+
 	return func;
 }
 
-void free_impl_func(impl_func *f) {
-	if (f->token) {
-		free(f->token);
+void psi_impl_func_free(struct psi_impl_func **f_ptr)
+{
+	if (*f_ptr) {
+		struct psi_impl_func *f = *f_ptr;
+
+		*f_ptr = NULL;
+		if (f->token) {
+			free(f->token);
+		}
+
+		psi_impl_type_free(&f->return_type);
+		psi_plist_free(f->args);
+
+		if (f->vararg) {
+			psi_impl_arg_free(&f->vararg);
+		}
+
+		free(f->name);
+		free(f);
 	}
-	free_impl_type(f->return_type);
-	free_impl_args(f->args);
-	free(f->name);
-	free(f);
 }
 
-void dump_impl_func(int fd, impl_func *func) {
-	size_t j;
+bool psi_impl_func_validate(struct psi_data *data, struct psi_impl_func *func)
+{
+	int def = 0;
+	size_t i = 0;
+	struct psi_impl_arg *iarg;
 
-	dprintf(fd, "function %s(", func->name);
-	if (func->args) {
-		for (j = 0; j < func->args->count; ++j) {
-			impl_arg *iarg = func->args->args[j];
-
-			dprintf(fd, "%s%s %s%s",
-					j ? ", " : "",
-					iarg->type->name,
-					iarg->var->reference ? "&" : "",
-					iarg->var->name);
-			if (iarg->def) {
-				dprintf(fd, " = %s", iarg->def->text);
+	while (psi_plist_get(func->args, i++, &iarg)) {
+		if (iarg->def) {
+			def = 1;
+			if (!psi_impl_def_val_validate(data, iarg->def, iarg->type)) {
+				return 0;
 			}
-		}
-		if (func->args->vararg.name) {
-			impl_arg *vararg = func->args->vararg.name;
-
-			dprintf(fd, ", %s %s...%s",
-					vararg->type->name,
-					vararg->var->reference ? "&" : "",
-					vararg->var->name);
+		} else if (def) {
+			data->error(data, func->token, PSI_WARNING,
+					"Non-optional argument %zu '$%s' of implementation '%s'"
+					" follows optional argument",
+					i + 1,
+					iarg->var->name, func->name);
+			return false;
 		}
 	}
-	dprintf(fd, ") : %s%s",
-			func->return_reference ? "&":"",
+
+	return true;
+}
+
+void psi_impl_func_dump(int fd, struct psi_impl_func *func)
+{
+	dprintf(fd, "function %s(", func->name);
+	if (func->args) {
+		size_t i = 0;
+		struct psi_impl_arg *iarg;
+
+		while (psi_plist_get(func->args, i++, &iarg)) {
+			if (i > 1) {
+				dprintf(fd, ", ");
+			}
+			psi_impl_arg_dump(fd, iarg, false);
+		}
+
+		if (func->vararg) {
+			dprintf(fd, ", ");
+			psi_impl_arg_dump(fd, func->vararg, true);
+		}
+	}
+	dprintf(fd, ") : %s%s", func->return_reference ? "&" : "",
 			func->return_type->name);
 }

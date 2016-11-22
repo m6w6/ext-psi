@@ -164,8 +164,8 @@ and system interfaces of POSIX.1-2008 (http://pubs.opengroup.org/onlinepubs/9699
      <file role="src" name="let_func.h"/>
      <file role="src" name="let_stmt.c"/>
      <file role="src" name="let_stmt.h"/>
-     <file role="src" name="let_val.c"/>
-     <file role="src" name="let_val.h"/>
+     <file role="src" name="let_exp.c"/>
+     <file role="src" name="let_exp.h"/>
      <file role="src" name="let_vals.c"/>
      <file role="src" name="let_vals.h"/>
      <file role="src" name="num_exp.c"/>

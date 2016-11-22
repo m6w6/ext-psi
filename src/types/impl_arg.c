@@ -23,19 +23,13 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#else
-# include "php_config.h"
-#endif
+#include "php_psi_stdinc.h"
+#include "data.h"
 
-#include <stdlib.h>
-#include <stdio.h>
-
-#include "impl_arg.h"
-
-impl_arg *init_impl_arg(impl_type *type, impl_var *var, impl_def_val *def) {
-	impl_arg *arg = calloc(1, sizeof(*arg));
+struct psi_impl_arg *psi_impl_arg_init(struct psi_impl_type *type,
+		struct psi_impl_var *var, struct psi_impl_def_val *def)
+{
+	struct psi_impl_arg *arg = calloc(1, sizeof(*arg));
 	arg->type = type;
 	arg->var = var;
 	arg->var->arg = arg;
@@ -43,11 +37,30 @@ impl_arg *init_impl_arg(impl_type *type, impl_var *var, impl_def_val *def) {
 	return arg;
 }
 
-void free_impl_arg(impl_arg *arg) {
-	free_impl_type(arg->type);
-	free_impl_var(arg->var);
-	if (arg->def) {
-		free_impl_def_val(arg->def);
+void psi_impl_arg_free(struct psi_impl_arg **arg_ptr)
+{
+	if (*arg_ptr) {
+		struct psi_impl_arg *arg = *arg_ptr;
+
+		*arg_ptr = NULL;
+		psi_impl_type_free(&arg->type);
+		psi_impl_var_free(&arg->var);
+		if (arg->def) {
+			psi_impl_def_val_free(&arg->def);
+		}
+		free(arg);
 	}
-	free(arg);
+}
+
+void psi_impl_arg_dump(int fd, struct psi_impl_arg *iarg, bool vararg)
+{
+	dprintf(fd, "%s %s%s%s",
+			iarg->type->name,
+			iarg->var->reference ? "&" : "",
+			vararg ? "..." : "",
+			iarg->var->name);
+	if (iarg->def) {
+		dprintf(fd, " = %s", iarg->def->text);
+	}
+
 }

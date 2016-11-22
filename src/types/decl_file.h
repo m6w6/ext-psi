@@ -26,15 +26,16 @@
 #ifndef PSI_TYPES_DECL_FILE_H
 #define PSI_TYPES_DECL_FILE_H
 
-typedef struct decl_file {
-	char *ln;
-	char *fn;
-} decl_file;
-
-void free_decl_file(decl_file *file);
-
 struct psi_data;
 
-int validate_file(struct psi_data *data, void **dlopened);
+struct psi_decl_file {
+	char *ln;
+	char *fn;
+};
+
+void psi_decl_file_dtor(struct psi_decl_file *file);
+bool psi_decl_file_validate(struct psi_data *dst, struct psi_data *src, void **dlopened);
+
+void psi_libs_free(void **dlopened);
 
 #endif

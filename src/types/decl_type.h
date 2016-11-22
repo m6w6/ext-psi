@@ -28,48 +28,52 @@
 
 #include "token.h"
 
-typedef struct decl_type {
+struct psi_data;
+struct psi_token;
+struct psi_plist;
+struct psi_decl_arg;
+struct psi_decl_struct;
+struct psi_decl_union;
+struct psi_decl_enum;
+struct psi_decl;
+
+struct psi_decl_type {
 	struct psi_token *token;
 	char *name;
 	token_t type;
 	union {
-		struct decl_arg *def;
-		struct decl_struct *strct;
-		struct decl_union *unn;
-		struct decl_enum *enm;
-		struct decl *func;
+		struct psi_decl_arg *def;
+		struct psi_decl_struct *strct;
+		struct psi_decl_union *unn;
+		struct psi_decl_enum *enm;
+		struct psi_decl *func;
 	} real;
-} decl_type;
+};
 
 #include <string.h>
-#define is_anon_type(name, type) !strncmp(name, type "@", sizeof(type))
+#define psi_decl_type_is_anon(name, type) !strncmp(name, type "@", sizeof(type))
 
-decl_type *init_decl_type(token_t type, const char *name);
-void free_decl_type(decl_type *type);
-void dump_decl_type(int fd, decl_type *t, unsigned level);
+struct psi_decl_type *psi_decl_type_init(token_t type, const char *name);
+void psi_decl_type_free(struct psi_decl_type **type_ptr);
+void psi_decl_type_dump(int fd, struct psi_decl_type *t, unsigned level);
+bool psi_decl_type_validate(struct psi_data *data, struct psi_decl_type *type, struct psi_decl_arg *def);
 
-struct decl_args *extract_decl_type_args(decl_type *dtyp, decl_type** real_typ_ptr);
-size_t extract_decl_type_size(decl_type *dtyp, decl_type **real_typ_ptr);
+bool psi_decl_type_validate_args(struct psi_data *data, struct psi_decl_type *decl_type, token_t type, void *current);
 
-int weak_decl_type(decl_type *type);
-decl_type *real_decl_type(decl_type *type);
+size_t psi_decl_type_get_size(struct psi_decl_type *dtyp, struct psi_decl_type **real_typ_ptr);
+size_t psi_decl_type_get_align(struct psi_decl_type *t);
+int psi_decl_type_is_weak(struct psi_decl_type *type);
+struct psi_decl_type *psi_decl_type_get_real(struct psi_decl_type *type);
 
-struct decl_typedefs;
-struct decl_structs;
-struct decl_unions;
-struct decl_enums;
-struct decls;
+struct psi_plist *psi_decl_type_get_args(struct psi_decl_type *dtyp, struct psi_decl_type **real_typ_ptr);
+void psi_decl_type_dump_args_with_layout(int fd, struct psi_plist *args, unsigned level);
+size_t psi_decl_type_get_args_align(struct psi_plist *args);
 
-int locate_decl_type_alias(struct decl_typedefs *defs, decl_type *type);
-int locate_decl_type_struct(struct decl_structs *structs, decl_type *type);
-int locate_decl_type_union(struct decl_unions *unions, decl_type *type);
-int locate_decl_type_enum(struct decl_enums *enums, decl_type *type);
-int locate_decl_type_decl(struct decls *decls, decl_type *type);
 
-struct psi_data;
-
-int validate_decl_type(struct psi_data *data, decl_type *type, struct decl_arg *def);
-
-size_t alignof_decl_type(decl_type *t);
+bool psi_decl_type_get_alias(struct psi_decl_type *type, struct psi_plist *typedefs);
+bool psi_decl_type_get_struct(struct psi_decl_type *type, struct psi_plist *structs);
+bool psi_decl_type_get_union(struct psi_decl_type *type, struct psi_plist *unions);
+bool psi_decl_type_get_enum(struct psi_decl_type *type, struct psi_plist *enums);
+bool psi_decl_type_get_decl(struct psi_decl_type *type, struct psi_plist *decls);
 
 #endif

@@ -2,13 +2,13 @@
 # Add a pre-defined type to $PSI_TYPES.
 psi_add_type() {
 	cat >>$PSI_TYPES <<EOF
-	$1, 
+	$1,
 EOF
 }
 
 psi_add_stdtype() {
 	cat >>$PSI_STDTYPES <<EOF
-	$1, 
+	$1,
 EOF
 }
 
@@ -18,6 +18,9 @@ EOF
 psi_type_pair() {
 	local psi_type_name=`printf "%s" "$1" | tr -cd A-Za-z0-9_`
 	local psi_type_lower=`printf "%s" "$1" | tr A-Z a-z`
+	while expr "$psi_type_lower" : const >/dev/null; do
+		psi_type_lower=`printf "%s" "$psi_type_lower" | cut -d " " -f2-`
+	done
 	case $psi_type_lower in
 	int*|uint*)
 		local psi_type_upper=`printf "%s" "$psi_type_name" | tr a-z A-Z`
@@ -42,7 +45,7 @@ psi_type_pair() {
 dnl PSI_TYPE(type name, basic type)
 dnl Check for a specific type, optionally referring to a basic type.
 dnl Calls AC_TYPE_<TYPE> (if defined) and PSI_CHECK_SIZEOF.
-dnl If the basic type is just specified as "int" (in contrast to "sint" or 
+dnl If the basic type is just specified as "int" (in contrast to "sint" or
 dnl "uint"), AX_CHECK_SIGN is used to discover signedness of the type.
 dnl Defines a pre-defined type in $PSI_TYPES.
 AC_DEFUN(PSI_TYPE, [
@@ -68,6 +71,7 @@ AC_DEFUN(PSI_STDTYPE, [
 	PSI_CHECK_SIZEOF($1)
 	if PSI_SH_TEST_SIZEOF($1); then
 		m4_case([$1],
+		[bool],[psi_add_stdtype "{PSI_T_BOOL, \"bool\", NULL}"],
 		[float],[psi_add_stdtype "{PSI_T_FLOAT, \"float\", NULL}"],
 		[double],[psi_add_stdtype "{PSI_T_DOUBLE, \"double\", NULL}"],
 		[long double],[psi_add_stdtype "{PSI_T_LONG_DOUBLE, \"long double\", NULL}"],
@@ -187,9 +191,10 @@ AC_DEFUN(PSI_TYPE_PAIR, [m4_case(m4_bregexp([$1], [^\w+], [\&]),
 	[PSI_T_NAME, \"m4_bregexp([$1], [^\(\w+ \)*\w+], [\&])\"])])
 
 dnl PSI_CHECK_STD_TYPES()
-dnl Checks for standard ANSI-C and stdint types.
+dnl Checks for standard ANSI-C, stdint and stdbool types.
 AC_DEFUN(PSI_CHECK_STD_TYPES, [
 	AC_CHECK_HEADERS(stdint.h)
+	AC_HEADER_STDBOOL
 
 	AC_TYPE_INT8_T
 	PSI_CHECK_SIZEOF(int8_t)
@@ -215,7 +220,7 @@ AC_DEFUN(PSI_CHECK_STD_TYPES, [
 	AC_TYPE_UINT64_T
 	PSI_CHECK_SIZEOF(uint64_t)
 	AC_CHECK_ALIGNOF(uint64_t)
-	
+
 	PSI_CHECK_SIZEOF(void *)
 	AC_CHECK_ALIGNOF(void *)
 
@@ -225,6 +230,9 @@ AC_DEFUN(PSI_CHECK_STD_TYPES, [
 	AC_CHECK_ALIGNOF(double)
 	PSI_STDTYPE(long double)
 	AC_CHECK_ALIGNOF(long double)
+
+	PSI_STDTYPE(bool)
+	AC_CHECK_ALIGNOF(bool, PSI_INCLUDES)
 
 	PSI_STDTYPE(char, int)
 	AC_CHECK_ALIGNOF(char)
@@ -255,6 +263,6 @@ AC_DEFUN(PSI_CHECK_STD_TYPES, [
 	PSI_STDTYPE(signed long long int, int)
 	PSI_STDTYPE(unsigned long long, uint)
 	PSI_STDTYPE(unsigned long long int, uint)
-	dnl this must come after the check fo "unsigned long long int"; autoconf, wth?
+	dnl this must come after the check for "unsigned long long int"; autoconf, wth?
 	PSI_STDTYPE(long long int, int)
 ])

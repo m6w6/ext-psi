@@ -5,11 +5,11 @@
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
 
-     * Redistributions of source code must retain the above copyright notice,
-       this list of conditions and the following disclaimer.
-     * Redistributions in binary form must reproduce the above copyright
-       notice, this list of conditions and the following disclaimer in the
-       documentation and/or other materials provided with the distribution.
+ * Redistributions of source code must retain the above copyright notice,
+ this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright
+ notice, this list of conditions and the following disclaimer in the
+ documentation and/or other materials provided with the distribution.
 
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -21,106 +21,151 @@
  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*******************************************************************************/
+ *******************************************************************************/
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#else
-# include "php_config.h"
-#endif
-
-#include <stdlib.h>
-#include <stdio.h>
+#include "php_psi_stdinc.h"
 #include <assert.h>
 
 #include "data.h"
 
-decl_arg *init_decl_arg(decl_type *type, decl_var *var) {
-	decl_arg *arg = calloc(1, sizeof(*arg));
+struct psi_decl_arg *psi_decl_arg_init(struct psi_decl_type *type,
+		struct psi_decl_var *var)
+{
+	struct psi_decl_arg *arg = calloc(1, sizeof(*arg));
 	arg->token = var->token;
 	arg->type = type;
 	arg->var = var;
 	var->arg = arg;
-	arg->ptr = &arg->val;
-	arg->let = arg->ptr;
 	return arg;
 }
 
-void free_decl_arg(decl_arg *arg) {
-	if (arg->token && arg->token != arg->var->token) {
-		free(arg->token);
+void psi_decl_arg_free(struct psi_decl_arg **arg_ptr)
+{
+	if (*arg_ptr) {
+		struct psi_decl_arg *arg = *arg_ptr;
+
+		*arg_ptr = NULL;
+		if (arg->token && arg->token != arg->var->token) {
+			free(arg->token);
+		}
+		psi_decl_type_free(&arg->type);
+		psi_decl_var_free(&arg->var);
+		if (arg->layout) {
+			psi_layout_free(&arg->layout);
+		}
+		free(arg);
 	}
-	free_decl_type(arg->type);
-	free_decl_var(arg->var);
-	if (arg->layout) {
-		free_decl_struct_layout(arg->layout);
-	}
-	free(arg);
 }
 
-void dump_decl_arg(int fd, decl_arg *arg, unsigned level) {
+void psi_decl_arg_dump(int fd, struct psi_decl_arg *arg, unsigned level)
+{
 	if (arg->type->type == PSI_T_FUNCTION) {
-		dump_decl_type(fd, arg->type->real.func->func->type, level);
+		psi_decl_type_dump(fd, arg->type->real.func->func->type, level);
 		dprintf(fd, " (*");
-		dump_decl_var(fd, arg->var);
+		psi_decl_var_dump(fd, arg->var);
 		dprintf(fd, ")(");
 		if (arg->type->real.func->args) {
-			size_t j;
+			size_t j = 0;
+			struct psi_decl_arg *farg;
 
-			for (j = 0; j < arg->type->real.func->args->count; ++j) {
-				if (j) {
+			++level;
+			while (psi_plist_get(arg->type->real.func->args, j++, &farg)) {
+				if (j > 1) {
 					dprintf(fd, ", ");
 				}
-				dump_decl_arg(fd, arg->type->real.func->args->args[j], level+1);
+				psi_decl_arg_dump(fd, farg, level);
 			}
-			if (arg->type->real.func->args->varargs) {
+			--level;
+			if (arg->type->real.func->varargs) {
 				dprintf(fd, ", ...");
 			}
 		}
 		dprintf(fd, ")");
 	} else {
-		dump_decl_type(fd, arg->type, level);
+		psi_decl_type_dump(fd, arg->type, level);
 		dprintf(fd, " ");
-		dump_decl_var(fd, arg->var);
+		psi_decl_var_dump(fd, arg->var);
 	}
 }
 
-int validate_decl_arg(struct psi_data *data, decl_arg *arg) {
-	if (!validate_decl_type(data, arg->type, NULL)) {
+bool psi_decl_arg_validate(struct psi_data *data, struct psi_decl_arg *arg)
+{
+	if (!psi_decl_type_validate(data, arg->type, NULL)) {
 		data->error(data, arg->type->token, PSI_WARNING,
-			"Cannot use '%s' as type for '%s'",
-			arg->type->name, arg->var->name);
-		return 0;
+				"Cannot use '%s' as type for '%s': %s", arg->type->name,
+				arg->var->name, data->last_error);
+		return false;
 	}
-	return 1;
+	return true;
 }
 
-size_t align_decl_arg(decl_arg *darg, size_t *pos, size_t *len) {
-	size_t align = alignof_decl_arg(darg);
+bool psi_decl_arg_validate_typedef(struct psi_data *data, struct psi_decl_arg *def)
+{
+	if (!psi_decl_type_validate(data, def->type, def)) {
+		const char *pre;
+
+		switch (def->type->type) {
+		case PSI_T_STRUCT:
+			pre = "struct ";
+			break;
+		case PSI_T_UNION:
+			pre = "union ";
+			break;
+		case PSI_T_ENUM:
+			pre = "enum ";
+			break;
+		default:
+			pre = "";
+			break;
+		}
+		data->error(data, def->token, PSI_WARNING,
+				"Type '%s' cannot be aliased to '%s%s': %s", def->var->name, pre,
+				def->type->name, data->last_error);
+		return false;
+	}
+	if (def->type->type == PSI_T_VOID) {
+		if (def->var->pointer_level) {
+			def->type->type = PSI_T_POINTER;
+		} else {
+			data->error(data, def->token, PSI_WARNING,
+					"Type '%s' cannot be aliased to 'void'", def->type->name);
+			return false;
+		}
+	}
+
+	return true;
+}
+
+size_t psi_decl_arg_align(struct psi_decl_arg *darg, size_t *pos, size_t *len)
+{
+	size_t align = psi_decl_arg_get_align(darg);
 
 	assert(align > 0);
 
-	*len = sizeof_decl_arg(darg);
+	*len = psi_decl_arg_get_size(darg);
 	*pos = psi_align(align, *pos);
 
 	return align;
 }
 
-size_t alignof_decl_arg(decl_arg *darg) {
+size_t psi_decl_arg_get_align(struct psi_decl_arg *darg)
+{
 	size_t align;
 
-	if (darg->var->pointer_level && (!darg->var->array_size || darg->var->pointer_level > 2)) {
+	if (darg->var->pointer_level
+			&& (!darg->var->array_size || darg->var->pointer_level > 2)) {
 		align = psi_t_alignment(PSI_T_POINTER);
 	} else {
-		align = alignof_decl_type(darg->type);
+		align = psi_decl_type_get_align(darg->type);
 	}
 
 	return align;
 }
 
-size_t sizeof_decl_arg(decl_arg *darg) {
+size_t psi_decl_arg_get_size(struct psi_decl_arg *darg)
+{
 	size_t size;
-	decl_type *real = real_decl_type(darg->type);
+	struct psi_decl_type *real = psi_decl_type_get_real(darg->type);
 
 	if (darg->var->array_size) {
 		if (darg->var->pointer_level > 2) {
@@ -145,7 +190,39 @@ size_t sizeof_decl_arg(decl_arg *darg) {
 		}
 	}
 
-	assert(size > 0);
-
 	return size;
+}
+
+struct psi_decl_arg *psi_decl_arg_get_by_name(struct psi_plist *args,
+		const char *name)
+{
+	size_t i = 0;
+	struct psi_decl_arg *arg;
+
+	if (args)
+		while (psi_plist_get(args, i++, &arg)) {
+			if (!strcmp(name, arg->var->name)) {
+				return arg;
+			}
+		}
+
+	return NULL;
+}
+
+struct psi_decl_arg *psi_decl_arg_get_by_var(struct psi_decl_var *var,
+		struct psi_plist *args, struct psi_decl_arg *func)
+{
+	struct psi_decl_arg *arg = psi_decl_arg_get_by_name(args, var->name);
+
+	if (arg) {
+		assert(!var->arg || var->arg == arg);
+
+		return var->arg = arg;
+	}
+
+	if (func && !strcmp(var->name, func->var->name)) {
+		return var->arg = func;
+	}
+
+	return NULL;
 }

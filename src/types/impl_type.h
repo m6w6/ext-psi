@@ -28,12 +28,13 @@
 
 #include "token.h"
 
-typedef struct impl_type {
+struct psi_impl_type {
+	struct psi_token *token;
 	char *name;
 	token_t type;
-} impl_type;
+};
 
-impl_type *init_impl_type(token_t type, const char *name);
-void free_impl_type(impl_type *type);
+struct psi_impl_type *psi_impl_type_init(token_t type, const char *name);
+void psi_impl_type_free(struct psi_impl_type **type_ptr);
 
 #endif

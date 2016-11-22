@@ -26,17 +26,17 @@
 #ifndef PSI_TYPES_DECL_ABI_H
 #define PSI_TYPES_DECL_ABI_H
 
-typedef struct decl_abi {
-	struct psi_token *token;
-	char *convention;
-} decl_abi;
-
-decl_abi *init_decl_abi(const char *convention);
-void free_decl_abi(decl_abi *abi);
-void dump_decl_abi(int fd, decl_abi *abi);
-
+struct psi_token;
 struct psi_data;
 
-int validate_decl_abi(struct psi_data *data, decl_abi *abi);
+struct psi_decl_abi {
+	struct psi_token *token;
+	char *convention;
+};
+
+struct psi_decl_abi *psi_decl_abi_init(const char *convention);
+void psi_decl_abi_free(struct psi_decl_abi **abi_ptr);
+void psi_decl_abi_dump(int fd, struct psi_decl_abi *abi);
+bool psi_decl_abi_validate(struct psi_data *data, struct psi_decl_abi *abi);
 
 #endif

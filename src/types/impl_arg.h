@@ -28,30 +28,18 @@
 
 #include "token.h"
 
-#include "impl_type.h"
-#include "impl_var.h"
-#include "impl_def_val.h"
-#include "impl_val.h"
+struct psi_impl_type;
+struct psi_impl_var;
+struct psi_impl_def_val;
 
-#include "Zend/zend_types.h"
+struct psi_impl_arg {
+	struct psi_impl_type *type;
+	struct psi_impl_var *var;
+	struct psi_impl_def_val *def;
+};
 
-typedef struct impl_arg {
-	impl_type *type;
-	impl_var *var;
-	impl_def_val *def;
-	impl_val val;
-	zval *_zv;
-} impl_arg;
-
-typedef struct impl_vararg {
-	impl_arg *name;
-	struct impl_args *args;
-	token_t *types;
-	impl_val *values;
-	void **free_list;
-} impl_vararg;
-
-impl_arg *init_impl_arg(impl_type *type, impl_var *var, impl_def_val *def);
-void free_impl_arg(impl_arg *arg);
+struct psi_impl_arg *psi_impl_arg_init(struct psi_impl_type *type, struct psi_impl_var *var, struct psi_impl_def_val *def);
+void psi_impl_arg_free(struct psi_impl_arg **arg_ptr);
+void psi_impl_arg_dump(int fd, struct psi_impl_arg *iarg, bool vararg);
 
 #endif

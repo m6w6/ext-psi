@@ -5,11 +5,11 @@
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
 
-     * Redistributions of source code must retain the above copyright notice,
-       this list of conditions and the following disclaimer.
-     * Redistributions in binary form must reproduce the above copyright
-       notice, this list of conditions and the following disclaimer in the
-       documentation and/or other materials provided with the distribution.
+ * Redistributions of source code must retain the above copyright notice,
+ this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright
+ notice, this list of conditions and the following disclaimer in the
+ documentation and/or other materials provided with the distribution.
 
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -21,104 +21,85 @@
  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*******************************************************************************/
+ *******************************************************************************/
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#else
-# include "php_config.h"
-#endif
-
-#include <stdlib.h>
-#include <stdio.h>
-
+#include "php_psi_stdinc.h"
 #include "data.h"
+#include "call.h"
 
-set_stmt *init_set_stmt(impl_var *var, set_value *val) {
-	set_stmt *set = calloc(1, sizeof(*set));
-	set->var = var;
-	set->val = val;
+struct psi_set_stmt *psi_set_stmt_init(struct psi_set_exp *exp)
+{
+	struct psi_set_stmt *set = calloc(1, sizeof(*set));
+	set->exp = exp;
 	return set;
 }
 
-void free_set_stmt(set_stmt *set) {
-	free_impl_var(set->var);
-	free_set_value(set->val);
-	free(set);
+void psi_set_stmt_exec(struct psi_set_stmt *set, struct psi_call_frame *frame)
+{
+	psi_set_exp_exec(set->exp, frame);
 }
 
-void dump_set_stmt(int fd, set_stmt *set) {
-	dprintf(fd, "\tset %s = ", set->var->name);
-	dump_set_value(fd, set->val, 1, 0);
+void psi_set_stmt_free(struct psi_set_stmt **set_ptr)
+{
+	if (*set_ptr) {
+		struct psi_set_stmt *set = *set_ptr;
+
+		*set_ptr = NULL;
+		psi_set_exp_free(&set->exp);
+		if (set->token) {
+			free(set->token);
+		}
+		free(set);
+	}
 }
 
-int validate_set_stmts(struct psi_data *data, impl *impl) {
-	size_t i, j, k;
+void psi_set_stmt_dump(int fd, struct psi_set_stmt *set)
+{
+	dprintf(fd, "\tset ");
+	psi_set_exp_dump(fd, set->exp, 1, 1);
+	dprintf(fd, ";\n");
+}
+
+
+bool psi_set_stmts_validate(struct psi_data *data, struct psi_impl *impl)
+{
+	size_t i = 0;
+	struct psi_set_stmt *set;
+
 	/* we can have any count of set stmts; processing out vars */
 	/* check that set stmts reference known variables */
-	for (i = 0; i < impl->stmts->set.count; ++i) {
-		set_stmt *set = impl->stmts->set.list[i];
-		int check = 0;
-
-		if (impl->func->args) for (j = 0; j < impl->func->args->count; ++j) {
-			impl_arg *iarg = impl->func->args->args[j];
-
-			if (!strcmp(set->var->name, iarg->var->name)) {
-				set->arg = iarg;
-				check = 1;
-				break;
-			}
+	while (psi_plist_get(impl->stmts.set, i++, &set)) {
+		if (!set->exp->var) {
+			data->error(data, set->token, PSI_WARNING,
+					"Missing variable of `set` statement of implementation '%s'",
+					impl->func->name);
+			return false;
 		}
-		if (!check) {
-			data->error(data, set->var->token, PSI_WARNING, "Unknown variable '$%s' of `set` statement"
-					" of implementation '%s'",
-					set->var->name, impl->func->name);
-			return 0;
+		if (!psi_impl_get_arg(impl, set->exp->var)) {
+			data->error(data, set->token, PSI_WARNING,
+					"Unknown variable '%s' of `set` statement of implementation '%s'",
+					set->exp->var->name, impl->func->name);
+			return false;
 		}
 
-		for (j = 0; j < set->val->vars->count; ++j) {
-			decl_var *set_var = set->val->vars->vars[j];
-
-			check = 0;
-			if (impl->decl->args) {
-				for (k = 0; k < impl->decl->args->count; ++k) {
-					decl_arg *set_arg = impl->decl->args->args[k];
-
-					if (!strcmp(set_var->name, set_arg->var->name)) {
-						check = 1;
-						set_var->arg = set_arg;
-						if (!validate_set_value(data, set->val, 1, &set_arg, 1, &impl->decl->func, impl->decl->args->count, impl->decl->args->args, 0)) {
-							return 0;
-						}
-						break;
-					}
+		switch (set->exp->kind) {
+		case PSI_SET_NUMEXP:
+			break;
+		case PSI_SET_FUNC:
+			if (!psi_decl_get_arg(impl->decl, set->exp->data.func->var)) {
+				if (!psi_impl_get_temp_let_arg(impl, set->exp->data.func->var)) {
+					data->error(data, set->token, PSI_WARNING,
+							"Unknown variable '%s' of `set` statement of implementation '%s'",
+							set->exp->data.func->var, impl->func->name);
+					return false;
 				}
 			}
-			if (!check) {
-				for (k = 0; k < impl->stmts->let.count; ++k) {
-					let_stmt *let = impl->stmts->let.list[k];
-
-					/* check temp vars */
-					if (let->val && let->val->kind == PSI_LET_TMP) {
-						if (!strcmp(set_var->name, let->val->var->name)) {
-							check = 1;
-							set_var->arg = let->val->var->arg;
-							if (!validate_set_value(data, set->val, 1, &set_var->arg, 1, &impl->decl->func, impl->decl->args->count, impl->decl->args->args, 0)) {
-								return 0;
-							}
-							break;
-						}
-					}
-				}
-			}
-
-			if (!check) {
-				data->error(data, set_var->token, PSI_WARNING, "Unknown value '%s' of `set` statement"
-						" for variable '$%s' of implementation '%s'",
-						set_var->name, set->arg->var->name, impl->func->name);
-				return 0;
-			}
+		}
+		/* validate the expression itself */
+		if (!psi_set_exp_validate(data, set->exp, impl, NULL)) {
+			return false;
 		}
 	}
-	return 1;
+
+	return true;
 }

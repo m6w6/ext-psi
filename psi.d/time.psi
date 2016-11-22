@@ -18,14 +18,34 @@ function psi\gettimeofday(array &$tv = NULL, array &$tz = NULL) : int {
 }
 
 // extern char *asctime(struct tm *tm);
-function psi\asctime(array $tm = NULL) : string {
-	let tm = &arrval($tm);
+function psi\asctime(array $tm) : string {
+	let tm = &arrval($tm,
+		intval($tm_sec),
+		intval($tm_min),
+		intval($tm_hour),
+		intval($tm_mday),
+		intval($tm_mon),
+		intval($tm_year),
+		intval($tm_wday),
+		intval($tm_yday),
+		intval($tm_isdst)
+	);
 	return to_string(asctime);
 }
 
 // extern char *asctime_r(struct tm *tm, char *buf);
-function psi\asctime_r(array $tm = NULL) : string {
-	let tm = &arrval($tm);
+function psi\asctime_r(array $tm) : string {
+	let tm = &arrval($tm,
+		intval($tm_sec),
+		intval($tm_min),
+		intval($tm_hour),
+		intval($tm_mday),
+		intval($tm_mon),
+		intval($tm_year),
+		intval($tm_wday),
+		intval($tm_yday),
+		intval($tm_isdst)
+	);
 	let buf = calloc(32, psi\SIZEOF_CHAR);
 	return to_string(asctime_r);
 }
@@ -65,7 +85,10 @@ function psi\gmtime_r(int $ts) : array {
 
 // extern int nanosleep(struct timespec *rqts, struct timespec *rmts);
 function psi\nanosleep(array $rq = NULL, array &$rm = NULL) : int {
-	let rqts = &arrval($rq);
+	let rqts = &arrval($rq,
+		intval($tv_sec),
+		intval($tv_nsec)
+	);
 	let rmts = calloc(1, psi\SIZEOF_STRUCT_TIMESPEC);
 	return to_int(nanosleep);
 	set $rm = to_array(*rmts,

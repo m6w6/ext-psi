@@ -5,11 +5,11 @@
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
 
-     * Redistributions of source code must retain the above copyright notice,
-       this list of conditions and the following disclaimer.
-     * Redistributions in binary form must reproduce the above copyright
-       notice, this list of conditions and the following disclaimer in the
-       documentation and/or other materials provided with the distribution.
+ * Redistributions of source code must retain the above copyright notice,
+ this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright
+ notice, this list of conditions and the following disclaimer in the
+ documentation and/or other materials provided with the distribution.
 
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -21,53 +21,87 @@
  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*******************************************************************************/
+ *******************************************************************************/
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#else
-# include "php_config.h"
-#endif
-
-#include <stdlib.h>
-#include <stdio.h>
-
+#include "php_psi_stdinc.h"
 #include "data.h"
 
-let_callback *init_let_callback(struct let_func *func, struct set_values *args) {
-	let_callback *cb = calloc(1, sizeof(*cb));
+struct psi_let_callback *psi_let_callback_init(struct psi_let_func *func,
+		struct psi_plist *args)
+{
+	struct psi_let_callback *cb = calloc(1, sizeof(*cb));
 	cb->func = func;
 	cb->args = args;
 	return cb;
 }
 
-void free_let_callback(let_callback *cb) {
-	free_let_func(cb->func);
-	free_set_values(cb->args);
-	free(cb);
+void psi_let_callback_free(struct psi_let_callback **cb_ptr)
+{
+	if (*cb_ptr) {
+		struct psi_let_callback *cb = *cb_ptr;
+
+		*cb_ptr = NULL;
+		psi_let_func_free(&cb->func);
+		psi_plist_free(cb->args);
+		if (cb->token) {
+			free(cb->token);
+		}
+		free(cb);
+	}
 }
 
-int validate_let_callback(struct psi_data *data, decl_var *cb_var, let_callback *cb, impl *impl) {
-	size_t i;
-	decl *cb_func;
-	decl_type *cb_type = real_decl_type(cb_var->arg->type);
+bool psi_let_callback_validate(struct psi_data *data, struct psi_let_exp *exp,
+		struct psi_let_callback *cb, struct psi_impl *impl)
+{
+	size_t i = 0;
+	struct psi_decl *cb_func;
+	struct psi_decl_type *cb_type;
+	struct psi_decl_var *cb_var = exp->var;
+	struct psi_set_exp *set_exp;
 
+	cb_type = psi_decl_type_get_real(cb_var->arg->type);
 	if (cb_type->type != PSI_T_FUNCTION) {
-		data->error(data, cb_var->token, PSI_WARNING, "Not a function: %s", cb_var->name);
-		return 0;
+		data->error(data, cb_var->token, PSI_WARNING,
+				"Expected a function: %s",
+				cb_var->name);
+		return false;
 	}
 	cb_func = cb_type->real.func;
-	for (i = 0; i < cb->args->count; ++i) {
-		if (!validate_set_value(data, cb->args->vals[i], cb_func->args->count, cb_func->args->args, 0)) {
-			return 0;
+
+	while (psi_plist_get(cb->args, i++, &set_exp)) {
+		if (!psi_set_exp_validate(data, set_exp, impl, cb_func)) {
+			return false;
 		}
 	}
 
-	if (!validate_decl_nodl(data, cb_func)) {
-		return 0;
+	if (!psi_decl_validate_nodl(data, cb_func)) {
+		return false;
 	}
 
 	cb->decl = cb_func;
 
-	return 1;
+	return true;
+}
+
+void psi_let_callback_dump(int fd, struct psi_let_callback *callback,
+		unsigned level)
+{
+	dprintf(fd, "callback %s(%s(",
+			callback->func->name,
+			callback->func->var->name);
+
+	if (callback->args) {
+		size_t i = 0, last = psi_plist_count(callback->args);
+		struct psi_set_exp *set;
+
+		dprintf(fd, "\n");
+		++level;
+		while (psi_plist_get(callback->args, i++, &set)) {
+			psi_set_exp_dump(fd, set, level, i == last);
+			dprintf(fd, "\n");
+		}
+		--level;
+		dprintf(fd, "%s", psi_t_indent(level));
+	}
+	dprintf(fd, "))");
 }

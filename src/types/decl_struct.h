@@ -26,30 +26,30 @@
 #ifndef PSI_TYPES_DECL_STRUCT_H
 #define PSI_TYPES_DECL_STRUCT_H
 
-#include "decl_args.h"
+struct psi_data;
+struct psi_token;
+struct psi_plist;
+struct psi_decl_var;
 
-typedef struct decl_struct {
+struct psi_decl_struct {
 	struct psi_token *token;
 	char *name;
-	decl_args *args;
+	struct psi_plist *args;
 	size_t size;
 	size_t align;
 	struct {
 		void *type;
 		void (*dtor)(void *type);
 	} engine;
-} decl_struct;
+};
 
-decl_struct *init_decl_struct(const char *name, decl_args *args);
-void free_decl_struct(decl_struct *s);
-void dump_decl_struct(int fd, decl_struct *strct);
+struct psi_decl_struct *psi_decl_struct_init(const char *name, struct psi_plist *args);
+void psi_decl_struct_free(struct psi_decl_struct **s_ptr);
+void psi_decl_struct_dump(int fd, struct psi_decl_struct *strct);
 
-decl_arg *locate_decl_struct_member(decl_struct *s, decl_var *var);
+bool psi_decl_struct_validate(struct psi_data *data, struct psi_decl_struct *s);
 
-struct psi_data;
-
-int validate_decl_struct(struct psi_data *data, decl_struct *s);
-
-size_t alignof_decl_struct(decl_struct *s);
+struct psi_decl_arg *psi_decl_struct_get_arg(struct psi_decl_struct *s, struct psi_decl_var *var);
+size_t psi_decl_struct_get_align(struct psi_decl_struct *s);
 
 #endif

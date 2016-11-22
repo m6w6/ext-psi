@@ -26,8 +26,8 @@ function psi\dbm_fetch(object $db, array $key) : array {
 		dsize = intval($dsize)
 	);
 	return to_array(dbm_fetch,
-		to_string(dptr, dsize),
-		to_int(dsize)
+		to_int(dsize),
+		to_string(dptr, dsize)
 	);
 }
 

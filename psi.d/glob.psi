@@ -5,14 +5,22 @@ function psi\glob(string $pattern, int $flags, array &$glob = NULL, callable $er
 		to_string(epath),
 		to_int(eerrno)
 	));
-	let buf = &arrval($glob);
+	let buf = &arrval($glob,
+		intval($gl_matchc),
+		intval($gl_pathc),
+		intval($gl_offs),
+		intval($gl_flags),
+		&arrval($gl_pathv, 
+			strval($gl_pathv)
+		)
+	);
 	return to_int(glob);
 	set $glob = to_array(*buf,
 		to_int(gl_matchc),
 		to_int(gl_pathc),
 		to_int(gl_offs),
 		to_int(gl_flags),
-		to_array(gl_pathv, gl_pathc + gl_offs, to_string(gl_pathv))
+		to_array(*gl_pathv, gl_pathc + gl_offs, to_string(*gl_pathv))
 	);
 	free globfree(buf);
 }
