@@ -48,7 +48,7 @@ PHP_ARG_ENABLE(psi, whether to enable PHP System Interface support,
 
 if test "$PHP_PSI" != no; then
 	PHP_CONFIGURE_PART(Configuring PSI)
-	
+
 	PHP_ARG_ENABLE(psi-posix, whether to pre-define POSIX decls,
 	[  --enable-psi-posix=...  PSI: pre-define POSIX decls], [ ], [ ])
 
@@ -59,11 +59,11 @@ if test "$PHP_PSI" != no; then
 	[  --with-psi-libffi=DIR   PSI: path to libffi], [ ], [ ])
 
 	AC_HEADER_ASSERT dnl # adds --disable-assert to define NDEBUG
-	
+
 	dnl we cannot use AC_USE_SYSTEM_EXTENSIONS here, because we're way too late
 	dnl in the game, and we're currently only targeting _GNU_SOURCE for now
 	AC_MSG_CHECKING([for _GNU_SOURCE])
-	AC_EGREP_CPP([gnu_source_defined], [
+	AC_EGREP_CPP([gnu_source_not_defined], [
 		#ifndef _GNU_SOURCE
 		gnu_source_not_defined
 		#endif

@@ -191,7 +191,8 @@ AC_DEFUN(PSI_PTHREAD, [
 dnl PSI_INCLUDES()
 dnl Expands to a complete list of include statements including
 dnl AC_INCLUDES_DEFAULT().
-AC_DEFUN(PSI_INCLUDES, [#define PSI_INCLUDES
+AC_DEFUN(PSI_INCLUDES, [dnl
+#define PSI_INCLUDES
 #ifndef _GNU_SOURCE
 # define _GNU_SOURCE
 #endif
