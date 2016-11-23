@@ -44,6 +44,12 @@ struct psi_parser {
 	void *proc;
 
 	struct {
+		HashTable defs;
+		unsigned level;
+		unsigned skip;
+	} cpp;
+
+	struct {
 		enum psi_parser_input_type {
 			PSI_PARSE_FILE = 1,
 			PSI_PARSE_STRING

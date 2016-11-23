@@ -26,6 +26,7 @@
 #include "php_psi_stdinc.h"
 #include <sys/mman.h>
 #include <assert.h>
+#include <stdarg.h>
 
 #include "parser.h"
 
@@ -46,6 +47,11 @@ struct psi_parser *psi_parser_init(struct psi_parser *P, psi_error_cb error, uns
 	P->col = 1;
 	P->line = 1;
 	P->proc = psi_parser_proc_init();
+
+	ZEND_INIT_SYMTABLE(&P->cpp.defs);
+	zval tmp;
+	ZVAL_ARR(&tmp, &P->cpp.defs);
+	add_assoc_string(&tmp, "PHP_OS", PHP_OS);
 
 	if (flags & PSI_DEBUG) {
 		psi_parser_proc_trace(stderr, "PSI> ");
@@ -210,6 +216,8 @@ void psi_parser_dtor(struct psi_parser *P)
 
 	psi_data_dtor(PSI_DATA(P));
 
+	zend_hash_destroy(&P->cpp.defs);
+
 	memset(P, 0, sizeof(*P));
 }
 
@@ -221,6 +229,13 @@ void psi_parser_free(struct psi_parser **P)
 		*P = NULL;
 	}
 }
+
+static bool cpp_truth(struct psi_parser *P);
+static bool cpp_defined(struct psi_parser *P);
+static zval *cpp_define_var(struct psi_parser *P);
+static void cpp_define_val(struct psi_parser *P, token_t typ, zval *val);
+static void cpp_undefine(struct psi_parser *P);
+static void cpp_error(struct psi_parser *P, const char *msg, ...);
 
 /*!max:re2c*/
 #if BSIZE < YYMAXFILL
@@ -235,9 +250,6 @@ void psi_parser_free(struct psi_parser **P)
 	return t; \
 } while(1)
 
-#define ADDCOLS \
-	P->col += P->cur - P->tok
-
 #define NEWLINE(label) \
 	P->col = 1; \
 	++P->line; \
@@ -249,8 +261,14 @@ token_t psi_parser_scan(struct psi_parser *P)
 		psi_parser_fill(P, 0);
 	}
 	for (;;) {
-		ADDCOLS;
-	nextline:
+		if (P->cpp.skip) {
+			/* we might come from EOL, so just go to cpp instead of cpp_skip */
+			goto cpp;
+		}
+
+		P->col += P->cur - P->tok;
+
+	nextline: ;
 		P->tok = P->cur;
 		/*!re2c
 		re2c:indent:top = 2;
@@ -269,8 +287,9 @@ token_t psi_parser_scan(struct psi_parser *P)
 		QUOTED_STRING = "\"" ([^\"])+ "\"";
 		NUMBER = [+-]? [0-9]* "."? [0-9]+ ([eE] [+-]? [0-9]+)?;
 
+		"#" { --P->cur; goto cpp; }
 		"/*" { goto comment; }
-		("#"|"//") .* "\n" { NEWLINE(nextline); }
+		"//" .* "\n" { NEWLINE(nextline); }
 		"(" {RETURN(PSI_T_LPAREN);}
 		")" {RETURN(PSI_T_RPAREN);}
 		";" {RETURN(PSI_T_EOS);}
@@ -371,13 +390,373 @@ token_t psi_parser_scan(struct psi_parser *P)
 		[^] {break;}
 		*/
 
-	comment:
+	comment: ;
 		P->tok = P->cur;
 		/*!re2c
-		"\n" { NEWLINE(comment); }
-		"*" "/" { continue; }
-		[^] { goto comment; }
+		"\n"	{ NEWLINE(comment); }
+		"*" "/"	{ continue; }
+		[^]		{ goto comment; }
 		*/
+
+#define PSI_DEBUG_CPP(P, msg, ...) do { \
+	if (PSI_DATA(P)->flags & PSI_DEBUG) { \
+		fprintf(stderr, "PSI> CPP %.*s line=%u level=%u skip=%u ", \
+				(int) strcspn(P->tok, "\r\n"), P->tok, \
+				P->line, P->cpp.level, P->cpp.skip); \
+		fprintf(stderr, msg, __VA_ARGS__); \
+	} \
+} while(0)
+
+	cpp: ;
+		P->tok = P->cur;
+		/*!re2c
+		[\t ] 				{goto cpp;}
+		"#" [\t ]* "if"		{ goto cpp_if; }
+		"#" [\t ]* "ifdef"	{ goto cpp_ifdef; }
+		"#" [\t ]* "ifndef"	{ goto cpp_ifndef; }
+		"#" [\t ]* "else"	{ goto cpp_else; }
+		"#" [\t ]* "endif"	{ goto cpp_endif; }
+		"#" [\t ]* "define"	{ goto cpp_define; }
+		"#" [\t ]* "undef"	{ goto cpp_undef; }
+		"#" [\t ]* "error"	{ goto cpp_error; }
+		[^] 				{ goto cpp_default; }
+		*/
+
+	cpp_default: ;
+		if (P->cpp.skip) {
+			goto cpp_skip;
+		} else {
+			assert(0);
+			break;
+		}
+
+	cpp_skip: ;
+		P->tok = P->cur;
+		/*!re2c
+		[\r\n]	{ goto cpp_skip_eol; }
+		[^]		{ goto cpp_skip; }
+		*/
+
+	cpp_skip_eol:
+		PSI_DEBUG_PRINT(P, "PSI> CPP skip line %u\n", P->line);
+		NEWLINE(cpp);
+
+	cpp_if: ;
+		PSI_DEBUG_CPP(P, "%s\n", "");
+
+		++P->cpp.level;
+
+	cpp_if_cont: ;
+		if (P->cpp.skip) {
+			goto cpp_skip;
+		}
+
+		P->tok = P->cur;
+
+		/*!re2c
+		[\t ]+								{ goto cpp_if_cont; }
+		"!" [\t ]* "defined" [\t ]* "("?	{ goto cpp_ifndef_cont; }
+		"defined" [ \t]* "("?				{ goto cpp_ifdef_cont; }
+		NAME [\t ]* [\r\n]					{ goto cpp_if_name_eol; }
+		[^]									{ goto cpp_if_default;  }
+		*/
+
+	cpp_if_default: ;
+		cpp_error(P, "PSI syntax error: invalid #if");
+		continue;
+
+	cpp_if_name_eol: ;
+		if (cpp_truth(P)) {
+			NEWLINE(nextline);
+		} else {
+			P->cpp.skip = P->cpp.level;
+			NEWLINE(cpp);
+		}
+
+	cpp_ifdef: ;
+		PSI_DEBUG_CPP(P, "%s\n", "");
+
+		++P->cpp.level;
+
+	cpp_ifdef_cont: ;
+		if (P->cpp.skip) {
+			goto cpp_skip;
+		}
+
+		P->tok = P->cur;
+
+		/*!re2c
+		[\t ]+							{ goto cpp_ifdef_cont; }
+		NAME [\t ]* ")"? [\t ]* [\r\n]	{ goto cpp_ifdef_name_eol; }
+		[^]								{ goto cpp_ifdef_default; }
+		*/
+
+	cpp_ifdef_default: ;
+		cpp_error(P, "PSI syntax error: invalid #ifdef");
+		continue;
+
+	cpp_ifdef_name_eol: ;
+		if (cpp_defined(P)) {
+			NEWLINE(nextline);
+		} else {
+			P->cpp.skip = P->cpp.level;
+			NEWLINE(cpp);
+		}
+
+	cpp_ifndef: ;
+		PSI_DEBUG_CPP(P, "%s\n", "");
+
+		++P->cpp.level;
+
+	cpp_ifndef_cont:
+		if (P->cpp.skip) {
+			goto cpp_skip;
+		}
+
+		P->tok = P->cur;
+
+		/*!re2c
+		[\t ]+							{ goto cpp_ifndef_cont; }
+		NAME [\t ]* ")"? [\t ]* [\r\n]	{ goto cpp_ifndef_name_eol; }
+		[^]								{ goto cpp_ifndef_default; }
+		*/
+
+	cpp_ifndef_default: ;
+		cpp_error(P, "PSI syntax error: invalid #ifndef");
+		continue;
+
+	cpp_ifndef_name_eol: ;
+		if (!cpp_defined(P)) {
+			NEWLINE(nextline);
+		} else {
+			P->cpp.skip = P->cpp.level;
+			NEWLINE(cpp_skip);
+		}
+
+	cpp_else: ;
+		PSI_DEBUG_CPP(P, "%s\n", "");
+
+		P->tok = P->cur;
+
+		if (!P->cpp.level) {
+			cpp_error(P, "PSI syntax error: ignoring lone #else");
+			continue;
+		}
+		if (!P->cpp.skip) {
+			P->cpp.skip = P->cpp.level;
+			goto cpp_skip;
+		} else if (P->cpp.skip == P->cpp.level) {
+			P->cpp.skip = 0;
+		}
+		continue;
+
+	cpp_endif: ;
+		PSI_DEBUG_CPP(P, "%s\n", "");
+
+		P->tok = P->cur;
+		if (!P->cpp.level) {
+			cpp_error(P, "PSI syntax_error: ignoring lone #endif");
+			continue;
+		} else if (P->cpp.skip == P->cpp.level) {
+			P->cpp.skip = 0;
+		}
+		--P->cpp.level;
+		continue;
+
+	cpp_define: ;
+		PSI_DEBUG_CPP(P, "%s\n", "");
+
+		zval *val = NULL;
+
+		if (P->cpp.skip) {
+			goto cpp_skip;
+		}
+
+	cpp_define_cont: ;
+		P->tok = P->cur;
+
+		/*!re2c
+		[\t ]+			{ goto cpp_define_cont; }
+		[\r\n]			{ goto cpp_define_eol; }
+		NAME			{ goto cpp_define_name; }
+		QUOTED_STRING	{ goto cpp_define_quoted_string; }
+		NUMBER			{ goto cpp_define_number; }
+		[^]				{ goto cpp_define_default; }
+		*/
+
+	cpp_define_default: ;
+		cpp_error(P, "PSI syntax error: invalid #ifndef");
+		continue;
+
+	cpp_define_eol: ;
+		if (!val) {
+			cpp_error(P, "PSI syntax error: ignoring lone #define");
+			continue;
+		}
+		NEWLINE(nextline);
+
+	cpp_define_name: ;
+		if (val) {
+			if (Z_TYPE_P(val) != IS_TRUE) {
+				cpp_error(P, "PSI syntax error: invalid #define");
+				continue;
+			}
+			cpp_define_val(P, PSI_T_NAME, val);
+		} else {
+			val = cpp_define_var(P);
+		}
+		goto cpp_define_cont;
+
+	cpp_define_quoted_string: ;
+		if (!val) {
+			cpp_error(P, "PSI syntax error: invalid quoted string in #define");
+			continue;
+		} else {
+			cpp_define_val(P, PSI_T_QUOTED_STRING, val);
+		}
+		goto cpp_define_cont;
+
+	cpp_define_number: ;
+		if (!val) {
+			cpp_error(P, "PSI syntax error: invalid quoted string in #define");
+			continue;
+		} else {
+			cpp_define_val(P, PSI_T_NUMBER, val);
+		}
+		goto cpp_define_cont;
+
+	cpp_undef: ;
+		PSI_DEBUG_CPP(P, "%s\n", "");
+
+		if (P->cpp.skip) {
+			goto cpp_skip;
+		}
+
+	cpp_undef_cont: ;
+		P->tok = P->cur;
+
+		/*!re2c
+		[\t ]+				{ goto cpp_undef_cont; }
+		NAME [\t ]* [\r\n]	{ goto cpp_undef_name_eol; }
+		[^]					{ goto cpp_undef_default; }
+		*/
+
+	cpp_undef_default: ;
+		cpp_error(P, "PSI syntax error: invalid #undef");
+		continue;
+
+	cpp_undef_name_eol: ;
+		cpp_undefine(P);
+		NEWLINE(nextline);
+
+	cpp_error: ;
+		size_t len = strcspn(P->cur, "\r\n");
+
+		if (P->cpp.skip) {
+			P->tok = P->cur + len;
+			NEWLINE(cpp_skip);
+		} else {
+			cpp_error(P, "%.*s", (int) len, P->cur);
+			break;
+		}
 	}
 	return -1;
+}
+
+#include <ctype.h>
+
+static bool cpp_truth(struct psi_parser *P)
+{
+	size_t len = P->cur - P->tok;
+
+	while (len && isspace(P->tok[len - 1])) {
+		--len;
+	}
+
+	zval *val = zend_symtable_str_find(&P->cpp.defs, P->tok, len);
+	bool truth = val ? zend_is_true(val) : false;
+
+	PSI_DEBUG_PRINT(P, "PSI> CPP truth(%.*s)=%s\n",
+			(int) len, P->tok, truth ? "true" : "false");
+
+	return truth;
+}
+
+static bool cpp_defined(struct psi_parser *P)
+{
+	size_t len = P->cur - P->tok;
+
+	while (len && isspace(P->tok[len - 1])) {
+		--len;
+	}
+
+
+	bool defined = zend_symtable_str_exists(&P->cpp.defs, P->tok, len);
+	PSI_DEBUG_PRINT(P, "PSI> CPP defined(%.*s)=%s\n",
+			(int) len, P->tok, defined ? "true" : "false");
+	return defined;
+}
+
+static zval *cpp_define_var(struct psi_parser *P)
+{
+	if (cpp_defined(P)) {
+		psi_error(PSI_WARNING, P->file.fn, P->line, "PSI syntax error: Unexpected end of input");
+	}
+	size_t len = P->cur - P->tok;
+
+	while (len && isspace(P->tok[len - 1])) {
+		--len;
+	}
+
+	PSI_DEBUG_PRINT(P, "PSI> CPP define %.*s\n", (int) len, P->tok);
+
+	if (zend_symtable_str_exists(&P->cpp.defs, P->tok, len)) {
+		cpp_error(P, "Redefinition of %.*s", (int) len, P->tok);
+	}
+
+	zval val;
+	ZVAL_TRUE(&val);
+	return zend_symtable_str_update(&P->cpp.defs, P->tok, len, &val);
+}
+
+static void cpp_define_val(struct psi_parser *P, token_t typ, zval *val) {
+	size_t len = P->cur - P->tok;
+
+	while (len && isspace(P->tok[len - 1])) {
+		--len;
+	}
+
+	PSI_DEBUG_PRINT(P, "PSI> define = %.*s\n", (int) len, P->tok);
+
+	switch (typ) {
+	case PSI_T_QUOTED_STRING:
+		ZVAL_STRINGL(val, P->tok + 1, len - 2);
+		break;
+	case PSI_T_NUMBER:
+		ZVAL_STRINGL(val, P->tok, len);
+		convert_scalar_to_number(val);
+		break;
+	default:
+		assert(0);
+	}
+}
+
+static void cpp_undefine(struct psi_parser *P)
+{
+	size_t len = P->cur - P->tok;
+
+	while (len && isspace(P->tok[len - 1])) {
+		--len;
+	}
+
+	zend_symtable_str_del(&P->cpp.defs, P->tok, len);
+}
+
+static void cpp_error(struct psi_parser *P, const char *msg, ...)
+{
+	va_list argv;
+
+	va_start(argv, msg);
+	psi_verror(PSI_WARNING, P->file.fn, P->line, msg, argv);
+	va_end(argv);
 }
