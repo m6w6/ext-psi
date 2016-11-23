@@ -10,6 +10,7 @@ addons:
    - php-pear
    - re2c
    - libidn11-dev
+   - libsqlite3-dev
 
 env:
  matrix:
