@@ -107,7 +107,10 @@ static inline bool psi_decl_validate_func(struct psi_data *data,
 #ifndef RTLD_NEXT
 # define RTLD_NEXT ((void *) -1l)
 #endif
-		decl->sym = dlsym(dl ?: RTLD_NEXT, func->var->name);
+#ifndef RTLD_DEFAULT
+# define RTLD_DEFAULT ((void *) 0)
+#endif
+		decl->sym = dlsym(dl ?: RTLD_DEFAULT, func->var->name);
 		if (!decl->sym) {
 			data->error(data, func->token, PSI_WARNING,
 					"Failed to locate symbol '%s': %s", func->var->name,
