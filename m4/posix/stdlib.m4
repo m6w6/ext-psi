@@ -49,7 +49,7 @@ PSI_CHECK_STDLIB() {
 	PSI_DECL(long nrand48, [(unsigned short xsubi@<:@3@:>@)])
 	PSI_DECL(int posix_openpt, [(int flags)])
 	PSI_DECL(char *ptsname, [(int fd)])
-	PSI_DECL(char *pstname_r, [(int fd, char *buf, size_t buflen)])
+	PSI_DECL(char *ptsname_r, [(int fd, char *buf, size_t buflen)])
 	PSI_DECL(int putenv, [(char *var)])
 	PSI_DECL(int rand, [()])
 	PSI_DECL(int rand_r, [(unsigned *seed_p)])
