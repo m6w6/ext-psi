@@ -30,10 +30,40 @@
 
 #include "parser.h"
 
-void *psi_parser_proc_init(void);
-void psi_parser_proc_free(void **parser_proc);
-void psi_parser_proc_parse(void *parser_proc, token_t r, struct psi_token *token, struct psi_parser *parser);
-void psi_parser_proc_trace(FILE *out, char *prefix);
+/*!max:re2c*/
+#ifndef YYMAXFILL
+# define YYMAXFILL 256
+#endif
+/*!re2c
+
+re2c:indent:top = 2;
+re2c:define:YYCTYPE = "unsigned char";
+re2c:define:YYCURSOR = P->cur;
+re2c:define:YYLIMIT = P->lim;
+re2c:define:YYMARKER = P->mrk;
+re2c:define:YYFILL = "if (P->cur >= P->lim) goto done;";
+re2c:yyfill:parameter = 0;
+
+B = [^a-zA-Z0-9_];
+W = [a-zA-Z0-9_];
+SP = [ \t];
+EOL = [\r\n];
+NAME = [a-zA-Z_]W*;
+NSNAME = (NAME)? ("\\" NAME)+;
+DOLLAR_NAME = '$' W+;
+QUOTED_STRING = "\"" ([^"])+ "\"";
+NUMBER = [+-]? [0-9]* "."? [0-9]+ ([eE] [+-]? [0-9]+)?;
+
+*/
+
+static void free_cpp_def(zval *p)
+{
+	if (Z_TYPE_P(p) == IS_PTR) {
+		psi_cpp_macro_decl_free((void *) &Z_PTR_P(p));
+	} else if (Z_REFCOUNTED_P(p)) {
+		zval_ptr_dtor(p);
+	}
+}
 
 struct psi_parser *psi_parser_init(struct psi_parser *P, psi_error_cb error, unsigned flags)
 {
@@ -48,7 +78,7 @@ struct psi_parser *psi_parser_init(struct psi_parser *P, psi_error_cb error, uns
 	P->line = 1;
 	P->proc = psi_parser_proc_init();
 
-	ZEND_INIT_SYMTABLE(&P->cpp.defs);
+	zend_hash_init(&P->cpp.defs, 0, NULL, free_cpp_def, 1);
 	zval tmp;
 	ZVAL_ARR(&tmp, &P->cpp.defs);
 	add_assoc_string(&tmp, "PHP_OS", PHP_OS);
@@ -60,158 +90,177 @@ struct psi_parser *psi_parser_init(struct psi_parser *P, psi_error_cb error, uns
 	return P;
 }
 
+void psi_parser_reset(struct psi_parser *P)
+{
+	P->cur = P->tok = P->mrk = P->input.buffer;
+	P->lim = P->input.buffer + P->input.length;
+}
+
 bool psi_parser_open_file(struct psi_parser *P, const char *filename)
 {
-	FILE *fp = fopen(filename, "r");
-
-	if (!fp) {
-		P->error(PSI_DATA(P), NULL, PSI_WARNING,
-				"Could not open '%s' for reading: %s",
-				filename, strerror(errno));
-		return false;
-	}
-
-	P->input.type = PSI_PARSE_FILE;
-	P->input.data.file.handle = fp;
-
-#if HAVE_MMAP
 	struct stat sb;
-	int fd = fileno(fp);
+	FILE *fp;
+	char *fb;
 
-	if (fstat(fd, &sb)) {
+	if (stat(filename, &sb)) {
 		P->error(PSI_DATA(P), NULL, PSI_WARNING,
 				"Could not stat '%s': %s",
 				filename, strerror(errno));
 		return false;
 	}
 
-	P->input.data.file.buffer = mmap(NULL, sb.st_size, PROT_READ, MAP_SHARED, fd, 0);
-	if (MAP_FAILED == P->input.data.file.buffer) {
+	if (!(fb = malloc(sb.st_size + YYMAXFILL))) {
 		P->error(PSI_DATA(P), NULL, PSI_WARNING,
-				"Could not map '%s' for reading: %s",
+				"Could not allocate %zu bytes for reading '%s': %s",
+				sb.st_size + YYMAXFILL, filename, strerror(errno));
+		return false;
+	}
+
+	if (!(fp = fopen(filename, "r"))) {
+		free(fb);
+		P->error(PSI_DATA(P), NULL, PSI_WARNING,
+				"Could not open '%s' for reading: %s",
 				filename, strerror(errno));
 		return false;
 	}
-	P->input.data.file.length = sb.st_size;
-#else
-	P->input.data.file.buffer = malloc(BSIZE);
-#endif
+
+	if (sb.st_size != fread(fb, 1, sb.st_size, fp)) {
+		free(fb);
+		fclose(fp);
+		P->error(PSI_DATA(P), NULL, PSI_WARNING,
+				"Could not read %zu bytes from '%s': %s",
+				sb.st_size + YYMAXFILL, filename, strerror(errno));
+		return false;
+	}
+	memset(fb + sb.st_size, 0, YYMAXFILL);
+
+	if (P->input.buffer) {
+		free(P->input.buffer);
+	}
+	P->input.buffer = fb;
+	P->input.length = sb.st_size;
 
 	P->file.fn = strdup(filename);
+
+	psi_parser_reset(P);
 
 	return true;
 }
 
 bool psi_parser_open_string(struct psi_parser *P, const char *string, size_t length)
 {
-	P->input.type = PSI_PARSE_STRING;
-	P->input.data.string.length = length;
-	if (!(P->input.data.string.buffer = strndup(string, length))) {
+	char *sb;
+
+	if (!(sb = malloc(length + YYMAXFILL))) {
+		P->error(PSI_DATA(P), NULL, PSI_WARNING,
+				"Could not allocate %zu bytes: %s",
+				length + YYMAXFILL, strerror(errno));
 		return false;
 	}
 
+	memcpy(sb, string, length);
+	memset(sb + length, 0, YYMAXFILL);
+
+	if (P->input.buffer) {
+		free(P->input.buffer);
+	}
+	P->input.buffer = sb;
+	P->input.length = length;
+
 	P->file.fn = strdup("<input>");
+
+	psi_parser_reset(P);
 
 	return true;
 }
 
-static ssize_t psi_parser_fill(struct psi_parser *P, size_t n)
+#if 0
+static void psi_parser_register_constants(struct psi_parser *P)
 {
-	PSI_DEBUG_PRINT(P, "PSI< Fill: n=%zu (input.type=%d)\n", n, P->input.type);
+	zend_string *key;
+	zval *val;
 
-	/* init if n==0 */
-	if (!n) {
-		switch (P->input.type) {
-		case PSI_PARSE_FILE:
-			P->cur = P->tok = P->mrk = P->input.data.file.buffer;
-#if HAVE_MMAP
-			P->eof = P->input.data.file.buffer + P->input.data.file.length;
-			P->lim = P->eof;
-#else
-			P->eof = NULL;
-			P->lim = P->input.data.file.buffer;
-#endif
+	ZEND_HASH_FOREACH_STR_KEY_VAL(&P->cpp.defs, key, val)
+	{
+		struct psi_impl_def_val *iv;
+		struct psi_const_type *ct;
+		struct psi_const *c;
+		const char *ctn;
+		token_t ctt;
+		impl_val tmp;
+		zend_string *str;
+
+		ZVAL_DEREF(val);
+		switch (Z_TYPE_P(val)) {
+		case IS_TRUE:
+		case IS_FALSE:
+			ctt = PSI_T_BOOL;
+			ctn = "bool";
+			tmp.zend.bval = Z_TYPE_P(val) == IS_TRUE;
 			break;
-
-		case PSI_PARSE_STRING:
-			P->cur = P->tok = P->mrk = P->input.data.string.buffer;
-			P->eof = P->input.data.string.buffer + P->input.data.string.length;
-			P->lim = P->eof;
+		case IS_LONG:
+			ctt = PSI_T_INT;
+			ctn = "int";
+			tmp.zend.lval = Z_LVAL_P(val);
+			break;
+		case IS_DOUBLE:
+			ctt = PSI_T_FLOAT;
+			ctn = "float";
+			tmp.dval = Z_DVAL_P(val);
+			break;
+		default:
+			ctt = PSI_T_STRING;
+			ctn = "string";
+			str = zval_get_string(val);
+			tmp.zend.str = zend_string_dup(str, 1);
+			zend_string_release(str);
 			break;
 		}
 
-		PSI_DEBUG_PRINT(P, "PSI< Fill: cur=%p lim=%p eof=%p\n", P->cur, P->lim, P->eof);
-	}
-
-	switch (P->input.type) {
-	case PSI_PARSE_STRING:
-		break;
-
-	case PSI_PARSE_FILE:
-#if !HAVE_MMAP
-		if (!P->eof) {
-			size_t consumed = P->tok - P->buf;
-			size_t reserved = P->lim - P->tok;
-			size_t available = BSIZE - reserved;
-			size_t didread;
-
-			if (consumed) {
-				memmove(P->buf, P->tok, reserved);
-				P->tok -= consumed;
-				P->cur -= consumed;
-				P->lim -= consumed;
-				P->mrk -= consumed;
-			}
-
-			didread = fread(P->lim, 1, available, P->fp);
-			P->lim += didread;
-			if (didread < available) {
-				P->eof = P->lim;
-			}
-			PSI_DEBUG_PRINT(P, "PSI< Fill: consumed=%zu reserved=%zu available=%zu didread=%zu\n",
-					consumed, reserved, available, didread);
+		iv = psi_impl_def_val_init(ctt, NULL);
+		iv->ival = tmp;
+		ct = psi_const_type_init(ctt, ctn);
+		c = psi_const_init(ct, key->val, iv);
+		if (!P->consts) {
+			P->consts = psi_plist_init((psi_plist_dtor) psi_const_free);
 		}
-#endif
-		break;
+		P->consts = psi_plist_add(P->consts, &c);
 	}
-
-	PSI_DEBUG_PRINT(P, "PSI< Fill: avail=%td\n", P->lim - P->cur);
-
-	return P->lim - P->cur;
+	ZEND_HASH_FOREACH_END();
 }
+#endif
 
-void psi_parser_parse(struct psi_parser *P, struct psi_token *T)
+void psi_parser_parse(struct psi_parser *P)
 {
-	if (T) {
-		psi_parser_proc_parse(P->proc, T->type, T, P);
-	} else {
+	size_t i = 0;
+	struct psi_token *T;
+
+	P->cpp.tokens = psi_parser_scan(P);
+
+	psi_cpp_preprocess(P, &P->cpp);
+
+	if (psi_plist_count(P->cpp.tokens)) {
+		while (psi_plist_get(P->cpp.tokens, i++, &T)) {
+			if (P->flags & PSI_DEBUG) {
+				fprintf(stderr, "PSI> ");
+				psi_token_dump(2, T);
+			}
+			psi_parser_proc_parse(P->proc, T->type, T, P);
+		}
 		psi_parser_proc_parse(P->proc, 0, NULL, P);
 	}
+
+	psi_plist_free(P->cpp.tokens);
+	P->cpp.tokens = NULL;
 }
 
 void psi_parser_dtor(struct psi_parser *P)
 {
 	psi_parser_proc_free(&P->proc);
 
-	switch (P->input.type) {
-	case PSI_PARSE_FILE:
-		if (P->input.data.file.buffer) {
-#if HAVE_MMAP
-			munmap(P->input.data.file.buffer, P->input.data.file.length);
-#else
-			free(P->input.data.file.buffer);
-#endif
-		}
-		if (P->input.data.file.handle) {
-			fclose(P->input.data.file.handle);
-		}
-		break;
-
-	case PSI_PARSE_STRING:
-		if (P->input.data.string.buffer) {
-			free(P->input.data.string.buffer);
-		}
-		break;
+	if (P->input.buffer) {
+		free(P->input.buffer);
+		P->input.buffer = NULL;
 	}
 
 	psi_data_dtor(PSI_DATA(P));
@@ -230,533 +279,173 @@ void psi_parser_free(struct psi_parser **P)
 	}
 }
 
-static bool cpp_truth(struct psi_parser *P);
-static bool cpp_defined(struct psi_parser *P);
-static zval *cpp_define_var(struct psi_parser *P);
-static void cpp_define_val(struct psi_parser *P, token_t typ, zval *val);
-static void cpp_undefine(struct psi_parser *P);
-static void cpp_error(struct psi_parser *P, const char *msg, ...);
-
-/*!max:re2c*/
-#if BSIZE < YYMAXFILL
-# error BSIZE must be greater than YYMAXFILL
-#endif
-
-#define RETURN(t) do { \
-	P->num = t; \
-	PSI_DEBUG_PRINT(P, "PSI< TOKEN: %d %.*s (EOF=%d %s:%u:%u)\n", \
-				P->num, (int) (P->cur-P->tok), P->tok, P->num == PSI_T_EOF, \
-				P->file.fn, P->line, P->col); \
-	return t; \
-} while(1)
-
-#define NEWLINE(label) \
+#define NEWLINE() \
 	P->col = 1; \
-	++P->line; \
-	goto label
+	++P->line
 
-token_t psi_parser_scan(struct psi_parser *P)
+#define NEWTOKEN(t) \
+	P->num = t; \
+	token = psi_token_alloc(P); \
+	tokens = psi_plist_add(tokens, &token); \
+	P->col += P->cur - P->tok; \
+	if (P->flags & PSI_DEBUG) { \
+		fprintf(stderr, "PSI< "); \
+		psi_token_dump(2, token); \
+	} \
+	token = NULL
+
+
+struct psi_plist *psi_parser_scan(struct psi_parser *P)
 {
+	struct psi_plist *tokens;
+	struct psi_token *token;
+
 	if (!P->cur) {
-		psi_parser_fill(P, 0);
+		return NULL;
 	}
-	for (;;) {
-		if (P->cpp.skip) {
-			/* we might come from EOL, so just go to cpp instead of cpp_skip */
-			goto cpp;
-		}
 
-		P->col += P->cur - P->tok;
+	tokens = psi_plist_init(NULL);
 
-	nextline: ;
+	start: ;
 		P->tok = P->cur;
+
 		/*!re2c
-		re2c:indent:top = 2;
-		re2c:define:YYCTYPE = "unsigned char";
-		re2c:define:YYCURSOR = P->cur;
-		re2c:define:YYLIMIT = P->lim;
-		re2c:define:YYMARKER = P->mrk;
-		re2c:define:YYFILL = "{ if (!psi_parser_fill(P,@@)) RETURN(PSI_T_EOF); }";
-		re2c:yyfill:parameter = 0;
 
-		B = [^a-zA-Z0-9_];
-		W = [a-zA-Z0-9_];
-		NAME = [a-zA-Z_]W*;
-		NSNAME = (NAME)? ("\\" NAME)+;
-		DOLLAR_NAME = '$' W+;
-		QUOTED_STRING = "\"" ([^\"])+ "\"";
-		NUMBER = [+-]? [0-9]* "."? [0-9]+ ([eE] [+-]? [0-9]+)?;
+		"/*"			{ goto comment; }
+		"//"			{ goto comment_sl; }
+		"#"				{ NEWTOKEN(PSI_T_HASH); goto start; }
+		"("				{ NEWTOKEN(PSI_T_LPAREN); goto start; }
+		")"				{ NEWTOKEN(PSI_T_RPAREN); goto start; }
+		";"				{ NEWTOKEN(PSI_T_EOS); goto start; }
+		","				{ NEWTOKEN(PSI_T_COMMA); goto start; }
+		":"				{ NEWTOKEN(PSI_T_COLON); goto start; }
+		"{"				{ NEWTOKEN(PSI_T_LBRACE); goto start; }
+		"}"				{ NEWTOKEN(PSI_T_RBRACE); goto start; }
+		"["				{ NEWTOKEN(PSI_T_LBRACKET); goto start; }
+		"]"				{ NEWTOKEN(PSI_T_RBRACKET); goto start; }
+		"!=" 			{ NEWTOKEN(PSI_T_CMP_NE); goto start; }
+		"=="			{ NEWTOKEN(PSI_T_CMP_EQ); goto start; }
+		"&&"			{ NEWTOKEN(PSI_T_AND); goto start; }
+		"||"			{ NEWTOKEN(PSI_T_OR); goto start; }
+		"="				{ NEWTOKEN(PSI_T_EQUALS); goto start; }
+		"*"				{ NEWTOKEN(PSI_T_ASTERISK); goto start; }
+		"~"				{ NEWTOKEN(PSI_T_TILDE); goto start; }
+		"!"				{ NEWTOKEN(PSI_T_NOT); goto start; }
+		"%"				{ NEWTOKEN(PSI_T_MODULO); goto start; }
+		"&"				{ NEWTOKEN(PSI_T_AMPERSAND); goto start; }
+		"+"				{ NEWTOKEN(PSI_T_PLUS); goto start; }
+		"-"				{ NEWTOKEN(PSI_T_MINUS); goto start; }
+		"/"				{ NEWTOKEN(PSI_T_SLASH); goto start; }
+		"\\"			{ NEWTOKEN(PSI_T_BSLASH); goto start; }
+		"|"				{ NEWTOKEN(PSI_T_PIPE); goto start; }
+		"^"				{ NEWTOKEN(PSI_T_CARET); goto start; }
+		"<<"			{ NEWTOKEN(PSI_T_LSHIFT); goto start; }
+		">>"			{ NEWTOKEN(PSI_T_RSHIFT); goto start; }
+		"<="			{ NEWTOKEN(PSI_T_CMP_LE); goto start; }
+		">="			{ NEWTOKEN(PSI_T_CMP_GE); goto start; }
+		"<"				{ NEWTOKEN(PSI_T_LCHEVR); goto start; }
+		">"				{ NEWTOKEN(PSI_T_RCHEVR); goto start; }
+		"..."			{ NEWTOKEN(PSI_T_ELLIPSIS); goto start; }
+		'IF'			{ NEWTOKEN(PSI_T_IF); goto start; }
+		'IFDEF'			{ NEWTOKEN(PSI_T_IFDEF); goto start; }
+		'IFNDEF'		{ NEWTOKEN(PSI_T_IFNDEF); goto start; }
+		'ELSE'			{ NEWTOKEN(PSI_T_ELSE); goto start; }
+		'ELIF'			{ NEWTOKEN(PSI_T_ELIF); goto start; }
+		'ENDIF'			{ NEWTOKEN(PSI_T_ENDIF); goto start; }
+		'DEFINE'		{ NEWTOKEN(PSI_T_DEFINE); goto start; }
+		'DEFINED'		{ NEWTOKEN(PSI_T_DEFINED); goto start; }
+		'UNDEF'			{ NEWTOKEN(PSI_T_UNDEF); goto start; }
+		'WARNING'		{ NEWTOKEN(PSI_T_WARNING); goto start; }
+		'ERROR'			{ NEWTOKEN(PSI_T_ERROR); goto start; }
+		'TRUE'			{ NEWTOKEN(PSI_T_TRUE); goto start; }
+		'FALSE'			{ NEWTOKEN(PSI_T_FALSE); goto start; }
+		'NULL'			{ NEWTOKEN(PSI_T_NULL); goto start; }
+		'MIXED'			{ NEWTOKEN(PSI_T_MIXED); goto start; }
+		'CALLABLE'		{ NEWTOKEN(PSI_T_CALLABLE); goto start; }
+		'VOID'			{ NEWTOKEN(PSI_T_VOID); goto start; }
+		'BOOL'			{ NEWTOKEN(PSI_T_BOOL); goto start; }
+		'CHAR'			{ NEWTOKEN(PSI_T_CHAR); goto start; }
+		'SHORT'			{ NEWTOKEN(PSI_T_SHORT); goto start; }
+		'INT'			{ NEWTOKEN(PSI_T_INT); goto start; }
+		'LONG'			{ NEWTOKEN(PSI_T_LONG); goto start; }
+		'FLOAT'			{ NEWTOKEN(PSI_T_FLOAT); goto start; }
+		'DOUBLE'		{ NEWTOKEN(PSI_T_DOUBLE); goto start; }
+		'INT8_T'		{ NEWTOKEN(PSI_T_INT8); goto start; }
+		'UINT8_T'		{ NEWTOKEN(PSI_T_UINT8); goto start; }
+		'INT16_T'		{ NEWTOKEN(PSI_T_INT16); goto start; }
+		'UINT16_T'		{ NEWTOKEN(PSI_T_UINT16); goto start; }
+		'INT32_T'		{ NEWTOKEN(PSI_T_INT32); goto start; }
+		'UINT32_T'		{ NEWTOKEN(PSI_T_UINT32); goto start; }
+		'INT64_T'		{ NEWTOKEN(PSI_T_INT64); goto start; }
+		'UINT64_T'		{ NEWTOKEN(PSI_T_UINT64); goto start; }
+		'UNSIGNED'		{ NEWTOKEN(PSI_T_UNSIGNED); goto start; }
+		'SIGNED'		{ NEWTOKEN(PSI_T_SIGNED); goto start; }
+		'STRING'		{ NEWTOKEN(PSI_T_STRING); goto start; }
+		'ARRAY'			{ NEWTOKEN(PSI_T_ARRAY); goto start; }
+		'OBJECT'		{ NEWTOKEN(PSI_T_OBJECT); goto start; }
+		'CALLBACK'		{ NEWTOKEN(PSI_T_CALLBACK); goto start; }
+		'STATIC'		{ NEWTOKEN(PSI_T_STATIC); goto start; }
+		'FUNCTION'		{ NEWTOKEN(PSI_T_FUNCTION); goto start; }
+		'TYPEDEF'		{ NEWTOKEN(PSI_T_TYPEDEF); goto start; }
+		'STRUCT'		{ NEWTOKEN(PSI_T_STRUCT); goto start; }
+		'UNION'			{ NEWTOKEN(PSI_T_UNION); goto start; }
+		'ENUM'			{ NEWTOKEN(PSI_T_ENUM); goto start; }
+		'CONST'			{ NEWTOKEN(PSI_T_CONST); goto start; }
+		'LIB'			{ NEWTOKEN(PSI_T_LIB); goto start; }
+		'LET'			{ NEWTOKEN(PSI_T_LET); goto start; }
+		'SET'			{ NEWTOKEN(PSI_T_SET); goto start; }
+		'PRE_ASSERT'	{ NEWTOKEN(PSI_T_PRE_ASSERT); goto start; }
+		'POST_ASSERT'	{ NEWTOKEN(PSI_T_POST_ASSERT); goto start; }
+		'RETURN'		{ NEWTOKEN(PSI_T_RETURN); goto start; }
+		'FREE'			{ NEWTOKEN(PSI_T_FREE); goto start; }
+		'TEMP'			{ NEWTOKEN(PSI_T_TEMP); goto start; }
+		'STRLEN'		{ NEWTOKEN(PSI_T_STRLEN); goto start; }
+		'STRVAL'		{ NEWTOKEN(PSI_T_STRVAL); goto start; }
+		'PATHVAL'		{ NEWTOKEN(PSI_T_PATHVAL); goto start; }
+		'INTVAL'		{ NEWTOKEN(PSI_T_INTVAL); goto start; }
+		'FLOATVAL'		{ NEWTOKEN(PSI_T_FLOATVAL); goto start; }
+		'BOOLVAL'		{ NEWTOKEN(PSI_T_BOOLVAL); goto start; }
+		'ARRVAL'		{ NEWTOKEN(PSI_T_ARRVAL); goto start; }
+		'OBJVAL'		{ NEWTOKEN(PSI_T_OBJVAL); goto start; }
+		'ZVAL'			{ NEWTOKEN(PSI_T_ZVAL); goto start; }
+		'COUNT'			{ NEWTOKEN(PSI_T_COUNT); goto start; }
+		'CALLOC'		{ NEWTOKEN(PSI_T_CALLOC); goto start; }
+		'TO_OBJECT'		{ NEWTOKEN(PSI_T_TO_OBJECT); goto start; }
+		'TO_ARRAY'		{ NEWTOKEN(PSI_T_TO_ARRAY); goto start; }
+		'TO_STRING'		{ NEWTOKEN(PSI_T_TO_STRING); goto start; }
+		'TO_INT'		{ NEWTOKEN(PSI_T_TO_INT); goto start; }
+		'TO_FLOAT'		{ NEWTOKEN(PSI_T_TO_FLOAT); goto start; }
+		'TO_BOOL'		{ NEWTOKEN(PSI_T_TO_BOOL); goto start; }
+		NUMBER			{ NEWTOKEN(PSI_T_NUMBER); goto start; }
+		NAME			{ NEWTOKEN(PSI_T_NAME); goto start; }
+		NSNAME			{ NEWTOKEN(PSI_T_NSNAME); goto start; }
+		DOLLAR_NAME		{ NEWTOKEN(PSI_T_DOLLAR_NAME); goto start; }
+		QUOTED_STRING	{ NEWTOKEN(PSI_T_QUOTED_STRING); goto start; }
+		EOL				{ NEWTOKEN(PSI_T_EOL); NEWLINE(); goto start; }
+		SP+				{ NEWTOKEN(PSI_T_WHITESPACE); goto start; }
+		*				{ goto error; }
 
-		"#" { --P->cur; goto cpp; }
-		"/*" { goto comment; }
-		"//" .* "\n" { NEWLINE(nextline); }
-		"(" {RETURN(PSI_T_LPAREN);}
-		")" {RETURN(PSI_T_RPAREN);}
-		";" {RETURN(PSI_T_EOS);}
-		"," {RETURN(PSI_T_COMMA);}
-		":" {RETURN(PSI_T_COLON);}
-		"{" {RETURN(PSI_T_LBRACE);}
-		"}" {RETURN(PSI_T_RBRACE);}
-		"[" {RETURN(PSI_T_LBRACKET);}
-		"]" {RETURN(PSI_T_RBRACKET);}
-		"!=" {RETURN(PSI_T_CMP_NE);}
-		"==" {RETURN(PSI_T_CMP_EQ);}
-		"&&" {RETURN(PSI_T_AND);}
-		"||" {RETURN(PSI_T_OR);}
-		"=" {RETURN(PSI_T_EQUALS);}
-		"*" {RETURN(PSI_T_ASTERISK);}
-		"~" {RETURN(PSI_T_TILDE);}
-		"!" {RETURN(PSI_T_NOT);}
-		"%" {RETURN(PSI_T_MODULO);}
-		"&" {RETURN(PSI_T_AMPERSAND);}
-		"+" {RETURN(PSI_T_PLUS);}
-		"-" {RETURN(PSI_T_MINUS);}
-		"/" {RETURN(PSI_T_SLASH);}
-		"|" {RETURN(PSI_T_PIPE);}
-		"^" {RETURN(PSI_T_CARET);}
-		"<<" {RETURN(PSI_T_LSHIFT);}
-		">>" {RETURN(PSI_T_RSHIFT);}
-		"<=" {RETURN(PSI_T_CMP_LE);}
-		">=" {RETURN(PSI_T_CMP_GE);}
-		"<" {RETURN(PSI_T_LCHEVR);}
-		">" {RETURN(PSI_T_RCHEVR);}
-		"..." {RETURN(PSI_T_ELLIPSIS);}
-		[\r\n] { NEWLINE(nextline); }
-		[\t ]+ { continue; }
-		'TRUE' {RETURN(PSI_T_TRUE);}
-		'FALSE' {RETURN(PSI_T_FALSE);}
-		'NULL' {RETURN(PSI_T_NULL);}
-		'MIXED' {RETURN(PSI_T_MIXED);}
-		'CALLABLE' {RETURN(PSI_T_CALLABLE);}
-		'VOID' {RETURN(PSI_T_VOID);}
-		'BOOL' {RETURN(PSI_T_BOOL);}
-		'CHAR' {RETURN(PSI_T_CHAR);}
-		'SHORT' {RETURN(PSI_T_SHORT);}
-		'INT' {RETURN(PSI_T_INT);}
-		'LONG' {RETURN(PSI_T_LONG);}
-		'FLOAT' {RETURN(PSI_T_FLOAT);}
-		'DOUBLE' {RETURN(PSI_T_DOUBLE);}
-		'INT8_T' {RETURN(PSI_T_INT8);}
-		'UINT8_T' {RETURN(PSI_T_UINT8);}
-		'INT16_T' {RETURN(PSI_T_INT16);}
-		'UINT16_T' {RETURN(PSI_T_UINT16);}
-		'INT32_T' {RETURN(PSI_T_INT32);}
-		'UINT32_T' {RETURN(PSI_T_UINT32);}
-		'INT64_T' {RETURN(PSI_T_INT64);}
-		'UINT64_T' {RETURN(PSI_T_UINT64);}
-		'UNSIGNED' {RETURN(PSI_T_UNSIGNED);}
-		'SIGNED' {RETURN(PSI_T_SIGNED);}
-		'STRING' {RETURN(PSI_T_STRING);}
-		'ARRAY' {RETURN(PSI_T_ARRAY);}
-		'OBJECT' {RETURN(PSI_T_OBJECT);}
-		'CALLBACK' {RETURN(PSI_T_CALLBACK);}
-		'STATIC' {RETURN(PSI_T_STATIC);}
-		'FUNCTION' {RETURN(PSI_T_FUNCTION);}
-		'TYPEDEF' {RETURN(PSI_T_TYPEDEF);}
-		'STRUCT' {RETURN(PSI_T_STRUCT);}
-		'UNION' {RETURN(PSI_T_UNION);}
-		'ENUM' {RETURN(PSI_T_ENUM);}
-		'CONST' {RETURN(PSI_T_CONST);}
-		'LIB' {RETURN(PSI_T_LIB);}
-		'LET' {RETURN(PSI_T_LET);}
-		'SET' {RETURN(PSI_T_SET);}
-		'PRE_ASSERT' {RETURN(PSI_T_PRE_ASSERT);}
-		'POST_ASSERT' {RETURN(PSI_T_POST_ASSERT);}
-		'RETURN' {RETURN(PSI_T_RETURN);}
-		'FREE' {RETURN(PSI_T_FREE);}
-		'TEMP' {RETURN(PSI_T_TEMP);}
-		'STRLEN' {RETURN(PSI_T_STRLEN);}
-		'STRVAL' {RETURN(PSI_T_STRVAL);}
-		'PATHVAL' {RETURN(PSI_T_PATHVAL);}
-		'INTVAL' {RETURN(PSI_T_INTVAL);}
-		'FLOATVAL' {RETURN(PSI_T_FLOATVAL);}
-		'BOOLVAL' {RETURN(PSI_T_BOOLVAL);}
-		'ARRVAL' {RETURN(PSI_T_ARRVAL);}
-		'OBJVAL' {RETURN(PSI_T_OBJVAL);}
-		'ZVAL' {RETURN(PSI_T_ZVAL);}
-		'COUNT' {RETURN(PSI_T_COUNT);}
-		'CALLOC' {RETURN(PSI_T_CALLOC);}
-		'TO_OBJECT' {RETURN(PSI_T_TO_OBJECT);}
-		'TO_ARRAY' {RETURN(PSI_T_TO_ARRAY);}
-		'TO_STRING' {RETURN(PSI_T_TO_STRING);}
-		'TO_INT' {RETURN(PSI_T_TO_INT);}
-		'TO_FLOAT' {RETURN(PSI_T_TO_FLOAT);}
-		'TO_BOOL' {RETURN(PSI_T_TO_BOOL);}
-		NUMBER {RETURN(PSI_T_NUMBER);}
-		NAME {RETURN(PSI_T_NAME);}
-		NSNAME {RETURN(PSI_T_NSNAME);}
-		DOLLAR_NAME {RETURN(PSI_T_DOLLAR_NAME);}
-		QUOTED_STRING {RETURN(PSI_T_QUOTED_STRING);}
-		[^] {break;}
 		*/
 
 	comment: ;
-		P->tok = P->cur;
 		/*!re2c
-		"\n"	{ NEWLINE(comment); }
-		"*" "/"	{ continue; }
-		[^]		{ goto comment; }
+
+		EOL		{ NEWLINE(); goto comment; }
+		"*" "/"	{ NEWTOKEN(PSI_T_COMMENT); goto start; }
+		 *		{ goto comment; }
+
 		*/
 
-#define PSI_DEBUG_CPP(P, msg, ...) do { \
-	if (PSI_DATA(P)->flags & PSI_DEBUG) { \
-		fprintf(stderr, "PSI> CPP %.*s line=%u level=%u skip=%u ", \
-				(int) strcspn(P->tok, "\r\n"), P->tok, \
-				P->line, P->cpp.level, P->cpp.skip); \
-		fprintf(stderr, msg, __VA_ARGS__); \
-	} \
-} while(0)
-
-	cpp: ;
-		P->tok = P->cur;
+	comment_sl: ;
 		/*!re2c
-		[\t ] 				{goto cpp;}
-		"#" [\t ]* "if"		{ goto cpp_if; }
-		"#" [\t ]* "ifdef"	{ goto cpp_ifdef; }
-		"#" [\t ]* "ifndef"	{ goto cpp_ifndef; }
-		"#" [\t ]* "else"	{ goto cpp_else; }
-		"#" [\t ]* "endif"	{ goto cpp_endif; }
-		"#" [\t ]* "define"	{ goto cpp_define; }
-		"#" [\t ]* "undef"	{ goto cpp_undef; }
-		"#" [\t ]* "error"	{ goto cpp_error; }
-		[^] 				{ goto cpp_default; }
+
+		EOL	{ NEWTOKEN(PSI_T_COMMENT); NEWLINE(); goto start; }
+		*	{ goto comment_sl; }
+
 		*/
-
-	cpp_default: ;
-		if (P->cpp.skip) {
-			goto cpp_skip;
-		} else {
-			assert(0);
-			break;
-		}
-
-	cpp_skip: ;
-		P->tok = P->cur;
-		/*!re2c
-		[\r\n]	{ goto cpp_skip_eol; }
-		[^]		{ goto cpp_skip; }
-		*/
-
-	cpp_skip_eol:
-		PSI_DEBUG_PRINT(P, "PSI> CPP skip line %u\n", P->line);
-		NEWLINE(cpp);
-
-	cpp_if: ;
-		PSI_DEBUG_CPP(P, "%s\n", "");
-
-		++P->cpp.level;
-
-	cpp_if_cont: ;
-		if (P->cpp.skip) {
-			goto cpp_skip;
-		}
-
-		P->tok = P->cur;
-
-		/*!re2c
-		[\t ]+								{ goto cpp_if_cont; }
-		"!" [\t ]* "defined" [\t ]* "("?	{ goto cpp_ifndef_cont; }
-		"defined" [ \t]* "("?				{ goto cpp_ifdef_cont; }
-		NAME [\t ]* [\r\n]					{ goto cpp_if_name_eol; }
-		[^]									{ goto cpp_if_default;  }
-		*/
-
-	cpp_if_default: ;
-		cpp_error(P, "PSI syntax error: invalid #if");
-		continue;
-
-	cpp_if_name_eol: ;
-		if (cpp_truth(P)) {
-			NEWLINE(nextline);
-		} else {
-			P->cpp.skip = P->cpp.level;
-			NEWLINE(cpp);
-		}
-
-	cpp_ifdef: ;
-		PSI_DEBUG_CPP(P, "%s\n", "");
-
-		++P->cpp.level;
-
-	cpp_ifdef_cont: ;
-		if (P->cpp.skip) {
-			goto cpp_skip;
-		}
-
-		P->tok = P->cur;
-
-		/*!re2c
-		[\t ]+							{ goto cpp_ifdef_cont; }
-		NAME [\t ]* ")"? [\t ]* [\r\n]	{ goto cpp_ifdef_name_eol; }
-		[^]								{ goto cpp_ifdef_default; }
-		*/
-
-	cpp_ifdef_default: ;
-		cpp_error(P, "PSI syntax error: invalid #ifdef");
-		continue;
-
-	cpp_ifdef_name_eol: ;
-		if (cpp_defined(P)) {
-			NEWLINE(nextline);
-		} else {
-			P->cpp.skip = P->cpp.level;
-			NEWLINE(cpp);
-		}
-
-	cpp_ifndef: ;
-		PSI_DEBUG_CPP(P, "%s\n", "");
-
-		++P->cpp.level;
-
-	cpp_ifndef_cont:
-		if (P->cpp.skip) {
-			goto cpp_skip;
-		}
-
-		P->tok = P->cur;
-
-		/*!re2c
-		[\t ]+							{ goto cpp_ifndef_cont; }
-		NAME [\t ]* ")"? [\t ]* [\r\n]	{ goto cpp_ifndef_name_eol; }
-		[^]								{ goto cpp_ifndef_default; }
-		*/
-
-	cpp_ifndef_default: ;
-		cpp_error(P, "PSI syntax error: invalid #ifndef");
-		continue;
-
-	cpp_ifndef_name_eol: ;
-		if (!cpp_defined(P)) {
-			NEWLINE(nextline);
-		} else {
-			P->cpp.skip = P->cpp.level;
-			NEWLINE(cpp_skip);
-		}
-
-	cpp_else: ;
-		PSI_DEBUG_CPP(P, "%s\n", "");
-
-		P->tok = P->cur;
-
-		if (!P->cpp.level) {
-			cpp_error(P, "PSI syntax error: ignoring lone #else");
-			continue;
-		}
-		if (!P->cpp.skip) {
-			P->cpp.skip = P->cpp.level;
-			goto cpp_skip;
-		} else if (P->cpp.skip == P->cpp.level) {
-			P->cpp.skip = 0;
-		}
-		continue;
-
-	cpp_endif: ;
-		PSI_DEBUG_CPP(P, "%s\n", "");
-
-		P->tok = P->cur;
-		if (!P->cpp.level) {
-			cpp_error(P, "PSI syntax_error: ignoring lone #endif");
-			continue;
-		} else if (P->cpp.skip == P->cpp.level) {
-			P->cpp.skip = 0;
-		}
-		--P->cpp.level;
-		continue;
-
-	cpp_define: ;
-		PSI_DEBUG_CPP(P, "%s\n", "");
-
-		zval *val = NULL;
-
-		if (P->cpp.skip) {
-			goto cpp_skip;
-		}
-
-	cpp_define_cont: ;
-		P->tok = P->cur;
-
-		/*!re2c
-		[\t ]+			{ goto cpp_define_cont; }
-		[\r\n]			{ goto cpp_define_eol; }
-		NAME			{ goto cpp_define_name; }
-		QUOTED_STRING	{ goto cpp_define_quoted_string; }
-		NUMBER			{ goto cpp_define_number; }
-		[^]				{ goto cpp_define_default; }
-		*/
-
-	cpp_define_default: ;
-		cpp_error(P, "PSI syntax error: invalid #ifndef");
-		continue;
-
-	cpp_define_eol: ;
-		if (!val) {
-			cpp_error(P, "PSI syntax error: ignoring lone #define");
-			continue;
-		}
-		NEWLINE(nextline);
-
-	cpp_define_name: ;
-		if (val) {
-			if (Z_TYPE_P(val) != IS_TRUE) {
-				cpp_error(P, "PSI syntax error: invalid #define");
-				continue;
-			}
-			cpp_define_val(P, PSI_T_NAME, val);
-		} else {
-			val = cpp_define_var(P);
-		}
-		goto cpp_define_cont;
-
-	cpp_define_quoted_string: ;
-		if (!val) {
-			cpp_error(P, "PSI syntax error: invalid quoted string in #define");
-			continue;
-		} else {
-			cpp_define_val(P, PSI_T_QUOTED_STRING, val);
-		}
-		goto cpp_define_cont;
-
-	cpp_define_number: ;
-		if (!val) {
-			cpp_error(P, "PSI syntax error: invalid quoted string in #define");
-			continue;
-		} else {
-			cpp_define_val(P, PSI_T_NUMBER, val);
-		}
-		goto cpp_define_cont;
-
-	cpp_undef: ;
-		PSI_DEBUG_CPP(P, "%s\n", "");
-
-		if (P->cpp.skip) {
-			goto cpp_skip;
-		}
-
-	cpp_undef_cont: ;
-		P->tok = P->cur;
-
-		/*!re2c
-		[\t ]+				{ goto cpp_undef_cont; }
-		NAME [\t ]* [\r\n]	{ goto cpp_undef_name_eol; }
-		[^]					{ goto cpp_undef_default; }
-		*/
-
-	cpp_undef_default: ;
-		cpp_error(P, "PSI syntax error: invalid #undef");
-		continue;
-
-	cpp_undef_name_eol: ;
-		cpp_undefine(P);
-		NEWLINE(nextline);
-
-	cpp_error: ;
-		size_t len = strcspn(P->cur, "\r\n");
-
-		if (P->cpp.skip) {
-			P->tok = P->cur + len;
-			NEWLINE(cpp_skip);
-		} else {
-			cpp_error(P, "%.*s", (int) len, P->cur);
-			break;
-		}
-	}
-	return -1;
-}
-
-#include <ctype.h>
-
-static bool cpp_truth(struct psi_parser *P)
-{
-	size_t len = P->cur - P->tok;
-
-	while (len && isspace(P->tok[len - 1])) {
-		--len;
-	}
-
-	zval *val = zend_symtable_str_find(&P->cpp.defs, P->tok, len);
-	bool truth = val ? zend_is_true(val) : false;
-
-	PSI_DEBUG_PRINT(P, "PSI> CPP truth(%.*s)=%s\n",
-			(int) len, P->tok, truth ? "true" : "false");
-
-	return truth;
-}
-
-static bool cpp_defined(struct psi_parser *P)
-{
-	size_t len = P->cur - P->tok;
-
-	while (len && isspace(P->tok[len - 1])) {
-		--len;
-	}
-
-
-	bool defined = zend_symtable_str_exists(&P->cpp.defs, P->tok, len);
-	PSI_DEBUG_PRINT(P, "PSI> CPP defined(%.*s)=%s\n",
-			(int) len, P->tok, defined ? "true" : "false");
-	return defined;
-}
-
-static zval *cpp_define_var(struct psi_parser *P)
-{
-	if (cpp_defined(P)) {
-		psi_error(PSI_WARNING, P->file.fn, P->line, "PSI syntax error: Unexpected end of input");
-	}
-	size_t len = P->cur - P->tok;
-
-	while (len && isspace(P->tok[len - 1])) {
-		--len;
-	}
-
-	PSI_DEBUG_PRINT(P, "PSI> CPP define %.*s\n", (int) len, P->tok);
-
-	if (zend_symtable_str_exists(&P->cpp.defs, P->tok, len)) {
-		cpp_error(P, "Redefinition of %.*s", (int) len, P->tok);
-	}
-
-	zval val;
-	ZVAL_TRUE(&val);
-	return zend_symtable_str_update(&P->cpp.defs, P->tok, len, &val);
-}
-
-static void cpp_define_val(struct psi_parser *P, token_t typ, zval *val) {
-	size_t len = P->cur - P->tok;
-
-	while (len && isspace(P->tok[len - 1])) {
-		--len;
-	}
-
-	PSI_DEBUG_PRINT(P, "PSI> define = %.*s\n", (int) len, P->tok);
-
-	switch (typ) {
-	case PSI_T_QUOTED_STRING:
-		ZVAL_STRINGL(val, P->tok + 1, len - 2);
-		break;
-	case PSI_T_NUMBER:
-		ZVAL_STRINGL(val, P->tok, len);
-		convert_scalar_to_number(val);
-		break;
-	default:
-		assert(0);
-	}
-}
-
-static void cpp_undefine(struct psi_parser *P)
-{
-	size_t len = P->cur - P->tok;
-
-	while (len && isspace(P->tok[len - 1])) {
-		--len;
-	}
-
-	zend_symtable_str_del(&P->cpp.defs, P->tok, len);
-}
-
-static void cpp_error(struct psi_parser *P, const char *msg, ...)
-{
-	va_list argv;
-
-	va_start(argv, msg);
-	psi_verror(PSI_WARNING, P->file.fn, P->line, msg, argv);
-	va_end(argv);
+error:
+	psi_plist_free(tokens);
+	return NULL;
+done:
+	return tokens;
 }

@@ -100,7 +100,7 @@ bool psi_decl_enum_item_validate(struct psi_data *data,
 		return false;
 	}
 
-	item->val = psi_long_num_exp(item->num, NULL);
+	item->val = psi_long_num_exp(item->num, NULL, NULL);
 
 	return true;
 }

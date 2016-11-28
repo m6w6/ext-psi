@@ -75,7 +75,7 @@ void psi_set_exp_exec_ex(struct psi_set_exp *val, zval *zv, impl_val *iv,
 		val->data.func->handler(zv, val, iv, frame);
 		break;
 	case PSI_SET_NUMEXP:
-		switch (psi_num_exp_exec(val->data.num, iv, frame)) {
+		switch (psi_num_exp_exec(val->data.num, iv, frame, NULL)) {
 		case PSI_T_FLOAT:
 		case PSI_T_DOUBLE:
 		case PSI_T_LONG_DOUBLE:

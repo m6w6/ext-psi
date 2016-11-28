@@ -62,6 +62,9 @@
 #include "types/free_stmt.h"
 #include "types/assert_stmt.h"
 #include "types/layout.h"
+#include "types/cpp_exp.h"
+#include "types/cpp_macro_call.h"
+#include "types/cpp_macro_decl.h"
 
 static inline impl_val *deref_impl_val(impl_val *ret_val, struct psi_decl_var *var) {
 	unsigned i;

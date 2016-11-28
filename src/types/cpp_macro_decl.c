@@ -1,5 +1,5 @@
 /*******************************************************************************
- Copyright (c) 2016, Michael Wallner <mike@php.net>.
+ Copyright (c) 2017, Michael Wallner <mike@php.net>.
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -23,41 +23,55 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef PSI_PARSER_H
-#define PSI_PARSER_H
+#include "php_psi_stdinc.h"
 
-#include "token.h"
-#include "types.h"
-#include "data.h"
 #include "cpp.h"
+#include "data.h"
 
-struct psi_parser {
-	PSI_DATA_MEMBERS;
-	token_t num;
-	unsigned line, col;
-	char *cur, *tok, *lim, *ctx, *mrk;
+struct psi_cpp_macro_decl *psi_cpp_macro_decl_init(struct psi_plist *sig,
+		struct psi_plist *tokens, struct psi_num_exp *exp)
+{
+	struct psi_cpp_macro_decl *macro = calloc(1, sizeof(*macro));
+	macro->exp = exp;
+	macro->sig = sig;
+	macro->tokens = tokens;
+	return macro;
+}
 
-	/* internals */
-	void *proc;
+void psi_cpp_macro_decl_free(struct psi_cpp_macro_decl **macro_ptr)
+{
+	if (*macro_ptr) {
+		struct psi_cpp_macro_decl *macro = *macro_ptr;
 
-	struct psi_cpp_data cpp;
-	struct {
-		char *buffer;
-		size_t length;
-	} input;
-};
+		*macro_ptr = NULL;
+		if (macro->token) {
+			free(macro->token);
+		}
+		if (macro->exp) {
+			psi_num_exp_free(&macro->exp);
+		}
+		if (macro->sig) {
+			psi_plist_free(macro->sig);
+		}
+		if (macro->tokens) {
+			psi_plist_free(macro->tokens);
+		}
+		free(macro);
+	}
+}
 
-struct psi_parser *psi_parser_init(struct psi_parser *P, psi_error_cb error, unsigned flags);
-bool psi_parser_open_file(struct psi_parser *P, const char *filename);
-bool psi_parser_open_string(struct psi_parser *P, const char *string, size_t length);
-struct psi_plist *psi_parser_scan(struct psi_parser *P);
-void psi_parser_parse(struct psi_parser *P);
-void psi_parser_dtor(struct psi_parser *P);
-void psi_parser_free(struct psi_parser **P);
+void psi_cpp_macro_decl_dump(int fd, struct psi_cpp_macro_decl *macro)
+{
+	dprintf(fd, "%s", macro->token->text);
 
-void *psi_parser_proc_init(void);
-void psi_parser_proc_free(void **parser_proc);
-void psi_parser_proc_parse(void *parser_proc, token_t r, struct psi_token *token, struct psi_parser *parser);
-void psi_parser_proc_trace(FILE *out, char *prefix);
+	if (macro->sig) {
+		size_t i = 0;
+		struct psi_token *tok;
 
-#endif
+		dprintf(fd, "(");
+		while (psi_plist_get(macro->sig, i++, &tok)) {
+			dprintf(fd, "%s%s", i>1?",":"", tok->text);
+		}
+		dprintf(fd, ")");
+	}
+}

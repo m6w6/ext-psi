@@ -256,14 +256,7 @@ void psi_context_build(struct psi_context *C, const char *paths)
 					continue;
 				}
 
-				while (0 < psi_parser_scan(&P)) {
-					psi_parser_parse(&P, psi_token_alloc(&P));
-					if (P.num == PSI_T_EOF) {
-						break;
-					}
-				}
-
-				psi_parser_parse(&P, NULL);
+				psi_parser_parse(&P);
 				psi_context_add_data(C, PSI_DATA(&P));
 				psi_parser_dtor(&P);
 			}
@@ -341,7 +334,7 @@ zend_function_entry *psi_context_compile(struct psi_context *C)
 				zend_string *name = strpprintf(0, "psi\\%s\\%s", e->name, item->name);
 
 				zc.name = zend_string_dup(name, 1);
-				ZVAL_LONG(&zc.value, psi_long_num_exp(item->num, NULL));
+				ZVAL_LONG(&zc.value, psi_long_num_exp(item->num, NULL, NULL));
 				zend_register_constant(&zc);
 				zend_string_release(name);
 			}

@@ -35,6 +35,7 @@ struct psi_decl_enum_item;
 struct psi_let_exp;
 struct psi_set_exp;
 struct psi_call_frame;
+struct psi_cpp_macro_call;
 
 struct psi_number {
 	struct psi_token *token;
@@ -45,6 +46,7 @@ struct psi_number {
 		struct psi_const *cnst;
 		struct psi_decl_var *dvar;
 		struct psi_decl_enum_item *enm;
+		struct psi_cpp_macro_call *call;
 	} data;
 };
 
@@ -58,6 +60,7 @@ bool psi_number_validate(struct psi_data *data, struct psi_number *exp,
 		struct psi_let_exp *current_let, struct psi_set_exp *current_set,
 		struct psi_decl_enum *current_enum);
 
-token_t psi_number_eval(struct psi_number *exp, impl_val *res, struct psi_call_frame *frame);
+token_t psi_number_eval(struct psi_number *exp, impl_val *res,
+		struct psi_call_frame *frame, HashTable *defs);
 
 #endif

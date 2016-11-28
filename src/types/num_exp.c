@@ -439,7 +439,7 @@ static inline void psi_num_exp_verify_result(token_t t, impl_val *res, struct ps
 }
 
 static void psi_num_exp_reduce(struct psi_num_exp *exp, struct psi_plist **output_ptr,
-		struct psi_plist **input_ptr, struct psi_call_frame *frame)
+		struct psi_plist **input_ptr, struct psi_call_frame *frame, HashTable *defs)
 {
 	struct psi_plist *output = *output_ptr, *input = *input_ptr;
 	struct element {
@@ -452,14 +452,14 @@ static void psi_num_exp_reduce(struct psi_num_exp *exp, struct psi_plist **outpu
 
 	switch (exp->op) {
 	case 0:
-		entry.type = psi_number_eval(exp->data.n, &entry.data.value, frame);
+		entry.type = psi_number_eval(exp->data.n, &entry.data.value, frame, defs);
 		output = psi_plist_add(output, &entry);
 		break;
 
 	case PSI_T_LPAREN:
 		entry.type = exp->op;
 		input = psi_plist_add(input, &entry);
-		psi_num_exp_reduce(exp->data.u, &output, &input, frame);
+		psi_num_exp_reduce(exp->data.u, &output, &input, frame, defs);
 		while (psi_plist_pop(input, &entry)) {
 			if (entry.type == PSI_T_LPAREN) {
 				break;
@@ -483,11 +483,11 @@ static void psi_num_exp_reduce(struct psi_num_exp *exp, struct psi_plist **outpu
 		entry.type = exp->op;
 		entry.data.calc = exp->calc;
 		input = psi_plist_add(input, &entry);
-		psi_num_exp_reduce(exp->data.u, &output, &input, frame);
+		psi_num_exp_reduce(exp->data.u, &output, &input, frame, defs);
 		break;
 
 	default:
-		psi_num_exp_reduce(exp->data.b.lhs, &output, &input, frame);
+		psi_num_exp_reduce(exp->data.b.lhs, &output, &input, frame, defs);
 		while (psi_plist_top(input, &entry)) {
 			/* bail out if exp->op > entry.type */
 			if (psi_calc_oper(exp->op, entry.type) == -1) {
@@ -500,7 +500,7 @@ static void psi_num_exp_reduce(struct psi_num_exp *exp, struct psi_plist **outpu
 		entry.type = exp->op;
 		entry.data.calc = exp->calc;
 		input = psi_plist_add(input, &entry);
-		psi_num_exp_reduce(exp->data.b.rhs, &output, &input, frame);
+		psi_num_exp_reduce(exp->data.b.rhs, &output, &input, frame, defs);
 		break;
 	}
 
@@ -509,7 +509,7 @@ static void psi_num_exp_reduce(struct psi_num_exp *exp, struct psi_plist **outpu
 }
 
 token_t psi_num_exp_exec(struct psi_num_exp *exp, impl_val *res,
-		struct psi_call_frame *frame)
+		struct psi_call_frame *frame, HashTable *defs)
 {
 	struct psi_plist *output, *input;
 	struct element {
@@ -523,7 +523,7 @@ token_t psi_num_exp_exec(struct psi_num_exp *exp, impl_val *res,
 	output = psi_plist_init_ex(sizeof(entry), NULL);
 	input = psi_plist_init_ex(sizeof(entry), NULL);
 
-	psi_num_exp_reduce(exp, &output, &input, frame);
+	psi_num_exp_reduce(exp, &output, &input, frame, defs);
 
 	while (psi_plist_pop(input, &entry)) {
 		if (frame) PSI_DEBUG_PRINT(frame->context, " %s", psi_num_exp_op_tok(entry.type));

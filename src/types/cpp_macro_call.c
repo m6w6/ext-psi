@@ -1,5 +1,5 @@
 /*******************************************************************************
- Copyright (c) 2016, Michael Wallner <mike@php.net>.
+ Copyright (c) 2017, Michael Wallner <mike@php.net>.
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -23,41 +23,50 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef PSI_PARSER_H
-#define PSI_PARSER_H
+#include "php_psi_stdinc.h"
 
-#include "token.h"
-#include "types.h"
-#include "data.h"
 #include "cpp.h"
+#include "data.h"
 
-struct psi_parser {
-	PSI_DATA_MEMBERS;
-	token_t num;
-	unsigned line, col;
-	char *cur, *tok, *lim, *ctx, *mrk;
+struct psi_cpp_macro_call *psi_cpp_macro_call_init(const char *name,
+		struct psi_plist *args)
+{
+	struct psi_cpp_macro_call *call = calloc(1, sizeof(*call));
+	call->name = strdup(name);
+	call->args = args;
+	return call;
+}
 
-	/* internals */
-	void *proc;
+struct psi_cpp_macro_call *psi_cpp_macro_call_copy(
+		struct psi_cpp_macro_call *call)
+{
+	struct psi_cpp_macro_call *copy = calloc(1, sizeof(*copy));
+	copy->name = strdup(call->name);
+	if (call->token) {
+		copy->token = psi_token_copy(call->token);
+	}
+	if (call->args) {
+		copy->args = psi_plist_copy(call->args,
+				(void (*)(void*)) psi_token_copy_ctor);
+	}
+	return copy;
+}
 
-	struct psi_cpp_data cpp;
-	struct {
-		char *buffer;
-		size_t length;
-	} input;
-};
+void psi_cpp_macro_call_free(struct psi_cpp_macro_call **call_ptr)
+{
+	if (*call_ptr) {
+		struct psi_cpp_macro_call *call = *call_ptr;
 
-struct psi_parser *psi_parser_init(struct psi_parser *P, psi_error_cb error, unsigned flags);
-bool psi_parser_open_file(struct psi_parser *P, const char *filename);
-bool psi_parser_open_string(struct psi_parser *P, const char *string, size_t length);
-struct psi_plist *psi_parser_scan(struct psi_parser *P);
-void psi_parser_parse(struct psi_parser *P);
-void psi_parser_dtor(struct psi_parser *P);
-void psi_parser_free(struct psi_parser **P);
+		*call_ptr = NULL;
 
-void *psi_parser_proc_init(void);
-void psi_parser_proc_free(void **parser_proc);
-void psi_parser_proc_parse(void *parser_proc, token_t r, struct psi_token *token, struct psi_parser *parser);
-void psi_parser_proc_trace(FILE *out, char *prefix);
+		free(call->name);
+		if (call->args) {
+			psi_plist_free(call->args);
+		}
+		if (call->token) {
+			free(call->token);
+		}
+		free(call);
+	}
+}
 
-#endif

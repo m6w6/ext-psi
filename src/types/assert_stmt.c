@@ -62,7 +62,7 @@ void psi_assert_stmt_dump(int fd, struct psi_assert_stmt *stmt)
 bool psi_assert_stmt_exec(struct psi_assert_stmt *stmt, struct psi_call_frame *frame)
 {
 	impl_val res, chk;
-	token_t res_type = psi_num_exp_exec(stmt->exp, &res, frame);
+	token_t res_type = psi_num_exp_exec(stmt->exp, &res, frame, NULL);
 
 	psi_calc_cast(res_type, &res, PSI_T_UINT8, &chk);
 	return chk.u8;

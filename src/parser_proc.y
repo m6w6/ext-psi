@@ -37,7 +37,7 @@ void psi_parser_proc_free(void **parser_proc)
 %token_destructor {free($$);}
 %default_destructor {(void)P;}
 %extra_argument {struct psi_parser *P}
-%syntax_error { ++P->errors; if (TOKEN && TOKEN->type != PSI_T_EOF) { psi_error(PSI_WARNING, TOKEN->file, TOKEN->line, "PSI syntax error: Unexpected token '%s' at pos %u", TOKEN->text, TOKEN->col); } else { psi_error(PSI_WARNING, P->file.fn, P->line, "PSI syntax error: Unexpected end of input"); } }
+%syntax_error { ++P->errors; if (TOKEN) { psi_error(PSI_WARNING, TOKEN->file, TOKEN->line, "PSI syntax error: Unexpected token '%s' at pos %u", TOKEN->text, TOKEN->col); } else { psi_error(PSI_WARNING, P->file.fn, P->line, "PSI syntax error: Unexpected end of input"); } }
 %token_class const_type_token BOOL INT FLOAT STRING .
 %token_class decl_type_token FLOAT DOUBLE INT8 UINT8 INT16 UINT16 INT32 UINT32 INT64 UINT64 NAME .
 %token_class impl_def_val_token NULL NUMBER TRUE FALSE QUOTED_STRING .
@@ -48,6 +48,7 @@ void psi_parser_proc_free(void **parser_proc)
 %token_class set_func_token TO_OBJECT TO_ARRAY TO_STRING TO_INT TO_FLOAT TO_BOOL ZVAL VOID .
 %token_class impl_type_token VOID MIXED BOOL INT FLOAT STRING ARRAY OBJECT CALLABLE .
 %token_class assert_stmt_token PRE_ASSERT POST_ASSERT .
+%token_class cpp_message_token ERROR WARNING .
 %nonassoc NAME.
 %right NOT TILDE.
 %left AND OR.
@@ -60,6 +61,7 @@ void psi_parser_proc_free(void **parser_proc)
 %left PLUS MINUS.
 %left ASTERISK SLASH MODULO.
 %fallback NAME TEMP FREE SET LET RETURN CALLOC CALLBACK ZVAL LIB STRING COUNT.
+%wildcard ANY.
 %type decl_enum {struct psi_decl_enum *}
 %destructor decl_enum {psi_decl_enum_free(&$$);}
 %type decl_enum_items {struct psi_plist*}
@@ -169,14 +171,151 @@ void psi_parser_proc_free(void **parser_proc)
 %destructor free_exp {psi_free_exp_free(&$$);}
 %type impl_type {struct psi_impl_type*}
 %destructor impl_type {psi_impl_type_free(&$$);}
+%type cpp_exp {struct psi_cpp_exp*}
+%destructor cpp_exp {psi_cpp_exp_free(&$$);}
+%type cpp_macro_decl {struct psi_cpp_macro_decl*}
+%destructor cpp_macro_decl {psi_cpp_macro_decl_free(&$$);}
+%type cpp_macro_decl_tokens {struct psi_plist*}
+%destructor cpp_macro_decl_tokens {psi_plist_free($$);}
+%type cpp_macro_exp {struct psi_num_exp*}
+%destructor cpp_macro_exp {psi_num_exp_free(&$$);}
+%type cpp_macro_sig {struct psi_plist*}
+%destructor cpp_macro_sig {psi_plist_free($$);}
+%type cpp_macro_sig_args {struct psi_plist*}
+%destructor cpp_macro_sig_args {psi_plist_free($$);}
+%type cpp_macro_call {struct psi_plist*}
+%destructor cpp_macro_call {psi_plist_free($$);}
+%type cpp_macro_call_args {struct psi_plist*}
+%destructor cpp_macro_call_args {psi_plist_free($$);}
 %type reference {bool}
 %type indirection {unsigned}
 %type pointers {unsigned}
 file ::= blocks.
 blocks ::= block.
 blocks ::= blocks block.
-block ::= EOF.
 block ::= EOS.
+block ::= EOL.
+block ::= COMMENT.
+block ::= HASH cpp_exp(exp_) EOL. {
+ P->cpp.exp = exp_;
+}
+cpp_exp(exp) ::= cpp_message_token(T) QUOTED_STRING(S). {
+ exp = psi_cpp_exp_init(T->type, S);
+ exp->token = T;
+}
+cpp_exp(exp) ::= IFDEF(T) NAME(N). {
+ exp = psi_cpp_exp_init(T->type, N);
+ exp->token = T;
+}
+cpp_exp(exp) ::= IFNDEF(T) NAME(N). {
+ exp = psi_cpp_exp_init(T->type, N);
+ exp->token = T;
+}
+cpp_exp(exp) ::= ENDIF(T). {
+ exp = psi_cpp_exp_init(T->type, NULL);
+ exp->token = T;
+}
+cpp_exp(exp) ::= ELSE(T). {
+ exp = psi_cpp_exp_init(T->type, NULL);
+ exp->token = T;
+}
+cpp_exp(exp) ::= UNDEF(T) NAME(N). {
+ exp = psi_cpp_exp_init(T->type, N);
+ exp->token = T;
+}
+cpp_exp(exp) ::= DEFINE(T) NAME(N) cpp_macro_decl(macro). {
+ exp = psi_cpp_exp_init(T->type, macro);
+ exp->token = T;
+ macro->token = N;
+}
+cpp_macro_decl(macro) ::= . {
+ macro = psi_cpp_macro_decl_init(NULL, NULL, NULL);
+}
+cpp_macro_decl(macro) ::= cpp_macro_sig(sig). {
+ macro = psi_cpp_macro_decl_init(sig, NULL, NULL);
+}
+cpp_macro_decl(macro) ::= cpp_macro_sig(sig) cpp_macro_decl_tokens(tokens). {
+ macro = psi_cpp_macro_decl_init(sig, tokens, NULL);
+}
+cpp_macro_sig(sig) ::= NO_WHITESPACE LPAREN cpp_macro_sig_args(args) RPAREN. {
+ sig = args;
+}
+cpp_macro_sig_args(args) ::= . {
+ args = NULL;
+}
+cpp_macro_sig_args(args) ::= NAME(arg). {
+ args = psi_plist_add(psi_plist_init((void (*)(void *)) psi_token_free), &arg);
+}
+cpp_macro_sig_args(args) ::= cpp_macro_sig_args(args_) COMMA NAME(arg). {
+ args = psi_plist_add(args_, &arg);
+}
+cpp_macro_decl(macro) ::= cpp_macro_decl_tokens(tokens). {
+ macro = psi_cpp_macro_decl_init(NULL, tokens, NULL);
+}
+cpp_macro_decl_tokens(tokens) ::= ANY(T). {
+ tokens = psi_plist_add(psi_plist_init((void (*)(void *)) psi_token_free), &T);
+}
+cpp_macro_decl_tokens(tokens) ::= cpp_macro_decl_tokens(tokens_) ANY(T). {
+ tokens = psi_plist_add(tokens_, &T);
+}
+cpp_exp(exp) ::= IF(T) cpp_macro_exp(macro). {
+ exp = psi_cpp_exp_init(T->type, macro);
+ exp->token = T;
+}
+cpp_exp(exp) ::= ELIF(T) cpp_macro_exp(macro). {
+ exp = psi_cpp_exp_init(T->type, macro);
+ exp->token = T;
+}
+cpp_macro_exp(exp) ::= LPAREN(L) cpp_macro_exp(exp_) RPAREN. {
+ exp = psi_num_exp_init_unary(L->type, exp_);
+ exp->token = L;
+}
+cpp_macro_exp(exp) ::= unary_op_token(OP) cpp_macro_exp(exp_). {
+ exp = psi_num_exp_init_unary(OP->type, exp_);
+ exp->token = OP;
+}
+cpp_macro_exp(exp) ::= cpp_macro_exp(lhs) binary_op_token(OP) cpp_macro_exp(rhs). {
+ exp = psi_num_exp_init_binary(OP->type, lhs, rhs);
+ exp->token = OP;
+}
+cpp_macro_exp(exp) ::= DEFINED NAME(N). {
+ {
+  uint8_t exists = zend_hash_str_exists(&P->cpp.defs, N->text, N->size);
+  exp = psi_num_exp_init_num(psi_number_init(PSI_T_UINT8, &exists));
+  exp->token = N;
+ }
+}
+cpp_macro_exp(exp) ::= DEFINED LPAREN NAME(N) RPAREN. {
+ {
+  uint8_t exists = zend_hash_str_exists(&P->cpp.defs, N->text, N->size);
+  exp = psi_num_exp_init_num(psi_number_init(PSI_T_UINT8, &exists));
+  exp->token = N;
+ }
+}
+cpp_macro_exp(exp) ::= number_token(tok). {
+ exp = psi_num_exp_init_num(psi_number_init(tok->type, tok->text));
+ exp->token = tok;
+ exp->data.n->token = psi_token_copy(tok);
+}
+cpp_macro_exp(exp) ::= NAME(N). {
+ exp = psi_num_exp_init_num(psi_number_init(PSI_T_DEFINE, N->text));
+ exp->token = N;
+ exp->data.n->token = psi_token_copy(N);
+}
+cpp_macro_exp(exp) ::= NAME(N) LPAREN cpp_macro_call_args(args) RPAREN. {
+ exp = psi_num_exp_init_num(psi_number_init(PSI_T_FUNCTION,
+   psi_cpp_macro_call_init(N->text, args)));
+ exp->token = N;
+}
+cpp_macro_call_args(args) ::= . {
+ args = NULL;
+}
+cpp_macro_call_args(args) ::= cpp_macro_exp(arg). {
+ args = psi_plist_add(psi_plist_init((void (*)(void *)) psi_num_exp_free), &arg);
+}
+cpp_macro_call_args(args) ::= cpp_macro_call_args(args_) COMMA cpp_macro_exp(arg). {
+ args = psi_plist_add(args_, &arg);
+}
 block ::= LIB(token) QUOTED_STRING(libname) EOS. {
  if (P->file.ln) {
   P->error(PSI_DATA(P), token, PSI_WARNING, "Extra 'lib %s' statement has no effect", libname->text);

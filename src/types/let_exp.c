@@ -248,8 +248,8 @@ void *psi_let_exp_exec(struct psi_let_exp *val, struct psi_decl_arg *darg,
 
 	case PSI_LET_CALLOC:
 		{
-			zend_long n = psi_long_num_exp(val->data.alloc->nmemb, frame);
-			zend_long s = psi_long_num_exp(val->data.alloc->size, frame);
+			zend_long n = psi_long_num_exp(val->data.alloc->nmemb, frame, NULL);
+			zend_long s = psi_long_num_exp(val->data.alloc->size, frame, NULL);
 			void *tmp = *psi_call_frame_push_auto(frame,
 					safe_emalloc(n, s, sizeof(void *)));
 
@@ -262,7 +262,7 @@ void *psi_let_exp_exec(struct psi_let_exp *val, struct psi_decl_arg *darg,
 		{
 			impl_val res;
 			token_t val_type = psi_decl_type_get_real(val->var->arg->type)->type;
-			token_t res_type = psi_num_exp_exec(val->data.num, &res, frame);
+			token_t res_type = psi_num_exp_exec(val->data.num, &res, frame, NULL);
 
 			if (val_type == res_type) {
 				frame_sym->temp_val = res;

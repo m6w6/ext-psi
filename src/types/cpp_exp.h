@@ -1,5 +1,5 @@
 /*******************************************************************************
- Copyright (c) 2016, Michael Wallner <mike@php.net>.
+ Copyright (c) 2017, Michael Wallner <mike@php.net>.
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -23,41 +23,27 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef PSI_PARSER_H
-#define PSI_PARSER_H
+#ifndef PSI_TYPES_CPP_EXP_H
+#define PSI_TYPES_CPP_EXP_H
 
 #include "token.h"
-#include "types.h"
-#include "data.h"
-#include "cpp.h"
 
-struct psi_parser {
-	PSI_DATA_MEMBERS;
-	token_t num;
-	unsigned line, col;
-	char *cur, *tok, *lim, *ctx, *mrk;
+struct psi_cpp_macro_decl;
+struct psi_cpp_macro_call;
+struct psi_num_exp;
 
-	/* internals */
-	void *proc;
-
-	struct psi_cpp_data cpp;
-	struct {
-		char *buffer;
-		size_t length;
-	} input;
+struct psi_cpp_exp {
+	struct psi_token *token;
+	token_t type;
+	union {
+		struct psi_cpp_macro_decl *decl;
+		struct psi_num_exp *num;
+		struct psi_token *tok;
+	} data;
 };
 
-struct psi_parser *psi_parser_init(struct psi_parser *P, psi_error_cb error, unsigned flags);
-bool psi_parser_open_file(struct psi_parser *P, const char *filename);
-bool psi_parser_open_string(struct psi_parser *P, const char *string, size_t length);
-struct psi_plist *psi_parser_scan(struct psi_parser *P);
-void psi_parser_parse(struct psi_parser *P);
-void psi_parser_dtor(struct psi_parser *P);
-void psi_parser_free(struct psi_parser **P);
-
-void *psi_parser_proc_init(void);
-void psi_parser_proc_free(void **parser_proc);
-void psi_parser_proc_parse(void *parser_proc, token_t r, struct psi_token *token, struct psi_parser *parser);
-void psi_parser_proc_trace(FILE *out, char *prefix);
+struct psi_cpp_exp *psi_cpp_exp_init(token_t type, void *data);
+void psi_cpp_exp_free(struct psi_cpp_exp **exp_ptr);
+void psi_cpp_exp_dump(int fd, struct psi_cpp_exp *exp);
 
 #endif

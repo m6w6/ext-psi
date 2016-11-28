@@ -48,6 +48,8 @@ static inline size_t psi_offset_padding(size_t diff, size_t alignment) {
 
 #define PSI_T_POINTER PSI_T_ASTERISK
 #define PSI_T_LONG_DOUBLE (PSI_T_DOUBLE << 16)
+#define PSI_T_BSLASH (PSI_T_SLASH << 16)
+#define PSI_T_WHITESPACE -PSI_T_NO_WHITESPACE
 
 typedef int token_t;
 
@@ -137,9 +139,12 @@ struct psi_parser;
 struct psi_token *psi_token_alloc(struct psi_parser *P);
 size_t psi_token_alloc_size(size_t token_len, size_t fname_len);
 struct psi_token *psi_token_copy(struct psi_token *src);
+void psi_token_copy_ctor(struct psi_token **src);
 struct psi_token *psi_token_cat(unsigned argc, ...);
 struct psi_token *psi_token_append(struct psi_token *T, unsigned argc, ...);
 struct psi_token *psi_token_translit(struct psi_token *T, char *from, char *to);
 uint64_t psi_token_hash(struct psi_token *t, char *digest_buf);
+void psi_token_dump(int fd, struct psi_token *t);
+void psi_token_free(struct psi_token **token);
 
 #endif

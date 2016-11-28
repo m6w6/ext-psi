@@ -37,12 +37,17 @@ struct psi_plist {
 #define PLIST_ELE(l, i) (((char *)(l)->list) + (l)->size * (i))
 #define PLIST_CPY(list, dest, src) do { \
 	if (list->size == sizeof(void *)) { \
-		*(void **)dest = *(void **)src; \
+		*(void **)(dest) = *(void **)(src); \
 	} else { \
 		memcpy(dest, src, list->size); \
 	} \
 } while (0)
-#define PLIST_MOV(l, i) memmove(PLIST_ELE(l, i), PLIST_ELE(l, i + 1), (l)->size * ((l)->count - i))
+/* !!! adjust list->count prior reduction */
+#define PLIST_MOV_REDUCE(l, i) PLIST_MOV_REDUCE_EX(l, i, 1)
+#define PLIST_MOV_REDUCE_EX(l, i, n) memmove(PLIST_ELE(l, i), PLIST_ELE(l, i + n), (l)->size * ((l)->count - i))
+/* !!! adjust list->count after expansion */
+#define PLIST_MOV_EXPAND(l, i) PLIST_MOV_EXPAND_EX(l, i, 1)
+#define PLIST_MOV_EXPAND_EX(l, i, n) memmove(PLIST_ELE(l, i + n), PLIST_ELE(l, i), (l)->size * ((l)->count - i))
 
 struct psi_plist *psi_plist_init(void (*dtor)(void *)) {
 	return psi_plist_init_ex(0, dtor);
@@ -70,8 +75,30 @@ void psi_plist_free(struct psi_plist *list) {
 	free(list);
 }
 
+struct psi_plist *psi_plist_copy(struct psi_plist *list, void (*ctor)(void *))
+{
+	size_t i;
+	struct psi_plist *copy = calloc(1, sizeof(*list) + list->size + list->count * list->size);
+
+	*copy = *list;
+	if (list->count) {
+		memcpy(copy->list, list->list, list->size * list->count);
+	}
+	if (ctor) {
+		for (i = 0; i < list->count; ++i) {
+			void *ptr = PLIST_ELE(copy, i);
+			ctor(ptr);
+		}
+	}
+	return copy;
+}
+
 size_t psi_plist_count(struct psi_plist *list) {
 	return list ? list->count : 0;
+}
+
+void **psi_plist_eles(struct psi_plist *list) {
+	return list ? list->list : NULL;
 }
 
 struct psi_plist *psi_plist_add(struct psi_plist *list, void *ptr) {
@@ -98,11 +125,66 @@ bool psi_plist_del(struct psi_plist *list, size_t index, void *ptr) {
 			PLIST_CPY(list, ptr, PLIST_ELE(list, index));
 		}
 		if (--list->count > index) {
-			PLIST_MOV(list, index);
+			PLIST_MOV_REDUCE(list, index);
 		}
 		return true;
 	}
 	return false;
+}
+
+bool psi_plist_del_range(struct psi_plist *list, size_t offset_start, size_t num_eles, void **eles) {
+	if (list) {
+		size_t offset_end = offset_start + num_eles - 1;
+
+		if (list->count <= offset_end) {
+			offset_end = list->count - 1;
+		}
+		if (offset_end >= offset_start) {
+			num_eles = 1 + offset_end - offset_start;
+
+			if (eles) {
+				memcpy(eles, PLIST_ELE(list, offset_start), num_eles * list->size);
+			}
+
+			if ((list->count -= num_eles)) {
+				PLIST_MOV_REDUCE_EX(list, offset_start, num_eles);
+			}
+			return true;
+		}
+	}
+	return false;
+}
+
+struct psi_plist *psi_plist_ins(struct psi_plist *list, size_t index, void *ptr) {
+	size_t new_count = MAX(list->count + 1, index);
+
+	if (list && new_count) {
+		list = realloc(list, sizeof(*list) + list->size + new_count * list->size);
+	}
+	if (list) {
+		PLIST_MOV_EXPAND(list, index);
+		PLIST_CPY(list, PLIST_ELE(list, index), ptr);
+		list->count = new_count;
+	}
+	return list;
+}
+
+struct psi_plist *psi_plist_ins_range(struct psi_plist *list, size_t offset_start, size_t num_eles, void **eles) {
+	size_t new_count = MAX(offset_start, list->count) + num_eles;
+
+	if (list && new_count) {
+		list = realloc(list, sizeof(*list) + list->size + new_count * list->size);
+	}
+	if (list) {
+		size_t e;
+
+		PLIST_MOV_EXPAND_EX(list, offset_start, num_eles);
+		for (e = 0; e < num_eles; ++e) {
+			PLIST_CPY(list, PLIST_ELE(list, offset_start + e), &eles[e]);
+		}
+		list->count = new_count;
+	}
+	return list;
 }
 
 bool psi_plist_shift(struct psi_plist *list, void *ptr) {
@@ -111,7 +193,7 @@ bool psi_plist_shift(struct psi_plist *list, void *ptr) {
 			PLIST_CPY(list, ptr, PLIST_ELE(list, 0));
 		}
 		if (--list->count) {
-			PLIST_MOV(list, 0);
+			PLIST_MOV_REDUCE(list, 0);
 		}
 		return true;
 	}
@@ -153,4 +235,3 @@ void psi_plist_sort(struct psi_plist *list, compare_func_t cmp, swap_func_t swp)
 	assert(swp);
 	zend_insert_sort((void *) list->list, list->count, list->size, cmp, swp);
 }
-

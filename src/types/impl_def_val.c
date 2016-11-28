@@ -96,6 +96,9 @@ bool psi_impl_def_val_validate(struct psi_data *data,
 
 void psi_impl_def_val_dump(int fd, struct psi_impl_def_val *val) {
 	switch (val->type) {
+	case PSI_T_BOOL:
+		dprintf(fd, "%s", val->ival.zend.bval ? "true" : "false");
+		break;
 	case PSI_T_INT:
 		dprintf(fd, "%ld", val->ival.zend.lval);
 		break;

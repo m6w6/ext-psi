@@ -66,14 +66,16 @@ bool psi_num_exp_validate(struct psi_data *data, struct psi_num_exp *exp,
 		struct psi_let_exp *current_let, struct psi_set_exp *current_set,
 		struct psi_decl_enum *current_enum);
 
-token_t psi_num_exp_exec(struct psi_num_exp *exp, impl_val *res, struct psi_call_frame *frame);
+token_t psi_num_exp_exec(struct psi_num_exp *exp, impl_val *res,
+		struct psi_call_frame *frame, HashTable *defs);
 
 #include <assert.h>
 
-static inline zend_long psi_long_num_exp(struct psi_num_exp *exp, struct psi_call_frame *frame) {
+static inline zend_long psi_long_num_exp(struct psi_num_exp *exp,
+		struct psi_call_frame *frame, HashTable *defs) {
 	impl_val val = {0};
 
-	switch (psi_num_exp_exec(exp, &val, frame)) {
+	switch (psi_num_exp_exec(exp, &val, frame, defs)) {
 	case PSI_T_UINT8:	return val.u8;
 	case PSI_T_UINT16:	return val.u16;
 	case PSI_T_UINT32:	return val.u32;

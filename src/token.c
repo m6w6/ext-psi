@@ -25,6 +25,8 @@
 
 #include "php_psi_stdinc.h"
 
+#include <ctype.h>
+
 #include "token.h"
 #include "parser.h"
 
@@ -59,6 +61,15 @@ struct psi_token *psi_token_alloc(struct psi_parser *P) {
 	return T;
 }
 
+void psi_token_free(struct psi_token **token_ptr) {
+	if (*token_ptr) {
+		struct psi_token *token = *token_ptr;
+
+		*token_ptr = NULL;
+		free(token);
+	}
+}
+
 struct psi_token *psi_token_copy(struct psi_token *src) {
 	size_t strct_len = psi_token_alloc_size(src->size, strlen(src->file));
 	struct psi_token *ptr = malloc(strct_len);
@@ -69,6 +80,10 @@ struct psi_token *psi_token_copy(struct psi_token *src) {
 	ptr->file = &ptr->buf[ptr->size + 1];
 
 	return ptr;
+}
+
+void psi_token_copy_ctor(struct psi_token **tok) {
+	*tok = psi_token_copy(*tok);
 }
 
 struct psi_token *psi_token_cat(unsigned argc, ...) {
@@ -161,4 +176,50 @@ uint64_t psi_token_hash(struct psi_token *t, char *digest_buf) {
 
 	sprintf(loc_buf, "%u%u", t->line, t->col);
 	return psi_hash(digest_buf, t->file, loc_buf, (char *) NULL);
+}
+
+void psi_token_dump(int fd, struct psi_token *t)
+{
+	size_t i;
+
+	dprintf(fd, "TOKEN %p (%d) \"", t, t->type);
+	for (i = 0; i < MIN(t->size, 16); ++i) {
+		switch (t->text[i]) {
+		case '\0':
+			dprintf(fd, "\\0");
+			break;
+		case '\a':
+			dprintf(fd, "\\a");
+			break;
+		case '\b':
+			dprintf(fd, "\\b");
+			break;
+		case '\f':
+			dprintf(fd, "\\f");
+			break;
+		case '\n':
+			dprintf(fd, "\\n");
+			break;
+		case '\r':
+			dprintf(fd, "\\r");
+			break;
+		case '\t':
+			dprintf(fd, "\\t");
+			break;
+		case '\v':
+			dprintf(fd, "\\v");
+			break;
+		case '"':
+			dprintf(fd, "\\\"");
+			break;
+		default:
+			if (isprint(t->text[i])) {
+				dprintf(fd, "%c", t->text[i]);
+			} else {
+				dprintf(fd, "\\%03hho", t->text[i]);
+			}
+			break;
+		}
+	}
+	dprintf(fd, "\" at col %u in %s on line %u\n", t->col, t->file, t->line);
 }

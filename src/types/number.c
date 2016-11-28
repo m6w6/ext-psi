@@ -30,7 +30,7 @@
 #include "data.h"
 #include "calc.h"
 #include "call.h"
-
+#include "parser.h"
 
 struct psi_number *psi_number_init(token_t t, void *num)
 {
@@ -69,10 +69,14 @@ struct psi_number *psi_number_init(token_t t, void *num)
 		break;
 	case PSI_T_NUMBER:
 	case PSI_T_NSNAME:
+	case PSI_T_DEFINE:
 		exp->data.numb = strdup(num);
 		break;
 	case PSI_T_NAME:
 		exp->data.dvar = num;
+		break;
+	case PSI_T_FUNCTION:
+		exp->data.call = num;
 		break;
 	default:
 		assert(0);
@@ -98,10 +102,14 @@ struct psi_number *psi_number_copy(struct psi_number *exp)
 		break;
 	case PSI_T_NUMBER:
 	case PSI_T_NSNAME:
+	case PSI_T_DEFINE:
 		num->data.numb = strdup(num->data.numb);
 		break;
 	case PSI_T_NAME:
 		num->data.dvar = psi_decl_var_copy(num->data.dvar);
+		break;
+	case PSI_T_FUNCTION:
+		num->data.call = psi_cpp_macro_call_copy(num->data.call);
 		break;
 	default:
 		assert(0);
@@ -124,8 +132,12 @@ void psi_number_free(struct psi_number **exp_ptr)
 		case PSI_T_ENUM:
 		case PSI_T_CONST:
 			break;
+		case PSI_T_FUNCTION:
+			psi_cpp_macro_call_free(&exp->data.call);
+			break;
 		case PSI_T_NSNAME:
 		case PSI_T_NUMBER:
+		case PSI_T_DEFINE:
 			free(exp->data.numb);
 			break;
 		case PSI_T_NAME:
@@ -149,6 +161,7 @@ void psi_number_dump(int fd, struct psi_number *exp)
 		break;
 	case PSI_T_NUMBER:
 	case PSI_T_NSNAME:
+	case PSI_T_DEFINE:
 		dprintf(fd, "%s", exp->data.numb);
 		break;
 	case PSI_T_CONST:
@@ -197,6 +210,8 @@ bool psi_number_validate(struct psi_data *data, struct psi_number *exp,
 	case PSI_T_INT64:
 	case PSI_T_DOUBLE:
 	case PSI_T_ENUM:
+	case PSI_T_DEFINE:
+	case PSI_T_FUNCTION:
 		return true;
 
 	case PSI_T_NAME:
@@ -302,7 +317,18 @@ static inline token_t psi_number_eval_decl_var(struct psi_number *exp,
 	return real->type;
 }
 
-token_t psi_number_eval(struct psi_number *exp, impl_val *res, struct psi_call_frame *frame)
+static inline token_t psi_number_eval_define(struct psi_number *exp,
+		impl_val *res, HashTable *defs)
+{
+	struct psi_cpp_macro_decl *macro = zend_hash_str_find_ptr(defs, exp->data.numb, strlen(exp->data.numb));
+
+	//WHATT?
+
+	res->u8 = 0;
+	return PSI_T_UINT8;
+}
+
+token_t psi_number_eval(struct psi_number *exp, impl_val *res, struct psi_call_frame *frame, HashTable *defs)
 {
 	switch (exp->type) {
 	case PSI_T_INT64:
@@ -322,11 +348,16 @@ token_t psi_number_eval(struct psi_number *exp, impl_val *res, struct psi_call_f
 
 	case PSI_T_CONST:
 		return psi_number_eval_constant(exp, res, frame);
-		break;
 
 	case PSI_T_NAME:
 		return psi_number_eval_decl_var(exp, res, frame);
-		break;
+
+	case PSI_T_DEFINE:
+		return psi_number_eval_define(exp, res, defs);
+
+	case PSI_T_FUNCTION:
+		res->u8 = 0;
+		return PSI_T_UINT8;
 
 	default:
 		assert(0);

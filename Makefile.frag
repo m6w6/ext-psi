@@ -23,7 +23,8 @@ $(PHP_PSI_BUILDDIR)/lemon: $(PHP_PSI_BUILDDIR)/lemon.c | $(PHP_PSI_BUILDDIR)/lem
 $(PHP_PSI_SRCDIR)/src/parser_proc.h: $(PHP_PSI_SRCDIR)/src/parser_proc.c
 
 $(PHP_PSI_SRCDIR)/src/parser_proc.inc:
-$(PHP_PSI_SRCDIR)/src/parser_proc.y: $(PHP_PSI_SRCDIR)/src/parser_def.h $(PHP_PSI_SRCDIR)/src/parser_proc.inc
+$(PHP_PSI_SRCDIR)/src/parser_proc_def.h: $(PHP_PSI_SRCDIR)/src/parser_def.h
+$(PHP_PSI_SRCDIR)/src/parser_proc.y: $(PHP_PSI_SRCDIR)/src/parser_proc_def.h $(PHP_PSI_SRCDIR)/src/parser_proc.inc
 	cat $(PHP_PSI_SRCDIR)/src/parser_proc.inc >$@
 	$(CPP) -P -DGENERATE $< >>$@
 $(PHP_PSI_SRCDIR)/src/parser_proc.c: $(PHP_PSI_SRCDIR)/src/parser_proc.y $(LEMON)

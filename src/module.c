@@ -143,14 +143,7 @@ static PHP_FUNCTION(psi_validate)
 		RETURN_FALSE;
 	}
 
-	while (0 < psi_parser_scan(&P)) {
-		psi_parser_parse(&P, psi_token_alloc(&P));
-		if (P.num == PSI_T_EOF) {
-			break;
-		}
-	}
-	psi_parser_parse(&P, NULL);
-
+	psi_parser_parse(&P);
 	psi_data_ctor(&D, P.error, P.flags);
 	RETVAL_BOOL(psi_data_validate(&D, PSI_DATA(&P)) && !P.errors);
 	psi_data_dtor(&D);
@@ -180,14 +173,7 @@ static PHP_FUNCTION(psi_validate_string)
 		RETURN_FALSE;
 	}
 
-	while (0 < psi_parser_scan(&P)) {
-		psi_parser_parse(&P, psi_token_alloc(&P));
-		if (P.num == PSI_T_EOF) {
-			break;
-		}
-	}
-	psi_parser_parse(&P, NULL);
-
+	psi_parser_parse(&P);
 	psi_data_ctor(&D, P.error, P.flags);
 	RETVAL_BOOL(psi_data_validate(&D, PSI_DATA(&P)) && !P.errors);
 	psi_data_dtor(&D);
