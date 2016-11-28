@@ -132,7 +132,7 @@
 %destructor free_exp {psi_free_exp_free(&$$);}
 %type impl_type {struct psi_impl_type*}
 %destructor impl_type {psi_impl_type_free(&$$);}
-%type reference {char}
+%type reference {bool}
 %type indirection {unsigned}
 %type pointers {unsigned}
 file ::= blocks.
@@ -850,10 +850,10 @@ free_exp(call) ::= NAME(F) LPAREN decl_vars(vars) RPAREN. {
  call->token = F;
 }
 reference(r) ::= . {
- r = 0;
+ r = false;
 }
 reference(r) ::= AMPERSAND. {
- r = 1;
+ r = true;
 }
 indirection(i) ::= .{
  i = 0;

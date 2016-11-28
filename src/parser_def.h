@@ -199,7 +199,7 @@ TOKEN_TYPE(free_exp, struct psi_free_exp*)
 TOKEN_DTOR(free_exp, psi_free_exp_free(&$$);)
 TOKEN_TYPE(impl_type, struct psi_impl_type*)
 TOKEN_DTOR(impl_type, psi_impl_type_free(&$$);)
-TOKEN_TYPE(reference, char)
+TOKEN_TYPE(reference, bool)
 TOKEN_TYPE(indirection, unsigned)
 TOKEN_TYPE(pointers, unsigned)
 
@@ -1823,7 +1823,7 @@ PARSE_TYPED(free_exp, call,
  * reference: <empty>
  */
 PARSE_TYPED(reference, r, ) {
-	r = 0;
+	r = false;
 }
 
 /*
@@ -1831,7 +1831,7 @@ PARSE_TYPED(reference, r, ) {
  */
 PARSE_TYPED(reference, r,
 		TOKEN(AMPERSAND)) {
-	r = 1;
+	r = true;
 }
 
 /*

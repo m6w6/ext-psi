@@ -9,9 +9,7 @@ extension_loaded("psi") or die("skip - need ext/psi");
 <?php 
 
 function validate($check, $psi) {
-	$file = __DIR__."/001.psi";
-	file_put_contents($file, $psi);
-	if ($check !== psi_validate($file)) {
+	if ($check !== psi_validate_string($psi)) {
 		printf("Assertion failed!\nExpected: %s\n\n%s\n\n",
 				$check ? "true" : "false", $psi);
 	}
@@ -79,22 +77,18 @@ validate(true, "typedef int bar(int baz); \ntypedef int *(*foo)(bar bar);");
 
 ?>
 ===DONE===
---CLEAN--
-<?php
-@unlink(__DIR__."/001.psi");
-?>
 --EXPECTF--
 ===TEST===
 
-Warning: PSI syntax error: Unexpected token ';' at pos 17 in %s001.psi on line 1
+Warning: PSI syntax error: Unexpected token ';' at pos 17 in %s on line 1
 
-Warning: PSI syntax error: Unexpected token 'int' at pos 14 in %s001.psi on line 1
+Warning: PSI syntax error: Unexpected token 'int' at pos 14 in %s on line 1
 
-Warning: Cannot compute size of empty struct 'a' in %s001.psi on line 1
+Warning: Cannot compute size of empty struct 'a' in %s on line 1
 
-Warning: Unknown variable 'X' in numeric expression in %s001.psi on line 4
+Warning: Unknown variable 'X' in numeric expression in %s on line 4
 
-Warning: PSI syntax error: Unexpected token '(' at pos 26 in %s001.psi on line 1
+Warning: PSI syntax error: Unexpected token '(' at pos 26 in %s on line 1
 
-Warning: PSI syntax error: Unexpected token '(' at pos 32 in %s001.psi on line 1
+Warning: PSI syntax error: Unexpected token '(' at pos 32 in %s on line 1
 ===DONE===

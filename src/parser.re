@@ -1,4 +1,5 @@
 #include "php_psi_stdinc.h"
+#include <sys/mman.h>
 #include <assert.h>
 
 #include "parser.h"
@@ -8,28 +9,15 @@ void psi_parser_proc_Free(void*, void(*)(void*));
 void psi_parser_proc_(void *, token_t, struct psi_token *, struct psi_parser *);
 void psi_parser_proc_Trace(FILE *, const char*);
 
-struct psi_parser *psi_parser_init(struct psi_parser *P, const char *filename, psi_error_cb error, unsigned flags)
+struct psi_parser *psi_parser_init(struct psi_parser *P, psi_error_cb error, unsigned flags)
 {
-	FILE *fp;
-
-	fp = fopen(filename, "r");
-
-	if (!fp) {
-		if (!(flags & PSI_SILENT)) {
-			error(NULL, NULL, PSI_WARNING, "Could not open '%s' for reading: %s",
-					filename, strerror(errno));
-		}
-		return NULL;
-	}
-
 	if (!P) {
 		P = malloc(sizeof(*P));
 	}
 	memset(P, 0, sizeof(*P));
 
 	psi_data_ctor_with_dtors(PSI_DATA(P), error, flags);
-	P->file.fn = strdup(filename);
-	P->fp = fp;
+
 	P->col = 1;
 	P->line = 1;
 	P->proc = psi_parser_proc_Alloc(malloc);
@@ -38,49 +26,126 @@ struct psi_parser *psi_parser_init(struct psi_parser *P, const char *filename, p
 		psi_parser_proc_Trace(stderr, "PSI> ");
 	}
 
-	psi_parser_fill(P, 0);
-
 	return P;
 }
 
-ssize_t psi_parser_fill(struct psi_parser *P, size_t n)
+bool psi_parser_open_file(struct psi_parser *P, const char *filename)
 {
-	if (P->flags & PSI_DEBUG) {
-		fprintf(stderr, "PSI> Fill: n=%zu\n", n);
+	FILE *fp = fopen(filename, "r");
+
+	if (!fp) {
+		P->error(PSI_DATA(P), NULL, PSI_WARNING,
+				"Could not open '%s' for reading: %s",
+				filename, strerror(errno));
+		return false;
 	}
+
+	P->input.type = PSI_PARSE_FILE;
+	P->input.data.file.handle = fp;
+
+#if HAVE_MMAP
+	struct stat sb;
+	int fd = fileno(fp);
+
+	if (fstat(fd, &sb)) {
+		P->error(PSI_DATA(P), NULL, PSI_WARNING,
+				"Could not stat '%s': %s",
+				filename, strerror(errno));
+		return false;
+	}
+
+	P->input.data.file.buffer = mmap(NULL, sb.st_size, PROT_READ, MAP_SHARED, fd, 0);
+	if (MAP_FAILED == P->input.data.file.buffer) {
+		P->error(PSI_DATA(P), NULL, PSI_WARNING,
+				"Could not map '%s' for reading: %s",
+				filename, strerror(errno));
+		return false;
+	}
+	P->input.data.file.length = sb.st_size;
+#else
+	P->input.data.file.buffer = malloc(BSIZE);
+#endif
+
+	P->file.fn = strdup(filename);
+
+	return true;
+}
+
+bool psi_parser_open_string(struct psi_parser *P, const char *string, size_t length)
+{
+	P->input.type = PSI_PARSE_STRING;
+	P->input.data.string.length = length;
+	if (!(P->input.data.string.buffer = strndup(string, length))) {
+		return false;
+	}
+
+	P->file.fn = strdup("<input>");
+
+	return true;
+}
+
+static ssize_t psi_parser_fill(struct psi_parser *P, size_t n)
+{
+	PSI_DEBUG_PRINT(P, "PSI> Fill: n=%zu (input.type=%d)\n", n, P->input.type);
+
+	/* init if n==0 */
 	if (!n) {
-		P->cur = P->tok = P->lim = P->mrk = P->buf;
-		P->eof = NULL;
-	}
+		switch (P->input.type) {
+		case PSI_PARSE_FILE:
+			P->cur = P->tok = P->mrk = P->input.data.file.buffer;
+#if HAVE_MMAP
+			P->eof = P->input.data.file.buffer + P->input.data.file.length;
+			P->lim = P->eof;
+#else
+			P->eof = NULL;
+			P->lim = P->input.data.file.buffer;
+#endif
+			break;
 
-	if (!P->eof) {
-		size_t consumed = P->tok - P->buf;
-		size_t reserved = P->lim - P->tok;
-		size_t available = BSIZE - reserved;
-		size_t didread;
-
-		if (consumed) {
-			memmove(P->buf, P->tok, reserved);
-			P->tok -= consumed;
-			P->cur -= consumed;
-			P->lim -= consumed;
-			P->mrk -= consumed;
+		case PSI_PARSE_STRING:
+			P->cur = P->tok = P->mrk = P->input.data.string.buffer;
+			P->eof = P->input.data.string.buffer + P->input.data.string.length;
+			P->lim = P->eof;
+			break;
 		}
 
-		didread = fread(P->lim, 1, available, P->fp);
-		P->lim += didread;
-		if (didread < available) {
-			P->eof = P->lim;
-		}
+		PSI_DEBUG_PRINT(P, "PSI> Fill: cur=%p lim=%p eof=%p\n", P->cur, P->lim, P->eof);
+	}
 
-		if (P->flags & PSI_DEBUG) {
-			fprintf(stderr, "PSI> Fill: consumed=%zu reserved=%zu available=%zu didread=%zu\n",
-				consumed, reserved, available, didread);
+	switch (P->input.type) {
+	case PSI_PARSE_STRING:
+		break;
+
+	case PSI_PARSE_FILE:
+#if !HAVE_MMAP
+		if (!P->eof) {
+			size_t consumed = P->tok - P->buf;
+			size_t reserved = P->lim - P->tok;
+			size_t available = BSIZE - reserved;
+			size_t didread;
+
+			if (consumed) {
+				memmove(P->buf, P->tok, reserved);
+				P->tok -= consumed;
+				P->cur -= consumed;
+				P->lim -= consumed;
+				P->mrk -= consumed;
+			}
+
+			didread = fread(P->lim, 1, available, P->fp);
+			P->lim += didread;
+			if (didread < available) {
+				P->eof = P->lim;
+			}
+			PSI_DEBUG_PRINT(P, "PSI> Fill: consumed=%zu reserved=%zu available=%zu didread=%zu\n",
+					consumed, reserved, available, didread);
 		}
+#endif
+		break;
 	}
-	if (P->flags & PSI_DEBUG) {
-		fprintf(stderr, "PSI> Fill: avail=%td\n", P->lim - P->cur);
-	}
+
+	PSI_DEBUG_PRINT(P, "PSI> Fill: avail=%td\n", P->lim - P->cur);
+
 	return P->lim - P->cur;
 }
 
@@ -97,8 +162,25 @@ void psi_parser_dtor(struct psi_parser *P)
 {
 	psi_parser_proc_Free(P->proc, free);
 
-	if (P->fp) {
-		fclose(P->fp);
+	switch (P->input.type) {
+	case PSI_PARSE_FILE:
+		if (P->input.data.file.buffer) {
+#if HAVE_MMAP
+			munmap(P->input.data.file.buffer, P->input.data.file.length);
+#else
+			free(P->input.data.file.buffer);
+#endif
+		}
+		if (P->input.data.file.handle) {
+			fclose(P->input.data.file.handle);
+		}
+		break;
+
+	case PSI_PARSE_STRING:
+		if (P->input.data.string.buffer) {
+			free(P->input.data.string.buffer);
+		}
+		break;
 	}
 
 	psi_data_dtor(PSI_DATA(P));
@@ -116,19 +198,15 @@ void psi_parser_free(struct psi_parser **P)
 }
 
 /*!max:re2c*/
-#define BSIZE 256
-
 #if BSIZE < YYMAXFILL
 # error BSIZE must be greater than YYMAXFILL
 #endif
 
 #define RETURN(t) do { \
 	P->num = t; \
-	if (P->flags & PSI_DEBUG) { \
-		fprintf(stderr, "PSI> TOKEN: %d %.*s (EOF=%d %s:%u:%u)\n", \
+	PSI_DEBUG_PRINT(P, "PSI> TOKEN: %d %.*s (EOF=%d %s:%u:%u)\n", \
 				P->num, (int) (P->cur-P->tok), P->tok, P->num == PSI_T_EOF, \
 				P->file.fn, P->line, P->col); \
-	} \
 	return t; \
 } while(1)
 
@@ -142,6 +220,9 @@ void psi_parser_free(struct psi_parser **P)
 
 token_t psi_parser_scan(struct psi_parser *P)
 {
+	if (!P->cur) {
+		psi_parser_fill(P, 0);
+	}
 	for (;;) {
 		ADDCOLS;
 	nextline:

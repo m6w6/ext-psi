@@ -36,16 +36,38 @@
 
 struct psi_parser {
 	PSI_DATA_MEMBERS;
-	FILE *fp;
 	token_t num;
-	void *proc;
 	unsigned line, col;
-	char *cur, *tok, *lim, *eof, *ctx, *mrk, buf[BSIZE];
+	char *cur, *tok, *lim, *eof, *ctx, *mrk;
+
+	/* internals */
+	void *proc;
+
+	struct {
+		enum psi_parser_input_type {
+			PSI_PARSE_FILE = 1,
+			PSI_PARSE_STRING
+		} type;
+
+		union {
+			struct {
+				FILE *handle;
+				char *buffer;
+#if HAVE_MMAP
+				size_t length;
+#endif
+			} file;
+			struct {
+				char *buffer;
+				size_t length;
+			} string;
+		} data;
+	} input;
 };
 
-struct psi_parser *psi_parser_init(struct psi_parser *P, const char *filename, psi_error_cb error, unsigned flags);
-void psi_parser_syntax_error(struct psi_parser *P, const char *fn, size_t ln, const char *msg, ...);
-ssize_t psi_parser_fill(struct psi_parser *P, size_t n);
+struct psi_parser *psi_parser_init(struct psi_parser *P, psi_error_cb error, unsigned flags);
+bool psi_parser_open_file(struct psi_parser *P, const char *filename);
+bool psi_parser_open_string(struct psi_parser *P, const char *string, size_t length);
 token_t psi_parser_scan(struct psi_parser *P);
 void psi_parser_parse(struct psi_parser *P, struct psi_token *src);
 void psi_parser_dtor(struct psi_parser *P);

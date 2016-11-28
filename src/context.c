@@ -250,8 +250,13 @@ void psi_context_build(struct psi_context *C, const char *paths)
 					C->error(PSI_DATA(C), NULL, PSI_WARNING, "Path to PSI file too long: %s/%s",
 						ptr, entries[i]->d_name);
 				}
-				if (!psi_parser_init(&P, psi, C->error, C->flags)) {
+				if (!psi_parser_init(&P, C->error, C->flags)) {
 					C->error(PSI_DATA(C), NULL, PSI_WARNING, "Failed to init PSI parser (%s): %s",
+						psi, strerror(errno));
+					continue;
+				}
+				if (!psi_parser_open_file(&P, psi)) {
+					C->error(PSI_DATA(C), NULL, PSI_WARNING, "Failed to open PSI file (%s): %s",
 						psi, strerror(errno));
 					continue;
 				}
