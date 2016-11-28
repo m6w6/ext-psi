@@ -18,7 +18,7 @@ env:
 
 $gen = include __DIR__."/../travis/pecl/gen-matrix.php";
 $env = $gen([
-	"PHP" => ["7.0", "7.1", "master"],
+	"PHP" => ["master"],
 	"enable_debug",
 	#"enable_maintainer_zts",
 	"enable_psi" => ["yes"],
@@ -38,4 +38,5 @@ script:
  - make -f travis/pecl/Makefile test
 
 after_failure:
- - cat config.log
+ - cat config.log | curl -F 'sprunge=<-' http://sprunge.us
+ - ldd .libs/psi.so
