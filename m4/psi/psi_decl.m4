@@ -84,7 +84,7 @@ dnl Adds a pre-defined (vararg) decl to $PSI_VA_DECLS/$PSI_DECLS.
 dnl Calls PSI_MACRO if PSI_FUNC fails.
 AC_DEFUN(PSI_DECL, [
 	AC_REQUIRE([PSI_FUNC_LIBC_MAIN])dnl
-	
+
 	PSI_DECL_ARGS($1, $2)
 
 	psi_symbol="PSI_VAR_NAME($1)"
@@ -95,33 +95,34 @@ AC_DEFUN(PSI_DECL, [
 			decl_save_LIBS=$LIBS
 			LIBS=$lib
 			AC_TRY_LINK(PSI_INCLUDES, [
-				void (*fn)(void) = (void (*)(void)) $psi_symbol; (*fn)()
+				void (*fn)(long, long, long) = (void (*)(long,long,long)) $psi_symbol;
+				fn(1,2,3);
 			], [
 				psi_symbol_redirect=`nm -g conftest$ac_exeext | $AWK -F ' *|@' '/^@<:@@<:@:space:@:>@@:>@+U '$psi_cv_libc_main'/ {next} /^@<:@@<:@:space:@:>@@:>@+U / {print$[]3; exit}'`
 			])
 			LIBS=$decl_save_LIBS
-			
+
 			if test -n "$psi_symbol_redirect"; then
 				if test -n "$lib"; then
 					psi_decl_check="$psi_symbol_redirect in $lib"
 				else
-					psi_decl_check="$psi_symbol_redirect" 
+					psi_decl_check="$psi_symbol_redirect"
 				fi
 				break
 			fi
 		done
 		[psi_cv_fn_]PSI_VAR_NAME($1)=$psi_decl_check
 	])
-	
+
 	psi_symbol_redirect=`AS_ECHO("$[psi_cv_fn_]PSI_VAR_NAME($1)") | $AWK -F " in " '{print [$]1}'`
 	psi_symbol_libflag=`AS_ECHO("$[psi_cv_fn_]PSI_VAR_NAME($1)") | $AWK -F " in " '{print [$]2}'`
-	
+
 	if test -n "$psi_symbol_libflag"; then
 		if ! expr "X$LIBS" : "X.*\b$psi_symbol_libflag\b" >/dev/null; then
 			LIBS="$psi_symbol_libflag $LIBS"
 		fi
 	fi
-	
+
 	case "$psi_symbol_redirect" in
 	"$psi_symbol"|"_$psi_symbol")
 		case "$PHP_DEBUG-$3" in
@@ -131,6 +132,10 @@ AC_DEFUN(PSI_DECL, [
 			])
 			;;
 		*)
+			if test -n "$psi_symbol_libflag"
+			then
+				PSI_REDIR($psi_symbol)
+			fi
 			psi_add_decl "$psi_decl_args" $3
 			;;
 		esac
