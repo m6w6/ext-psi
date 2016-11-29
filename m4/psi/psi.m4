@@ -294,7 +294,10 @@ dnl PSI_LEMON()
 dnl Declare $LEMON precious, and check for a `lemon` in $PATH.
 AC_DEFUN(PSI_LEMON, [
 	AC_ARG_VAR(LEMON, The lemon parser generator of the SQLite project)
-	AC_PATH_PROG(LEMON, lemon, ./lemon)
+	if test -z "$LEMON"
+	then
+		AC_PATH_PROG(LEMON, lemon, ./lemon)
+	fi
 	PHP_SUBST(LEMON)
 ])
 
