@@ -122,18 +122,20 @@ static PHP_FUNCTION(psi_dump)
 
 ZEND_BEGIN_ARG_INFO_EX(ai_psi_validate, 0, 0, 1)
 	ZEND_ARG_INFO(0, file)
+	ZEND_ARG_INFO(0, flags)
 ZEND_END_ARG_INFO();
 static PHP_FUNCTION(psi_validate)
 {
 	zend_string *file;
 	struct psi_parser P;
 	struct psi_data D = {0};
+	zend_long flags = 0;
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "P", &file)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "P|l", &file, &flags)) {
 		return;
 	}
 
-	if (!psi_parser_init(&P, psi_error_wrapper, 0)) {
+	if (!psi_parser_init(&P, psi_error_wrapper, flags)) {
 		RETURN_FALSE;
 	}
 	if (!psi_parser_open_file(&P, file->val)) {
@@ -164,12 +166,13 @@ static PHP_FUNCTION(psi_validate_string)
 	zend_string *string;
 	struct psi_parser P;
 	struct psi_data D = {0};
+	zend_long flags = 0;
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "S", &string)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "S|l", &string, &flags)) {
 		return;
 	}
 
-	if (!psi_parser_init(&P, psi_error_wrapper, 0)) {
+	if (!psi_parser_init(&P, psi_error_wrapper, flags)) {
 		RETURN_FALSE;
 	}
 	if (!psi_parser_open_string(&P, string->val, string->len)) {
@@ -198,14 +201,10 @@ static PHP_MINIT_FUNCTION(psi)
 	zend_class_entry ce = {0};
 	unsigned flags = 0;
 
-	if (psi_check_env("PSI_DEBUG")) {
-		flags |= PSI_DEBUG;
-	}
-	if (psi_check_env("PSI_SILENT")) {
-		flags |= PSI_SILENT;
-	}
-
 	REGISTER_INI_ENTRIES();
+
+	zend_register_long_constant(ZEND_STRL("PSI_DEBUG"), PSI_DEBUG, CONST_CS|CONST_PERSISTENT, module_number);
+	zend_register_long_constant(ZEND_STRL("PSI_SILENT"), PSI_SILENT, CONST_CS|CONST_PERSISTENT, module_number);
 
 	INIT_NS_CLASS_ENTRY(ce, "psi", "object", NULL);
 	psi_class_entry = zend_register_internal_class_ex(&ce, NULL);
@@ -228,6 +227,13 @@ static PHP_MINIT_FUNCTION(psi)
 	if (!ops) {
 		php_error(E_WARNING, "No PSI engine found");
 		return FAILURE;
+	}
+
+	if (psi_check_env("PSI_DEBUG")) {
+		flags |= PSI_DEBUG;
+	}
+	if (psi_check_env("PSI_SILENT")) {
+		flags |= PSI_SILENT;
 	}
 
 	PSI_G(context) = psi_context_init(NULL, ops, psi_error_wrapper, flags);

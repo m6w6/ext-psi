@@ -26,6 +26,7 @@
 #include "php_psi_stdinc.h"
 #include "data.h"
 #include "call.h"
+#include "calc.h"
 #include "marshal.h"
 
 struct psi_set_exp *psi_set_exp_init(enum psi_set_exp_kind kind, void *data)
@@ -74,8 +75,16 @@ void psi_set_exp_exec_ex(struct psi_set_exp *val, zval *zv, impl_val *iv,
 		val->data.func->handler(zv, val, iv, frame);
 		break;
 	case PSI_SET_NUMEXP:
-		psi_num_exp_exec(val->data.num, iv, frame);
-		psi_set_to_int(zv, val, iv, frame);
+		switch (psi_num_exp_exec(val->data.num, iv, frame)) {
+		case PSI_T_FLOAT:
+		case PSI_T_DOUBLE:
+		case PSI_T_LONG_DOUBLE:
+			psi_set_to_float(zv, val, iv, frame);
+			break;
+		default:
+			psi_set_to_int(zv, val, iv, frame);
+			break;
+		}
 		break;
 	default:
 		assert(0);

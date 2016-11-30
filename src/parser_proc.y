@@ -15,15 +15,18 @@
 %extra_argument {struct psi_parser *P}
 %syntax_error { ++P->errors; if (TOKEN && TOKEN->type != PSI_T_EOF) { psi_error(PSI_WARNING, TOKEN->file, TOKEN->line, "PSI syntax error: Unexpected token '%s' at pos %u", TOKEN->text, TOKEN->col); } else { psi_error(PSI_WARNING, P->file.fn, P->line, "PSI syntax error: Unexpected end of input"); } }
 %nonassoc NAME.
+%left LSHIFT RSHIFT.
 %left PLUS MINUS.
 %left ASTERISK SLASH.
 %nonassoc AMPERSAND.
+%nonassoc CARET.
+%nonassoc PIPE.
 %fallback NAME TEMP FREE SET LET RETURN CALLOC CALLBACK ZVAL LIB STRING COUNT.
 %token_class const_type_token BOOL INT FLOAT STRING.
 %token_class decl_type_token FLOAT DOUBLE INT8 UINT8 INT16 UINT16 INT32 UINT32 INT64 UINT64 NAME.
 %token_class impl_def_val_token NULL NUMBER TRUE FALSE QUOTED_STRING.
 %token_class num_exp_token NUMBER NSNAME.
-%token_class num_exp_op_token PLUS MINUS ASTERISK SLASH.
+%token_class num_exp_op_token LSHIFT RSHIFT PLUS MINUS ASTERISK SLASH AMPERSAND CARET PIPE.
 %token_class let_func_token ZVAL OBJVAL ARRVAL PATHVAL STRLEN STRVAL FLOATVAL INTVAL BOOLVAL COUNT.
 %token_class set_func_token TO_OBJECT TO_ARRAY TO_STRING TO_INT TO_FLOAT TO_BOOL ZVAL VOID.
 %token_class impl_type_token VOID MIXED BOOL INT FLOAT STRING ARRAY OBJECT CALLABLE.
@@ -704,10 +707,16 @@ num_exp(exp) ::= decl_var(var). {
  exp = psi_num_exp_init(PSI_T_NAME, var);
  exp->token = psi_token_copy(var->token);
 }
-num_exp(exp) ::= num_exp(exp_) num_exp_op_token(operator_) num_exp(operand_). {
- exp_->op = operator_->type;
- exp_->operand = operand_;
- exp = exp_;
+num_exp(exp) ::= num_exp(exp1) num_exp_op_token(operator_) num_exp(exp2). {
+ exp = exp1;
+ do {
+  struct psi_num_exp *op = exp1;
+  while (op->operand) {
+   op = op->operand;
+  }
+  op->op = operator_->type;
+  op->operand = exp2;
+ } while(0);
  free(operator_);
 }
 let_exp(val) ::= NULL. {
@@ -835,8 +844,9 @@ return_stmt(ret) ::= RETURN(T) set_func(func) EOS. {
  ret = psi_return_stmt_init(psi_set_exp_init(PSI_SET_FUNC, func));
  ret->token = T;
 }
-free_stmt(free) ::= FREE free_exps(calls) EOS. {
+free_stmt(free) ::= FREE(T) free_exps(calls) EOS. {
  free = psi_free_stmt_init(calls);
+ free->token = T;
 }
 free_exps(calls) ::= free_exp(call). {
  calls = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_free_exp_free),

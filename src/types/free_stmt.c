@@ -39,6 +39,9 @@ void psi_free_stmt_free(struct psi_free_stmt **f_ptr)
 		struct psi_free_stmt *f = *f_ptr;
 
 		*f_ptr = NULL;
+		if (f->token) {
+			free(f->token);
+		}
 		psi_plist_free(f->exps);
 		free(f);
 	}

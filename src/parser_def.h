@@ -80,16 +80,19 @@ DEF(%syntax_error, {
 })
 
 DEF(%nonassoc, NAME.)
+DEF(%left, LSHIFT RSHIFT.)
 DEF(%left, PLUS MINUS.)
 DEF(%left, ASTERISK SLASH.)
 DEF(%nonassoc, AMPERSAND.)
+DEF(%nonassoc, CARET.)
+DEF(%nonassoc, PIPE.)
 DEF(%fallback, NAME TEMP FREE SET LET RETURN CALLOC CALLBACK ZVAL LIB STRING COUNT.)
 
 DEF(%token_class, const_type_token BOOL INT FLOAT STRING.)
 DEF(%token_class, decl_type_token FLOAT DOUBLE INT8 UINT8 INT16 UINT16 INT32 UINT32 INT64 UINT64 NAME.)
 DEF(%token_class, impl_def_val_token NULL NUMBER TRUE FALSE QUOTED_STRING.)
 DEF(%token_class, num_exp_token NUMBER NSNAME.)
-DEF(%token_class, num_exp_op_token PLUS MINUS ASTERISK SLASH.)
+DEF(%token_class, num_exp_op_token LSHIFT RSHIFT PLUS MINUS ASTERISK SLASH AMPERSAND CARET PIPE.)
 DEF(%token_class, let_func_token ZVAL OBJVAL ARRVAL PATHVAL STRLEN STRVAL FLOATVAL INTVAL BOOLVAL COUNT.)
 DEF(%token_class, set_func_token TO_OBJECT TO_ARRAY TO_STRING TO_INT TO_FLOAT TO_BOOL ZVAL VOID.)
 DEF(%token_class, impl_type_token VOID MIXED BOOL INT FLOAT STRING ARRAY OBJECT CALLABLE.)
@@ -1419,12 +1422,18 @@ PARSE_TYPED(num_exp, exp,
  * num_exp: num_exp num_exp_op_token num_exp
  */
 PARSE_TYPED(num_exp, exp,
-		TYPED(num_exp, exp_)
+		TYPED(num_exp, exp1)
 		NAMED(num_exp_op_token, operator_)
-		TYPED(num_exp, operand_)) {
-	exp_->op = operator_->type;
-	exp_->operand = operand_;
-	exp = exp_;
+		TYPED(num_exp, exp2)) {
+	exp = exp1;
+	do {
+		struct psi_num_exp *op = exp1;
+		while (op->operand) {
+			op = op->operand;
+		}
+		op->op = operator_->type;
+		op->operand = exp2;
+	} while(0);
 	free(operator_);
 }
 
@@ -1782,10 +1791,11 @@ PARSE_TYPED(return_stmt, ret,
  * free_stmt: FREE free_exps ;
  */
 PARSE_TYPED(free_stmt, free,
-		TOKEN(FREE)
+		NAMED(FREE, T)
 		TYPED(free_exps, calls)
 		TOKEN(EOS)) {
 	free = psi_free_stmt_init(calls);
+	free->token = T;
 }
 
 /*

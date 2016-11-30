@@ -36,7 +36,7 @@
 #include <stdarg.h>
 
 #define PSI_DEBUG_PRINT(ctx, msg, ...) do { \
-	if (PSI_DATA(ctx)->flags & PSI_DEBUG) { \
+	if ((ctx) && (PSI_DATA(ctx)->flags & PSI_DEBUG)) { \
 		fprintf(stderr, msg, __VA_ARGS__); \
 	} \
 } while(0)

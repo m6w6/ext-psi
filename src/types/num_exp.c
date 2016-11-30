@@ -114,6 +114,33 @@ void psi_num_exp_free(struct psi_num_exp **exp_ptr)
 	}
 }
 
+static inline wint_t psi_num_exp_op_tok(token_t op)
+{
+	switch (op) {
+	case PSI_T_LSHIFT:
+		return L'«';
+	case PSI_T_RSHIFT:
+		return L'»';
+	case PSI_T_PLUS:
+		return L'+';
+	case PSI_T_MINUS:
+		return L'-';
+	case PSI_T_ASTERISK:
+		return L'*';
+	case PSI_T_SLASH:
+		return L'/';
+	case PSI_T_AMPERSAND:
+		return L'&';
+	case PSI_T_CARET:
+		return L'^';
+	case PSI_T_PIPE:
+		return L'|';
+	default:
+		assert(0);
+	}
+	return 0;
+}
+
 void psi_num_exp_dump(int fd, struct psi_num_exp *exp)
 {
 	while (exp) {
@@ -142,25 +169,7 @@ void psi_num_exp_dump(int fd, struct psi_num_exp *exp)
 		}
 
 		if (exp->operand) {
-			char op;
-
-			switch (exp->op) {
-			case PSI_T_PLUS:
-				op = '+';
-				break;
-			case PSI_T_MINUS:
-				op = '-';
-				break;
-			case PSI_T_ASTERISK:
-				op = '*';
-				break;
-			case PSI_T_SLASH:
-				op = '/';
-				break;
-			default:
-				assert(0);
-			}
-			dprintf(fd, " %c ", op);
+			dprintf(fd, " %c ", psi_num_exp_op_tok(exp->op));
 		}
 
 		exp = exp->operand;
@@ -196,6 +205,12 @@ bool psi_num_exp_validate(struct psi_data *data, struct psi_num_exp *exp,
 
 	if (exp->operand) {
 		switch (exp->op) {
+		case PSI_T_LSHIFT:
+			exp->calc = psi_calc_bin_lshift;
+			break;
+		case PSI_T_RSHIFT:
+			exp->calc = psi_calc_bin_rshift;
+			break;
 		case PSI_T_PLUS:
 			exp->calc = psi_calc_add;
 			break;
@@ -207,6 +222,15 @@ bool psi_num_exp_validate(struct psi_data *data, struct psi_num_exp *exp,
 			break;
 		case PSI_T_SLASH:
 			exp->calc = psi_calc_div;
+			break;
+		case PSI_T_AMPERSAND:
+			exp->calc = psi_calc_bin_and;
+			break;
+		case PSI_T_CARET:
+			exp->calc = psi_calc_bin_xor;
+			break;
+		case PSI_T_PIPE:
+			exp->calc = psi_calc_bin_or;
 			break;
 		default:
 			data->error(data, exp->token, PSI_WARNING,
@@ -297,13 +321,46 @@ static inline token_t psi_num_exp_eval_constant(struct psi_num_exp *exp,
 	case PSI_T_INT:
 		res->i64 = zend_get_constant_str(exp->data.cnst->name,
 				strlen(exp->data.cnst->name))->value.lval;
+		if (frame) PSI_DEBUG_PRINT(frame->context, "%" PRIi64, res->i64);
 		return PSI_T_INT64;
 	case PSI_T_FLOAT:
 		res->dval = zend_get_constant_str(exp->data.cnst->name,
 				strlen(exp->data.cnst->name))->value.dval;
+		if (frame) PSI_DEBUG_PRINT(frame->context, "%" PRIdval, res->dval);
 		return PSI_T_DOUBLE;
 	default:
+		if (frame) PSI_DEBUG_PRINT(frame->context, "?(t=%d)", exp->data.cnst->type->type);
 		return 0;
+	}
+}
+
+static inline void psi_num_exp_verify_result(token_t t, impl_val *res, struct psi_call_frame *frame)
+{
+	switch (t) {
+	case PSI_T_INT8:
+	case PSI_T_UINT8:
+		if (frame) PSI_DEBUG_PRINT(frame->context, "%" PRIi8, res->i8);
+		break;
+	case PSI_T_INT16:
+	case PSI_T_UINT16:
+		if (frame) PSI_DEBUG_PRINT(frame->context, "%" PRIi16, res->i16);
+		break;
+	case PSI_T_INT32:
+	case PSI_T_UINT32:
+		if (frame) PSI_DEBUG_PRINT(frame->context, "%" PRIi32, res->i32);
+		break;
+	case PSI_T_INT64:
+	case PSI_T_UINT64:
+		if (frame) PSI_DEBUG_PRINT(frame->context, "%" PRIi64, res->i64);
+		break;
+	case PSI_T_FLOAT:
+		if (frame) PSI_DEBUG_PRINT(frame->context, "%" PRIfval, res->fval);
+		break;
+	case PSI_T_DOUBLE:
+		if (frame) PSI_DEBUG_PRINT(frame->context, "%" PRIdval, res->dval);
+		break;
+	default:
+		assert(0);
 	}
 }
 
@@ -322,22 +379,6 @@ static inline token_t psi_num_exp_eval_decl_var(struct psi_num_exp *exp,
 
 	memcpy(res, ref, size);
 
-	switch (real->type) {
-	case PSI_T_INT8:
-	case PSI_T_UINT8:
-	case PSI_T_INT16:
-	case PSI_T_UINT16:
-	case PSI_T_INT32:
-	case PSI_T_UINT32:
-	case PSI_T_INT64:
-	case PSI_T_UINT64:
-	case PSI_T_FLOAT:
-	case PSI_T_DOUBLE:
-		break;
-	default:
-		assert(0);
-	}
-
 	return real->type;
 }
 
@@ -346,12 +387,18 @@ static inline token_t psi_num_exp_eval(struct psi_num_exp *exp, impl_val *res,
 {
 	switch (exp->type) {
 	case PSI_T_INT64:
+		*res = exp->data.ival;
+		if (frame) PSI_DEBUG_PRINT(frame->context, "%" PRIi64, res->i64);
+		return PSI_T_INT64;
+
 	case PSI_T_DOUBLE:
 		*res = exp->data.ival;
+		if (frame) PSI_DEBUG_PRINT(frame->context, "%" PRIdval, res->dval);
 		return exp->type;
 
 	case PSI_T_ENUM:
 		res->i64 = exp->data.enm->val;
+		if (frame) PSI_DEBUG_PRINT(frame->context, "%" PRIi64, res->i64);
 		return PSI_T_INT64;
 
 	case PSI_T_CONST:
@@ -368,20 +415,79 @@ static inline token_t psi_num_exp_eval(struct psi_num_exp *exp, impl_val *res,
 	return 0;
 }
 
+#include "context.h"
+
+static inline int psi_num_exp_op_cmp(token_t op1, token_t op2)
+{
+	assert(op1 >= PSI_T_LSHIFT && op2 <= PSI_T_PIPE);
+	assert(op2 >= PSI_T_LSHIFT && op2 <= PSI_T_PIPE);
+
+	switch (op1) {
+	case PSI_T_LSHIFT:
+	case PSI_T_RSHIFT:
+		return op2 > PSI_T_RSHIFT;
+
+	case PSI_T_PLUS:
+	case PSI_T_MINUS:
+		return op2 > PSI_T_MINUS ? 1 : (op2 < PSI_T_PLUS ? -1 : 0);
+
+	case PSI_T_ASTERISK:
+	case PSI_T_SLASH:
+		return op2 > PSI_T_SLASH ? 1 : (op2 < PSI_T_ASTERISK ? -1 : 0);
+
+	case PSI_T_AMPERSAND:
+	case PSI_T_CARET:
+	case PSI_T_PIPE:
+		return -1 * (op2 < PSI_T_AMPERSAND);
+	}
+
+	return 0;
+}
+
 token_t psi_num_exp_exec(struct psi_num_exp *exp, impl_val *res,
 		struct psi_call_frame *frame)
 {
 	impl_val num = {0};
-	token_t num_type = psi_num_exp_eval(exp, &num, frame);
+	token_t num_type;
 
-	/* FIXME operator precedence */
+	num_type = psi_num_exp_eval(exp, &num, frame);
+
 	if (exp->operand) {
-		impl_val tmp = {0};
-		token_t tmp_type = psi_num_exp_exec(exp->operand, &tmp, frame);
+		impl_val rhs;
+		token_t rhs_type, res_type;
 
-		return exp->calc(num_type, &num, tmp_type, &tmp, res);
+		/* only if there's a following op, and we have a higher precedence */
+		if (exp->operand->operand &&
+				psi_num_exp_op_cmp(exp->op, exp->operand->op) < 0) {
+			impl_val tmp, lhs;
+			token_t tmp_type, lhs_type;
+
+			if (frame) PSI_DEBUG_PRINT(frame->context, " %lc ", psi_num_exp_op_tok(exp->op));
+
+			tmp_type = psi_num_exp_eval(exp->operand, &tmp, frame);
+			lhs_type = exp->calc(num_type, &num, tmp_type, &tmp, &lhs);
+
+			if (frame) PSI_DEBUG_PRINT(frame->context, " %c ", '=');
+			psi_num_exp_verify_result(lhs_type, &lhs, frame);
+			if (frame) PSI_DEBUG_PRINT(frame->context, " %c", '\n');
+
+			rhs_type = psi_num_exp_exec(exp->operand->operand, &rhs, frame);
+			res_type = exp->operand->calc(lhs_type, &lhs, rhs_type, &rhs, res);
+		} else {
+			if (frame) PSI_DEBUG_PRINT(frame->context, " %lc ", psi_num_exp_op_tok(exp->op));
+
+			rhs_type = psi_num_exp_exec(exp->operand, &rhs, frame);
+			res_type = exp->calc(num_type, &num, rhs_type, &rhs, res);
+		}
+
+		if (frame) PSI_DEBUG_PRINT(frame->context, " %c ", '=');
+		psi_num_exp_verify_result(res_type, res, frame);
+		if (frame) PSI_DEBUG_PRINT(frame->context, " %c", '\n');
+
+		return res_type;
 	}
 
 	*res = num;
+
 	return num_type;
 }

@@ -27,3 +27,10 @@ function psi\strtold(string $str, string &$end = null) : float {
 	return to_float(strtold);
 	set $end = to_string(*endptr);
 }
+
+extern double pow(double x, double y);
+function psi\pow2() : float {
+	let x = 1 | 2;
+	let y = 1 << 1;
+	return to_float(pow);
+}

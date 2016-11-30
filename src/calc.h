@@ -29,9 +29,21 @@
 #include "token.h"
 #include "impl_val.h"
 
+#define PRIfval "f"
+#define PRIdval "lf"
+#define PRIldval "Lf"
+
 token_t psi_calc_add(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
 token_t psi_calc_sub(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
 token_t psi_calc_mul(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
 token_t psi_calc_div(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
+
+token_t psi_calc_bin_lshift(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
+token_t psi_calc_bin_rshift(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
+token_t psi_calc_bin_and(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
+token_t psi_calc_bin_xor(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
+token_t psi_calc_bin_or(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
+
+void psi_calc_cast(token_t in_type, impl_val *in_val, token_t out_type, impl_val *out_val);
 
 #endif

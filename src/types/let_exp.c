@@ -26,6 +26,7 @@
 #include "php_psi_stdinc.h"
 #include "data.h"
 #include "call.h"
+#include "calc.h"
 
 #include <assert.h>
 
@@ -258,7 +259,17 @@ void *psi_let_exp_exec(struct psi_let_exp *val, struct psi_decl_arg *darg,
 		break;
 
 	case PSI_LET_NUMEXP:
-		frame_sym->temp_val.zend.lval = psi_long_num_exp(val->data.num, frame);
+		{
+			impl_val res;
+			token_t val_type = psi_decl_type_get_real(val->var->arg->type)->type;
+			token_t res_type = psi_num_exp_exec(val->data.num, &res, frame);
+
+			if (val_type == res_type) {
+				frame_sym->temp_val = res;
+			} else {
+				psi_calc_cast(res_type, &res, val_type, &frame_sym->temp_val);
+			}
+		}
 		break;
 
 	case PSI_LET_CALLBACK:

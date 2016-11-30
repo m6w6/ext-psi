@@ -261,6 +261,10 @@ token_t psi_parser_scan(struct psi_parser *P)
 		"+" {RETURN(PSI_T_PLUS);}
 		"-" {RETURN(PSI_T_MINUS);}
 		"/" {RETURN(PSI_T_SLASH);}
+		"|" {RETURN(PSI_T_PIPE);}
+		"^" {RETURN(PSI_T_CARET);}
+		"<<" {RETURN(PSI_T_LSHIFT);}
+		">>" {RETURN(PSI_T_RSHIFT);}
 		"..." {RETURN(PSI_T_ELLIPSIS);}
 		[\r\n] { NEWLINE(nextline); }
 		[\t ]+ { continue; }

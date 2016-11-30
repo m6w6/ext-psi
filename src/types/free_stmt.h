@@ -32,6 +32,7 @@ struct psi_impl;
 struct psi_call_frame;
 
 struct psi_free_stmt {
+	struct psi_token *token;
 	struct psi_plist *exps;
 };
 
