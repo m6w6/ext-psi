@@ -86,7 +86,7 @@ bool psi_parser_open_string(struct psi_parser *P, const char *string, size_t len
 
 static ssize_t psi_parser_fill(struct psi_parser *P, size_t n)
 {
-	PSI_DEBUG_PRINT(P, "PSI> Fill: n=%zu (input.type=%d)\n", n, P->input.type);
+	PSI_DEBUG_PRINT(P, "PSI< Fill: n=%zu (input.type=%d)\n", n, P->input.type);
 
 	/* init if n==0 */
 	if (!n) {
@@ -109,7 +109,7 @@ static ssize_t psi_parser_fill(struct psi_parser *P, size_t n)
 			break;
 		}
 
-		PSI_DEBUG_PRINT(P, "PSI> Fill: cur=%p lim=%p eof=%p\n", P->cur, P->lim, P->eof);
+		PSI_DEBUG_PRINT(P, "PSI< Fill: cur=%p lim=%p eof=%p\n", P->cur, P->lim, P->eof);
 	}
 
 	switch (P->input.type) {
@@ -137,14 +137,14 @@ static ssize_t psi_parser_fill(struct psi_parser *P, size_t n)
 			if (didread < available) {
 				P->eof = P->lim;
 			}
-			PSI_DEBUG_PRINT(P, "PSI> Fill: consumed=%zu reserved=%zu available=%zu didread=%zu\n",
+			PSI_DEBUG_PRINT(P, "PSI< Fill: consumed=%zu reserved=%zu available=%zu didread=%zu\n",
 					consumed, reserved, available, didread);
 		}
 #endif
 		break;
 	}
 
-	PSI_DEBUG_PRINT(P, "PSI> Fill: avail=%td\n", P->lim - P->cur);
+	PSI_DEBUG_PRINT(P, "PSI< Fill: avail=%td\n", P->lim - P->cur);
 
 	return P->lim - P->cur;
 }
@@ -204,7 +204,7 @@ void psi_parser_free(struct psi_parser **P)
 
 #define RETURN(t) do { \
 	P->num = t; \
-	PSI_DEBUG_PRINT(P, "PSI> TOKEN: %d %.*s (EOF=%d %s:%u:%u)\n", \
+	PSI_DEBUG_PRINT(P, "PSI< TOKEN: %d %.*s (EOF=%d %s:%u:%u)\n", \
 				P->num, (int) (P->cur-P->tok), P->tok, P->num == PSI_T_EOF, \
 				P->file.fn, P->line, P->col); \
 	return t; \
@@ -257,6 +257,9 @@ token_t psi_parser_scan(struct psi_parser *P)
 		"]" {RETURN(PSI_T_RBRACKET);}
 		"=" {RETURN(PSI_T_EQUALS);}
 		"*" {RETURN(PSI_T_ASTERISK);}
+		"~" {RETURN(PSI_T_TILDE);}
+		"!" {RETURN(PSI_T_NOT);}
+		"%" {RETURN(PSI_T_MODULO);}
 		"&" {RETURN(PSI_T_AMPERSAND);}
 		"+" {RETURN(PSI_T_PLUS);}
 		"-" {RETURN(PSI_T_MINUS);}

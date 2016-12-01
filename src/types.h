@@ -42,6 +42,7 @@
 #include "types/const.h"
 #include "types/impl_arg.h"
 #include "types/impl_func.h"
+#include "types/number.h"
 #include "types/num_exp.h"
 #include "types/decl_enum_item.h"
 #include "types/decl_enum.h"

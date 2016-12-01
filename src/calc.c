@@ -29,43 +29,70 @@
 #include "token.h"
 #include "calc.h"
 
-#define PSI_CALC_CAST_SET(in_type, in_val, out_val, out_var) \
+#define PSI_CALC_CAST_SET(in_type, in_val, op, out_val, out_var) \
 switch (in_type) { \
-case PSI_T_INT8:		(out_val)->out_var = (in_val)->i8;		break; \
-case PSI_T_UINT8:		(out_val)->out_var = (in_val)->u8;		break; \
-case PSI_T_INT16:		(out_val)->out_var = (in_val)->i16;		break; \
-case PSI_T_UINT16:		(out_val)->out_var = (in_val)->u16;		break; \
-case PSI_T_INT32:		(out_val)->out_var = (in_val)->i32;		break; \
-case PSI_T_UINT32:		(out_val)->out_var = (in_val)->u32;		break; \
-case PSI_T_INT64:		(out_val)->out_var = (in_val)->i64;		break; \
-case PSI_T_UINT64:		(out_val)->out_var = (in_val)->u64;		break; \
-case PSI_T_FLOAT:		(out_val)->out_var = (in_val)->fval;	break; \
-case PSI_T_DOUBLE:		(out_val)->out_var = (in_val)->dval;	break; \
-case PSI_T_LONG_DOUBLE:	(out_val)->out_var = (in_val)->ldval;	break; \
+case PSI_T_INT8:		(out_val)->out_var op (in_val)->i8;		break; \
+case PSI_T_UINT8:		(out_val)->out_var op (in_val)->u8;		break; \
+case PSI_T_INT16:		(out_val)->out_var op (in_val)->i16;	break; \
+case PSI_T_UINT16:		(out_val)->out_var op (in_val)->u16;	break; \
+case PSI_T_INT32:		(out_val)->out_var op (in_val)->i32;	break; \
+case PSI_T_UINT32:		(out_val)->out_var op (in_val)->u32;	break; \
+case PSI_T_INT64:		(out_val)->out_var op (in_val)->i64;	break; \
+case PSI_T_UINT64:		(out_val)->out_var op (in_val)->u64;	break; \
+case PSI_T_FLOAT:		(out_val)->out_var op (in_val)->fval;	break; \
+case PSI_T_DOUBLE:		(out_val)->out_var op (in_val)->dval;	break; \
+case PSI_T_LONG_DOUBLE:	(out_val)->out_var op (in_val)->ldval;	break; \
 default: \
 	assert(0); \
 }
 
-#define PSI_CALC_CAST(in_type, in_val, out_type, out_val) \
+#define PSI_CALC_CAST(in_type, in_val, op, out_type, out_val) \
 switch (out_type) { \
-case PSI_T_INT8:		PSI_CALC_CAST_SET(in_type, in_val, out_val, i8)		break; \
-case PSI_T_UINT8:		PSI_CALC_CAST_SET(in_type, in_val, out_val, u8)		break; \
-case PSI_T_INT16:		PSI_CALC_CAST_SET(in_type, in_val, out_val, i16)	break; \
-case PSI_T_UINT16:		PSI_CALC_CAST_SET(in_type, in_val, out_val, u16)	break; \
-case PSI_T_INT32:		PSI_CALC_CAST_SET(in_type, in_val, out_val, i32)	break; \
-case PSI_T_UINT32:		PSI_CALC_CAST_SET(in_type, in_val, out_val, u32)	break; \
-case PSI_T_INT64:		PSI_CALC_CAST_SET(in_type, in_val, out_val, i64)	break; \
-case PSI_T_UINT64:		PSI_CALC_CAST_SET(in_type, in_val, out_val, u64)	break; \
-case PSI_T_FLOAT:		PSI_CALC_CAST_SET(in_type, in_val, out_val, fval)	break; \
-case PSI_T_DOUBLE:		PSI_CALC_CAST_SET(in_type, in_val, out_val, dval)	break; \
-case PSI_T_LONG_DOUBLE:	PSI_CALC_CAST_SET(in_type, in_val, out_val, ldval)	break; \
+case PSI_T_INT8:		PSI_CALC_CAST_SET(in_type, in_val, op, out_val, i8)		break; \
+case PSI_T_UINT8:		PSI_CALC_CAST_SET(in_type, in_val, op, out_val, u8)		break; \
+case PSI_T_INT16:		PSI_CALC_CAST_SET(in_type, in_val, op, out_val, i16)	break; \
+case PSI_T_UINT16:		PSI_CALC_CAST_SET(in_type, in_val, op, out_val, u16)	break; \
+case PSI_T_INT32:		PSI_CALC_CAST_SET(in_type, in_val, op, out_val, i32)	break; \
+case PSI_T_UINT32:		PSI_CALC_CAST_SET(in_type, in_val, op, out_val, u32)	break; \
+case PSI_T_INT64:		PSI_CALC_CAST_SET(in_type, in_val, op, out_val, i64)	break; \
+case PSI_T_UINT64:		PSI_CALC_CAST_SET(in_type, in_val, op, out_val, u64)	break; \
+case PSI_T_FLOAT:		PSI_CALC_CAST_SET(in_type, in_val, op, out_val, fval)	break; \
+case PSI_T_DOUBLE:		PSI_CALC_CAST_SET(in_type, in_val, op, out_val, dval)	break; \
+case PSI_T_LONG_DOUBLE:	PSI_CALC_CAST_SET(in_type, in_val, op, out_val, ldval)	break; \
+default: \
+	assert(0); \
+}
+
+#define PSI_CALC_CAST_SET_INT(in_type, in_val, op, out_val, out_var) \
+switch (in_type) { \
+case PSI_T_INT8:		(out_val)->out_var op (in_val)->i8;		break; \
+case PSI_T_UINT8:		(out_val)->out_var op (in_val)->u8;		break; \
+case PSI_T_INT16:		(out_val)->out_var op (in_val)->i16;	break; \
+case PSI_T_UINT16:		(out_val)->out_var op (in_val)->u16;	break; \
+case PSI_T_INT32:		(out_val)->out_var op (in_val)->i32;	break; \
+case PSI_T_UINT32:		(out_val)->out_var op (in_val)->u32;	break; \
+case PSI_T_INT64:		(out_val)->out_var op (in_val)->i64;	break; \
+case PSI_T_UINT64:		(out_val)->out_var op (in_val)->u64;	break; \
+default: \
+	assert(0); \
+}
+#define PSI_CALC_CAST_INT(in_type, in_val, op, out_type, out_val) \
+switch (out_type) { \
+case PSI_T_INT8:		PSI_CALC_CAST_SET_INT(in_type, in_val, op, out_val, i8)		break; \
+case PSI_T_UINT8:		PSI_CALC_CAST_SET_INT(in_type, in_val, op, out_val, u8)		break; \
+case PSI_T_INT16:		PSI_CALC_CAST_SET_INT(in_type, in_val, op, out_val, i16)	break; \
+case PSI_T_UINT16:		PSI_CALC_CAST_SET_INT(in_type, in_val, op, out_val, u16)	break; \
+case PSI_T_INT32:		PSI_CALC_CAST_SET_INT(in_type, in_val, op, out_val, i32)	break; \
+case PSI_T_UINT32:		PSI_CALC_CAST_SET_INT(in_type, in_val, op, out_val, u32)	break; \
+case PSI_T_INT64:		PSI_CALC_CAST_SET_INT(in_type, in_val, op, out_val, i64)	break; \
+case PSI_T_UINT64:		PSI_CALC_CAST_SET_INT(in_type, in_val, op, out_val, u64)	break; \
 default: \
 	assert(0); \
 }
 
 void psi_calc_cast(token_t in_type, impl_val *in_val, token_t out_type, impl_val *out_val)
 {
-	PSI_CALC_CAST(in_type, in_val, out_type, out_val)
+	PSI_CALC_CAST(in_type, in_val, =, out_type, out_val)
 }
 
 #if 0
@@ -268,28 +295,60 @@ PSI_CALC_FN(sub)
 PSI_CALC_FN(div)
 #undef PSI_CALC
 
-#define PSI_CALC_BIN_FN(op) token_t psi_calc_##op(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res) \
+token_t psi_calc_mod(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res)
+{
+	impl_val i1, i2;
+
+	PSI_CALC_CAST(t1, v1, =, PSI_T_INT64, &i1);
+	PSI_CALC_CAST(t2, v2, =, PSI_T_INT64, &i2);
+
+	res->i64 = i1.i64 % i2.i64;
+
+	return PSI_T_INT64;
+}
+
+#define PSI_CALC_BIT_FN(op) token_t psi_calc_##op(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res) \
 { \
 	impl_val i1, i2; \
-	PSI_CALC_CAST(t1, v1, PSI_T_UINT64, &i1); \
-	PSI_CALC_CAST(t2, v2, PSI_T_UINT64, &i2); \
+	PSI_CALC_CAST(t1, v1, =, PSI_T_UINT64, &i1); \
+	PSI_CALC_CAST(t2, v2, =, PSI_T_UINT64, &i2); \
 	res->u64 = PSI_CALC(i1.u64, i2.u64); \
 	return PSI_T_UINT64; \
 }
 
 #define PSI_CALC(var1, var2) (var1) << (var2)
-PSI_CALC_BIN_FN(bin_lshift)
+PSI_CALC_BIT_FN(bin_lshift)
 #undef PSI_CALC
 #define PSI_CALC(var1, var2) (var1) >> (var2)
-PSI_CALC_BIN_FN(bin_rshift)
+PSI_CALC_BIT_FN(bin_rshift)
 #undef PSI_CALC
 #define PSI_CALC(var1, var2) (var1) & (var2)
-PSI_CALC_BIN_FN(bin_and)
+PSI_CALC_BIT_FN(bin_and)
 #undef PSI_CALC
 #define PSI_CALC(var1, var2) (var1) ^ (var2)
-PSI_CALC_BIN_FN(bin_xor)
+PSI_CALC_BIT_FN(bin_xor)
 #undef PSI_CALC
 #define PSI_CALC(var1, var2) (var1) | (var2)
-PSI_CALC_BIN_FN(bin_or)
+PSI_CALC_BIT_FN(bin_or)
 #undef PSI_CALC
 
+token_t psi_calc_not(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res)
+{
+	(void) t2;
+	(void) v2;
+
+	PSI_CALC_CAST(t1, v1, =!, t1, res);
+	return t1;
+}
+
+token_t psi_calc_bin_not(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res)
+{
+	impl_val i1;
+
+	(void) t2;
+	(void) v2;
+
+	PSI_CALC_CAST(t1, v1, =, PSI_T_UINT64, &i1);
+	PSI_CALC_CAST_INT(t1, &i1, =~, t1, res);
+	return t1;
+}

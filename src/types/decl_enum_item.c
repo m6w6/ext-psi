@@ -44,8 +44,22 @@ void psi_decl_enum_item_free(struct psi_decl_enum_item **i_ptr)
 		if (i->token) {
 			free(i->token);
 		}
-		if (i->num && i->num != &i->inc) {
-			psi_num_exp_free(&i->num);
+		if (i->num) {
+			if (i->num == &i->inc) {
+				switch (i->inc.op) {
+				case 0:
+					psi_number_free(&i->inc.data.n);
+					break;
+				case PSI_T_PLUS:
+					psi_num_exp_free(&i->inc.data.b.lhs);
+					psi_num_exp_free(&i->inc.data.b.rhs);
+					break;
+				default:
+					assert(0);
+				}
+			} else {
+				psi_num_exp_free(&i->num);
+			}
 		}
 		free(i->name);
 		free(i);
@@ -66,14 +80,18 @@ bool psi_decl_enum_item_validate(struct psi_data *data,
 {
 	if (!item->num) {
 		if (seq) {
-			item->inc.type = PSI_T_INT64;
-			item->inc.data.ival.i64 = 1;
+			int64_t one = 1;
+
 			item->inc.op = PSI_T_PLUS;
-			item->inc.operand = item->prev->num ? : &item->prev->inc;
+			item->inc.data.b.lhs = psi_num_exp_init_unary(PSI_T_LPAREN,
+					psi_num_exp_copy(item->prev->num));
+			item->inc.data.b.rhs = psi_num_exp_init_num(
+							psi_number_init(PSI_T_INT64, &one));
 			item->num = &item->inc;
 		} else {
-			item->inc.type = PSI_T_INT64;
-			item->inc.data.ival.i64 = 0;
+			int64_t nil = 0;
+
+			item->inc.data.n = psi_number_init(PSI_T_INT64, &nil);
 			item->num = &item->inc;
 		}
 	}

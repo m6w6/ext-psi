@@ -28,113 +28,167 @@
 #include <assert.h>
 
 #include "data.h"
+#include "context.h"
 #include "call.h"
 #include "calc.h"
 
-struct psi_num_exp *psi_num_exp_init(token_t t, void *num)
+
+struct psi_num_exp *psi_num_exp_init_binary(token_t op,
+		struct psi_num_exp *lhs, struct psi_num_exp *rhs)
 {
 	struct psi_num_exp *exp = calloc(1, sizeof(*exp));
 
-	switch (exp->type = t) {
-	case PSI_T_NUMBER:
-	case PSI_T_NSNAME:
-		exp->data.numb = strdup(num);
-		break;
-	case PSI_T_NAME:
-		exp->data.dvar = num;
-		break;
-	default:
-		assert(0);
-	}
+	exp->op = op;
+	exp->data.b.lhs = lhs;
+	exp->data.b.rhs = rhs;
+
+	return exp;
+}
+
+struct psi_num_exp *psi_num_exp_init_unary(token_t op,
+		struct psi_num_exp *u)
+{
+	struct psi_num_exp *exp = calloc(1, sizeof(*exp));
+
+	exp->op = op;
+	exp->data.u = u;
+
+	return exp;
+}
+
+struct psi_num_exp *psi_num_exp_init_num(struct psi_number *n)
+{
+	struct psi_num_exp *exp = calloc(1, sizeof(*exp));
+
+	exp->data.n = n;
 
 	return exp;
 }
 
 struct psi_num_exp *psi_num_exp_copy(struct psi_num_exp *exp)
 {
-	struct psi_num_exp *num = calloc(1, sizeof(*num));
+	struct psi_num_exp *cpy;
 
-	*num = *exp;
-
-	if (num->token) {
-		num->token = psi_token_copy(num->token);
-	}
-	if (num->operand) {
-		num->operand = psi_num_exp_copy(num->operand);
+	if (!exp) {
+		return NULL;
 	}
 
-	switch (num->type) {
-	case PSI_T_INT64:
-	case PSI_T_DOUBLE:
-	case PSI_T_ENUM:
-	case PSI_T_CONST:
+	cpy = malloc(sizeof(*cpy));
+	*cpy = *exp;
+
+	switch (exp->op) {
+	case 0:
+		cpy->data.n = psi_number_copy(exp->data.n);
 		break;
-	case PSI_T_NUMBER:
-	case PSI_T_NSNAME:
-		num->data.numb = strdup(num->data.numb);
+
+	case PSI_T_NOT:
+	case PSI_T_TILDE:
+	case PSI_T_LPAREN:
+		cpy->data.u = psi_num_exp_copy(exp->data.u);
 		break;
-	case PSI_T_NAME:
-		num->data.dvar = psi_decl_var_copy(num->data.dvar);
+
+	case PSI_T_PIPE:
+	case PSI_T_CARET:
+	case PSI_T_AMPERSAND:
+	case PSI_T_LSHIFT:
+	case PSI_T_RSHIFT:
+	case PSI_T_PLUS:
+	case PSI_T_MINUS:
+	case PSI_T_ASTERISK:
+	case PSI_T_SLASH:
+	case PSI_T_MODULO:
+		cpy->data.b.lhs = psi_num_exp_copy(exp->data.b.lhs);
+		cpy->data.b.rhs = psi_num_exp_copy(exp->data.b.rhs);
 		break;
+
 	default:
 		assert(0);
 	}
-	return num;
+
+	if (exp->token) {
+		cpy->token = psi_token_copy(exp->token);
+	}
+
+	return cpy;
 }
 
-void psi_num_exp_free(struct psi_num_exp **exp_ptr)
+void psi_num_exp_free(struct psi_num_exp **c_ptr)
 {
-	if (*exp_ptr) {
-		struct psi_num_exp *exp = *exp_ptr;
+	if (*c_ptr) {
+		struct psi_num_exp *c = *c_ptr;
 
-		*exp_ptr = NULL;
-		if (exp->token) {
-			free(exp->token);
-		}
-		switch (exp->type) {
-		case PSI_T_INT64:
-		case PSI_T_DOUBLE:
-		case PSI_T_ENUM:
-		case PSI_T_CONST:
+		*c_ptr = NULL;
+
+		switch (c->op) {
+		case 0:
+			psi_number_free(&c->data.n);
 			break;
-		case PSI_T_NSNAME:
-		case PSI_T_NUMBER:
-			free(exp->data.numb);
+		case PSI_T_NOT:
+		case PSI_T_TILDE:
+		case PSI_T_LPAREN:
+			psi_num_exp_free(&c->data.u);
 			break;
-		case PSI_T_NAME:
-			psi_decl_var_free(&exp->data.dvar);
+
+		case PSI_T_PIPE:
+		case PSI_T_CARET:
+		case PSI_T_AMPERSAND:
+		case PSI_T_LSHIFT:
+		case PSI_T_RSHIFT:
+		case PSI_T_PLUS:
+		case PSI_T_MINUS:
+		case PSI_T_ASTERISK:
+		case PSI_T_SLASH:
+		case PSI_T_MODULO:
+			psi_num_exp_free(&c->data.b.lhs);
+			psi_num_exp_free(&c->data.b.rhs);
 			break;
+
 		default:
 			assert(0);
 		}
-		if (exp->operand) {
-			psi_num_exp_free(&exp->operand);
+
+		if (c->token) {
+			free(c->token);
 		}
-		free(exp);
+
+		free(c);
 	}
 }
 
 static inline wint_t psi_num_exp_op_tok(token_t op)
 {
 	switch (op) {
+	case PSI_T_NOT:
+		return L'!';
+	case PSI_T_TILDE:
+		return L'~';
+	case PSI_T_LPAREN:
+		return L'(';
+
+	case PSI_T_PIPE:
+		return L'|';
+	case PSI_T_CARET:
+		return L'^';
+	case PSI_T_AMPERSAND:
+		return L'&';
+
 	case PSI_T_LSHIFT:
 		return L'«';
 	case PSI_T_RSHIFT:
 		return L'»';
+
 	case PSI_T_PLUS:
 		return L'+';
 	case PSI_T_MINUS:
 		return L'-';
+
 	case PSI_T_ASTERISK:
 		return L'*';
 	case PSI_T_SLASH:
 		return L'/';
-	case PSI_T_AMPERSAND:
-		return L'&';
-	case PSI_T_CARET:
-		return L'^';
-	case PSI_T_PIPE:
-		return L'|';
+	case PSI_T_MODULO:
+		return L'%';
+
 	default:
 		assert(0);
 	}
@@ -143,68 +197,68 @@ static inline wint_t psi_num_exp_op_tok(token_t op)
 
 void psi_num_exp_dump(int fd, struct psi_num_exp *exp)
 {
-	while (exp) {
-		switch (exp->type) {
-		case PSI_T_INT64:
-			dprintf(fd, "%" PRId64, exp->data.ival.i64);
-			break;
-		case PSI_T_DOUBLE:
-			dprintf(fd, "%F", exp->data.ival.dval);
-			break;
-		case PSI_T_NUMBER:
-		case PSI_T_NSNAME:
-			dprintf(fd, "%s", exp->data.numb);
-			break;
-		case PSI_T_CONST:
-			dprintf(fd, "%s", exp->data.cnst->name);
-			break;
-		case PSI_T_ENUM:
-			dprintf(fd, "%s", exp->data.enm->name);
-			break;
-		case PSI_T_NAME:
-			psi_decl_var_dump(fd, exp->data.dvar);
-			break;
-		default:
-			assert(0);
-		}
+	switch (exp->op) {
+	case 0:
+		psi_number_dump(fd, exp->data.n);
+		break;
 
-		if (exp->operand) {
-			dprintf(fd, " %c ", psi_num_exp_op_tok(exp->op));
-		}
+	case PSI_T_NOT:
+	case PSI_T_TILDE:
+		dprintf(fd, "%lc", psi_num_exp_op_tok(exp->op));
+		psi_num_exp_dump(fd, exp->data.u);
+		break;
 
-		exp = exp->operand;
-	}
-}
+	case PSI_T_LPAREN:
+		dprintf(fd, "(");
+		psi_num_exp_dump(fd, exp->data.u);
+		dprintf(fd, ")");
+		break;
 
-static inline bool psi_num_exp_validate_enum(struct psi_data *data, struct psi_num_exp *exp,
-		struct psi_decl_enum *enm)
-{
-	size_t i = 0;
-	struct psi_decl_enum_item *itm;
+	case PSI_T_PIPE:
+	case PSI_T_CARET:
+	case PSI_T_AMPERSAND:
+	case PSI_T_LSHIFT:
+	case PSI_T_RSHIFT:
+	case PSI_T_PLUS:
+	case PSI_T_MINUS:
+	case PSI_T_ASTERISK:
+	case PSI_T_SLASH:
+		psi_num_exp_dump(fd, exp->data.b.lhs);
+		dprintf(fd, " %lc ", psi_num_exp_op_tok(exp->op));
+		psi_num_exp_dump(fd, exp->data.b.rhs);
+		break;
 
-	while (psi_plist_get(enm->items, i++, &itm)) {
-		if (!strcmp(itm->name, exp->data.dvar->name)) {
-			psi_decl_var_free(&exp->data.dvar);
-			exp->type = PSI_T_ENUM;
-			exp->data.enm = itm;
-			return psi_num_exp_validate(data, exp, NULL, NULL, NULL, NULL, enm);
-		}
+	default:
+		assert(0);
 	}
 
-	return false;
 }
 
 bool psi_num_exp_validate(struct psi_data *data, struct psi_num_exp *exp,
 		struct psi_impl *impl, struct psi_decl *cb_decl, struct psi_let_exp *current_let,
 		struct psi_set_exp *current_set, struct psi_decl_enum *current_enum)
 {
-	size_t i = 0;
-	impl_val tmp = {0};
-	struct psi_const *cnst;
-	struct psi_decl_enum *enm;
-
-	if (exp->operand) {
+	if (exp->op) {
 		switch (exp->op) {
+		case PSI_T_NOT:
+			exp->calc = psi_calc_not;
+			break;
+		case PSI_T_TILDE:
+			exp->calc = psi_calc_bin_not;
+			break;
+
+		case PSI_T_LPAREN:
+			break;
+
+		case PSI_T_PIPE:
+			exp->calc = psi_calc_bin_or;
+			break;
+		case PSI_T_CARET:
+			exp->calc = psi_calc_bin_xor;
+			break;
+		case PSI_T_AMPERSAND:
+			exp->calc = psi_calc_bin_and;
+			break;
 		case PSI_T_LSHIFT:
 			exp->calc = psi_calc_bin_lshift;
 			break;
@@ -223,88 +277,38 @@ bool psi_num_exp_validate(struct psi_data *data, struct psi_num_exp *exp,
 		case PSI_T_SLASH:
 			exp->calc = psi_calc_div;
 			break;
-		case PSI_T_AMPERSAND:
-			exp->calc = psi_calc_bin_and;
-			break;
-		case PSI_T_CARET:
-			exp->calc = psi_calc_bin_xor;
-			break;
-		case PSI_T_PIPE:
-			exp->calc = psi_calc_bin_or;
+		case PSI_T_MODULO:
+			exp->calc = psi_calc_mod;
 			break;
 		default:
 			data->error(data, exp->token, PSI_WARNING,
 					"Unknown numeric operator (%d)", exp->op);
 			return false;
 		}
-		if (!psi_num_exp_validate(data, exp->operand, impl, cb_decl, current_let,
-				current_set, current_enum)) {
-			return false;
-		}
 	}
 
-	switch (exp->type) {
-	case PSI_T_CONST:
-	case PSI_T_INT64:
-	case PSI_T_DOUBLE:
-	case PSI_T_ENUM:
-		return true;
+	switch (exp->op) {
+	case 0:
+		return psi_number_validate(data, exp->data.n, impl, cb_decl, current_let, current_set, current_enum);
 
-	case PSI_T_NAME:
-		if (current_enum && psi_num_exp_validate_enum(data, exp, current_enum)) {
-			return true;
-		}
-		while (psi_plist_get(data->enums, i++, &enm)) {
-			if (psi_num_exp_validate_enum(data, exp, enm)) {
-				return true;
-			}
-		}
-		if (exp->data.dvar->arg) {
-			return true;
-		}
-		if (psi_decl_var_validate(data, exp->data.dvar, impl ? impl->decl : NULL,
-				current_let, current_set)) {
-			return true;
-		}
-		if (cb_decl && psi_decl_var_validate(data, exp->data.dvar, cb_decl, NULL, NULL)) {
-			return true;
-		}
-		data->error(data, exp->token, PSI_WARNING,
-				"Unknown variable '%s' in numeric expression",
-				exp->data.dvar->name);
-		return false;
+	case PSI_T_NOT:
+	case PSI_T_TILDE:
+	case PSI_T_LPAREN:
+		return psi_num_exp_validate(data, exp->data.u, impl, cb_decl, current_let, current_set, current_enum);
+		break;
 
-	case PSI_T_NSNAME:
-		while (psi_plist_get(data->consts, i++, &cnst)) {
-			if (!strcmp(cnst->name, exp->data.numb)) {
-				free(exp->data.numb);
-				exp->type = PSI_T_CONST;
-				exp->data.cnst = cnst;
-				return true;
-			}
-		}
-		data->error(data, exp->token, PSI_WARNING,
-				"Unknown constant '%s' in numeric expression",
-				exp->data.numb);
-		return false;
-
-	case PSI_T_NUMBER:
-		switch (is_numeric_string(exp->data.numb, strlen(exp->data.numb), (zend_long *) &tmp, (double *) &tmp, 0)) {
-		case IS_LONG:
-			free(exp->data.numb);
-			exp->type = PSI_T_INT64;
-			exp->data.ival.i64 = tmp.zend.lval;
-			return true;
-
-		case IS_DOUBLE:
-			free(exp->data.numb);
-			exp->type = PSI_T_DOUBLE;
-			exp->data.ival.dval = tmp.dval;
-			return true;
-		}
-		data->error(data, exp->token, PSI_WARNING, "Expected numeric entity (parser error?)");
-		return false;
-
+	case PSI_T_PIPE:
+	case PSI_T_CARET:
+	case PSI_T_AMPERSAND:
+	case PSI_T_LSHIFT:
+	case PSI_T_RSHIFT:
+	case PSI_T_PLUS:
+	case PSI_T_MINUS:
+	case PSI_T_ASTERISK:
+	case PSI_T_SLASH:
+	case PSI_T_MODULO:
+		return psi_num_exp_validate(data, exp->data.b.lhs, impl, cb_decl, current_let, current_set, current_enum)
+				&& psi_num_exp_validate(data, exp->data.b.rhs, impl, cb_decl, current_let, current_set, current_enum);
 	default:
 		assert(0);
 	}
@@ -312,182 +316,185 @@ bool psi_num_exp_validate(struct psi_data *data, struct psi_num_exp *exp,
 	return false;
 }
 
-#include "Zend/zend_constants.h"
-
-static inline token_t psi_num_exp_eval_constant(struct psi_num_exp *exp,
-		impl_val *res, struct psi_call_frame *frame)
-{
-	switch (exp->data.cnst->type->type) {
-	case PSI_T_INT:
-		res->i64 = zend_get_constant_str(exp->data.cnst->name,
-				strlen(exp->data.cnst->name))->value.lval;
-		if (frame) PSI_DEBUG_PRINT(frame->context, "%" PRIi64, res->i64);
-		return PSI_T_INT64;
-	case PSI_T_FLOAT:
-		res->dval = zend_get_constant_str(exp->data.cnst->name,
-				strlen(exp->data.cnst->name))->value.dval;
-		if (frame) PSI_DEBUG_PRINT(frame->context, "%" PRIdval, res->dval);
-		return PSI_T_DOUBLE;
-	default:
-		if (frame) PSI_DEBUG_PRINT(frame->context, "?(t=%d)", exp->data.cnst->type->type);
-		return 0;
-	}
-}
-
-static inline void psi_num_exp_verify_result(token_t t, impl_val *res, struct psi_call_frame *frame)
+static inline void psi_impl_val_dump(token_t t, impl_val *res,
+		struct psi_call_frame *frame)
 {
 	switch (t) {
 	case PSI_T_INT8:
 	case PSI_T_UINT8:
-		if (frame) PSI_DEBUG_PRINT(frame->context, "%" PRIi8, res->i8);
+		if (frame) PSI_DEBUG_PRINT(frame->context, " %" PRIi8, res->i8);
 		break;
 	case PSI_T_INT16:
 	case PSI_T_UINT16:
-		if (frame) PSI_DEBUG_PRINT(frame->context, "%" PRIi16, res->i16);
+		if (frame) PSI_DEBUG_PRINT(frame->context, " %" PRIi16, res->i16);
 		break;
 	case PSI_T_INT32:
 	case PSI_T_UINT32:
-		if (frame) PSI_DEBUG_PRINT(frame->context, "%" PRIi32, res->i32);
+		if (frame) PSI_DEBUG_PRINT(frame->context, " %" PRIi32, res->i32);
 		break;
 	case PSI_T_INT64:
 	case PSI_T_UINT64:
-		if (frame) PSI_DEBUG_PRINT(frame->context, "%" PRIi64, res->i64);
+		if (frame) PSI_DEBUG_PRINT(frame->context, " %" PRIi64, res->i64);
 		break;
 	case PSI_T_FLOAT:
-		if (frame) PSI_DEBUG_PRINT(frame->context, "%" PRIfval, res->fval);
+		if (frame) PSI_DEBUG_PRINT(frame->context, " %" PRIfval, res->fval);
 		break;
 	case PSI_T_DOUBLE:
-		if (frame) PSI_DEBUG_PRINT(frame->context, "%" PRIdval, res->dval);
+		if (frame) PSI_DEBUG_PRINT(frame->context, " %" PRIdval, res->dval);
 		break;
 	default:
 		assert(0);
 	}
 }
-
-static inline token_t psi_num_exp_eval_decl_var(struct psi_num_exp *exp,
-		impl_val *res, struct psi_call_frame *frame)
+static inline void psi_num_exp_verify_result(token_t t, impl_val *res, struct psi_call_frame *frame)
 {
-	impl_val *ref;
-	struct psi_call_frame_symbol *sym;
-	struct psi_decl_type *real;
-	size_t size;
-
-	real = psi_decl_type_get_real(exp->data.dvar->arg->type);
-	size = psi_decl_arg_get_size(exp->data.dvar->arg);
-	sym = psi_call_frame_fetch_symbol(frame, exp->data.dvar);
-	ref = deref_impl_val(sym->ptr, exp->data.dvar);
-
-	memcpy(res, ref, size);
-
-	return real->type;
+	if (frame) PSI_DEBUG_PRINT(frame->context, "%s", " = ");
+	psi_impl_val_dump(t, res, frame);
+	if (frame) PSI_DEBUG_PRINT(frame->context, "%s", "\n");
 }
 
-static inline token_t psi_num_exp_eval(struct psi_num_exp *exp, impl_val *res,
-		struct psi_call_frame *frame)
+static void psi_num_exp_reduce(struct psi_num_exp *exp, struct psi_plist **output_ptr,
+		struct psi_plist **input_ptr, struct psi_call_frame *frame)
 {
-	switch (exp->type) {
-	case PSI_T_INT64:
-		*res = exp->data.ival;
-		if (frame) PSI_DEBUG_PRINT(frame->context, "%" PRIi64, res->i64);
-		return PSI_T_INT64;
+	struct psi_plist *output = *output_ptr, *input = *input_ptr;
+	struct element {
+		token_t type;
+		union {
+			impl_val value;
+			psi_calc calc;
+		} data;
+	} entry;
 
-	case PSI_T_DOUBLE:
-		*res = exp->data.ival;
-		if (frame) PSI_DEBUG_PRINT(frame->context, "%" PRIdval, res->dval);
-		return exp->type;
-
-	case PSI_T_ENUM:
-		res->i64 = exp->data.enm->val;
-		if (frame) PSI_DEBUG_PRINT(frame->context, "%" PRIi64, res->i64);
-		return PSI_T_INT64;
-
-	case PSI_T_CONST:
-		return psi_num_exp_eval_constant(exp, res, frame);
+	switch (exp->op) {
+	case 0:
+		entry.type = psi_number_eval(exp->data.n, &entry.data.value, frame);
+		output = psi_plist_add(output, &entry);
 		break;
 
-	case PSI_T_NAME:
-		return psi_num_exp_eval_decl_var(exp, res, frame);
+	case PSI_T_LPAREN:
+		entry.type = exp->op;
+		input = psi_plist_add(input, &entry);
+		psi_num_exp_reduce(exp->data.u, &output, &input, frame);
+		while (psi_plist_pop(input, &entry)) {
+			if (entry.type == PSI_T_LPAREN) {
+				break;
+			}
+			if (frame) PSI_DEBUG_PRINT(frame->context, " %lc", psi_num_exp_op_tok(entry.type));
+			output = psi_plist_add(output, &entry);
+		}
+		break;
+
+	case PSI_T_NOT:
+	case PSI_T_TILDE:
+		while (psi_plist_top(input, &entry)) {
+			/* bail out if exp->op >= entry.type */
+			if (psi_num_exp_op_cmp(exp->op, entry.type) != 1) {
+				break;
+			}
+			psi_plist_pop(input, NULL);
+			if (frame) PSI_DEBUG_PRINT(frame->context, " %lc", psi_num_exp_op_tok(entry.type));
+			output = psi_plist_add(output, &entry);
+		}
+		entry.type = exp->op;
+		entry.data.calc = exp->calc;
+		input = psi_plist_add(input, &entry);
+		psi_num_exp_reduce(exp->data.u, &output, &input, frame);
 		break;
 
 	default:
-		assert(0);
-	}
-	return 0;
-}
-
-#include "context.h"
-
-static inline int psi_num_exp_op_cmp(token_t op1, token_t op2)
-{
-	assert(op1 >= PSI_T_LSHIFT && op2 <= PSI_T_PIPE);
-	assert(op2 >= PSI_T_LSHIFT && op2 <= PSI_T_PIPE);
-
-	switch (op1) {
-	case PSI_T_LSHIFT:
-	case PSI_T_RSHIFT:
-		return op2 > PSI_T_RSHIFT;
-
-	case PSI_T_PLUS:
-	case PSI_T_MINUS:
-		return op2 > PSI_T_MINUS ? 1 : (op2 < PSI_T_PLUS ? -1 : 0);
-
-	case PSI_T_ASTERISK:
-	case PSI_T_SLASH:
-		return op2 > PSI_T_SLASH ? 1 : (op2 < PSI_T_ASTERISK ? -1 : 0);
-
-	case PSI_T_AMPERSAND:
-	case PSI_T_CARET:
-	case PSI_T_PIPE:
-		return -1 * (op2 < PSI_T_AMPERSAND);
+		psi_num_exp_reduce(exp->data.b.lhs, &output, &input, frame);
+		while (psi_plist_top(input, &entry)) {
+			/* bail out if exp->op > entry.type */
+			if (psi_num_exp_op_cmp(exp->op, entry.type) == -1) {
+				break;
+			}
+			psi_plist_pop(input, NULL);
+			if (frame) PSI_DEBUG_PRINT(frame->context, " %lc", psi_num_exp_op_tok(entry.type));
+			output = psi_plist_add(output, &entry);
+		}
+		entry.type = exp->op;
+		entry.data.calc = exp->calc;
+		input = psi_plist_add(input, &entry);
+		psi_num_exp_reduce(exp->data.b.rhs, &output, &input, frame);
+		break;
 	}
 
-	return 0;
+	*output_ptr = output;
+	*input_ptr = input;
 }
 
 token_t psi_num_exp_exec(struct psi_num_exp *exp, impl_val *res,
 		struct psi_call_frame *frame)
 {
-	impl_val num = {0};
-	token_t num_type;
+	struct psi_plist *output, *input;
+	struct element {
+		token_t type;
+		union {
+			impl_val value;
+			psi_calc calc;
+		} data;
+	} entry, lhs, rhs;
 
-	num_type = psi_num_exp_eval(exp, &num, frame);
+	output = psi_plist_init_ex(sizeof(entry), NULL);
+	input = psi_plist_init_ex(sizeof(entry), NULL);
 
-	if (exp->operand) {
-		impl_val rhs;
-		token_t rhs_type, res_type;
+	psi_num_exp_reduce(exp, &output, &input, frame);
 
-		/* only if there's a following op, and we have a higher precedence */
-		if (exp->operand->operand &&
-				psi_num_exp_op_cmp(exp->op, exp->operand->op) < 0) {
-			impl_val tmp, lhs;
-			token_t tmp_type, lhs_type;
+	while (psi_plist_pop(input, &entry)) {
+		if (frame) PSI_DEBUG_PRINT(frame->context, " %lc", psi_num_exp_op_tok(entry.type));
+		output = psi_plist_add(output, &entry);
+	}
+	if (frame) PSI_DEBUG_PRINT(frame->context, "%s", "\n");
 
-			if (frame) PSI_DEBUG_PRINT(frame->context, " %lc ", psi_num_exp_op_tok(exp->op));
+	while (psi_plist_shift(output, &entry)) {
+		switch (entry.type) {
+		default:
+			input = psi_plist_add(input, &entry);
+			break;
 
-			tmp_type = psi_num_exp_eval(exp->operand, &tmp, frame);
-			lhs_type = exp->calc(num_type, &num, tmp_type, &tmp, &lhs);
+		case PSI_T_NOT:
+		case PSI_T_TILDE:
+			psi_plist_pop(input, &rhs);
+			if (frame) PSI_DEBUG_PRINT(frame->context, " %lc", psi_num_exp_op_tok(entry.type));
+			psi_impl_val_dump(rhs.type, &rhs.data.value, frame);
 
-			if (frame) PSI_DEBUG_PRINT(frame->context, " %c ", '=');
-			psi_num_exp_verify_result(lhs_type, &lhs, frame);
-			if (frame) PSI_DEBUG_PRINT(frame->context, " %c", '\n');
+			entry.type = entry.data.calc(rhs.type, &rhs.data.value, 0, NULL, &entry.data.value);
+			input = psi_plist_add(input, &entry);
+			psi_num_exp_verify_result(entry.type, &entry.data.value, frame);
+			break;
 
-			rhs_type = psi_num_exp_exec(exp->operand->operand, &rhs, frame);
-			res_type = exp->operand->calc(lhs_type, &lhs, rhs_type, &rhs, res);
-		} else {
-			if (frame) PSI_DEBUG_PRINT(frame->context, " %lc ", psi_num_exp_op_tok(exp->op));
+		case PSI_T_PIPE:
+		case PSI_T_CARET:
+		case PSI_T_AMPERSAND:
+		case PSI_T_LSHIFT:
+		case PSI_T_RSHIFT:
+		case PSI_T_MINUS:
+		case PSI_T_PLUS:
+		case PSI_T_ASTERISK:
+		case PSI_T_SLASH:
+		case PSI_T_MODULO:
+			psi_plist_pop(input, &rhs);
+			psi_plist_pop(input, &lhs);
 
-			rhs_type = psi_num_exp_exec(exp->operand, &rhs, frame);
-			res_type = exp->calc(num_type, &num, rhs_type, &rhs, res);
+			psi_impl_val_dump(lhs.type, &lhs.data.value, frame);
+			if (frame) PSI_DEBUG_PRINT(frame->context, " %lc", psi_num_exp_op_tok(entry.type));
+			psi_impl_val_dump(rhs.type, &rhs.data.value, frame);
+
+			entry.type = entry.data.calc(
+					lhs.type, &lhs.data.value,
+					rhs.type, &rhs.data.value,
+					&entry.data.value);
+			input = psi_plist_add(input, &entry);
+			psi_num_exp_verify_result(entry.type, &entry.data.value, frame);
+			break;
 		}
 
-		if (frame) PSI_DEBUG_PRINT(frame->context, " %c ", '=');
-		psi_num_exp_verify_result(res_type, res, frame);
-		if (frame) PSI_DEBUG_PRINT(frame->context, " %c", '\n');
-
-		return res_type;
+		if (!psi_plist_count(output)) {
+			break;
+		}
 	}
 
-	*res = num;
-
-	return num_type;
+	*res = entry.data.value;
+	return entry.type;
 }
+

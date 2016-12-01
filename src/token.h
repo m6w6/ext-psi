@@ -51,6 +51,52 @@ static inline size_t psi_offset_padding(size_t diff, size_t alignment) {
 
 typedef int token_t;
 
+static inline int psi_num_exp_op_cmp(token_t op1, token_t op2)
+{
+	assert(!op1 || op1 == PSI_T_LPAREN || (op1 <= PSI_T_NOT && op1 >= PSI_T_PIPE));
+	assert(!op2 || op2 == PSI_T_LPAREN || (op2 <= PSI_T_NOT && op2 >= PSI_T_PIPE));
+
+	if (PSI_T_LPAREN == op2) {
+		return -1;
+	} else if (PSI_T_LPAREN == op1) {
+		return 1;
+	} else if (op1 == op2) {
+		return 0;
+	} else if (!op1) {
+		return 1;
+	} else if (!op2) {
+		return -1;
+	}
+
+	switch (op1) {
+	case PSI_T_PIPE:
+		return op2 > PSI_T_PIPE ? 1 : (op2 < PSI_T_PIPE ? -1 : 0);
+	case PSI_T_CARET:
+		return op2 > PSI_T_CARET ? 1 : (op2 < PSI_T_CARET ? -1 : 0);
+	case PSI_T_AMPERSAND:
+		return op2 > PSI_T_AMPERSAND ? 1 : (op2 < PSI_T_AMPERSAND ? -1 : 0);
+
+	case PSI_T_LSHIFT:
+	case PSI_T_RSHIFT:
+		return op2 > PSI_T_RSHIFT ? 1 : (op2 < PSI_T_LSHIFT ? -1 : 0);
+
+	case PSI_T_PLUS:
+	case PSI_T_MINUS:
+		return op2 > PSI_T_MINUS ? 1 : (op2 < PSI_T_PLUS ? -1 : 0);
+
+	case PSI_T_ASTERISK:
+	case PSI_T_SLASH:
+	case PSI_T_MODULO:
+		return op2 > PSI_T_MODULO ? 1 : (op2 < PSI_T_ASTERISK ? -1 : 0);
+
+	case PSI_T_NOT:
+	case PSI_T_TILDE:
+		return op2 > PSI_T_TILDE ? 1 : (op2 < PSI_T_NOT ? -1 : 0);
+	}
+
+	return 0;
+}
+
 static inline size_t psi_t_alignment(token_t t)
 {
 #define PSI_ALIGNOF(T) case PSI_T_## T: return ALIGNOF_## T ##_T;

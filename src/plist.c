@@ -23,12 +23,6 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#else
-# include "php_config.h"
-#endif
-
 #include "php_psi_stdinc.h"
 
 #include "plist.h"
@@ -37,7 +31,7 @@ struct psi_plist {
 	size_t size;
 	size_t count;
 	void (*dtor)(void *);
-	void *list[1];
+	void *list[0];
 };
 
 #define PLIST_ELE(l, i) (((char *)(l)->list) + (l)->size * (i))
@@ -54,9 +48,14 @@ struct psi_plist *psi_plist_init(void (*dtor)(void *)) {
 	return psi_plist_init_ex(0, dtor);
 }
 struct psi_plist *psi_plist_init_ex(size_t size, void (*dtor)(void *)) {
-	struct psi_plist *list = calloc(1, sizeof(*list));
+	struct psi_plist *list;
 
-	list->size = size ?: sizeof(void*);
+	if (!size) {
+		size = sizeof(void*);
+	}
+
+	list = calloc(1, sizeof(*list) + size);
+	list->size = size;
 	list->dtor = dtor;
 
 	return list;
@@ -76,8 +75,8 @@ size_t psi_plist_count(struct psi_plist *list) {
 }
 
 struct psi_plist *psi_plist_add(struct psi_plist *list, void *ptr) {
-	if (list->count) {
-		list = realloc(list, sizeof(*list) + list->count * list->size);
+	if (list && list->count) {
+		list = realloc(list, sizeof(*list) + list->size + list->count * list->size);
 	}
 	if (list) {
 		PLIST_CPY(list, PLIST_ELE(list, list->count++), ptr);
@@ -94,7 +93,7 @@ bool psi_plist_get(struct psi_plist *list, size_t index, void *ptr) {
 }
 
 bool psi_plist_del(struct psi_plist *list, size_t index, void *ptr) {
-	if (list->count > index) {
+	if (list && list->count > index) {
 		if (ptr) {
 			PLIST_CPY(list, ptr, PLIST_ELE(list, index));
 		}
@@ -107,7 +106,7 @@ bool psi_plist_del(struct psi_plist *list, size_t index, void *ptr) {
 }
 
 bool psi_plist_shift(struct psi_plist *list, void *ptr) {
-	if (list->count) {
+	if (list && list->count) {
 		if (ptr) {
 			PLIST_CPY(list, ptr, PLIST_ELE(list, 0));
 		}
@@ -120,11 +119,19 @@ bool psi_plist_shift(struct psi_plist *list, void *ptr) {
 }
 
 bool psi_plist_pop(struct psi_plist *list, void *ptr) {
-	if (list->count) {
+	if (list && list->count) {
 		--list->count;
 		if (ptr) {
 			PLIST_CPY(list, ptr, PLIST_ELE(list, list->count));
 		}
+		return true;
+	}
+	return false;
+}
+
+bool psi_plist_top(struct psi_plist *list, void *ptr) {
+	if (list && list->count) {
+		PLIST_CPY(list, ptr, PLIST_ELE(list, list->count - 1));
 		return true;
 	}
 	return false;

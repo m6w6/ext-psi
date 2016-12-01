@@ -60,3 +60,16 @@ $(PHP_PSI_SRCDIR)/src/parser.c: $(PHP_PSI_SRCDIR)/src/parser.re
 
 $(PHP_PSI_SRCDIR)/src/types/decl.c: $(PHP_PSI_SRCDIR)/php_psi_macros.h $(PHP_PSI_SRCDIR)/php_psi_redirs.h
 $(PHP_PSI_SRCDIR)/src/context.c: $(PHP_PSI_SRCDIR)/php_psi_consts.h $(PHP_PSI_SRCDIR)/php_psi_decls.h $(PHP_PSI_SRCDIR)/php_psi_fn_decls.h $(PHP_PSI_SRCDIR)/php_psi_structs.h $(PHP_PSI_SRCDIR)/php_psi_types.h $(PHP_PSI_SRCDIR)/php_psi_unions.h $(PHP_PSI_SRCDIR)/php_psi_va_decls.h
+
+PHP_PSI_DEPEND = $(PHP_PSI_BUILDDIR)/Makefile.deps
+
+depend: psi-depend
+.PHONY: psi-depend
+psi-depend: $(PHP_PSI_DEPEND)
+
+$(PHP_PSI_DEPEND): $(PHP_PSI_SOURCES)
+	$(CC) -MM -MG $(CPPFLAGS) $(DEFS) $(INCLUDES) $^ \
+		| $(SED) -e 's/^\(.*\).o: /\1.lo: /' \
+		> $@
+
+-include $(PHP_PSI_DEPEND)

@@ -14,22 +14,24 @@
 %default_destructor {(void)P;}
 %extra_argument {struct psi_parser *P}
 %syntax_error { ++P->errors; if (TOKEN && TOKEN->type != PSI_T_EOF) { psi_error(PSI_WARNING, TOKEN->file, TOKEN->line, "PSI syntax error: Unexpected token '%s' at pos %u", TOKEN->text, TOKEN->col); } else { psi_error(PSI_WARNING, P->file.fn, P->line, "PSI syntax error: Unexpected end of input"); } }
-%nonassoc NAME.
-%left LSHIFT RSHIFT.
-%left PLUS MINUS.
-%left ASTERISK SLASH.
-%nonassoc AMPERSAND.
-%nonassoc CARET.
-%nonassoc PIPE.
-%fallback NAME TEMP FREE SET LET RETURN CALLOC CALLBACK ZVAL LIB STRING COUNT.
 %token_class const_type_token BOOL INT FLOAT STRING.
 %token_class decl_type_token FLOAT DOUBLE INT8 UINT8 INT16 UINT16 INT32 UINT32 INT64 UINT64 NAME.
 %token_class impl_def_val_token NULL NUMBER TRUE FALSE QUOTED_STRING.
-%token_class num_exp_token NUMBER NSNAME.
-%token_class num_exp_op_token LSHIFT RSHIFT PLUS MINUS ASTERISK SLASH AMPERSAND CARET PIPE.
+%token_class number_token NUMBER NSNAME.
+%token_class num_exp_binary_op_token PIPE CARET AMPERSAND LSHIFT RSHIFT PLUS MINUS ASTERISK SLASH MODULO.
+%token_class num_exp_unary_op_token TILDE NOT PLUS MINUS.
 %token_class let_func_token ZVAL OBJVAL ARRVAL PATHVAL STRLEN STRVAL FLOATVAL INTVAL BOOLVAL COUNT.
 %token_class set_func_token TO_OBJECT TO_ARRAY TO_STRING TO_INT TO_FLOAT TO_BOOL ZVAL VOID.
 %token_class impl_type_token VOID MIXED BOOL INT FLOAT STRING ARRAY OBJECT CALLABLE.
+%nonassoc NAME.
+%right NOT TILDE.
+%left PIPE.
+%left CARET.
+%left AMPERSAND.
+%left LSHIFT RSHIFT.
+%left PLUS MINUS.
+%left ASTERISK SLASH MODULO.
+%fallback NAME TEMP FREE SET LET RETURN CALLOC CALLBACK ZVAL LIB STRING COUNT.
 %type decl_enum {struct psi_decl_enum *}
 %destructor decl_enum {psi_decl_enum_free(&$$);}
 %type decl_enum_items {struct psi_plist*}
@@ -99,6 +101,8 @@
 %destructor impl_stmts {psi_plist_free($$);}
 %type impl_stmt {struct psi_token**}
 %destructor impl_stmt {psi_impl_stmt_free(&$$);}
+%type number {struct psi_number*}
+%destructor number {psi_number_free(&$$);}
 %type num_exp {struct psi_num_exp*}
 %destructor num_exp {psi_num_exp_free(&$$);}
 %type let_stmt {struct psi_let_stmt*}
@@ -699,25 +703,29 @@ impl_stmt(i) ::= set_stmt(s). {
 impl_stmt(i) ::= free_stmt(f). {
  i = (struct psi_token**) f;
 }
-num_exp(exp) ::= num_exp_token(tok). {
- exp = psi_num_exp_init(tok->type, tok->text);
+number(exp) ::= number_token(tok). {
+ exp = psi_number_init(tok->type, tok->text);
  exp->token = tok;
 }
-num_exp(exp) ::= decl_var(var). {
- exp = psi_num_exp_init(PSI_T_NAME, var);
+number(exp) ::= decl_var(var). {
+ exp = psi_number_init(PSI_T_NAME, var);
  exp->token = psi_token_copy(var->token);
 }
-num_exp(exp) ::= num_exp(exp1) num_exp_op_token(operator_) num_exp(exp2). {
- exp = exp1;
- do {
-  struct psi_num_exp *op = exp1;
-  while (op->operand) {
-   op = op->operand;
-  }
-  op->op = operator_->type;
-  op->operand = exp2;
- } while(0);
- free(operator_);
+num_exp(exp) ::= number(num). {
+ exp = psi_num_exp_init_num(num);
+ exp->token = psi_token_copy(num->token);
+}
+num_exp(exp) ::= LPAREN(L) num_exp(exp_) RPAREN. {
+ exp = psi_num_exp_init_unary(PSI_T_LPAREN, exp_);
+ exp->token = L;
+}
+num_exp(exp) ::= num_exp(lhs_) num_exp_binary_op_token(OP) num_exp(rhs_). {
+ exp = psi_num_exp_init_binary(OP->type, lhs_, rhs_);
+ exp->token = OP;
+}
+num_exp(exp) ::= num_exp_unary_op_token(OP) num_exp(exp_). {
+ exp = psi_num_exp_init_unary(OP->type, exp_);
+ exp->token = OP;
 }
 let_exp(val) ::= NULL. {
  val = psi_let_exp_init(PSI_LET_NULL, NULL);

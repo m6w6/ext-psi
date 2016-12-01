@@ -23,30 +23,41 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef PSI_PLIST_H
-#define PSI_PLIST_H
+#ifndef PSI_TYPES_NUMBER_H
+#define PSI_TYPES_NUMBER_H
 
-struct psi_plist;
 
-typedef void (*psi_plist_dtor)(void *);
+struct psi_data;
+struct psi_token;
+struct psi_impl;
+struct psi_const;
+struct psi_decl_enum_item;
+struct psi_let_exp;
+struct psi_set_exp;
+struct psi_call_frame;
 
-struct psi_plist *psi_plist_init(void (*dtor)(void *));
-struct psi_plist *psi_plist_init_ex(size_t size, void (*dtor)(void *));
-void psi_plist_free(struct psi_plist *list);
+struct psi_number {
+	struct psi_token *token;
+	token_t type;
+	union {
+		char *numb;
+		impl_val ival;
+		struct psi_const *cnst;
+		struct psi_decl_var *dvar;
+		struct psi_decl_enum_item *enm;
+	} data;
+};
 
-size_t psi_plist_count(struct psi_plist *list);
+struct psi_number *psi_number_init(token_t t, void *num);
+struct psi_number *psi_number_copy(struct psi_number *exp);
+void psi_number_free(struct psi_number **exp_ptr);
+void psi_number_dump(int fd, struct psi_number *exp);
 
-struct psi_plist *psi_plist_add(struct psi_plist *list, void *ptr);
-bool psi_plist_get(struct psi_plist *list, size_t index, void *ptr);
-bool psi_plist_del(struct psi_plist *list, size_t index, void *ptr);
-bool psi_plist_shift(struct psi_plist *list, void *ptr);
-bool psi_plist_pop(struct psi_plist *list, void *ptr);
-bool psi_plist_top(struct psi_plist *list, void *ptr);
-#define psi_plist_bottom(l, p) psi_plist_get((l), 0, (p))
+bool psi_number_validate(struct psi_data *data, struct psi_number *exp,
+		struct psi_impl *impl, struct psi_decl *cb_decl,
+		struct psi_let_exp *current_let, struct psi_set_exp *current_set,
+		struct psi_decl_enum *current_enum);
 
-#include "Zend/zend.h"
-#include "Zend/zend_sort.h"
-
-void psi_plist_sort(struct psi_plist *list, compare_func_t cmp, swap_func_t swp);
+token_t psi_number_eval(struct psi_number *exp, impl_val *res, struct psi_call_frame *frame);
 
 #endif

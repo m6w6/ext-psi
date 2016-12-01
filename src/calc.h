@@ -33,10 +33,16 @@
 #define PRIdval "lf"
 #define PRIldval "Lf"
 
+typedef token_t (*psi_calc)(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
+
 token_t psi_calc_add(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
 token_t psi_calc_sub(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
 token_t psi_calc_mul(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
 token_t psi_calc_div(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
+token_t psi_calc_mod(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
+
+token_t psi_calc_not(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
+token_t psi_calc_bin_not(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
 
 token_t psi_calc_bin_lshift(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
 token_t psi_calc_bin_rshift(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);

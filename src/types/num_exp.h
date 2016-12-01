@@ -23,8 +23,8 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef PSI_TYPES_NUM_EXP
-#define PSI_TYPES_NUM_EXP
+#ifndef PSI_TYPES_NUM_EXP_H
+#define PSI_TYPES_NUM_EXP_H
 
 #include "token.h"
 #include "Zend/zend_types.h"
@@ -40,24 +40,27 @@ struct psi_call_frame;
 
 struct psi_num_exp {
 	struct psi_token *token;
-	token_t type;
-	union {
-		char *numb;
-		impl_val ival;
-		struct psi_const *cnst;
-		struct psi_decl_var *dvar;
-		struct psi_decl_enum_item *enm;
-	} data;
 	token_t op;
-	struct psi_num_exp *operand;
+	union {
+		struct {
+			struct psi_num_exp *lhs;
+			struct psi_num_exp *rhs;
+		} b;
+		struct psi_num_exp *u;
+		struct psi_number *n;
+	} data;
 	token_t (*calc)(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
 };
 
-struct psi_num_exp *psi_num_exp_init(token_t t, void *num);
-struct psi_num_exp *psi_num_exp_copy(struct psi_num_exp *exp);
-void psi_num_exp_free(struct psi_num_exp **exp_ptr);
-void psi_num_exp_dump(int fd, struct psi_num_exp *exp);
+struct psi_num_exp *psi_num_exp_init_binary(token_t op,
+		struct psi_num_exp *lhs, struct psi_num_exp *rhs);
+struct psi_num_exp *psi_num_exp_init_unary(token_t op,
+		struct psi_num_exp *u);
+struct psi_num_exp *psi_num_exp_init_num(struct psi_number *n);
+void psi_num_exp_free(struct psi_num_exp **c_ptr);
 
+struct psi_num_exp *psi_num_exp_copy(struct psi_num_exp *exp);
+void psi_num_exp_dump(int fd, struct psi_num_exp *exp);
 bool psi_num_exp_validate(struct psi_data *data, struct psi_num_exp *exp,
 		struct psi_impl *impl, struct psi_decl *cb_decl,
 		struct psi_let_exp *current_let, struct psi_set_exp *current_set,
@@ -86,5 +89,6 @@ static inline zend_long psi_long_num_exp(struct psi_num_exp *exp, struct psi_cal
 	}
 	return 0;
 }
+
 
 #endif

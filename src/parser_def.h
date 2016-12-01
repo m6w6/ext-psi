@@ -79,23 +79,33 @@ DEF(%syntax_error, {
 	}
 })
 
-DEF(%nonassoc, NAME.)
-DEF(%left, LSHIFT RSHIFT.)
-DEF(%left, PLUS MINUS.)
-DEF(%left, ASTERISK SLASH.)
-DEF(%nonassoc, AMPERSAND.)
-DEF(%nonassoc, CARET.)
-DEF(%nonassoc, PIPE.)
-DEF(%fallback, NAME TEMP FREE SET LET RETURN CALLOC CALLBACK ZVAL LIB STRING COUNT.)
-
 DEF(%token_class, const_type_token BOOL INT FLOAT STRING.)
 DEF(%token_class, decl_type_token FLOAT DOUBLE INT8 UINT8 INT16 UINT16 INT32 UINT32 INT64 UINT64 NAME.)
 DEF(%token_class, impl_def_val_token NULL NUMBER TRUE FALSE QUOTED_STRING.)
-DEF(%token_class, num_exp_token NUMBER NSNAME.)
-DEF(%token_class, num_exp_op_token LSHIFT RSHIFT PLUS MINUS ASTERISK SLASH AMPERSAND CARET PIPE.)
+DEF(%token_class, number_token NUMBER NSNAME.)
+DEF(%token_class, num_exp_binary_op_token PIPE CARET AMPERSAND LSHIFT RSHIFT PLUS MINUS ASTERISK SLASH MODULO.)
+DEF(%token_class, num_exp_unary_op_token TILDE NOT PLUS MINUS.)
 DEF(%token_class, let_func_token ZVAL OBJVAL ARRVAL PATHVAL STRLEN STRVAL FLOATVAL INTVAL BOOLVAL COUNT.)
 DEF(%token_class, set_func_token TO_OBJECT TO_ARRAY TO_STRING TO_INT TO_FLOAT TO_BOOL ZVAL VOID.)
 DEF(%token_class, impl_type_token VOID MIXED BOOL INT FLOAT STRING ARRAY OBJECT CALLABLE.)
+
+DEF(%nonassoc, NAME.)
+DEF(%right, NOT TILDE.)
+DEF(%left, PIPE.)
+DEF(%left, CARET.)
+DEF(%left, AMPERSAND.)
+DEF(%left, LSHIFT RSHIFT.)
+DEF(%left, PLUS MINUS.)
+DEF(%left, ASTERISK SLASH MODULO.)
+/*
+DEF(%left, ASTERISK SLASH MODULO.)
+DEF(%left, PLUS MINUS.)
+DEF(%left, LSHIFT RSHIFT.)
+DEF(%left, AMPERSAND.)
+DEF(%left, CARET.)
+DEF(%left, PIPE.)
+*/
+DEF(%fallback, NAME TEMP FREE SET LET RETURN CALLOC CALLBACK ZVAL LIB STRING COUNT.)
 
 TOKEN_TYPE(decl_enum, struct psi_decl_enum *)
 TOKEN_DTOR(decl_enum, psi_decl_enum_free(&$$);)
@@ -166,6 +176,8 @@ TOKEN_TYPE(impl_stmts, struct psi_plist*)
 TOKEN_DTOR(impl_stmts, psi_plist_free($$);)
 TOKEN_TYPE(impl_stmt, struct psi_token**)
 TOKEN_DTOR(impl_stmt, psi_impl_stmt_free(&$$);)
+TOKEN_TYPE(number, struct psi_number*)
+TOKEN_DTOR(number, psi_number_free(&$$);)
 TOKEN_TYPE(num_exp, struct psi_num_exp*)
 TOKEN_DTOR(num_exp, psi_num_exp_free(&$$);)
 TOKEN_TYPE(let_stmt, struct psi_let_stmt*)
@@ -1401,40 +1413,62 @@ PARSE_TYPED(impl_stmt, i,
 }
 
 /*
- * num_exp: num_exp_token
+ * number: number_token
  */
-PARSE_TYPED(num_exp, exp,
-		NAMED(num_exp_token, tok)) {
-	exp = psi_num_exp_init(tok->type, tok->text);
+PARSE_TYPED(number, exp,
+		NAMED(number_token, tok)) {
+	exp = psi_number_init(tok->type, tok->text);
 	exp->token = tok;
 }
 
 /*
  * num_exp: decl_var
  */
-PARSE_TYPED(num_exp, exp,
+PARSE_TYPED(number, exp,
 		TYPED(decl_var, var)) {
-	exp = psi_num_exp_init(PSI_T_NAME, var);
+	exp = psi_number_init(PSI_T_NAME, var);
 	exp->token = psi_token_copy(var->token);
 }
 
 /*
- * num_exp: num_exp num_exp_op_token num_exp
+ * num_exp: num_exp
  */
 PARSE_TYPED(num_exp, exp,
-		TYPED(num_exp, exp1)
-		NAMED(num_exp_op_token, operator_)
-		TYPED(num_exp, exp2)) {
-	exp = exp1;
-	do {
-		struct psi_num_exp *op = exp1;
-		while (op->operand) {
-			op = op->operand;
-		}
-		op->op = operator_->type;
-		op->operand = exp2;
-	} while(0);
-	free(operator_);
+		TYPED(number, num)) {
+	exp = psi_num_exp_init_num(num);
+	exp->token = psi_token_copy(num->token);
+}
+
+/*
+ * num_exp: ( num_exp )
+ */
+PARSE_TYPED(num_exp, exp,
+		NAMED(LPAREN, L)
+		TYPED(num_exp, exp_)
+		TOKEN(RPAREN)) {
+	exp = psi_num_exp_init_unary(PSI_T_LPAREN, exp_);
+	exp->token = L;
+}
+
+/*
+ * num_exp: num_exp num_exp_binary_op_token num_exp
+ */
+PARSE_TYPED(num_exp, exp,
+		TYPED(num_exp, lhs_)
+		NAMED(num_exp_binary_op_token, OP)
+		TYPED(num_exp, rhs_)) {
+	exp = psi_num_exp_init_binary(OP->type, lhs_, rhs_);
+	exp->token = OP;
+}
+
+/*
+ * num_exp: num_exp_unary_op_token num_exp
+ */
+PARSE_TYPED(num_exp, exp,
+		NAMED(num_exp_unary_op_token, OP)
+		TYPED(num_exp, exp_)) {
+	exp = psi_num_exp_init_unary(OP->type, exp_);
+	exp->token = OP;
 }
 
 /*
