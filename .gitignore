@@ -76,3 +76,4 @@ php_psi_unions.h
 /token.h
 /types.h
 /types/
+*.d

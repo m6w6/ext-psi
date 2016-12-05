@@ -27,7 +27,7 @@
 #define PSI_CALC_H
 
 #include "token.h"
-#include "impl_val.h"
+#include "types/impl_val.h"
 
 #define PRIfval "f"
 #define PRIdval "lf"

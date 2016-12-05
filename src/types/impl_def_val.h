@@ -27,7 +27,7 @@
 #define PSI_TYPES_IMPL_DEF_VAL_H
 
 #include "token.h"
-#include "impl_val.h"
+#include "types/impl_val.h"
 
 struct psi_data;
 struct psi_impl_type;
