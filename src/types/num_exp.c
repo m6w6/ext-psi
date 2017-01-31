@@ -494,6 +494,9 @@ token_t psi_num_exp_exec(struct psi_num_exp *exp, impl_val *res,
 		}
 	}
 
+	psi_plist_free(output);
+	psi_plist_free(input);
+
 	*res = entry.data.value;
 	return entry.type;
 }
