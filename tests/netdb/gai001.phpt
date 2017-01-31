@@ -21,7 +21,7 @@ $flags = psi\NI_NUMERICHOST|psi\NI_NUMERICSERV;
 do {
 	$rc = psi\getnameinfo($ai["ai_addr"], $host, $serv, $flags);
 	if ($rc !== 0) var_dump($rc);
-	if ($host !== "78.46.223.30") var_dump($host);
+	if ($host !== "78.46.223.30" && $host !== "2a01:4f8:d13:2304::2") var_dump($host);
 	if ($serv !== "0") var_dump($serv);
 } while (($ai = $ai["ai_next"]));
 
