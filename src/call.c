@@ -187,6 +187,7 @@ zval *psi_call_frame_sub_argument(struct psi_call_frame *frame,
 	if (!inner_zval) {
 		zval empty_zval;
 
+		SEPARATE_ZVAL(outer_zval);
 		ZVAL_NULL(&empty_zval);
 		inner_zval = zend_symtable_str_update(Z_ARRVAL_P(outer_zval),
 				&inner_var->name[1], strlen(&inner_var->name[1]),
@@ -282,9 +283,9 @@ ZEND_RESULT_CODE psi_call_frame_parse_args(struct psi_call_frame *frame,
 			Z_PARAM_ARRAY_EX(tmp, _optional || iarg->var->reference,
 					iarg->var->reference);
 		} else if (PSI_T_OBJECT == iarg->type->type) {
-			Z_PARAM_PROLOGUE(0);
+			Z_PARAM_PROLOGUE(iarg->var->reference);
 		} else if (PSI_T_MIXED == iarg->type->type) {
-			Z_PARAM_PROLOGUE(0);
+			Z_PARAM_PROLOGUE(iarg->var->reference);
 		} else if (PSI_T_CALLABLE == iarg->type->type) {
 			zend_fcall_info fci;
 			zend_fcall_info_cache fcc;
