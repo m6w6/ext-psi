@@ -59,6 +59,9 @@ static inline psi_object *PSI_OBJ(zval *zv, zend_object *zo) {
 	if (zv) {
 		zo = Z_OBJ_P(zv);
 	}
+	if (!zo) {
+		return NULL;
+	}
 	return (void *) (((char *) zo) - zo->handlers->offset);
 }
 

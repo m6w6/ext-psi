@@ -58,15 +58,13 @@ void psi_decl_enum_dump(int fd, struct psi_decl_enum *e, unsigned level)
 		size_t i = 0;
 		struct psi_decl_enum_item *item;
 
-		++level;
 		while (psi_plist_get(e->items, i++, &item)) {
 			if (i > 1) {
 				dprintf(fd, ",\n");
 			}
-			dprintf(fd, "%s", psi_t_indent(level));
+			dprintf(fd, "%s", psi_t_indent(level + 1));
 			psi_decl_enum_item_dump(fd, item);
 		}
-		--level;
 	}
 	dprintf(fd, "\n}");
 }

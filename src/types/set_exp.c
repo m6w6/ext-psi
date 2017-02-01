@@ -50,7 +50,7 @@ struct psi_set_exp *psi_set_exp_init(enum psi_set_exp_kind kind, void *data)
 
 void psi_set_exp_exec(struct psi_set_exp *val, struct psi_call_frame *frame)
 {
-	struct psi_call_frame_symbol *frame_sym = NULL;
+	struct psi_call_frame_symbol *frame_sym;
 	struct psi_call_frame_argument *frame_arg;
 	struct psi_decl_var *set_dvar = psi_set_exp_get_decl_var(val);
 	struct psi_impl_var *set_ivar = psi_set_exp_get_impl_var(val);

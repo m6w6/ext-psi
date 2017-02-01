@@ -85,8 +85,8 @@ struct psi_context *psi_context_init(struct psi_context *C, struct psi_context_o
 		ops->init(C);
 	}
 
-	ZEND_ASSERT(ops->call != NULL);
-	ZEND_ASSERT(ops->compile != NULL);
+	assert(ops->call != NULL);
+	assert(ops->compile != NULL);
 
 	/* build up predefs in a temporary PSI_Data for validation */
 	memset(&T, 0, sizeof(T));

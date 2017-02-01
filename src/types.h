@@ -94,7 +94,8 @@ static inline impl_val *enref_impl_val(void *ptr, struct psi_decl_var *var) {
 		return ptr;
 	}
 
-	val = val_ptr = calloc(var->pointer_level + 1, sizeof(void *));
+	val = calloc(var->pointer_level + 1, sizeof(void *));
+	val_ptr = val;
 	for (i = !var->arg->var->array_size; i < var->pointer_level; ++i) {
 #if 0
 		fprintf(stderr, "++\n");

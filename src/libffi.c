@@ -69,7 +69,7 @@ static void *psi_ffi_closure_alloc(size_t s, void **code)
 
 static ffi_status psi_ffi_prep_closure(ffi_closure **closure, void **code, ffi_cif *sig, void (*handler)(ffi_cif*,void*,void**,void*), void *data) {
 	*closure = psi_ffi_closure_alloc(sizeof(ffi_closure), code);
-	ZEND_ASSERT(*closure != NULL);
+	assert(*closure != NULL);
 
 #if PSI_HAVE_FFI_PREP_CLOSURE_LOC
 	return ffi_prep_closure_loc(*closure, sig, handler, data, *code);
@@ -102,7 +102,7 @@ static void psi_ffi_prep_va(ffi_cif *base, ffi_cif *signature, size_t argc, size
 	rc = ffi_prep_cif(signature, base->abi, argc + va_count, base->rtype, param_types);
 #endif
 
-	ZEND_ASSERT(FFI_OK == rc);
+	assert(FFI_OK == rc);
 }
 
 static inline ffi_type *psi_ffi_decl_arg_type(struct psi_decl_arg *darg);
@@ -175,7 +175,7 @@ static inline struct psi_ffi_call *psi_ffi_call_alloc(struct psi_context *C, str
 
 	rc = ffi_prep_cif(&call->signature, psi_ffi_abi(decl->abi->convention),
 			c, psi_ffi_decl_arg_type(decl->func), call->params);
-	ZEND_ASSERT(FFI_OK == rc);
+	assert(FFI_OK == rc);
 
 	return call;
 }
@@ -205,7 +205,7 @@ static inline void psi_ffi_call_free(struct psi_ffi_call *call) {
 static inline ffi_type *psi_ffi_token_type(token_t t) {
 	switch (t) {
 	default:
-		ZEND_ASSERT(0);
+		assert(0);
 		/* no break */
 	case PSI_T_VOID:
 		return &ffi_type_void;
@@ -289,7 +289,7 @@ static size_t psi_ffi_struct_type_pad(ffi_type **els, size_t padding) {
 
 static ffi_type **psi_ffi_struct_type_elements(struct psi_decl_struct *strct) {
 	size_t i = 0, argc = psi_plist_count(strct->args), nels = 0, offset = 0, maxalign = 0;
-	ffi_type **els = calloc(argc + 1, sizeof(*els));
+	ffi_type **tmp, **els = calloc(argc + 1, sizeof(*els));
 	struct psi_decl_arg *darg;
 
 	while (psi_plist_get(strct->args, i++, &darg)) {
@@ -306,7 +306,13 @@ static ffi_type **psi_ffi_struct_type_elements(struct psi_decl_struct *strct) {
 		if ((padding = psi_offset_padding(darg->layout->pos - offset, type->alignment))) {
 			if (nels + padding + 1 > argc) {
 				argc += padding;
-				els = realloc(els, (argc + 1) * sizeof(*els));
+				tmp = realloc(els, (argc + 1) * sizeof(*els));
+				if (tmp) {
+					els = tmp;
+				} else {
+					free(els);
+					return NULL;
+				}
 				els[argc] = NULL;
 			}
 			psi_ffi_struct_type_pad(&els[nels], padding);
@@ -378,7 +384,7 @@ static inline struct psi_ffi_context *psi_ffi_context_init(struct psi_ffi_contex
 	L->params[0] = &ffi_type_pointer;
 	L->params[1] = &ffi_type_pointer;
 	rc = ffi_prep_cif(&L->signature, FFI_DEFAULT_ABI, 2, &ffi_type_void, L->params);
-	ZEND_ASSERT(rc == FFI_OK);
+	assert(rc == FFI_OK);
 
 	return L;
 }

@@ -164,7 +164,8 @@ static inline bool psi_set_func_validate_to_array(struct psi_data *data,
 		return true;
 
 	default:
-		complex: switch (psi_decl_type_get_real(set_var->arg->type)->type) {
+		complex:
+		switch (psi_decl_type_get_real(set_var->arg->type)->type) {
 		case PSI_T_UNION:
 		case PSI_T_STRUCT:
 			break;
@@ -185,8 +186,8 @@ static inline bool psi_set_func_validate_to_recursive(struct psi_data *data,
 		struct psi_impl *impl)
 {
 	if (!set->outer
-			|| set->outer->kind
-					!= PSI_SET_FUNC|| set->outer->data.func->type != PSI_T_TO_ARRAY) {
+			|| set->outer->kind != PSI_SET_FUNC
+			|| set->outer->data.func->type != PSI_T_TO_ARRAY) {
 		data->error(data, func->token, PSI_WARNING,
 				"Expected to_array() as parent to recursion in `set` statement"
 				" of implementation '%s'",
@@ -270,12 +271,6 @@ bool psi_set_func_validate(struct psi_data *data, struct psi_set_func *func,
 		break;
 	case PSI_T_TO_ARRAY:
 		if (!psi_set_func_validate_to_array(data, func, set, impl)) {
-			return false;
-		}
-		break;
-	case PSI_T_ELLIPSIS:
-		abort();
-		if (!psi_set_func_validate_to_recursive(data, func, set, impl)) {
 			return false;
 		}
 		break;

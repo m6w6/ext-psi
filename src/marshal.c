@@ -400,8 +400,6 @@ impl_val *psi_let_strval(impl_val *tmp, struct psi_decl_type *spec, token_t impl
 		} else {
 			tmp->ptr = "";
 		}
-	} else if (0 && Z_TYPE_P(zvalue) == IS_STRING) {
-		tmp->ptr = Z_STRVAL_P(zvalue);
 	} else {
 		zend_string *zs = zval_get_string(zvalue);
 		tmp->ptr = estrdup(zs->val);

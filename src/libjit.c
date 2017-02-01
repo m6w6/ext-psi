@@ -42,7 +42,7 @@ static inline jit_type_t psi_jit_token_type(token_t t)
 {
 	switch (t) {
 	default:
-		ZEND_ASSERT(0);
+		assert(0);
 		/* no break */
 	case PSI_T_VOID:
 		return jit_type_void;
@@ -155,7 +155,7 @@ static unsigned psi_jit_struct_type_elements(struct psi_decl_struct *strct,
 	/* apply struct alignment padding */
 	offset = (offset + maxalign - 1) & ~(maxalign - 1);
 
-	ZEND_ASSERT(offset <= strct->size);
+	assert(offset <= strct->size);
 	if (offset < strct->size) {
 		nels += psi_jit_struct_type_pad(&(*fields)[nels], strct->size - offset);
 	}
@@ -517,7 +517,7 @@ static void psi_jit_call_va(struct psi_context *C, struct psi_call_frame *frame,
 	signature = jit_type_create_signature(jit_abi_vararg,
 			jit_type_get_return(info->signature), param_types, argc + va_count,
 			1);
-	ZEND_ASSERT(signature);
+	assert(signature);
 
 	info->impl.fn.frame = frame;
 	jit_apply(signature, decl->sym, args, argc, rval);
