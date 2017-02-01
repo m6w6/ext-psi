@@ -35,10 +35,10 @@ psi-clean: psi-clean-headers psi-clean-sources psi-clean-aux
 
 
 lempar.c:
-	curl -sSo $@ "http://www.sqlite.org/src/raw/tool/lempar.c?name=3ec1463a034b37d87d782be5f6b8b10a3b1ecbe7"
+	curl -sSo $@ "http://www.sqlite.org/src/raw/tool/lempar.c?name=db1bdb4821f2d8fbd76e577cf3ab18642c8d08d1"
 
 lemon.c:
-	curl -sSo $@ "http://www.sqlite.org/src/raw/tool/lemon.c?name=799e73e19a33b8dd7767a7fa34618ed2a9c2397d"
+	curl -sSo $@ "http://www.sqlite.org/src/raw/tool/lemon.c?name=5ccba178a8e8a4b21e1c9232944d23973da38ad7"
 
 ./lemon: lemon.c | lempar.c
 	$(CC) -o $@ $<
