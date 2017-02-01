@@ -133,6 +133,7 @@ if test "$PHP_PSI" != no; then
 	AC_DEFINE_UNQUOTED([PSI_DECLS], ["$PSI_DECLS"], [Predefined functions])
 	AC_DEFINE_UNQUOTED([PSI_VA_DECLS], ["$PSI_VA_DECLS"], [Predefined vararg functions])
 
+	PHP_ADD_INCLUDE($PHP_PSI_SRCDIR)
 	PHP_ADD_INCLUDE($PHP_PSI_SRCDIR/src)
 	PHP_ADD_INCLUDE($PHP_PSI_SRCDIR/src/types)
 	PHP_ADD_BUILD_DIR($PHP_PSI_BUILDDIR/src)

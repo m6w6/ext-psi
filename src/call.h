@@ -100,5 +100,4 @@ void **psi_call_frame_push_auto(struct psi_call_frame *frame, void *auto_free);
 
 void psi_call_frame_free(struct psi_call_frame *frame);
 
-
 #endif

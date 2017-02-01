@@ -63,22 +63,23 @@ $(PHP_PSI_SRCDIR)/src/context.c: $(PHP_PSI_SRCDIR)/php_psi_consts.h $(PHP_PSI_SR
 
 # -- deps
 
-PHP_PSI_DEPEND = $(PHP_PSI_SOURCES:.c=.d)
+PHP_PSI_DEPEND = $(patsubst $(PHP_PSI_SRCDIR)/%,$(PHP_PSI_BUILDDIR)/%,$(PHP_PSI_SOURCES:.c=.dep))
 
 .PHONY: psi-clean-depend
 psi-clean-depend:
-	-rm -f $(PHP_PSI_DEPEND)
+	-rm -f $(PHP_PSI_DEPEND) $(PHP_PSI_BUILDDIR)/php_psi.dep
 
 psi-clean: psi-clean-depend
 
-%.d: %.c
-	$(CC) -MM -MG -MF $@ -MT $(patsubst $(PHP_PSI_SRCDIR)/%,$(PHP_PSI_BUILDDIR)/%,$(@:.d=.lo)) \
+$(PHP_PSI_BUILDDIR)/%.dep: $(PHP_PSI_SRCDIR)/%.c
+	$(CC) -MM -MG -MF $@ -MT $(patsubst $(PHP_PSI_SRCDIR)/%,$(PHP_PSI_BUILDDIR)/%,$(@:.dep=.lo)) \
 		$(CPPFLAGS) $(DEFS) $(INCLUDES) $< \
 			|| touch $@
 
 DEPS = 
 ifneq  ($(DEPS),)
 -include $(PHP_PSI_DEPEND)
+-include $(PHP_PSI_BUILDDIR)/php_psi.dep
 endif
 
 
