@@ -4,10 +4,10 @@
 
 #include "parser.h"
 
-void *psi_parser_proc_Alloc(void*(unsigned long));
-void psi_parser_proc_Free(void*, void(*)(void*));
-void psi_parser_proc_(void *, token_t, struct psi_token *, struct psi_parser *);
-void psi_parser_proc_Trace(FILE *, const char*);
+void *psi_parser_proc_init(void);
+void psi_parser_proc_free(void **parser_proc);
+void psi_parser_proc_parse(void *parser_proc, token_t r, struct psi_token *token, struct psi_parser *parser);
+void psi_parser_proc_trace(FILE *out, char *prefix);
 
 struct psi_parser *psi_parser_init(struct psi_parser *P, psi_error_cb error, unsigned flags)
 {
@@ -20,10 +20,10 @@ struct psi_parser *psi_parser_init(struct psi_parser *P, psi_error_cb error, uns
 
 	P->col = 1;
 	P->line = 1;
-	P->proc = psi_parser_proc_Alloc(malloc);
+	P->proc = psi_parser_proc_init();
 
 	if (flags & PSI_DEBUG) {
-		psi_parser_proc_Trace(stderr, "PSI> ");
+		psi_parser_proc_trace(stderr, "PSI> ");
 	}
 
 	return P;
@@ -152,15 +152,15 @@ static ssize_t psi_parser_fill(struct psi_parser *P, size_t n)
 void psi_parser_parse(struct psi_parser *P, struct psi_token *T)
 {
 	if (T) {
-		psi_parser_proc_(P->proc, T->type, T, P);
+		psi_parser_proc_parse(P->proc, T->type, T, P);
 	} else {
-		psi_parser_proc_(P->proc, 0, NULL, P);
+		psi_parser_proc_parse(P->proc, 0, NULL, P);
 	}
 }
 
 void psi_parser_dtor(struct psi_parser *P)
 {
-	psi_parser_proc_Free(P->proc, free);
+	psi_parser_proc_free(&P->proc);
 
 	switch (P->input.type) {
 	case PSI_PARSE_FILE:

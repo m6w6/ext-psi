@@ -19,7 +19,6 @@ psi-build-headers: $(PHP_PSI_HEADERS)
 .PHONY: psi-clean-headers
 psi-clean-headers:
 	-rm -f $(PHP_PSI_HEADERS)
-	-rmdir $(PHP_PSI_BUILDDIR)/types
 
 .PHONY: psi-clean-sources
 psi-clean-sources:
