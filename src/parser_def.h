@@ -880,12 +880,17 @@ PARSE_TYPED(decl_arg, arg_,
 /*
  * decl_args: <empty>
  */
-PASS(decl_args, )
+PARSE_TYPED(decl_args, args, ) {
+	args = NULL;
+}
 
 /*
  * decl_args: VOID
  */
-PASS(decl_args, VOID)
+PARSE_TYPED(decl_args, args,
+		TOKEN(VOID)) {
+	args = NULL;
+}
 
 /*
  * decl_args: decl_arg
@@ -1664,7 +1669,9 @@ PARSE_TYPED(let_exps, exps,
 /*
  * callback_arg_list: <empty>
  */
-PASS(callback_arg_list, )
+PARSE_TYPED(callback_arg_list, args, ) {
+	args = NULL;
+}
 
 /*
  * callback_arg_list: callback_args

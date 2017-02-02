@@ -500,8 +500,12 @@ decl_arg(arg_) ::= CONST VOID(T) pointers(p) NAME(N). {
  arg_->var->token = N;
  arg_->token = N;
 }
-decl_args ::= .
-decl_args ::= VOID.
+decl_args(args) ::= . {
+ args = NULL;
+}
+decl_args(args) ::= VOID. {
+ args = NULL;
+}
 decl_args(args) ::= decl_arg(arg). {
  args = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_decl_arg_free),
    &arg);
@@ -820,7 +824,9 @@ let_exps(exps) ::= let_exp(exp). {
 let_exps(exps) ::= let_exps(exps_) COMMA let_exp(exp). {
  exps = psi_plist_add(exps_, &exp);
 }
-callback_arg_list ::= .
+callback_arg_list(args) ::= . {
+ args = NULL;
+}
 callback_arg_list(args) ::= callback_args(args_). {
  args = args_;
 }
