@@ -1,5 +1,4 @@
 PSI_CHECK_SYS_STAT() {
-	PSI_CONFIG_POSIX(sys/stat, sys/stat.h)
 
 	PSI_STRUCT(struct stat, [
 		dev_t st_dev,

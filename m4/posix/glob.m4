@@ -1,5 +1,4 @@
 PSI_CHECK_GLOB() {
-    PSI_CONFIG_POSIX(glob, glob.h)
     
     PSI_STRUCT(glob_t, [
         size_t gl_pathc,

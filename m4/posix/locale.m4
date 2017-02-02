@@ -1,6 +1,4 @@
 PSI_CHECK_LOCALE() {
-	PSI_CONFIG_POSIX(locale, locale.h xlocale.h)
-
 	PSI_STRUCT(struct lconv, [
 		char    *currency_symbol,
 		char    *decimal_point,

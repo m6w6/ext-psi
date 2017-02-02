@@ -1,5 +1,4 @@
 PSI_CHECK_SYS_UTSNAME() {
-	PSI_CONFIG_POSIX(sys/utsname, sys/utsname.h)
 
 	PSI_STRUCT(struct utsname, [
 		char sysname@<:@0@:>@,

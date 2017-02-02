@@ -1,5 +1,4 @@
 PSI_CHECK_SYS_UIO() {
-	PSI_CONFIG_POSIX(sys/uio, sys/uio.h)
 
 	PSI_STRUCT(struct iovec, [
 		void *iov_base,

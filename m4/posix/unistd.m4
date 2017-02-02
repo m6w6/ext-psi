@@ -1,6 +1,4 @@
 PSI_CHECK_UNISTD() {
-	PSI_CONFIG_POSIX(unistd, unistd.h)
-
 	PSI_CONST(F_LOCK, int)
 	PSI_CONST(F_TEST, int)
 	PSI_CONST(F_TLOCK, int)

@@ -1,5 +1,4 @@
 PSI_CHECK_NETINET_IN() {
-	PSI_CONFIG_POSIX(netinet/in, netinet/in.h)
 
 	PSI_TYPE(in_port_t, uint)
 	PSI_TYPE(in_addr_t, uint)

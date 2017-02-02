@@ -1,5 +1,4 @@
 PSI_CHECK_SYSLOG() {
-	PSI_CONFIG_POSIX(syslog, syslog.h)
 
 	PSI_CONST(LOG_PID, int)
 	PSI_CONST(LOG_CONS, int)

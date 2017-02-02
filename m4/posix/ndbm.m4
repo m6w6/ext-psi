@@ -1,9 +1,4 @@
 PSI_CHECK_NDBM() {
-	PSI_CONFIG_POSIX(ndbm, dnl
-		ndbm.h dnl posix
-		relic.h dnl qdbm
-		gdbm-ndbm.h dnl gdbm
-	)
 
 	PSI_STRUCT(datum, [
 		void *dptr,

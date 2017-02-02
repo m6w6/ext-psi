@@ -149,6 +149,10 @@ dnl PSI_VAR_TYPE(decl arg)
 dnl Extracts the type of a decl arg, e.g. dnl unsigned char* buf[16] -> unsigned char*.
 AC_DEFUN(PSI_VAR_TYPE, [m4_bregexp([$1], [^\(const \)?\(.*\) \([*]*\)[^ ]+$], [\2\3])])
 
+dnl PSI_VAR_TYPE_RETURN(decl arg)
+dnl Extracts the type of a decl arg usable for return types, e.g. dnl unsigned char* buf[16] -> unsigned char**.
+AC_DEFUN(PSI_VAR_TYPE_RETURN, [PSI_VAR_TYPE(m4_bpatsubst([$1], [\([^ ]+\) *@<:@[0-9]+@:>@], [* \1]))])
+
 dnl PSI_VAR_NAME(decl arg)
 dnl Extracts the var name of a decl arg, e.g. unsigned char* buf[16] -> buf.
 AC_DEFUN(PSI_VAR_NAME, [m4_bregexp(m4_bregexp([$1], [\([^ ]+\)$], [\1]), [\w+], [\&])])

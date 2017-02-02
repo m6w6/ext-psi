@@ -1,5 +1,11 @@
 PHP_PSI_SRCDIR=PHP_EXT_SRCDIR(psi)
-PHP_PSI_BUILDDIR=PHP_EXT_BUILDDIR(psi)
+
+case "PHP_EXT_BUILDDIR(psi)" in
+""|.) PHP_PSI_BUILDDIR=$PHP_PSI_SRCDIR
+	;;
+*)    PHP_PSI_BUILDDIR=PHP_EXT_BUILDDIR(psi)
+	;;
+esac
 
 m4_foreach(incfile, [
 	[ax/ax_check_sign.m4],
@@ -44,13 +50,18 @@ m4_foreach(incfile, [
 ])
 
 PHP_ARG_ENABLE(psi, whether to enable PHP System Interface support,
-[  --enable-psi            Enable PHP System Interface support])
+[  --enable-psi            Enable PSI (PHP System Interface) support])
 
 if test "$PHP_PSI" != no; then
-	PHP_CONFIGURE_PART(Configuring PSI)
-
 	PHP_ARG_ENABLE(psi-posix, whether to pre-define POSIX decls,
-	[  --enable-psi-posix=...  PSI: pre-define POSIX decls], [ ], [ ])
+	[  --enable-psi-posix=...  PSI: pre-define POSIX decls], [all], [no])
+	
+	PHP_ARG_ENABLE(psi-maintainer-mode, whether to enable maintainer mode,
+	[  --enable-psi-maintainer-mode
+                          PSI: enable maintainer mode
+                           . parallel configure
+                           . source dependencies
+                           . extra decl wrappers], [no], [no])
 
 	PHP_ARG_WITH(psi-libjit, where to find libjit,
 	[  --with-psi-libjit=DIR   PSI: path to libjit], [ ], [ ])
@@ -69,13 +80,10 @@ if test "$PHP_PSI" != no; then
 		#endif
 	], [
 		AC_MSG_RESULT([needs define])
-		AC_DEFINE([_GNU_SOURCE], [], [ ])
+		AC_DEFINE([_GNU_SOURCE], [1], [ ])
 	], [
 		AC_MSG_RESULT([already defined])
 	])
-
-	psi_save_LIBS=$LIBS
-	LIBS=
 
 	PSI_LEMON
 	PSI_CHECK_LIBJIT
@@ -86,39 +94,47 @@ if test "$PHP_PSI" != no; then
 	AC_FUNC_MMAP
 
 	PSI_CONFIG_INIT
+
+	dnl basics, one-by-one
 	PSI_CHECK_STD_TYPES
 	PSI_CHECK_STDINT
 	PSI_CHECK_SYS_TYPES
 	PSI_CHECK_STDDEF
-	PSI_CHECK_ERRNO
-	PSI_CHECK_FCNTL
-	PSI_CHECK_GLOB
-	PSI_CHECK_LOCALE
-	PSI_CHECK_STDIO
-	PSI_CHECK_STDLIB
-	PSI_CHECK_UNISTD
-	PSI_CHECK_TIME
-	PSI_CHECK_SYS_SELECT
-	PSI_CHECK_SYS_SOCKET
-	PSI_CHECK_SYS_TIME
-	PSI_CHECK_SYS_TIMES
-	PSI_CHECK_SYS_STAT
-	PSI_CHECK_SYS_UIO
-	PSI_CHECK_SYS_UTSNAME
-	PSI_CHECK_NDBM
-	PSI_CHECK_NETDB
-	PSI_CHECK_NETINET_IN
-	PSI_CHECK_NETINET_TCP
-	PSI_CHECK_POLL
-	PSI_CHECK_SIGNAL
-	PSI_CHECK_SYSLOG
-	PSI_CHECK_WCHAR
-	PSI_CHECK_WCTYPE
+	
+	dnl parallel
+	AC_MSG_CHECKING([for POSIX modules: $PHP_PSI_POSIX])
+	
+	PSI_CONFIG_POSIX(errno, errno.h)
+	PSI_CONFIG_POSIX(fcntl, fcntl.h)
+	PSI_CONFIG_POSIX(glob, glob.h)
+	PSI_CONFIG_POSIX(locale, locale.h xlocale.h)
+	PSI_CONFIG_POSIX(stdio, stdio.h)
+	PSI_CONFIG_POSIX(stdlib, stdlib.h)
+	PSI_CONFIG_POSIX(unistd, unistd.h)
+	PSI_CONFIG_POSIX(time, time.h)
+	PSI_CONFIG_POSIX(sys/select, sys/select.h)
+	PSI_CONFIG_POSIX(sys/socket, sys/socket.h)
+	PSI_CONFIG_POSIX(sys/time, sys/time.h)
+	PSI_CONFIG_POSIX(sys/times, sys/times.h)
+	PSI_CONFIG_POSIX(sys/stat, sys/stat.h)
+	PSI_CONFIG_POSIX(sys/uio, sys/uio.h)
+	PSI_CONFIG_POSIX(sys/utsname, sys/utsname.h)
+	PSI_CONFIG_POSIX(ndbm, dnl
+		ndbm.h dnl posix
+		relic.h dnl qdbm
+		gdbm-ndbm.h dnl gdbm
+	)
+	PSI_CONFIG_POSIX(netdb, netdb.h)
+	PSI_CONFIG_POSIX(netinet/in, netinet/in.h)
+	PSI_CONFIG_POSIX(netinet/tcp, netinet/tcp.h)
+	PSI_CONFIG_POSIX(poll, poll.h)
+	PSI_CONFIG_POSIX(signal, signal.h)
+	PSI_CONFIG_POSIX(syslog, syslog.h)
+	PSI_CONFIG_POSIX(wchar, wchar.h)
+	PSI_CONFIG_POSIX(wctype, wctype.h)
+	
 	PSI_CONFIG_DONE
 
-	psi_eval_LIBS=$LIBS
-	LIBS=$psi_save_LIBS
-	PHP_EVAL_LIBLINE($psi_eval_LIBS, PSI_SHARED_LIBADD)
 	PHP_SUBST(PSI_SHARED_LIBADD)
 
 	AC_DEFINE_UNQUOTED(PHP_PSI_SHLIB_SUFFIX, ["$SHLIB_SUFFIX_NAME"], DL suffix)

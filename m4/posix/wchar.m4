@@ -1,5 +1,4 @@
 PSI_CHECK_WCHAR() {
-	PSI_CONFIG_POSIX(wchar, wchar.h)
 
 	PSI_TYPE(wint_t, int)
 	PSI_STRUCT(mbstate_t)

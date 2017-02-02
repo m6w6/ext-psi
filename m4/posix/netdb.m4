@@ -1,5 +1,4 @@
 PSI_CHECK_NETDB() {
-	PSI_CONFIG_POSIX(netdb, netdb.h)
 
 	PSI_STRUCT(struct hostent, [
 		char *h_name,

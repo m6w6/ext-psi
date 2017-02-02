@@ -1,6 +1,4 @@
 PSI_CHECK_STDLIB() {
-	AC_CHECK_HEADERS(stdlib.h)
-
 	PSI_STRUCT(div_t, [
 		int quot,
 		int rem

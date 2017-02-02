@@ -10,7 +10,7 @@ EOF
 # Add a pre-defined decl to $PSI_VA_DECLS/$PSI_DECLS.
 psi_add_decl() {
 	case "$2" in
- *functor*)
+	*functor*)
 		cat >>$PSI_FN_DECLS <<EOF
 	$1, {0},
 EOF
@@ -125,8 +125,8 @@ AC_DEFUN(PSI_DECL, [
 
 	case "$psi_symbol_redirect" in
 	"$psi_symbol"|"_$psi_symbol")
-		case "$PHP_DEBUG-$3" in
-		"1-")
+		case "$PSI_EXTRA_REDIRS-$3" in
+		"true-")
 			PSI_MACRO($1, $2, [
 				psi_add_decl "$psi_decl_args"
 			])

@@ -1,6 +1,4 @@
 PSI_CHECK_SYS_SELECT() {
-	PSI_CONFIG_POSIX(sys/select, sys/select.h)
-
 	PSI_STRUCT(fd_set, [])
 
 	PSI_CONST(FD_SETSIZE, int)

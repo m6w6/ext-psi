@@ -62,11 +62,11 @@ $(PHP_PSI_SRCDIR)/src/context.c: $(PHP_PSI_SRCDIR)/php_psi_consts.h $(PHP_PSI_SR
 
 # -- deps
 
-PHP_PSI_DEPEND = $(patsubst $(PHP_PSI_SRCDIR)/%,$(PHP_PSI_BUILDDIR)/%,$(PHP_PSI_SOURCES:.c=.dep))
+PHP_PSI_DEPEND = $(PHP_PSI_BUILDDIR)/php_psi.dep $(patsubst $(PHP_PSI_SRCDIR)/%,$(PHP_PSI_BUILDDIR)/%,$(PHP_PSI_SOURCES:.c=.dep))
 
 .PHONY: psi-clean-depend
 psi-clean-depend:
-	-rm -f $(PHP_PSI_DEPEND) $(PHP_PSI_BUILDDIR)/php_psi.dep
+	-rm -f $(PHP_PSI_DEPEND)
 
 psi-clean: psi-clean-depend
 
@@ -75,10 +75,10 @@ $(PHP_PSI_BUILDDIR)/%.dep: $(PHP_PSI_SRCDIR)/%.c
 		$(CPPFLAGS) $(DEFS) $(INCLUDES) $< \
 			|| touch $@
 
-DEPS = 
-ifneq  ($(DEPS),)
+ifneq ($(findstring clean,$(MAKECMDGOALS)),clean)
+ifneq ($(PSI_DEPS),)
 -include $(PHP_PSI_DEPEND)
--include $(PHP_PSI_BUILDDIR)/php_psi.dep
+endif
 endif
 
 

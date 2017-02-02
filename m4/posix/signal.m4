@@ -1,5 +1,4 @@
 PSI_CHECK_SIGNAL() {
-	PSI_CONFIG_POSIX(signal, signal.h)
 	
 	PSI_PTHREAD
 	

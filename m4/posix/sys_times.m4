@@ -1,5 +1,4 @@
 PSI_CHECK_SYS_TIMES() {
-	PSI_CONFIG_POSIX(sys/times, sys/times.h)
 
 	PSI_STRUCT(struct tms, [
 		clock_t tms_utime,

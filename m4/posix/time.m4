@@ -1,6 +1,4 @@
 PSI_CHECK_TIME() {
-	PSI_CONFIG_POSIX(time, time.h)
-
 	PSI_CONST(CLOCKS_PER_SEC, int)
 	PSI_CONST(CLOCK_MONOTONIC, int)
 	PSI_CONST(CLOCK_PROCESS_CPUTIME_ID, int)
@@ -35,7 +33,7 @@ PSI_CHECK_TIME() {
 	PSI_DECL(int clock_getres, [(clockid_t clk_id, struct timespec *res)], [], [-lrt])
 	PSI_DECL(int clock_gettime, [(clockid_t clk_id, struct timespec *tp)], [], [-lrt])
 	PSI_DECL(int clock_nanosleep, [(clockid_t clk_id, int flags, struct timespec *rqtp, struct timespec *rmtp)], [], [-lrt])
-	PSI_DECL(int clock_settime, [(clockid_t clk_id, struct timespec *tp)], [], [-lrt])
+	PSI_DECL(int clock_settime, [(clockid_t clk_id, const struct timespec *tp)], [], [-lrt])
 	PSI_DECL(char *ctime, [(time_t *t)])
 	PSI_DECL(char *ctime_r, [(time_t *t, char *buf)])
 	PSI_DECL(double difftime, [(time_t time1, time_t time0)])
@@ -60,5 +58,5 @@ PSI_CHECK_TIME() {
 	PSI_MACRO(int getdate_err)
 	PSI_EXTVAR(int daylight)
 	PSI_EXTVAR(long timezone)
-	PSI_EXTVAR(char **tzname)
+	PSI_EXTVAR(char *tzname@<:@2@:>@)
 }

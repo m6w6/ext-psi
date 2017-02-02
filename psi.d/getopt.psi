@@ -1,12 +1,12 @@
 function psi\opterr(int $value) : void {
-	let _v = intval($value);
+	let opterr = intval($value);
 	return void(opterr_set);
 }
 function psi\optind\get() : int {
 	return to_int(optind_get);
 }
 function psi\optind\set(int $v) : void {
-	let _v = intval($v);
+	let optind = intval($v);
 	return void(optind_set);
 }
 function psi\optopt() : int {
