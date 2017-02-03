@@ -2,6 +2,7 @@
 
 PHP_PSI_HEADERS := $(addprefix $(PHP_PSI_BUILDDIR)/,$(PHP_PSI_HEADERS))
 PHP_PSI_SOURCES := $(addprefix $(PHP_PSI_SRCDIR)/,$(PHP_PSI_SOURCES))
+PHP_PSI_GENERATED:=$(addprefix $(PHP_PSI_SRCDIR)/,$(PHP_PSI_GENERATED))
 
 $(PHP_PSI_BUILDDIR)/types:
 	mkdir -p $@
@@ -61,13 +62,16 @@ psi-clean-headers:
 
 psi-clean: psi-clean-headers
 
-.PHONY: psi-clean-sources
-psi-clean-sources:
+.PHONY: psi-clean-objects
+psi-clean-objects:
 	-rm -f $(PHP_PSI_BUILDDIR)/src/*o
 	-rm -f $(PHP_PSI_BUILDDIR)/src/types/*o
-	-rm -f $(PHP_PSI_SRCDIR)/src/parser.c $(PHP_PSI_SRCDIR)/src/parser_proc.c $(PHP_PSI_SRCDIR)/src/parser_proc.y
 
-psi-clean: psi-clean-sources
+psi-clean: psi-clean-objects
+
+.PHONY: psi-clean-generated
+psi-clean-generated:
+	-rm -f $(PHP_PSI_GENERATED)
 
 .PHONY: psi-clean-aux
 psi-clean-aux:

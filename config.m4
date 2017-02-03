@@ -149,14 +149,15 @@ if test "$PHP_PSI" != no; then
 	PHP_PSI_HEADERS=`(cd $PHP_PSI_SRCDIR/src && ls *.h types/*.h)`
 	# parser* should come first
 	PHP_PSI_SOURCES=" \
-		src/parser_proc.c \
-		src/parser.c \
+		src/parser_proc.c src/parser.c
 		`(cd $PHP_PSI_SRCDIR && ls src/*.c src/types/*.c | $EGREP -v '^src/parser')` \
 	"
+	PHP_PSI_GENERATED="src/parser_proc.y src/parser_proc.c src/parser.c"
 
 	PHP_NEW_EXTENSION(psi, $PHP_PSI_SOURCES, $ext_shared)
 	PHP_INSTALL_HEADERS(ext/psi, php_psi.h $PHP_PSI_HEADERS)
 
+	PHP_SUBST(PHP_PSI_GENERATED)
 	PHP_SUBST(PHP_PSI_HEADERS)
 	PHP_SUBST(PHP_PSI_SOURCES)
 
