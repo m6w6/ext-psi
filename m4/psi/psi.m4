@@ -275,7 +275,7 @@ AC_DEFUN(PSI_LEMON, [
 	AC_ARG_VAR(LEMON, The lemon parser generator of the SQLite project)
 	if test -z "$LEMON"
 	then
-		AC_PATH_PROG(LEMON, lemon, ./lemon)
+		AC_PATH_PROG(LEMON, lemon, $PHP_PSI_BUILDDIR/lemon)
 	fi
 	PHP_SUBST(LEMON)
 ])

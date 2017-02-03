@@ -10,37 +10,13 @@ $(PHP_PSI_BUILDDIR)/types/%.h: $(PHP_PSI_SRCDIR)/src/types/%.h | $(PHP_PSI_BUILD
 $(PHP_PSI_BUILDDIR)/%.h: $(PHP_PSI_SRCDIR)/src/%.h
 	@cat >$@ <$<
 
-install-headers: psi-build-headers
-clean: psi-clean
-
-.PHONY: psi-build-headers
-psi-build-headers: $(PHP_PSI_HEADERS)
-
-.PHONY: psi-clean-headers
-psi-clean-headers:
-	-rm -f $(PHP_PSI_HEADERS)
-
-.PHONY: psi-clean-sources
-psi-clean-sources:
-	-rm -f $(PHP_PSI_BUILDDIR)/src/*o
-	-rm -f $(PHP_PSI_BUILDDIR)/src/types/*o
-	-rm -f $(PHP_PSI_SRCDIR)/src/parser.c $(PHP_PSI_SRCDIR)/src/parser_proc.c $(PHP_PSI_SRCDIR)/src/parser_proc.y
-
-.PHONY: psi-clean-aux
-psi-clean-aux:
-	-rm -f lempar.c lemon.c lemon
-
-.PHONY: psi-clean
-psi-clean: psi-clean-headers psi-clean-sources psi-clean-aux
-
-
-lempar.c:
+$(PHP_PSI_BUILDDIR)/lempar.c:
 	curl -sSo $@ "http://www.sqlite.org/src/raw/tool/lempar.c?name=db1bdb4821f2d8fbd76e577cf3ab18642c8d08d1"
 
-lemon.c:
+$(PHP_PSI_BUILDDIR)/lemon.c:
 	curl -sSo $@ "http://www.sqlite.org/src/raw/tool/lemon.c?name=5ccba178a8e8a4b21e1c9232944d23973da38ad7"
 
-./lemon: lemon.c | lempar.c
+$(PHP_PSI_BUILDDIR)/lemon: $(PHP_PSI_BUILDDIR)/lemon.c | $(PHP_PSI_BUILDDIR)/lempar.c
 	$(CC) -o $@ $<
 
 $(PHP_PSI_SRCDIR)/src/parser_proc.h: $(PHP_PSI_SRCDIR)/src/parser_proc.c
@@ -57,15 +33,7 @@ $(PHP_PSI_SRCDIR)/src/parser.re: $(PHP_PSI_SRCDIR)/src/parser_proc.h
 $(PHP_PSI_SRCDIR)/src/parser.c: $(PHP_PSI_SRCDIR)/src/parser.re
 	$(RE2C) -o $@ $<
 
-# -- deps
-
 PHP_PSI_DEPEND = $(patsubst $(PHP_PSI_SRCDIR)/%,$(PHP_PSI_BUILDDIR)/%,$(PHP_PSI_SOURCES:.c=.dep))
-
-.PHONY: psi-clean-depend
-psi-clean-depend:
-	-rm -f $(PHP_PSI_DEPEND)
-
-psi-clean: psi-clean-depend
 
 $(PHP_PSI_BUILDDIR)/%.dep: $(PHP_PSI_SRCDIR)/%.c
 	$(CC) -MM -MG -MF $@ -MT $(patsubst $(PHP_PSI_SRCDIR)/%,$(PHP_PSI_BUILDDIR)/%,$(@:.dep=.lo)) \
@@ -80,5 +48,36 @@ ifneq ($(PSI_DEPS),)
 endif
 endif
 
+install-headers: psi-build-headers
+.PHONY: psi-clean
+clean: psi-clean
 
-# -- deps
+.PHONY: psi-build-headers
+psi-build-headers: $(PHP_PSI_HEADERS)
+
+.PHONY: psi-clean-headers
+psi-clean-headers:
+	-rm -f $(PHP_PSI_HEADERS)
+
+psi-clean: psi-clean-headers
+
+.PHONY: psi-clean-sources
+psi-clean-sources:
+	-rm -f $(PHP_PSI_BUILDDIR)/src/*o
+	-rm -f $(PHP_PSI_BUILDDIR)/src/types/*o
+	-rm -f $(PHP_PSI_SRCDIR)/src/parser.c $(PHP_PSI_SRCDIR)/src/parser_proc.c $(PHP_PSI_SRCDIR)/src/parser_proc.y
+
+psi-clean: psi-clean-sources
+
+.PHONY: psi-clean-aux
+psi-clean-aux:
+	-rm -f $(PHP_PSI_BUILDDIR)/lempar.c $(PHP_PSI_BUILDDIR)/lemon.c $(PHP_PSI_BUILDDIR)/lemon
+
+psi-clean: psi-clean-aux
+
+.PHONY: psi-clean-depend
+psi-clean-depend:
+	-rm -f $(PHP_PSI_DEPEND)
+
+psi-clean: psi-clean-depend
+
