@@ -1,9 +1,8 @@
 # psi_add_macro(macro)
-# Add a pre-defined macro function to $PSI_MACROS.
+# Add a pre-defined macro function to $PSI_MACROS_H.
 psi_add_macro() {
-	cat >>$PSI_MACROS <<EOF
-$1
-EOF
+	PSI_MACROS="$PSI_MACROS
+$1"
 }
 
 dnl PSI_MACRO(macro, decl args, action-if-true)
@@ -60,12 +59,12 @@ AC_DEFUN(PSI_EXTVAR, [
 		psi_add_decl "$psi_decl_args"
 		dnl explicit getter
 		PSI_REDIR([${macro_name}_get], [_psi_get_$macro_name])
-		PSI_DECL_ARGS([PSI_VAR_TYPE_RETURN($1) PSI_VAR_NAME($1)_get])
+		PSI_DECL_ARGS(PSI_VAR_TYPE_RETURN([$1]) PSI_VAR_NAME([$1])_get)
 		psi_add_decl "$psi_decl_args"
 		dnl setter
 		psi_add_macro "void _psi_set_${macro_name}($macro_type value$macro_array) { memcpy(&$macro_name, &value, sizeof($macro_type$macro_array)); }"
 		PSI_REDIR([${macro_name}_set], [_psi_set_${macro_name}])
-		PSI_DECL_ARGS([void PSI_VAR_NAME($1)_set], [($1)])
+		PSI_DECL_ARGS([void ]PSI_VAR_NAME([$1])[_set], [($1)])
 		psi_add_decl "$psi_decl_args"
 	])
 ])

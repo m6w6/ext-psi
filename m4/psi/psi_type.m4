@@ -1,15 +1,13 @@
 # psi_add_type(type triplet)
-# Add a pre-defined type to $PSI_TYPES.
+# Add a pre-defined type to $PSI_TYPES_H.
 psi_add_type() {
-	cat >>$PSI_TYPES <<EOF
-	$1,
-EOF
+	PSI_TYPES="$PSI_TYPES
+	$1,"
 }
 
 psi_add_stdtype() {
-	cat >>$PSI_STDTYPES <<EOF
-	$1,
-EOF
+	PSI_STDTYPES="$PSI_STDTYPES
+	$1,"
 }
 
 # psi_type_pair(type, size)
@@ -47,7 +45,7 @@ dnl Check for a specific type, optionally referring to a basic type.
 dnl Calls AC_TYPE_<TYPE> (if defined) and PSI_CHECK_SIZEOF.
 dnl If the basic type is just specified as "int" (in contrast to "sint" or
 dnl "uint"), AX_CHECK_SIGN is used to discover signedness of the type.
-dnl Defines a pre-defined type in $PSI_TYPES.
+dnl Defines a pre-defined type in $PSI_TYPES_H.
 AC_DEFUN(PSI_TYPE, [
 	ifdef(AS_TR_CPP(AC_TYPE_$1), AS_TR_CPP(AC_TYPE_$1))
 	PSI_CHECK_SIZEOF($1)
@@ -90,7 +88,7 @@ AC_DEFUN(PSI_SH_BASIC_TYPE, [$AS_TR_SH([psi_basic_type_]$1)])
 dnl PSI_OPAQUE_TYPE(type name)
 dnl Checks a type for being a scalar, a struct or a pointer type.
 dnl Calls AC_TYPE_<TYPE> (if defined) and PSI_CHECK_SIZEOF.
-dnl Defines a pre-defined type in $PSI_TYPES and a pre-defined struct in
+dnl Defines a pre-defined type in $PSI_TYPES_H and a pre-defined struct in
 dnl $PSI_STRUCTS if the type is a struct.
 AC_DEFUN(PSI_OPAQUE_TYPE, [
 	ifdef(AS_TR_CPP(AC_TYPE_$1), AS_TR_CPP(AC_TYPE_$1))

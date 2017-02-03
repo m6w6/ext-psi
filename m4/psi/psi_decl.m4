@@ -1,38 +1,22 @@
 # psi_add_redir(name, symbol)
-# Add a function redirection to $PSI_REDIRS.
+# Add a function redirection to $PSI_REDIRS_H.
 psi_add_redir() {
-	cat >>$PSI_REDIRS <<EOF
-	{"$1", (psi_func_ptr) $2},
-EOF
+	PSI_REDIRS="$PSI_REDIRS
+	{\"$1\", (psi_func_ptr) $2},"
 }
 
 # psi_add_decl(decl, options)
-# Add a pre-defined decl to $PSI_VA_DECLS/$PSI_DECLS.
+# Add a pre-defined decl to $PSI_VA_DECLS_H/$PSI_DECLS_H.
 psi_add_decl() {
-	case "$2" in
-	*functor*)
-		cat >>$PSI_FN_DECLS <<EOF
-	$1, {0},
-EOF
-		;;
-	*vararg*)
-		cat >>$PSI_VA_DECLS <<EOF
-	$1, {0},
-EOF
-		;;
-	*)
-		cat >>$PSI_DECLS <<EOF
-	$1, {0},
-EOF
-		;;
-	esac
+	PSI_DECLS="$PSI_DECLS
+	$1, {0},"
 }
 
 dnl PSI_DECL_TYPE(type functor_name, args)
-dnl Adds a pre-defined functor decl to $PSI_FN_DECLS.
+dnl Adds a pre-defined functor decl to $PSI_FN_DECLS_H.
 AC_DEFUN(PSI_DECL_TYPE, [
-	PSI_DECL_ARGS($1, $2)
-	psi_add_decl "$psi_decl_args" functor
+	PSI_DECL_ARGS($1, $2, functor)
+	psi_add_decl "$psi_decl_args"
 ])
 dnl PSI_REDIR(name, custom symbol)
 dnl Create a function redirection to an optional custom symbol.
@@ -53,39 +37,41 @@ AC_DEFUN(PSI_FUNC_LIBC_MAIN, [
 	])
 ])
 
-dnl PSI_DECL_ARGS(decl args)
+dnl PSI_DECL_ARGS(decl func, decl args, options)
 dnl INTERNAL: build psi_decl_args
 AC_DEFUN(PSI_DECL_ARGS, [
 	psi_decl_args=
-	PSI_DECL_ARG($1)
+	PSI_DECL_ARG([$1], [$3])
 	m4_case([$2],
 		[(void)], [],
 		[()], [],
 		[], [],
-		[m4_map_args_sep([PSI_DECL_ARG(m4_normalize(], [))], [], m4_bregexp([$2], [(\(.*\))], [\1]))])
+		[m4_map_args_sep(
+			[PSI_DECL_ARG(m4_normalize(], 
+			[), [0])], [], m4_bregexp([$2], [(\(.*\))], [\1]))])
 ])
 
-dnl PSI_DECL_ARG(decl arg)
+dnl PSI_DECL_ARG(decl arg, options)
 dnl INTERNAL: build psi_decl_args
 AC_DEFUN(PSI_DECL_ARG, [
-    m4_define([member_name], PSI_VAR_NAME($1))
-    m4_define([member_type], PSI_VAR_TYPE($1))
+    m4_define([member_name], PSI_VAR_NAME([$1]))
+    m4_define([member_type], PSI_VAR_TYPE([$1]))
 
 	PSI_TYPE_INDIRECTION([$1],, pl, as)
     if test -n "$psi_decl_args"; then
         psi_decl_args="$psi_decl_args, "
     fi
-    psi_decl_args="[$psi_decl_args{]PSI_TYPE_PAIR(member_type)[, \"]member_name[\",] $pl, $as[}]"
+    psi_decl_args="[$psi_decl_args{]ifelse([$2],,DECL_KIND_STD,[ifelse([$2],0,0,AS_TR_CPP([DECL_KIND_$2]))])[, ]PSI_TYPE_PAIR(member_type)[, \"]member_name[\",] $pl, $as[}]"
 ])
 
 dnl PSI_DECL(type func, args, flags, libs)
 dnl Check for a function or macro declaration and a possible asm redirection.
-dnl Adds a pre-defined (vararg) decl to $PSI_VA_DECLS/$PSI_DECLS.
+dnl Adds a pre-defined (vararg) decl to $PSI_VA_DECLS_H/$PSI_DECLS_H.
 dnl Calls PSI_MACRO if PSI_FUNC fails.
 AC_DEFUN(PSI_DECL, [
 	AC_REQUIRE([PSI_FUNC_LIBC_MAIN])dnl
 
-	PSI_DECL_ARGS($1, $2)
+	PSI_DECL_ARGS($1, $2, $3)
 
 	psi_symbol="PSI_VAR_NAME($1)"
 	AC_CACHE_CHECK(for PSI_VAR_NAME($1), [psi_cv_fn_]PSI_VAR_NAME($1), [
@@ -136,7 +122,7 @@ AC_DEFUN(PSI_DECL, [
 			then
 				PSI_REDIR($psi_symbol)
 			fi
-			psi_add_decl "$psi_decl_args" $3
+			psi_add_decl "$psi_decl_args"
 			;;
 		esac
 		;;
@@ -151,7 +137,7 @@ AC_DEFUN(PSI_DECL, [
 		;;
 	*)
 		PSI_REDIR($psi_symbol)
-		psi_add_decl "$psi_decl_args" $3
+		psi_add_decl "$psi_decl_args"
 		;;
 	esac
 ])

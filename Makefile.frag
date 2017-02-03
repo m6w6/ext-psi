@@ -57,12 +57,9 @@ $(PHP_PSI_SRCDIR)/src/parser.re: $(PHP_PSI_SRCDIR)/src/parser_proc.h
 $(PHP_PSI_SRCDIR)/src/parser.c: $(PHP_PSI_SRCDIR)/src/parser.re
 	$(RE2C) -o $@ $<
 
-$(PHP_PSI_SRCDIR)/src/types/decl.c: $(PHP_PSI_SRCDIR)/php_psi_macros.h $(PHP_PSI_SRCDIR)/php_psi_redirs.h
-$(PHP_PSI_SRCDIR)/src/context.c: $(PHP_PSI_SRCDIR)/php_psi_consts.h $(PHP_PSI_SRCDIR)/php_psi_decls.h $(PHP_PSI_SRCDIR)/php_psi_fn_decls.h $(PHP_PSI_SRCDIR)/php_psi_structs.h $(PHP_PSI_SRCDIR)/php_psi_types.h $(PHP_PSI_SRCDIR)/php_psi_unions.h $(PHP_PSI_SRCDIR)/php_psi_va_decls.h
-
 # -- deps
 
-PHP_PSI_DEPEND = $(PHP_PSI_BUILDDIR)/php_psi.dep $(patsubst $(PHP_PSI_SRCDIR)/%,$(PHP_PSI_BUILDDIR)/%,$(PHP_PSI_SOURCES:.c=.dep))
+PHP_PSI_DEPEND = $(patsubst $(PHP_PSI_SRCDIR)/%,$(PHP_PSI_BUILDDIR)/%,$(PHP_PSI_SOURCES:.c=.dep))
 
 .PHONY: psi-clean-depend
 psi-clean-depend:
@@ -74,6 +71,8 @@ $(PHP_PSI_BUILDDIR)/%.dep: $(PHP_PSI_SRCDIR)/%.c
 	$(CC) -MM -MG -MF $@ -MT $(patsubst $(PHP_PSI_SRCDIR)/%,$(PHP_PSI_BUILDDIR)/%,$(@:.dep=.lo)) \
 		$(CPPFLAGS) $(DEFS) $(INCLUDES) $< \
 			|| touch $@
+
+php_psi_stdinc.h:
 
 ifneq ($(findstring clean,$(MAKECMDGOALS)),clean)
 ifneq ($(PSI_DEPS),)

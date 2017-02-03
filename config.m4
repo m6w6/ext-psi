@@ -15,7 +15,7 @@ m4_foreach(incfile, [
 	[psi/psi_const.m4],
 	[psi/psi_decl.m4],
 	[psi/psi_macro.m4],
-	[psi/psi_struct.m4],
+	[psi/psi_composite.m4],
 	[posix/errno.m4],
 	[posix/fcntl.m4],
 	[posix/glob.m4],
@@ -139,19 +139,10 @@ if test "$PHP_PSI" != no; then
 
 	AC_DEFINE_UNQUOTED(PHP_PSI_SHLIB_SUFFIX, ["$SHLIB_SUFFIX_NAME"], DL suffix)
 
-	AC_DEFINE_UNQUOTED([PSI_STDINC], ["$PSI_STDINC"], [Standard includes])
-	AC_DEFINE_UNQUOTED([PSI_TYPES], ["$PSI_TYPES"], [Predefined types])
-	AC_DEFINE_UNQUOTED([PSI_STRUCTS], ["$PSI_STRUCTS"], [Predefined structs])
-	AC_DEFINE_UNQUOTED([PSI_UNIONS], ["$PSI_UNIONS"], [Predefined structs])
-	AC_DEFINE_UNQUOTED([PSI_CONSTS], ["$PSI_CONSTS"], [Predefined constants])
-	AC_DEFINE_UNQUOTED([PSI_MACROS], ["$PSI_MACROS"], [Redirected Macros])
-	AC_DEFINE_UNQUOTED([PSI_REDIRS], ["$PSI_REDIRS"], [Redirected functions])
-	AC_DEFINE_UNQUOTED([PSI_DECLS], ["$PSI_DECLS"], [Predefined functions])
-	AC_DEFINE_UNQUOTED([PSI_VA_DECLS], ["$PSI_VA_DECLS"], [Predefined vararg functions])
-
 	PHP_ADD_INCLUDE($PHP_PSI_SRCDIR)
 	PHP_ADD_INCLUDE($PHP_PSI_SRCDIR/src)
 	PHP_ADD_INCLUDE($PHP_PSI_SRCDIR/src/types)
+	PHP_ADD_INCLUDE($PHP_PSI_BUILDDIR)
 	PHP_ADD_BUILD_DIR($PHP_PSI_BUILDDIR/src)
 	PHP_ADD_BUILD_DIR($PHP_PSI_BUILDDIR/src/types)
 

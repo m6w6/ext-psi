@@ -25,8 +25,10 @@
 
 #include "php_psi_stdinc.h"
 #include "token.h"
-#include "php_psi_stdtypes.h"
 #include "data.h"
+
+#define PSI_STD_TYPES
+#include "php_psi_posix.h"
 
 struct psi_decl_type *psi_decl_type_init(token_t type, const char *name)
 {

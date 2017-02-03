@@ -25,18 +25,11 @@
 
 #include "php_psi_stdinc.h"
 
-#if __GNUC__ >= 5
-# pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
-#endif
-#include "php_psi_macros.h"
-#include "php_psi_redirs.h"
-#if __GNUC__ >= 5
-# pragma GCC diagnostic pop
-#endif
-
 #include <dlfcn.h>
-
 #include "data.h"
+
+#define PSI_FUNC_REDIRS
+#include "php_psi_posix.h"
 
 struct psi_decl *psi_decl_init(struct psi_decl_abi *abi,
 		struct psi_decl_arg *func, struct psi_plist *args)

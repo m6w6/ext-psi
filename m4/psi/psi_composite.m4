@@ -1,22 +1,13 @@
-# psi_add_struct(struct members)
-# Add a pre-defined struct to $PSI_STRUCTS.
-psi_add_struct() {
-	cat >>$PSI_STRUCTS <<EOF
-	$1, {0}, 
-EOF
+# psi_add_composite(composite members)
+# Add a pre-defined composite (struct or union)
+psi_add_composite() {
+	PSI_COMPOSITES="$PSI_COMPOSITES
+	$1, {0},"
 }
 
-# psi_add_union(union/struct members)
-# Add a pre-defined union to $PSI_UNIONS.
-psi_add_union() {
-	cat >>$PSI_UNIONS <<EOF
-	$1, {0}, 
-EOF
-}
-
-dnl PSI_STRUCT_MEMBER(struct name, decl member)
-dnl INTERNAL: build $psi_struct_members
-AC_DEFUN(PSI_STRUCT_MEMBER, [
+dnl PSI_COMPOSITE_MEMBER(composite name, decl member)
+dnl INTERNAL: build $psi_composite_members
+AC_DEFUN(PSI_COMPOSITE_MEMBER, [
 	m4_define([member_name], PSI_VAR_NAME($2))
 	m4_define([member_type], PSI_VAR_TYPE($2))
 	PSI_CHECK_SIZEOF(AS_TR_SH($1)[_]member_name,
@@ -39,10 +30,10 @@ AC_DEFUN(PSI_STRUCT_MEMBER, [
 		if test $psi_member_sizeof != "$check_size"; then
 			psi_member_basic_type=PSI_SH_BASIC_TYPE(member_type)
 			psi_member_type_pair="`psi_type_pair $psi_member_basic_type $psi_member_sizeof`"
-			psi_struct_members="$psi_struct_members, {$psi_member_type_pair, \"[]member_name[]\", $psi_member_offsetof, $psi_member_sizeof, $pl, $as}"
+			psi_composite_members="$psi_composite_members, {$psi_member_type_pair, \"[]member_name[]\", $psi_member_offsetof, $psi_member_sizeof, $pl, $as}"
 			AC_MSG_WARN(pre-defined size $check_size of $2 in $1 does not match computed size $psi_member_sizeof; adjusting to $psi_member_type_pair)
 		else
-			psi_struct_members="[$psi_struct_members, {]PSI_TYPE_PAIR(member_type)[, \"]member_name[\", $psi_member_offsetof, $psi_member_sizeof, $pl, $as}]"
+			psi_composite_members="[$psi_composite_members, {]PSI_TYPE_PAIR(member_type)[, \"]member_name[\", $psi_member_offsetof, $psi_member_sizeof, $pl, $as}]"
 		fi
 	fi
 ])
@@ -56,11 +47,11 @@ AC_DEFUN(PSI_STRUCT, [
 	PSI_CHECK_SIZEOF($1)
 	if PSI_SH_TEST_SIZEOF($1); then
 		PSI_CHECK_ALIGNOF($1)
-		psi_struct_name=m4_bregexp([$1], [^\(struct \)?\(\w+\)], [\2])
-		psi_struct_members="{PSI_T_STRUCT, \"struct\", \"$psi_struct_name\", PSI_SH_ALIGNOF($1), PSI_SH_SIZEOF($1), 0, 0}"
-		ifelse([$2],,,[m4_map_args_sep([PSI_STRUCT_MEMBER($1, m4_normalize(], [))], [], $2)])
-		psi_add_struct "$psi_struct_members"
-		if test "$1" = "$psi_struct_name"; then
+		psi_composite_name=m4_bregexp([$1], [^\(struct \)?\(\w+\)], [\2])
+		psi_composite_members="{PSI_T_STRUCT, \"struct\", \"$psi_composite_name\", PSI_SH_ALIGNOF($1), PSI_SH_SIZEOF($1), 0, 0}"
+		ifelse([$2],,,[m4_map_args_sep([PSI_COMPOSITE_MEMBER($1, m4_normalize(], [))], [], $2)])
+		psi_add_composite "$psi_composite_members"
+		if test "$1" = "$psi_composite_name"; then
 			psi_add_type "{PSI_T_STRUCT, \"$1\", \"$1\"}"
 		fi
 	fi
@@ -75,11 +66,11 @@ AC_DEFUN(PSI_UNION, [
 	PSI_CHECK_SIZEOF($1)
 	if PSI_SH_TEST_SIZEOF($1); then
 		PSI_CHECK_ALIGNOF($1)
-		psi_struct_name=m4_bregexp([$1], [^\(union \)?\(\w+\)], [\2])
-		psi_struct_members="{PSI_T_UNION, \"union\", \"$psi_struct_name\", PSI_SH_ALIGNOF($1), PSI_SH_SIZEOF($1), 0, 0}"
-		ifelse([$2],,,[m4_map_args_sep([PSI_STRUCT_MEMBER($1, m4_normalize(], [))], [], $2)])
-		psi_add_union "$psi_struct_members"
-		if test "$1" = "$psi_struct_name"; then
+		psi_composite_name=m4_bregexp([$1], [^\(union \)?\(\w+\)], [\2])
+		psi_composite_members="{PSI_T_UNION, \"union\", \"$psi_composite_name\", PSI_SH_ALIGNOF($1), PSI_SH_SIZEOF($1), 0, 0}"
+		ifelse([$2],,,[m4_map_args_sep([PSI_COMPOSITE_MEMBER($1, m4_normalize(], [))], [], $2)])
+		psi_add_composite "$psi_composite_members"
+		if test "$1" = "$psi_composite_name"; then
 			psi_add_type "{PSI_T_UNION, \"$1\", \"$1\"}"
 		fi
 	fi

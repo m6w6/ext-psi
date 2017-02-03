@@ -56,21 +56,18 @@
 #include "token.h"
 #include "parser.h"
 
-#include "php_psi_types.h"
-#include "php_psi_consts.h"
-#include "php_psi_decls.h"
-#include "php_psi_va_decls.h"
-#include "php_psi_fn_decls.h"
-#include "php_psi_structs.h"
-#include "php_psi_unions.h"
+#define PSI_PREDEF_TYPES
+#define PSI_PREDEF_CONSTS
+#define PSI_PREDEF_COMPOSITES
+#define PSI_PREDEF_DECLS
+#include "php_psi_posix.h"
 
 struct psi_context *psi_context_init(struct psi_context *C, struct psi_context_ops *ops, psi_error_cb error, unsigned flags)
 {
 	struct psi_data T;
 	struct psi_predef_type *predef_type;
 	struct psi_predef_const *predef_const;
-	struct psi_predef_struct *predef_struct;
-	struct psi_predef_union *predef_union;
+	struct psi_predef_composite *predef_composite;
 	struct psi_predef_decl *predef_decl;
 
 	if (!C) {
@@ -106,14 +103,27 @@ struct psi_context *psi_context_init(struct psi_context *C, struct psi_context_o
 
 		T.consts = psi_plist_add(T.consts, &constant);
 	}
-	for (predef_struct = &psi_predef_structs[0]; predef_struct->type_tag; ++predef_struct) {
-		struct psi_predef_struct *member;
+	for (predef_composite = &psi_predef_composites[0]; predef_composite->type_tag; ++predef_composite) {
+		struct psi_predef_composite *member;
+		struct psi_decl_struct *dstruct;
+		struct psi_decl_union *dunion;
 		struct psi_plist *dargs = psi_plist_init((psi_plist_dtor) psi_decl_arg_free);
-		struct psi_decl_struct *dstruct = psi_decl_struct_init(predef_struct->var_name, dargs);
 
-		dstruct->size = predef_struct->size;
-		dstruct->align = predef_struct->offset;
-		for (member = &predef_struct[1]; member->type_tag; ++member) {
+		switch (predef_composite->type_tag) {
+		case PSI_T_STRUCT:
+			dstruct = psi_decl_struct_init(predef_composite->var_name, dargs);
+			dstruct->size = predef_composite->size;
+			dstruct->align = predef_composite->offset;
+			break;
+		case PSI_T_UNION:
+			dunion = psi_decl_union_init(predef_composite->var_name, dargs);
+			dunion->size = predef_composite->size;
+			dunion->align = predef_composite->offset;
+			break;
+		default:
+			assert(0);
+		}
+		for (member = &predef_composite[1]; member->type_tag; ++member) {
 			struct psi_decl_type *type;
 			struct psi_decl_var *dvar;
 			struct psi_decl_arg *darg;
@@ -122,74 +132,32 @@ struct psi_context *psi_context_init(struct psi_context *C, struct psi_context_o
 			dvar = psi_decl_var_init(member->var_name, member->pointer_level, member->array_size);
 			darg = psi_decl_arg_init(type, dvar);
 			darg->layout = psi_layout_init(member->offset, member->size);
-			dstruct->args = psi_plist_add(dstruct->args, &darg);
+
+			switch (predef_composite->type_tag) {
+			case PSI_T_STRUCT:
+				dstruct->args = psi_plist_add(dstruct->args, &darg);
+				break;
+			case PSI_T_UNION:
+				dunion->args = psi_plist_add(dunion->args, &darg);
+				break;
+			default:
+				assert(0);
+			}
+		}
+		switch (predef_composite->type_tag) {
+		case PSI_T_STRUCT:
+			T.structs = psi_plist_add(T.structs, &dstruct);
+			break;
+		case PSI_T_UNION:
+			T.unions = psi_plist_add(T.unions, &dunion);
+			break;
+		default:
+			assert(0);
 		}
 
-		T.structs = psi_plist_add(T.structs, &dstruct);
-		predef_struct = member;
-	}
-	for (predef_union = &psi_predef_unions[0]; predef_union->type_tag; ++predef_union) {
-		struct psi_predef_union *member;
-		struct psi_plist *dargs = psi_plist_init((psi_plist_dtor) psi_decl_arg_free);
-		struct psi_decl_union *dunion = psi_decl_union_init(predef_union->var_name, dargs);
-
-		dunion->size = predef_union->size;
-		dunion->align = predef_union->offset;
-		for (member = &predef_union[1]; member->type_tag; ++member) {
-			struct psi_decl_type *type;
-			struct psi_decl_var *dvar;
-			struct psi_decl_arg *darg;
-
-			type = psi_decl_type_init(member->type_tag, member->type_name);
-			dvar = psi_decl_var_init(member->var_name, member->pointer_level, member->array_size);
-			darg = psi_decl_arg_init(type, dvar);
-			darg->layout = psi_layout_init(member->offset, member->size);
-			dunion->args = psi_plist_add(dunion->args, &darg);
-		}
-
-		T.unions = psi_plist_add(T.unions, &dunion);
-		predef_union = member;
+		predef_composite = member;
 	}
 	for (predef_decl = &psi_predef_decls[0]; predef_decl->type_tag; ++predef_decl) {
-		struct psi_predef_decl *farg;
-		struct psi_decl_type *ftype = psi_decl_type_init(predef_decl->type_tag, predef_decl->type_name);
-		struct psi_decl_var *fname = psi_decl_var_init(predef_decl->var_name, predef_decl->pointer_level, predef_decl->array_size);
-		struct psi_decl_arg *func = psi_decl_arg_init(ftype, fname);
-		struct psi_plist *args = psi_plist_init((psi_plist_dtor) psi_decl_arg_free);
-		struct psi_decl *decl = psi_decl_init(psi_decl_abi_init("default"), func, args);
-
-		for (farg = &predef_decl[1]; farg->type_tag; ++farg) {
-			struct psi_decl_type *arg_type = psi_decl_type_init(farg->type_tag, farg->type_name);
-			struct psi_decl_var *arg_var = psi_decl_var_init(farg->var_name, farg->pointer_level, farg->array_size);
-			struct psi_decl_arg *darg = psi_decl_arg_init(arg_type, arg_var);
-			decl->args = psi_plist_add(decl->args, &darg);
-		}
-
-		T.decls = psi_plist_add(T.decls, &decl);
-		predef_decl = farg;
-	}
-
-	for (predef_decl = &psi_predef_vararg_decls[0]; predef_decl->type_tag; ++predef_decl) {
-		struct psi_predef_decl *farg;
-		struct psi_decl_type *ftype = psi_decl_type_init(predef_decl->type_tag, predef_decl->type_name);
-		struct psi_decl_var *fname = psi_decl_var_init(predef_decl->var_name, predef_decl->pointer_level, predef_decl->array_size);
-		struct psi_decl_arg *func = psi_decl_arg_init(ftype, fname);
-		struct psi_plist *args = psi_plist_init((psi_plist_dtor) psi_decl_arg_free);
-		struct psi_decl *decl = psi_decl_init(psi_decl_abi_init("default"), func, args);
-
-		for (farg = &predef_decl[1]; farg->type_tag; ++farg) {
-			struct psi_decl_type *arg_type = psi_decl_type_init(farg->type_tag, farg->type_name);
-			struct psi_decl_var *arg_var = psi_decl_var_init(farg->var_name, farg->pointer_level, farg->array_size);
-			struct psi_decl_arg *darg = psi_decl_arg_init(arg_type, arg_var);
-			decl->args = psi_plist_add(decl->args, &darg);
-		}
-		decl->varargs = 1;
-
-		T.decls = psi_plist_add(T.decls, &decl);
-		predef_decl = farg;
-	}
-
-	for (predef_decl = &psi_predef_functor_decls[0]; predef_decl->type_tag; ++predef_decl) {
 		struct psi_predef_decl *farg;
 		struct psi_decl_type *dtype, *ftype = psi_decl_type_init(predef_decl->type_tag, predef_decl->type_name);
 		struct psi_decl_var *fname = psi_decl_var_init(predef_decl->var_name, predef_decl->pointer_level, predef_decl->array_size);
@@ -204,10 +172,22 @@ struct psi_context *psi_context_init(struct psi_context *C, struct psi_context_o
 			decl->args = psi_plist_add(decl->args, &darg);
 		}
 
-		dtype = psi_decl_type_init(PSI_T_FUNCTION, fname->name);
-		dtype->real.func = decl;
-		tdef = psi_decl_arg_init(dtype, psi_decl_var_copy(fname));
-		T.types = psi_plist_add(T.types, &tdef);
+		switch (predef_decl->kind) {
+		case DECL_KIND_VARARG:
+			decl->varargs = 1;
+			/* no break */
+		case DECL_KIND_STD:
+			T.decls = psi_plist_add(T.decls, &decl);
+			break;
+		case DECL_KIND_FUNCTOR:
+			dtype = psi_decl_type_init(PSI_T_FUNCTION, fname->name);
+			dtype->real.func = decl;
+			tdef = psi_decl_arg_init(dtype, psi_decl_var_copy(fname));
+			T.types = psi_plist_add(T.types, &tdef);
+			break;
+		default:
+			assert(0);
+		}
 
 		predef_decl = farg;
 	}
@@ -305,6 +285,12 @@ zend_function_entry *psi_context_compile(struct psi_context *C)
 
 		while (psi_plist_get(C->consts, i++, &c)) {
 			zc.name = zend_string_init(c->name + (c->name[0] == '\\'), strlen(c->name) - (c->name[0] == '\\'), 1);
+
+			if (zend_get_constant(zc.name)) {
+				zend_string_release(zc.name);
+				continue;
+			}
+
 			ZVAL_NEW_STR(&zc.value, zend_string_init(c->val->text, strlen(c->val->text), 1));
 
 			switch (c->type->type) {
