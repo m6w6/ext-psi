@@ -14,8 +14,8 @@ addons:
 
 env:
  matrix:
-  - PHP=master enable_debug=no enable_psi=yes enable_psi_posix=all LEMON='\$(PHP_PSI_BUILDDIR)/lemon'
-  - PHP=master enable_debug=yes enable_psi=yes enable_psi_posix=all LEMON='\$(PHP_PSI_BUILDDIR)/lemon'
+  - PHP=master enable_debug=no enable_psi=yes enable_psi_posix=all LEMON='$(PHP_PSI_BUILDDIR)/lemon'
+  - PHP=master enable_debug=yes enable_psi=yes enable_psi_posix=all LEMON='$(PHP_PSI_BUILDDIR)/lemon'
 
 before_script:
  - make -f travis/pecl/Makefile php

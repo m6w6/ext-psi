@@ -24,7 +24,7 @@ $env = $gen([
 	#"enable_maintainer_zts",
 	"enable_psi" => ["yes"],
 	"enable_psi_posix" => ["all"],
-	"LEMON" => ["'\\\$(PHP_PSI_BUILDDIR)/lemon'"]
+	"LEMON" => ["'\$(PHP_PSI_BUILDDIR)/lemon'"]
 ]);
 foreach ($env as $e) {
 	printf("  - %s\n", $e);
