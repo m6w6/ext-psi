@@ -135,12 +135,10 @@ AC_DEFUN(PSI_FUNCTOR_TYPE, [
 	dnl psi_add_type "{PSI_T_POINTER, \"void\", \"PSI_VAR_NAME($1)\"}"
 	AS_TR_SH([ac_cv_sizeof_]PSI_VAR_NAME($1))=PSI_SH_SIZEOF(void *)
 	PSI_DECL_TYPE([$1], [$2])
-	if test "$PHP_DEBUG" = "1"; then
-		AC_CHECK_TYPE(PSI_VAR_NAME($1), [], [
-			psi_add_macro ["#undef ]PSI_VAR_NAME($1)["]
-			psi_add_macro ["typedef ]PSI_VAR_TYPE($1)[ (*]PSI_VAR_NAME($1)[)]$2;"
-		])
-	fi
+	AC_CHECK_TYPE(PSI_VAR_NAME($1), [], [
+		psi_add_macro ["#undef ]PSI_VAR_NAME($1)["]
+		psi_add_macro ["typedef ]PSI_VAR_TYPE($1)[ (*]PSI_VAR_NAME($1)[)]$2;"
+	])
 ])
 
 dnl PSI_VAR_TYPE(decl arg)
