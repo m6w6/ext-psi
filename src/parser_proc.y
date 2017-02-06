@@ -38,15 +38,15 @@ void psi_parser_proc_free(void **parser_proc)
 %default_destructor {(void)P;}
 %extra_argument {struct psi_parser *P}
 %syntax_error { ++P->errors; if (TOKEN && TOKEN->type != PSI_T_EOF) { psi_error(PSI_WARNING, TOKEN->file, TOKEN->line, "PSI syntax error: Unexpected token '%s' at pos %u", TOKEN->text, TOKEN->col); } else { psi_error(PSI_WARNING, P->file.fn, P->line, "PSI syntax error: Unexpected end of input"); } }
-%token_class const_type_token BOOL INT FLOAT STRING.
-%token_class decl_type_token FLOAT DOUBLE INT8 UINT8 INT16 UINT16 INT32 UINT32 INT64 UINT64 NAME.
-%token_class impl_def_val_token NULL NUMBER TRUE FALSE QUOTED_STRING.
-%token_class number_token NUMBER NSNAME.
-%token_class num_exp_binary_op_token PIPE CARET AMPERSAND LSHIFT RSHIFT PLUS MINUS ASTERISK SLASH MODULO.
-%token_class num_exp_unary_op_token TILDE NOT PLUS MINUS.
-%token_class let_func_token ZVAL OBJVAL ARRVAL PATHVAL STRLEN STRVAL FLOATVAL INTVAL BOOLVAL COUNT.
-%token_class set_func_token TO_OBJECT TO_ARRAY TO_STRING TO_INT TO_FLOAT TO_BOOL ZVAL VOID.
-%token_class impl_type_token VOID MIXED BOOL INT FLOAT STRING ARRAY OBJECT CALLABLE.
+%token_class const_type_token BOOL INT FLOAT STRING .
+%token_class decl_type_token FLOAT DOUBLE INT8 UINT8 INT16 UINT16 INT32 UINT32 INT64 UINT64 NAME .
+%token_class impl_def_val_token NULL NUMBER TRUE FALSE QUOTED_STRING .
+%token_class number_token NUMBER NSNAME .
+%token_class num_exp_binary_op_token PIPE CARET AMPERSAND LSHIFT RSHIFT PLUS MINUS ASTERISK SLASH MODULO .
+%token_class num_exp_unary_op_token TILDE NOT PLUS MINUS .
+%token_class let_func_token ZVAL OBJVAL ARRVAL PATHVAL STRLEN STRVAL FLOATVAL INTVAL BOOLVAL COUNT .
+%token_class set_func_token TO_OBJECT TO_ARRAY TO_STRING TO_INT TO_FLOAT TO_BOOL ZVAL VOID .
+%token_class impl_type_token VOID MIXED BOOL INT FLOAT STRING ARRAY OBJECT CALLABLE .
 %nonassoc NAME.
 %right NOT TILDE.
 %left PIPE.

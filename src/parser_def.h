@@ -27,6 +27,9 @@
 #define CONCAT1(x,y) CONCAT2(x,y)
 #define COUNTED(x) CONCAT1(parse_ ##x## _, __LINE__)
 
+#define TOKEN_PREFIX PSI_T
+#define TOKEN_STRUCT struct psi_token *
+
 #ifdef GENERATE
 # define DEF(dn, dv) dn dv
 # define PASS(nt, rule) nt ::= rule.
@@ -38,6 +41,8 @@
 # define TYPED(t, name) t(name)
 # define TOKEN_TYPE(token, type_) %type token {type_}
 # define TOKEN_DTOR(token, dtor) %destructor token {dtor}
+# define T(token) token
+# define TOKEN_CLASS(type, tokens) DEF(%token_class, type##_token tokens .)
 #else
 # ifndef TEST
 #  include "parser.h"
@@ -60,10 +65,12 @@
 # define TOKEN_TYPE_NAME(token) token##_parse_t
 # define TOKEN_TYPE(token, type) typedef type TOKEN_TYPE_NAME(token);
 # define TOKEN_DTOR(token, dtor)
+# define T(token) CONCAT1(TOKEN_PREFIX, _ ##token ),
+# define TOKEN_CLASS(type, tokens) static token_t type##_token[] = { tokens 0 };
 #endif
 
-DEF(%token_prefix, PSI_T_)
-DEF(%token_type, {struct psi_token *})
+DEF(%token_prefix, CONCAT1(TOKEN_PREFIX,_))
+DEF(%token_type, {TOKEN_STRUCT})
 DEF(%token_destructor, {free($$);})
 DEF(%default_destructor, {(void)P;})
 DEF(%extra_argument, {struct psi_parser *P})
@@ -78,15 +85,15 @@ DEF(%syntax_error, {
 	}
 })
 
-DEF(%token_class, const_type_token BOOL INT FLOAT STRING.)
-DEF(%token_class, decl_type_token FLOAT DOUBLE INT8 UINT8 INT16 UINT16 INT32 UINT32 INT64 UINT64 NAME.)
-DEF(%token_class, impl_def_val_token NULL NUMBER TRUE FALSE QUOTED_STRING.)
-DEF(%token_class, number_token NUMBER NSNAME.)
-DEF(%token_class, num_exp_binary_op_token PIPE CARET AMPERSAND LSHIFT RSHIFT PLUS MINUS ASTERISK SLASH MODULO.)
-DEF(%token_class, num_exp_unary_op_token TILDE NOT PLUS MINUS.)
-DEF(%token_class, let_func_token ZVAL OBJVAL ARRVAL PATHVAL STRLEN STRVAL FLOATVAL INTVAL BOOLVAL COUNT.)
-DEF(%token_class, set_func_token TO_OBJECT TO_ARRAY TO_STRING TO_INT TO_FLOAT TO_BOOL ZVAL VOID.)
-DEF(%token_class, impl_type_token VOID MIXED BOOL INT FLOAT STRING ARRAY OBJECT CALLABLE.)
+TOKEN_CLASS(const_type, T(BOOL) T(INT) T(FLOAT) T(STRING))
+TOKEN_CLASS(decl_type, T(FLOAT) T(DOUBLE) T(INT8) T(UINT8) T(INT16) T(UINT16) T(INT32) T(UINT32) T(INT64) T(UINT64) T(NAME))
+TOKEN_CLASS(impl_def_val, T(NULL) T(NUMBER) T(TRUE) T(FALSE) T(QUOTED_STRING))
+TOKEN_CLASS(number, T(NUMBER) T(NSNAME))
+TOKEN_CLASS(num_exp_binary_op, T(PIPE) T(CARET) T(AMPERSAND) T(LSHIFT) T(RSHIFT) T(PLUS) T(MINUS) T(ASTERISK) T(SLASH) T(MODULO))
+TOKEN_CLASS(num_exp_unary_op, T(TILDE) T(NOT) T(PLUS) T(MINUS))
+TOKEN_CLASS(let_func, T(ZVAL) T(OBJVAL) T(ARRVAL) T(PATHVAL) T(STRLEN) T(STRVAL) T(FLOATVAL) T(INTVAL) T(BOOLVAL) T(COUNT))
+TOKEN_CLASS(set_func, T(TO_OBJECT) T(TO_ARRAY) T(TO_STRING) T(TO_INT) T(TO_FLOAT) T(TO_BOOL) T(ZVAL) T(VOID))
+TOKEN_CLASS(impl_type, T(VOID) T(MIXED) T(BOOL) T(INT) T(FLOAT) T(STRING) T(ARRAY) T(OBJECT) T(CALLABLE))
 
 DEF(%nonassoc, NAME.)
 DEF(%right, NOT TILDE.)
@@ -96,14 +103,7 @@ DEF(%left, AMPERSAND.)
 DEF(%left, LSHIFT RSHIFT.)
 DEF(%left, PLUS MINUS.)
 DEF(%left, ASTERISK SLASH MODULO.)
-/*
-DEF(%left, ASTERISK SLASH MODULO.)
-DEF(%left, PLUS MINUS.)
-DEF(%left, LSHIFT RSHIFT.)
-DEF(%left, AMPERSAND.)
-DEF(%left, CARET.)
-DEF(%left, PIPE.)
-*/
+
 DEF(%fallback, NAME TEMP FREE SET LET RETURN CALLOC CALLBACK ZVAL LIB STRING COUNT.)
 
 TOKEN_TYPE(decl_enum, struct psi_decl_enum *)
