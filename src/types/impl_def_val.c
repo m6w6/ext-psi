@@ -33,7 +33,7 @@ struct psi_impl_def_val *psi_impl_def_val_init(token_t t, const char *text)
 	struct psi_impl_def_val *def = calloc(1, sizeof(*def));
 
 	def->type = t;
-	def->text = strdup(text);
+	def->text = text ? strdup(text) : NULL;
 
 	return def;
 }
@@ -49,15 +49,15 @@ void psi_impl_def_val_free(struct psi_impl_def_val **def_ptr)
 		}
 		switch (def->type) {
 		case PSI_T_STRING:
-			assert(0);
-			/* no break */
 		case PSI_T_QUOTED_STRING:
 			if (def->ival.zend.str) {
 				zend_string_release(def->ival.zend.str);
 			}
 			break;
 		}
-		free(def->text);
+		if (def->text) {
+			free(def->text);
+		}
 		free(def);
 	}
 }
@@ -79,7 +79,8 @@ bool psi_impl_def_val_validate(struct psi_data *data,
 			break;
 		case PSI_T_STRING:
 			/* used for consts */
-			/* no break */
+			def->ival.zend.str = zend_string_init(def->text, strlen(def->text), 1);
+			break;
 		case PSI_T_QUOTED_STRING:
 			def->ival.zend.str = zend_string_init(&def->text[1], strlen(def->text) - 2, 1);
 			break;
@@ -95,13 +96,25 @@ bool psi_impl_def_val_validate(struct psi_data *data,
 
 void psi_impl_def_val_dump(int fd, struct psi_impl_def_val *val) {
 	switch (val->type) {
+	case PSI_T_INT:
+		dprintf(fd, "%ld", val->ival.zend.lval);
+		break;
+	case PSI_T_FLOAT:
+	case PSI_T_DOUBLE:
+		dprintf(fd, "%f", val->ival.dval);
+		break;
 	case PSI_T_STRING:
-		assert(0);
-		/* no break */
+		dprintf(fd, "\"%s\"", val->ival.zend.str->val);
+		break;
 	case PSI_T_QUOTED_STRING:
 		dprintf(fd, "\"%s\"", val->text);
 		break;
 	default:
-		dprintf(fd, "%s", val->text);
+		if (val->text) {
+			dprintf(fd, "%s", val->text);
+		} else {
+			assert(0);
+		}
+		break;
 	}
 }

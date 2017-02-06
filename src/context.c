@@ -97,10 +97,25 @@ struct psi_context *psi_context_init(struct psi_context *C, struct psi_context_o
 		T.types = psi_plist_add(T.types, &def);
 	}
 	for (predef_const = &psi_predef_consts[0]; predef_const->type_tag; ++predef_const) {
-		struct psi_impl_def_val *val = psi_impl_def_val_init(predef_const->val_type_tag, predef_const->val_text);
 		struct psi_const_type *type = psi_const_type_init(predef_const->type_tag, predef_const->type_name);
-		struct psi_const *constant = psi_const_init(type, predef_const->var_name, val);
+		struct psi_impl_def_val *val;
+		struct psi_const *constant;
 
+		switch (type->type) {
+		case PSI_T_INT:
+			val = psi_impl_def_val_init(PSI_T_INT, NULL);
+			val->ival.zend.lval = predef_const->value.lval;
+			break;
+		case PSI_T_STRING:
+			val = psi_impl_def_val_init(PSI_T_STRING, NULL);
+			val->ival.zend.str = zend_string_init(predef_const->value.ptr, strlen(predef_const->value.ptr), 1);
+			break;
+		default:
+			assert(0);
+			break;
+		}
+
+		constant = psi_const_init(type, predef_const->var_name, val);
 		T.consts = psi_plist_add(T.consts, &constant);
 	}
 	for (predef_composite = &psi_predef_composites[0]; predef_composite->type_tag; ++predef_composite) {
@@ -289,7 +304,7 @@ zend_function_entry *psi_context_compile(struct psi_context *C)
 				continue;
 			}
 
-			zc.name = zend_string_init(c->name + (c->name[0] == '\\'), strlen(c->name) - (c->name[0] == '\\'), 1);
+			zc.name = zend_string_init(c->name, strlen(c->name), 1);
 
 			switch (c->type->type) {
 			case PSI_T_BOOL:
@@ -303,7 +318,7 @@ zend_function_entry *psi_context_compile(struct psi_context *C)
 				break;
 			case PSI_T_STRING:
 			case PSI_T_QUOTED_STRING:
-				ZVAL_NEW_STR(&zc.value, zend_string_init(c->val->text, strlen(c->val->text), 1));
+				ZVAL_NEW_STR(&zc.value, zend_string_copy(c->val->ival.zend.str));
 				break;
 			default:
 				assert(0);

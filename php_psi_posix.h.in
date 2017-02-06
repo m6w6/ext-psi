@@ -54,8 +54,7 @@ static struct psi_predef_const {
 	token_t type_tag;
 	const char *type_name;
 	const char *var_name;
-	const char *val_text;
-	token_t val_type_tag;
+	impl_val value;
 } psi_predef_consts[] = {
 @PSI_CONSTS@
 	{0}
