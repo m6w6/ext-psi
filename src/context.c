@@ -284,34 +284,36 @@ zend_function_entry *psi_context_compile(struct psi_context *C)
 		struct psi_const *c;
 
 		while (psi_plist_get(C->consts, i++, &c)) {
-			zc.name = zend_string_init(c->name + (c->name[0] == '\\'), strlen(c->name) - (c->name[0] == '\\'), 1);
 
-			if (zend_get_constant(zc.name)) {
-				zend_string_release(zc.name);
+			if (zend_get_constant_str(c->name, strlen(c->name))) {
 				continue;
 			}
 
-			ZVAL_NEW_STR(&zc.value, zend_string_init(c->val->text, strlen(c->val->text), 1));
+			zc.name = zend_string_init(c->name + (c->name[0] == '\\'), strlen(c->name) - (c->name[0] == '\\'), 1);
 
 			switch (c->type->type) {
 			case PSI_T_BOOL:
-				convert_to_boolean(&zc.value);
+				ZVAL_BOOL(&zc.value, c->val->ival.zend.bval);
 				break;
 			case PSI_T_INT:
-				convert_to_long(&zc.value);
+				ZVAL_LONG(&zc.value, c->val->ival.zend.lval);
 				break;
 			case PSI_T_FLOAT:
-				convert_to_double(&zc.value);
+				ZVAL_DOUBLE(&zc.value, c->val->ival.dval);
 				break;
 			case PSI_T_STRING:
 			case PSI_T_QUOTED_STRING:
+				ZVAL_NEW_STR(&zc.value, zend_string_init(c->val->text, strlen(c->val->text), 1));
 				break;
 			default:
 				assert(0);
+				break;
 			}
+
 			zend_register_constant(&zc);
 		}
 	}
+
 	if (C->enums) {
 		size_t i = 0;
 		struct psi_decl_enum *e;

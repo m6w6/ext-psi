@@ -70,7 +70,7 @@ bool psi_impl_func_validate(struct psi_data *data, struct psi_impl_func *func)
 	while (psi_plist_get(func->args, i++, &iarg)) {
 		if (iarg->def) {
 			def = 1;
-			if (!psi_impl_def_val_validate(data, iarg->def, iarg->type)) {
+			if (!psi_impl_def_val_validate(data, iarg->def, iarg->type->type, iarg->type->name)) {
 				return 0;
 			}
 		} else if (def) {

@@ -63,10 +63,10 @@ void psi_impl_def_val_free(struct psi_impl_def_val **def_ptr)
 }
 
 bool psi_impl_def_val_validate(struct psi_data *data,
-		struct psi_impl_def_val *def, struct psi_impl_type *type)
+		struct psi_impl_def_val *def, token_t type_t, const char *type_name)
 {
-	if (def->type != PSI_T_NULL) {
-		switch (type->type) {
+	if (def->type != PSI_T_NULL && def->text) {
+		switch (type_t) {
 		case PSI_T_BOOL:
 			def->ival.zend.bval = def->type == PSI_T_TRUE ? 1 : 0;
 			break;
@@ -78,7 +78,7 @@ bool psi_impl_def_val_validate(struct psi_data *data,
 			def->ival.dval = zend_strtod(def->text, NULL);
 			break;
 		case PSI_T_STRING:
-			assert(0);
+			/* used for consts */
 			/* no break */
 		case PSI_T_QUOTED_STRING:
 			def->ival.zend.str = zend_string_init(&def->text[1], strlen(def->text) - 2, 1);
@@ -86,7 +86,7 @@ bool psi_impl_def_val_validate(struct psi_data *data,
 		default:
 			data->error(data, def->token, PSI_WARNING,
 					"Invalid default value type '%s', expected one of bool, int, double, string.",
-					type->name);
+					type_name);
 			return false;
 		}
 	}

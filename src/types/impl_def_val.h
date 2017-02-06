@@ -42,6 +42,6 @@ struct psi_impl_def_val {
 struct psi_impl_def_val *psi_impl_def_val_init(token_t t, const char *text);
 void psi_impl_def_val_free(struct psi_impl_def_val **def_ptr);
 void psi_impl_def_val_dump(int fd, struct psi_impl_def_val *val);
-bool psi_impl_def_val_validate(struct psi_data *data, struct psi_impl_def_val *def, struct psi_impl_type *type);
+bool psi_impl_def_val_validate(struct psi_data *data, struct psi_impl_def_val *def, token_t i_type_t, const char *i_type_n);
 
 #endif

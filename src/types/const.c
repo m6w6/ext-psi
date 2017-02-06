@@ -31,7 +31,7 @@ struct psi_const *psi_const_init(struct psi_const_type *type, const char *name,
 {
 	struct psi_const *c = calloc(1, sizeof(*c));
 	c->type = type;
-	c->name = strdup(name);
+	c->name = strdup(name[0] == '\\' ? &name[1] : name);
 	c->val = val;
 	return c;
 }
@@ -63,6 +63,8 @@ void psi_const_dump(int fd, struct psi_const *cnst)
 
 bool psi_const_validate(struct psi_data *data, struct psi_const *c)
 {
-	/* FIXME */
+	if (!psi_impl_def_val_validate(data, c->val, c->type->type, c->type->name)) {
+		return false;
+	}
 	return true;
 }
