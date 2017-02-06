@@ -104,6 +104,17 @@ if test "$PHP_PSI" != no; then
 	dnl parallel
 	AC_MSG_CHECKING([for POSIX modules: $PHP_PSI_POSIX])
 	
+	PSI_CONFIG_POSIX(signal, signal.h, [
+		PSI_CONFIG_POSIX(time, time.h, [
+			PSI_CONFIG_POSIX(sys/stat, sys/stat.h)
+			PSI_CONFIG_POSIX(wchar, wchar.h, [
+				PSI_CONFIG_POSIX(wctype, wctype.h)
+			])
+		])
+		PSI_CONFIG_POSIX(sys/select, sys/select.h)
+	])
+	PSI_CONFIG_POSIX(poll, poll.h)
+	PSI_CONFIG_POSIX(syslog, syslog.h)
 	PSI_CONFIG_POSIX(errno, errno.h)
 	PSI_CONFIG_POSIX(fcntl, fcntl.h)
 	PSI_CONFIG_POSIX(glob, glob.h)
@@ -111,12 +122,13 @@ if test "$PHP_PSI" != no; then
 	PSI_CONFIG_POSIX(stdio, stdio.h)
 	PSI_CONFIG_POSIX(stdlib, stdlib.h)
 	PSI_CONFIG_POSIX(unistd, unistd.h)
-	PSI_CONFIG_POSIX(time, time.h)
-	PSI_CONFIG_POSIX(sys/select, sys/select.h)
-	PSI_CONFIG_POSIX(sys/socket, sys/socket.h)
+	PSI_CONFIG_POSIX(sys/socket, sys/socket.h, [
+		PSI_CONFIG_POSIX(netinet/in, netinet/in.h)
+		PSI_CONFIG_POSIX(netdb, netdb.h)
+	])
+	PSI_CONFIG_POSIX(netinet/tcp, netinet/tcp.h)
 	PSI_CONFIG_POSIX(sys/time, sys/time.h)
 	PSI_CONFIG_POSIX(sys/times, sys/times.h)
-	PSI_CONFIG_POSIX(sys/stat, sys/stat.h)
 	PSI_CONFIG_POSIX(sys/uio, sys/uio.h)
 	PSI_CONFIG_POSIX(sys/utsname, sys/utsname.h)
 	PSI_CONFIG_POSIX(ndbm, dnl
@@ -124,14 +136,6 @@ if test "$PHP_PSI" != no; then
 		relic.h dnl qdbm
 		gdbm-ndbm.h dnl gdbm
 	)
-	PSI_CONFIG_POSIX(netdb, netdb.h)
-	PSI_CONFIG_POSIX(netinet/in, netinet/in.h)
-	PSI_CONFIG_POSIX(netinet/tcp, netinet/tcp.h)
-	PSI_CONFIG_POSIX(poll, poll.h)
-	PSI_CONFIG_POSIX(signal, signal.h)
-	PSI_CONFIG_POSIX(syslog, syslog.h)
-	PSI_CONFIG_POSIX(wchar, wchar.h)
-	PSI_CONFIG_POSIX(wctype, wctype.h)
 	
 	PSI_CONFIG_DONE
 

@@ -15,6 +15,7 @@ AC_DEFUN(PSI_CONFIG_INIT, [
 		PHP_SUBST(PSI_DEPS)
 		
 		PSI_CONFIG_TMP=$(mktemp -d)
+		PSI_FUNC_LIBC_MAIN
 	else
 		PSI_FAST_CONFIG=false
 		PSI_DEPS=false
@@ -78,7 +79,7 @@ AC_DEFUN(PSI_CONFIG_POSIX_ENABLED, [
 		AS_TR_SH([psi_config_posix_]$1)=true
 		;;
 	*)
-		if expr "$PHP_PSI_POSIX" : '\b$1\b' >/dev/null; then
+		if expr "$PHP_PSI_POSIX" : '.*\b$1\b' >/dev/null; then
 			AS_TR_SH([psi_config_posix_]$1)=true
 		fi
 		;;
@@ -100,14 +101,15 @@ AC_DEFUN(PSI_SH_TEST_POSIX_ENABLED, [
 	fi
 ])
 
-dnl PSI_CONFIG_POSIX(section, headers)
+dnl PSI_CONFIG_POSIX(section, headers, dependents)
 AC_DEFUN(PSI_CONFIG_POSIX, [
 	PSI_CONFIG_POSIX_ENABLED($1, [
 		if $PSI_FAST_CONFIG; then
-			PSI_CONFIG_POSIX_PARALLEL($1, $2)
+			PSI_CONFIG_POSIX_PARALLEL($1, $2, [$3])
 		else
 			ifelse([$2],,:,[AC_CHECK_HEADERS($2)])
 			AS_TR_CPP([PSI_CHECK_$1])
+			$3
 		fi 
 	])
 ])
@@ -116,6 +118,7 @@ AC_DEFUN([PSI_CONFIG_POSIX_PARALLEL], [
 	(
 		dnl setup
 		mkdir $PSI_CONFIG_TMP/AS_TR_SH([$1])
+		printenv > $PSI_CONFIG_TMP/AS_TR_SH([$1])/start.env
 		ln -s $(pwd)/confdefs.h $PSI_CONFIG_TMP/AS_TR_SH([$1])/confdefs.h
 		
 		dnl restore stdio
@@ -139,6 +142,7 @@ AC_DEFUN([PSI_CONFIG_POSIX_PARALLEL], [
 		AS_TR_CPP([PSI_CHECK_$1])
 		
 		dnl save env
+		printenv > $PSI_CONFIG_TMP/AS_TR_SH([$1])/end.env
 		cat >$PSI_CONFIG_TMP/AS_TR_SH([$1])/conf.env <<EOF
 LIBS="$LIBS \$LIBS"
 EOF
@@ -152,8 +156,13 @@ EOF
 			fi
 		done
 		
+		_AC_CACHE_DUMP >>$PSI_CONFIG_TMP/AS_TR_SH([$1])/conf.env
+		
 		dnl done
 		printf "%s " "$1" >&66
+		
+		$3
+		wait
 	) &
 ])
 
