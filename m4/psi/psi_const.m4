@@ -9,8 +9,7 @@ psi_add_str_const() {
 # Add a pre-defined int constant to $PSI_CONSTS_H
 psi_add_int_const() {
 	PSI_CONSTS="$PSI_CONSTS
-	{PSI_T_INT, \"int\", \"psi\\\\$1\", \"$2\", PSI_T_NUMBER}, 
-"
+	{PSI_T_INT, \"int\", \"psi\\\\$1\", \"$2\", PSI_T_NUMBER},"
 }
 
 dnl PSI_CONST(const name, type)
