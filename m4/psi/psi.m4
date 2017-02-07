@@ -41,11 +41,22 @@ AC_DEFUN(PSI_CONFIG_INIT, [
 
 ])
 
+dnl PSI_CONFIG_WAIT()
+dnl Internal: waits for sub configures in maintainer mode
+AC_DEFUN(PSI_CONFIG_WAIT, [
+	wait
+	if test $? -gt 0; then
+		cat $PSI_CONFIG_TMP/*/stderr.log >&2
+		exit 1
+	fi
+])
+
 dnl PSI_CONFIG_DONE()
 dnl Finish the headers with the pre-defined types etc.
 AC_DEFUN(PSI_CONFIG_DONE, [
+	PSI_CONFIG_WAIT
+	
 	if $PSI_FAST_CONFIG; then
-		wait
 		for conf_env in $PSI_CONFIG_TMP/*/conf.env; do
 			source $conf_env
 		done
@@ -116,21 +127,19 @@ AC_DEFUN(PSI_CONFIG_POSIX, [
 
 AC_DEFUN([PSI_CONFIG_POSIX_PARALLEL], [
 	(
-		dnl setup
+		dnl chaway
 		mkdir $PSI_CONFIG_TMP/AS_TR_SH([$1])
-		printenv > $PSI_CONFIG_TMP/AS_TR_SH([$1])/start.env
-		ln -s $(pwd)/confdefs.h $PSI_CONFIG_TMP/AS_TR_SH([$1])/confdefs.h
+		cd $PSI_CONFIG_TMP/AS_TR_SH([$1])
 		
-		dnl restore stdio
-		exec 66>&AS_MESSAGE_FD
-		exec AS_MESSAGE_FD>$PSI_CONFIG_TMP/AS_TR_SH([$1])/stdout.log
-		exec 2>$PSI_CONFIG_TMP/AS_TR_SH([$1])/stderr.log
+		dnl AC_DEFINEs 
+		ln -s $abs_builddir/confdefs.h confdefs.h
+		
+		dnl STDOUT, STDERR
+		exec {PSI_MESSAGE_FD}>&AS_MESSAGE_FD {PSI_ERROR_FD}>&2
+		exec AS_MESSAGE_FD>stdout.log 2>stderr.log
 		
 		dnl check for headers?
 		ifelse([$2],,:,[AC_CHECK_HEADERS($2)])
-		
-		dnl chaway
-		cd $PSI_CONFIG_TMP/AS_TR_SH([$1])
 		
 		dnl run checks
 		PSI_TYPES=
@@ -142,27 +151,31 @@ AC_DEFUN([PSI_CONFIG_POSIX_PARALLEL], [
 		AS_TR_CPP([PSI_CHECK_$1])
 		
 		dnl save env
-		printenv > $PSI_CONFIG_TMP/AS_TR_SH([$1])/end.env
-		cat >$PSI_CONFIG_TMP/AS_TR_SH([$1])/conf.env <<EOF
+		cat >conf.env <<EOF
 LIBS="$LIBS \$LIBS"
 EOF
 		for env in TYPES CONSTS COMPOSITES MACROS REDIRS DECLS; do
 			eval var=\$PSI_$env
 			if test -n "$var"; then
-				cat >>$PSI_CONFIG_TMP/AS_TR_SH([$1])/conf.env <<EOF
+				cat >>conf.env <<EOF
 PSI_$env='$var'"
 \$PSI_$env"
 EOF
 			fi
 		done
 		
-		_AC_CACHE_DUMP >>$PSI_CONFIG_TMP/AS_TR_SH([$1])/conf.env
+		_AC_CACHE_DUMP >>conf.env
+		dnl restore STDOUT,STDERR
+		exec >&$PSI_MESSAGE_FD 2>&$PSI_ERROR_FD
 		
 		dnl done
-		printf "%s " "$1" >&66
+		AS_ECHO_N(["$1 "])
+		cd - >/dev/null
 		
+		dnl run dependents
 		$3
-		wait
+		
+		PSI_CONFIG_WAIT
 	) &
 ])
 
@@ -285,7 +298,13 @@ AC_DEFUN(PSI_LEMON, [
 	if test -z "$LEMON"
 	then
 		AC_PATH_PROG(LEMON, lemon, $PHP_PSI_BUILDDIR/lemon)
+		if expr + "$LEMON" : "/" >/dev/null; then
+			LEMON_PATH=
+		else
+			LEMON_PATH=$abs_builddir/
+		fi
 	fi
+	PHP_SUBST(LEMON_PATH)
 	PHP_SUBST(LEMON)
 ])
 

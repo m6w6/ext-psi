@@ -24,7 +24,7 @@
 */
 #include <stdio.h>
 /************ Begin %include sections from the grammar ************************/
-#line 1 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 1 "src/parser_proc.y"
 
 #include "php_psi_stdinc.h"
 
@@ -58,7 +58,7 @@ void psi_parser_proc_free(void **parser_proc)
 	}
 }
 
-#line 62 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 62 "src/parser_proc.c"
 /**************** End of %include directives **********************************/
 /* These constants specify the various numeric values for terminal symbols
 ** in a format understandable to "makeheaders".  This section is blank unless
@@ -1086,9 +1086,9 @@ static void yy_destructor(
     case 85: /* FUNCTION */
     case 86: /* DOLLAR_NAME */
 {
-#line 37 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 37 "src/parser_proc.y"
 free((yypminor->yy0));
-#line 1092 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1092 "src/parser_proc.c"
 }
       break;
       /* Default NON-TERMINAL Destructor */
@@ -1111,16 +1111,16 @@ free((yypminor->yy0));
     case 156: /* decl_scalar_type_long_long */
     case 157: /* callback_rval */
 {
-#line 38 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 38 "src/parser_proc.y"
 (void)P;
-#line 1117 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1117 "src/parser_proc.c"
 }
       break;
     case 88: /* decl_enum */
 {
-#line 60 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 60 "src/parser_proc.y"
 psi_decl_enum_free(&(yypminor->yy63));
-#line 1124 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1124 "src/parser_proc.c"
 }
       break;
     case 89: /* decl_enum_items */
@@ -1136,44 +1136,44 @@ psi_decl_enum_free(&(yypminor->yy63));
     case 135: /* set_exps */
     case 139: /* free_exps */
 {
-#line 62 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 62 "src/parser_proc.y"
 psi_plist_free((yypminor->yy163));
-#line 1142 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1142 "src/parser_proc.c"
 }
       break;
     case 90: /* decl_enum_item */
 {
-#line 64 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 64 "src/parser_proc.y"
 psi_decl_enum_item_free(&(yypminor->yy217));
-#line 1149 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1149 "src/parser_proc.c"
 }
       break;
     case 93: /* decl_struct */
 {
-#line 70 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 70 "src/parser_proc.y"
 psi_decl_struct_free(&(yypminor->yy275));
-#line 1156 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1156 "src/parser_proc.c"
 }
       break;
     case 95: /* decl_union */
 {
-#line 73 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 73 "src/parser_proc.y"
 psi_decl_union_free(&(yypminor->yy271));
-#line 1163 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1163 "src/parser_proc.c"
 }
       break;
     case 96: /* const_type */
 {
-#line 75 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 75 "src/parser_proc.y"
 psi_const_type_free(&(yypminor->yy171));
-#line 1170 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1170 "src/parser_proc.c"
 }
       break;
     case 97: /* constant */
 {
-#line 77 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 77 "src/parser_proc.y"
 psi_const_free(&(yypminor->yy154));
-#line 1177 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1177 "src/parser_proc.c"
 }
       break;
     case 98: /* decl_typedef */
@@ -1183,194 +1183,194 @@ psi_const_free(&(yypminor->yy154));
     case 107: /* decl_arg */
     case 110: /* struct_arg */
 {
-#line 79 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 79 "src/parser_proc.y"
 psi_decl_arg_free(&(yypminor->yy184));
-#line 1189 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1189 "src/parser_proc.c"
 }
       break;
     case 102: /* decl */
 {
-#line 87 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 87 "src/parser_proc.y"
 psi_decl_free(&(yypminor->yy103));
-#line 1196 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1196 "src/parser_proc.c"
 }
       break;
     case 104: /* decl_abi */
 {
-#line 91 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 91 "src/parser_proc.y"
 psi_decl_abi_free(&(yypminor->yy218));
-#line 1203 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1203 "src/parser_proc.c"
 }
       break;
     case 105: /* decl_var */
 {
-#line 93 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 93 "src/parser_proc.y"
 psi_decl_var_free(&(yypminor->yy11));
-#line 1210 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1210 "src/parser_proc.c"
 }
       break;
     case 111: /* decl_layout */
 {
-#line 105 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 105 "src/parser_proc.y"
 psi_layout_free(&(yypminor->yy141));
-#line 1217 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1217 "src/parser_proc.c"
 }
       break;
     case 112: /* decl_type */
     case 113: /* const_decl_type */
 {
-#line 107 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 107 "src/parser_proc.y"
 psi_decl_type_free(&(yypminor->yy132));
-#line 1225 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1225 "src/parser_proc.c"
 }
       break;
     case 114: /* impl */
 {
-#line 111 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 111 "src/parser_proc.y"
 psi_impl_free(&(yypminor->yy97));
-#line 1232 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1232 "src/parser_proc.c"
 }
       break;
     case 115: /* impl_func */
 {
-#line 113 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 113 "src/parser_proc.y"
 psi_impl_func_free(&(yypminor->yy168));
-#line 1239 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1239 "src/parser_proc.c"
 }
       break;
     case 116: /* impl_def_val */
 {
-#line 115 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 115 "src/parser_proc.y"
 psi_impl_def_val_free(&(yypminor->yy93));
-#line 1246 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1246 "src/parser_proc.c"
 }
       break;
     case 117: /* impl_var */
 {
-#line 117 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 117 "src/parser_proc.y"
 psi_impl_var_free(&(yypminor->yy37));
-#line 1253 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1253 "src/parser_proc.c"
 }
       break;
     case 118: /* impl_arg */
     case 120: /* impl_vararg */
 {
-#line 119 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 119 "src/parser_proc.y"
 psi_impl_arg_free(&(yypminor->yy210));
-#line 1261 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1261 "src/parser_proc.c"
 }
       break;
     case 122: /* impl_stmt */
 {
-#line 127 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 127 "src/parser_proc.y"
 psi_impl_stmt_free(&(yypminor->yy78));
-#line 1268 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1268 "src/parser_proc.c"
 }
       break;
     case 123: /* number */
 {
-#line 129 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 129 "src/parser_proc.y"
 psi_number_free(&(yypminor->yy188));
-#line 1275 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1275 "src/parser_proc.c"
 }
       break;
     case 124: /* num_exp */
 {
-#line 131 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 131 "src/parser_proc.y"
 psi_num_exp_free(&(yypminor->yy259));
-#line 1282 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1282 "src/parser_proc.c"
 }
       break;
     case 125: /* let_stmt */
 {
-#line 133 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 133 "src/parser_proc.y"
 psi_let_stmt_free(&(yypminor->yy311));
-#line 1289 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1289 "src/parser_proc.c"
 }
       break;
     case 126: /* let_calloc */
 {
-#line 135 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 135 "src/parser_proc.y"
 psi_let_calloc_free(&(yypminor->yy9));
-#line 1296 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1296 "src/parser_proc.c"
 }
       break;
     case 127: /* let_func */
 {
-#line 137 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 137 "src/parser_proc.y"
 psi_let_func_free(&(yypminor->yy27));
-#line 1303 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1303 "src/parser_proc.c"
 }
       break;
     case 128: /* callback_arg_list */
     case 129: /* callback_args */
 {
-#line 139 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 139 "src/parser_proc.y"
 psi_plist_free((yypminor->yy43));
-#line 1311 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1311 "src/parser_proc.c"
 }
       break;
     case 130: /* let_callback */
 {
-#line 143 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 143 "src/parser_proc.y"
 psi_let_callback_free(&(yypminor->yy220));
-#line 1318 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1318 "src/parser_proc.c"
 }
       break;
     case 131: /* let_exp */
 {
-#line 145 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 145 "src/parser_proc.y"
 psi_let_exp_free(&(yypminor->yy20));
-#line 1325 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1325 "src/parser_proc.c"
 }
       break;
     case 133: /* set_stmt */
 {
-#line 149 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 149 "src/parser_proc.y"
 psi_set_stmt_free(&(yypminor->yy98));
-#line 1332 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1332 "src/parser_proc.c"
 }
       break;
     case 134: /* set_exp */
 {
-#line 151 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 151 "src/parser_proc.y"
 psi_set_exp_free(&(yypminor->yy147));
-#line 1339 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1339 "src/parser_proc.c"
 }
       break;
     case 136: /* set_func */
 {
-#line 155 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 155 "src/parser_proc.y"
 psi_set_func_free(&(yypminor->yy26));
-#line 1346 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1346 "src/parser_proc.c"
 }
       break;
     case 137: /* return_stmt */
 {
-#line 157 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 157 "src/parser_proc.y"
 psi_return_stmt_free(&(yypminor->yy90));
-#line 1353 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1353 "src/parser_proc.c"
 }
       break;
     case 138: /* free_stmt */
 {
-#line 159 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 159 "src/parser_proc.y"
 psi_free_stmt_free(&(yypminor->yy192));
-#line 1360 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1360 "src/parser_proc.c"
 }
       break;
     case 140: /* free_exp */
 {
-#line 163 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 163 "src/parser_proc.y"
 psi_free_exp_free(&(yypminor->yy94));
-#line 1367 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1367 "src/parser_proc.c"
 }
       break;
     case 141: /* impl_type */
 {
-#line 165 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 165 "src/parser_proc.y"
 psi_impl_type_free(&(yypminor->yy138));
-#line 1374 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1374 "src/parser_proc.c"
 }
       break;
 /********* End destructor definitions *****************************************/
@@ -1843,7 +1843,7 @@ static void yy_reduce(
 /********** Begin reduce actions **********************************************/
         YYMINORTYPE yylhsminor;
       case 0: /* block ::= LIB QUOTED_STRING EOS */
-#line 174 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 174 "src/parser_proc.y"
 {
  if (P->file.ln) {
   P->error(PSI_DATA(P), yymsp[-2].minor.yy0, PSI_WARNING, "Extra 'lib %s' statement has no effect", yymsp[-1].minor.yy0->text);
@@ -1853,31 +1853,31 @@ static void yy_reduce(
  free(yymsp[-1].minor.yy0);
  free(yymsp[-2].minor.yy0);
 }
-#line 1857 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1857 "src/parser_proc.c"
   yy_destructor(yypParser,63,&yymsp[0].minor);
         break;
       case 1: /* block ::= decl */
-#line 183 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 183 "src/parser_proc.y"
 {
  if (!P->decls) {
   P->decls = psi_plist_init((psi_plist_dtor) psi_decl_free);
  }
  P->decls = psi_plist_add(P->decls, &yymsp[0].minor.yy103);
 }
-#line 1868 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1868 "src/parser_proc.c"
         break;
       case 2: /* block ::= impl */
-#line 189 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 189 "src/parser_proc.y"
 {
  if (!P->impls) {
   P->impls = psi_plist_init((psi_plist_dtor) psi_impl_free);
  }
  P->impls = psi_plist_add(P->impls, &yymsp[0].minor.yy97);
 }
-#line 1878 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1878 "src/parser_proc.c"
         break;
       case 3: /* block ::= decl_typedef */
-#line 195 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 195 "src/parser_proc.y"
 {
  if (!P->types) {
   P->types = psi_plist_init((psi_plist_dtor) psi_decl_arg_free);
@@ -1910,58 +1910,58 @@ static void yy_reduce(
   break;
  }
 }
-#line 1914 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1914 "src/parser_proc.c"
         break;
       case 4: /* block ::= constant */
-#line 227 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 227 "src/parser_proc.y"
 {
  if (!P->consts) {
   P->consts = psi_plist_init((psi_plist_dtor) psi_const_free);
  }
  P->consts = psi_plist_add(P->consts, &yymsp[0].minor.yy154);
 }
-#line 1924 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1924 "src/parser_proc.c"
         break;
       case 5: /* block ::= decl_struct */
-#line 233 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 233 "src/parser_proc.y"
 {
  if (!P->structs) {
   P->structs = psi_plist_init((psi_plist_dtor) psi_decl_struct_free);
  }
  P->structs = psi_plist_add(P->structs, &yymsp[0].minor.yy275);
 }
-#line 1934 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1934 "src/parser_proc.c"
         break;
       case 6: /* block ::= decl_union */
-#line 239 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 239 "src/parser_proc.y"
 {
  if (!P->unions) {
   P->unions = psi_plist_init((psi_plist_dtor) psi_decl_union_free);
  }
  P->unions = psi_plist_add(P->unions, &yymsp[0].minor.yy271);
 }
-#line 1944 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1944 "src/parser_proc.c"
         break;
       case 7: /* block ::= decl_enum */
-#line 245 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 245 "src/parser_proc.y"
 {
  if (!P->enums) {
   P->enums = psi_plist_init((psi_plist_dtor) psi_decl_enum_free);
  }
  P->enums = psi_plist_add(P->enums, &yymsp[0].minor.yy63);
 }
-#line 1954 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1954 "src/parser_proc.c"
         break;
       case 8: /* optional_name ::= */
       case 42: /* decl_var_array_size ::= */ yytestcase(yyruleno==42);
       case 64: /* decl_scalar_type_short ::= */ yytestcase(yyruleno==64);
       case 68: /* decl_scalar_type_long ::= */ yytestcase(yyruleno==68);
       case 71: /* decl_scalar_type_long_long ::= */ yytestcase(yyruleno==71);
-#line 251 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 251 "src/parser_proc.y"
 {
  yymsp[1].minor.yy0 = NULL;
 }
-#line 1965 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1965 "src/parser_proc.c"
         break;
       case 9: /* optional_name ::= NAME */
       case 62: /* decl_scalar_type ::= CHAR */ yytestcase(yyruleno==62);
@@ -1971,31 +1971,31 @@ static void yy_reduce(
       case 72: /* decl_scalar_type_long_long ::= INT */ yytestcase(yyruleno==72);
       case 130: /* callback_rval ::= ZVAL|OBJVAL|ARRVAL|PATHVAL|STRLEN|STRVAL|FLOATVAL|INTVAL|BOOLVAL|COUNT */ yytestcase(yyruleno==130);
       case 131: /* callback_rval ::= VOID */ yytestcase(yyruleno==131);
-#line 254 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 254 "src/parser_proc.y"
 {
  yylhsminor.yy0 = yymsp[0].minor.yy0;
 }
-#line 1979 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1979 "src/parser_proc.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 10: /* align_and_size ::= */
-#line 257 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 257 "src/parser_proc.y"
 {
  yymsp[1].minor.yy91.pos = 0;
  yymsp[1].minor.yy91.len = 0;
 }
-#line 1988 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1988 "src/parser_proc.c"
         break;
       case 11: /* align_and_size ::= COLON COLON LPAREN NUMBER COMMA NUMBER RPAREN */
 {  yy_destructor(yypParser,64,&yymsp[-6].minor);
-#line 261 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 261 "src/parser_proc.y"
 {
  yymsp[-6].minor.yy91.pos = atol(yymsp[-3].minor.yy0->text);
  yymsp[-6].minor.yy91.len = atol(yymsp[-1].minor.yy0->text);
  free(yymsp[-3].minor.yy0);
  free(yymsp[-1].minor.yy0);
 }
-#line 1999 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 1999 "src/parser_proc.c"
   yy_destructor(yypParser,64,&yymsp[-5].minor);
   yy_destructor(yypParser,65,&yymsp[-4].minor);
   yy_destructor(yypParser,66,&yymsp[-2].minor);
@@ -2005,7 +2005,7 @@ static void yy_reduce(
       case 12: /* enum_name ::= ENUM optional_name */
       case 13: /* struct_name ::= STRUCT optional_name */ yytestcase(yyruleno==13);
       case 14: /* union_name ::= UNION optional_name */ yytestcase(yyruleno==14);
-#line 267 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 267 "src/parser_proc.y"
 {
  if (yymsp[0].minor.yy0) {
   yylhsminor.yy0 = yymsp[0].minor.yy0;
@@ -2016,141 +2016,141 @@ static void yy_reduce(
   yylhsminor.yy0 = psi_token_translit(psi_token_append(yymsp[-1].minor.yy0, 1, digest), " ", "@");
  }
 }
-#line 2020 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2020 "src/parser_proc.c"
   yymsp[-1].minor.yy0 = yylhsminor.yy0;
         break;
       case 15: /* decl_enum ::= enum_name LBRACE decl_enum_items RBRACE */
-#line 297 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 297 "src/parser_proc.y"
 {
  yylhsminor.yy63 = psi_decl_enum_init(yymsp[-3].minor.yy0->text, yymsp[-1].minor.yy163);
  yylhsminor.yy63->token = yymsp[-3].minor.yy0;
 }
-#line 2029 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2029 "src/parser_proc.c"
   yy_destructor(yypParser,71,&yymsp[-2].minor);
   yy_destructor(yypParser,72,&yymsp[0].minor);
   yymsp[-3].minor.yy63 = yylhsminor.yy63;
         break;
       case 16: /* decl_enum_items ::= decl_enum_item */
-#line 301 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 301 "src/parser_proc.y"
 {
  yylhsminor.yy163 = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_decl_enum_item_free),
    &yymsp[0].minor.yy217);
 }
-#line 2040 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2040 "src/parser_proc.c"
   yymsp[0].minor.yy163 = yylhsminor.yy163;
         break;
       case 17: /* decl_enum_items ::= decl_enum_items COMMA decl_enum_item */
-#line 305 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 305 "src/parser_proc.y"
 {
  yylhsminor.yy163 = psi_plist_add(yymsp[-2].minor.yy163, &yymsp[0].minor.yy217);
 }
-#line 2048 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2048 "src/parser_proc.c"
   yy_destructor(yypParser,66,&yymsp[-1].minor);
   yymsp[-2].minor.yy163 = yylhsminor.yy163;
         break;
       case 18: /* decl_enum_item ::= NAME EQUALS num_exp */
-#line 308 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 308 "src/parser_proc.y"
 {
  yylhsminor.yy217 = psi_decl_enum_item_init(yymsp[-2].minor.yy0->text, yymsp[0].minor.yy259);
  yylhsminor.yy217->token = yymsp[-2].minor.yy0;
 }
-#line 2058 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2058 "src/parser_proc.c"
   yy_destructor(yypParser,73,&yymsp[-1].minor);
   yymsp[-2].minor.yy217 = yylhsminor.yy217;
         break;
       case 19: /* decl_enum_item ::= NAME */
-#line 312 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 312 "src/parser_proc.y"
 {
  yylhsminor.yy217 = psi_decl_enum_item_init(yymsp[0].minor.yy0->text, NULL);
  yylhsminor.yy217->token = yymsp[0].minor.yy0;
 }
-#line 2068 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2068 "src/parser_proc.c"
   yymsp[0].minor.yy217 = yylhsminor.yy217;
         break;
       case 20: /* decl_struct_args_block ::= LBRACE struct_args RBRACE */
 {  yy_destructor(yypParser,71,&yymsp[-2].minor);
-#line 316 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 316 "src/parser_proc.y"
 {
  yymsp[-2].minor.yy163 = yymsp[-1].minor.yy163;
 }
-#line 2077 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2077 "src/parser_proc.c"
   yy_destructor(yypParser,72,&yymsp[0].minor);
 }
         break;
       case 21: /* decl_struct_args ::= decl_struct_args_block */
-#line 319 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 319 "src/parser_proc.y"
 {
  yylhsminor.yy163 = yymsp[0].minor.yy163;
 }
-#line 2086 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2086 "src/parser_proc.c"
   yymsp[0].minor.yy163 = yylhsminor.yy163;
         break;
       case 22: /* decl_struct_args ::= EOS */
 {  yy_destructor(yypParser,63,&yymsp[0].minor);
-#line 322 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 322 "src/parser_proc.y"
 {
  yymsp[0].minor.yy163 = psi_plist_init((psi_plist_dtor) psi_decl_arg_free);
 }
-#line 2095 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2095 "src/parser_proc.c"
 }
         break;
       case 23: /* decl_struct ::= STRUCT NAME align_and_size decl_struct_args */
 {  yy_destructor(yypParser,69,&yymsp[-3].minor);
-#line 325 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 325 "src/parser_proc.y"
 {
  yymsp[-3].minor.yy275 = psi_decl_struct_init(yymsp[-2].minor.yy0->text, yymsp[0].minor.yy163);
  yymsp[-3].minor.yy275->align = yymsp[-1].minor.yy91.pos;
  yymsp[-3].minor.yy275->size = yymsp[-1].minor.yy91.len;
  yymsp[-3].minor.yy275->token = yymsp[-2].minor.yy0;
 }
-#line 2107 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2107 "src/parser_proc.c"
 }
         break;
       case 24: /* decl_union ::= UNION NAME align_and_size decl_struct_args */
 {  yy_destructor(yypParser,70,&yymsp[-3].minor);
-#line 331 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 331 "src/parser_proc.y"
 {
  yymsp[-3].minor.yy271 = psi_decl_union_init(yymsp[-2].minor.yy0->text, yymsp[0].minor.yy163);
  yymsp[-3].minor.yy271->align = yymsp[-1].minor.yy91.pos;
  yymsp[-3].minor.yy271->size = yymsp[-1].minor.yy91.len;
  yymsp[-3].minor.yy271->token = yymsp[-2].minor.yy0;
 }
-#line 2119 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2119 "src/parser_proc.c"
 }
         break;
       case 25: /* const_type ::= BOOL|INT|FLOAT|STRING */
-#line 337 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 337 "src/parser_proc.y"
 {
  yylhsminor.yy171 = psi_const_type_init(yymsp[0].minor.yy0->type, yymsp[0].minor.yy0->text);
  free(yymsp[0].minor.yy0);
 }
-#line 2128 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2128 "src/parser_proc.c"
   yymsp[0].minor.yy171 = yylhsminor.yy171;
         break;
       case 26: /* constant ::= CONST const_type NSNAME EQUALS impl_def_val EOS */
 {  yy_destructor(yypParser,74,&yymsp[-5].minor);
-#line 341 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 341 "src/parser_proc.y"
 {
  yymsp[-5].minor.yy154 = psi_const_init(yymsp[-4].minor.yy171, yymsp[-3].minor.yy0->text, yymsp[-1].minor.yy93);
  yymsp[-5].minor.yy154->token = yymsp[-3].minor.yy0;
 }
-#line 2138 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2138 "src/parser_proc.c"
   yy_destructor(yypParser,73,&yymsp[-2].minor);
   yy_destructor(yypParser,63,&yymsp[0].minor);
 }
         break;
       case 27: /* decl_typedef ::= TYPEDEF decl_typedef_body EOS */
-#line 345 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 345 "src/parser_proc.y"
 {
  yylhsminor.yy184 = yymsp[-1].minor.yy184;
  yylhsminor.yy184->token = yymsp[-2].minor.yy0;
 }
-#line 2149 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2149 "src/parser_proc.c"
   yy_destructor(yypParser,63,&yymsp[0].minor);
   yymsp[-2].minor.yy184 = yylhsminor.yy184;
         break;
       case 28: /* decl_typedef_body_ex ::= struct_name align_and_size decl_struct_args_block decl_var */
-#line 349 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 349 "src/parser_proc.y"
 {
  yylhsminor.yy184 = psi_decl_arg_init(psi_decl_type_init(PSI_T_STRUCT, yymsp[-3].minor.yy0->text), yymsp[0].minor.yy11);
  yylhsminor.yy184->type->token = psi_token_copy(yymsp[-3].minor.yy0);
@@ -2159,11 +2159,11 @@ static void yy_reduce(
  yylhsminor.yy184->type->real.strct->align = yymsp[-2].minor.yy91.pos;
  yylhsminor.yy184->type->real.strct->size = yymsp[-2].minor.yy91.len;
 }
-#line 2163 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2163 "src/parser_proc.c"
   yymsp[-3].minor.yy184 = yylhsminor.yy184;
         break;
       case 29: /* decl_typedef_body_ex ::= union_name align_and_size decl_struct_args_block decl_var */
-#line 357 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 357 "src/parser_proc.y"
 {
  yylhsminor.yy184 = psi_decl_arg_init(psi_decl_type_init(PSI_T_UNION, yymsp[-3].minor.yy0->text), yymsp[0].minor.yy11);
  yylhsminor.yy184->type->token = psi_token_copy(yymsp[-3].minor.yy0);
@@ -2172,68 +2172,68 @@ static void yy_reduce(
  yylhsminor.yy184->type->real.unn->align = yymsp[-2].minor.yy91.pos;
  yylhsminor.yy184->type->real.unn->size = yymsp[-2].minor.yy91.len;
 }
-#line 2176 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2176 "src/parser_proc.c"
   yymsp[-3].minor.yy184 = yylhsminor.yy184;
         break;
       case 30: /* decl_typedef_body_ex ::= decl_enum NAME */
-#line 365 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 365 "src/parser_proc.y"
 {
  yylhsminor.yy184 = psi_decl_arg_init(psi_decl_type_init(PSI_T_ENUM, yymsp[-1].minor.yy63->name), psi_decl_var_init(yymsp[0].minor.yy0->text, 0, 0));
  yylhsminor.yy184->var->token = yymsp[0].minor.yy0;
  yylhsminor.yy184->type->token = psi_token_copy(yymsp[-1].minor.yy63->token);
  yylhsminor.yy184->type->real.enm = yymsp[-1].minor.yy63;
 }
-#line 2187 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2187 "src/parser_proc.c"
   yymsp[-1].minor.yy184 = yylhsminor.yy184;
         break;
       case 31: /* decl_typedef_body ::= decl_typedef_body_ex */
       case 34: /* decl_typedef_body ::= decl_arg */ yytestcase(yyruleno==34);
       case 37: /* decl_func ::= decl_arg */ yytestcase(yyruleno==37);
-#line 371 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 371 "src/parser_proc.y"
 {
  yylhsminor.yy184 = yymsp[0].minor.yy184;
 }
-#line 2197 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2197 "src/parser_proc.c"
   yymsp[0].minor.yy184 = yylhsminor.yy184;
         break;
       case 32: /* decl_typedef_body_fn_args ::= LPAREN decl_args RPAREN */
 {  yy_destructor(yypParser,65,&yymsp[-2].minor);
-#line 374 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 374 "src/parser_proc.y"
 {
  yymsp[-2].minor.yy163 = yymsp[-1].minor.yy163;
 }
-#line 2206 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2206 "src/parser_proc.c"
   yy_destructor(yypParser,67,&yymsp[0].minor);
 }
         break;
       case 33: /* decl_typedef_body ::= decl_func decl_typedef_body_fn_args */
-#line 377 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 377 "src/parser_proc.y"
 {
  yylhsminor.yy184 = psi_decl_arg_init(psi_decl_type_init(PSI_T_FUNCTION, yymsp[-1].minor.yy184->var->name), psi_decl_var_copy(yymsp[-1].minor.yy184->var));
  yylhsminor.yy184->type->token = psi_token_copy(yymsp[-1].minor.yy184->token);
  yylhsminor.yy184->type->real.func = psi_decl_init(psi_decl_abi_init("default"), yymsp[-1].minor.yy184, yymsp[0].minor.yy163);
 }
-#line 2217 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2217 "src/parser_proc.c"
   yymsp[-1].minor.yy184 = yylhsminor.yy184;
         break;
       case 35: /* decl ::= decl_abi decl_func LPAREN decl_args RPAREN EOS */
-#line 385 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 385 "src/parser_proc.y"
 {
  yylhsminor.yy103 = psi_decl_init(yymsp[-5].minor.yy218, yymsp[-4].minor.yy184, yymsp[-2].minor.yy163);
 }
-#line 2225 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2225 "src/parser_proc.c"
   yy_destructor(yypParser,65,&yymsp[-3].minor);
   yy_destructor(yypParser,67,&yymsp[-1].minor);
   yy_destructor(yypParser,63,&yymsp[0].minor);
   yymsp[-5].minor.yy103 = yylhsminor.yy103;
         break;
       case 36: /* decl ::= decl_abi decl_func LPAREN decl_args COMMA ELLIPSIS RPAREN EOS */
-#line 388 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 388 "src/parser_proc.y"
 {
  yylhsminor.yy103 = psi_decl_init(yymsp[-7].minor.yy218, yymsp[-6].minor.yy184, yymsp[-4].minor.yy163);
  yylhsminor.yy103->varargs = 1;
 }
-#line 2237 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2237 "src/parser_proc.c"
   yy_destructor(yypParser,65,&yymsp[-5].minor);
   yy_destructor(yypParser,66,&yymsp[-3].minor);
   yy_destructor(yypParser,76,&yymsp[-2].minor);
@@ -2242,7 +2242,7 @@ static void yy_reduce(
   yymsp[-7].minor.yy103 = yylhsminor.yy103;
         break;
       case 38: /* decl_func ::= VOID NAME */
-#line 395 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 395 "src/parser_proc.y"
 {
  yylhsminor.yy184 = psi_decl_arg_init(
   psi_decl_type_init(yymsp[-1].minor.yy0->type, yymsp[-1].minor.yy0->text),
@@ -2252,11 +2252,11 @@ static void yy_reduce(
  yylhsminor.yy184->var->token = yymsp[0].minor.yy0;
  yylhsminor.yy184->token = yymsp[0].minor.yy0;
 }
-#line 2256 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2256 "src/parser_proc.c"
   yymsp[-1].minor.yy184 = yylhsminor.yy184;
         break;
       case 39: /* decl_typedef_body ::= VOID indirection LPAREN indirection NAME RPAREN decl_typedef_body_fn_args */
-#line 404 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 404 "src/parser_proc.y"
 {
  struct psi_decl_arg *func_ = psi_decl_arg_init(
   psi_decl_type_init(yymsp[-6].minor.yy0->type, yymsp[-6].minor.yy0->text),
@@ -2273,14 +2273,14 @@ static void yy_reduce(
  yylhsminor.yy184->type->token = psi_token_copy(func_->token);
  yylhsminor.yy184->type->real.func = psi_decl_init(psi_decl_abi_init("default"), func_, yymsp[0].minor.yy163);
 }
-#line 2277 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2277 "src/parser_proc.c"
   yy_destructor(yypParser,65,&yymsp[-4].minor);
   yy_destructor(yypParser,67,&yymsp[-1].minor);
   yymsp[-6].minor.yy184 = yylhsminor.yy184;
         break;
       case 40: /* decl_typedef_body ::= CONST VOID pointers LPAREN indirection NAME RPAREN decl_typedef_body_fn_args */
 {  yy_destructor(yypParser,74,&yymsp[-7].minor);
-#line 420 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 420 "src/parser_proc.y"
 {
  struct psi_decl_arg *func_ = psi_decl_arg_init(
   psi_decl_type_init(yymsp[-6].minor.yy0->type, yymsp[-6].minor.yy0->text),
@@ -2297,32 +2297,32 @@ static void yy_reduce(
  yymsp[-7].minor.yy184->type->token = psi_token_copy(func_->token);
  yymsp[-7].minor.yy184->type->real.func = psi_decl_init(psi_decl_abi_init("default"), func_, yymsp[0].minor.yy163);
 }
-#line 2301 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2301 "src/parser_proc.c"
   yy_destructor(yypParser,65,&yymsp[-4].minor);
   yy_destructor(yypParser,67,&yymsp[-1].minor);
 }
         break;
       case 41: /* decl_abi ::= NAME */
-#line 436 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 436 "src/parser_proc.y"
 {
  yylhsminor.yy218 = psi_decl_abi_init(yymsp[0].minor.yy0->text);
  yylhsminor.yy218->token = yymsp[0].minor.yy0;
 }
-#line 2312 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2312 "src/parser_proc.c"
   yymsp[0].minor.yy218 = yylhsminor.yy218;
         break;
       case 43: /* decl_var_array_size ::= LBRACKET NUMBER RBRACKET */
 {  yy_destructor(yypParser,77,&yymsp[-2].minor);
-#line 443 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 443 "src/parser_proc.y"
 {
  yymsp[-2].minor.yy0 = yymsp[-1].minor.yy0;
 }
-#line 2321 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2321 "src/parser_proc.c"
   yy_destructor(yypParser,78,&yymsp[0].minor);
 }
         break;
       case 44: /* decl_var ::= NAME decl_var_array_size */
-#line 446 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 446 "src/parser_proc.y"
 {
  yylhsminor.yy11 = psi_decl_var_init(yymsp[-1].minor.yy0->text, 0, yymsp[0].minor.yy0?atol(yymsp[0].minor.yy0->text):0);
  yylhsminor.yy11->token = yymsp[-1].minor.yy0;
@@ -2330,11 +2330,11 @@ static void yy_reduce(
   free(yymsp[0].minor.yy0);
  }
 }
-#line 2334 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2334 "src/parser_proc.c"
   yymsp[-1].minor.yy11 = yylhsminor.yy11;
         break;
       case 45: /* decl_var ::= pointers NAME decl_var_array_size */
-#line 453 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 453 "src/parser_proc.y"
 {
  yylhsminor.yy11 = psi_decl_var_init(yymsp[-1].minor.yy0->text, yymsp[-2].minor.yy202+!!yymsp[0].minor.yy0, yymsp[0].minor.yy0?atol(yymsp[0].minor.yy0->text):0);
  yylhsminor.yy11->token = yymsp[-1].minor.yy0;
@@ -2342,37 +2342,37 @@ static void yy_reduce(
   free(yymsp[0].minor.yy0);
  }
 }
-#line 2346 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2346 "src/parser_proc.c"
   yymsp[-2].minor.yy11 = yylhsminor.yy11;
         break;
       case 46: /* decl_vars ::= decl_var */
-#line 460 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 460 "src/parser_proc.y"
 {
  yylhsminor.yy163 = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_decl_var_free),
    &yymsp[0].minor.yy11);
 }
-#line 2355 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2355 "src/parser_proc.c"
   yymsp[0].minor.yy163 = yylhsminor.yy163;
         break;
       case 47: /* decl_vars ::= decl_vars COMMA decl_var */
-#line 464 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 464 "src/parser_proc.y"
 {
  yylhsminor.yy163 = psi_plist_add(yymsp[-2].minor.yy163, &yymsp[0].minor.yy11);
 }
-#line 2363 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2363 "src/parser_proc.c"
   yy_destructor(yypParser,66,&yymsp[-1].minor);
   yymsp[-2].minor.yy163 = yylhsminor.yy163;
         break;
       case 48: /* decl_arg ::= const_decl_type decl_var */
-#line 467 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 467 "src/parser_proc.y"
 {
  yylhsminor.yy184 = psi_decl_arg_init(yymsp[-1].minor.yy132, yymsp[0].minor.yy11);
 }
-#line 2372 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2372 "src/parser_proc.c"
   yymsp[-1].minor.yy184 = yylhsminor.yy184;
         break;
       case 49: /* decl_typedef_body ::= const_decl_type indirection LPAREN indirection NAME RPAREN decl_typedef_body_fn_args */
-#line 470 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 470 "src/parser_proc.y"
 {
  struct psi_decl_arg *func_ = psi_decl_arg_init(
   yymsp[-6].minor.yy132,
@@ -2388,13 +2388,13 @@ static void yy_reduce(
  yylhsminor.yy184->type->token = psi_token_copy(func_->token);
  yylhsminor.yy184->type->real.func = psi_decl_init(psi_decl_abi_init("default"), func_, yymsp[0].minor.yy163);
 }
-#line 2392 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2392 "src/parser_proc.c"
   yy_destructor(yypParser,65,&yymsp[-4].minor);
   yy_destructor(yypParser,67,&yymsp[-1].minor);
   yymsp[-6].minor.yy184 = yylhsminor.yy184;
         break;
       case 50: /* decl_arg ::= VOID pointers NAME */
-#line 485 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 485 "src/parser_proc.y"
 {
  yylhsminor.yy184 = psi_decl_arg_init(
   psi_decl_type_init(yymsp[-2].minor.yy0->type, yymsp[-2].minor.yy0->text),
@@ -2404,12 +2404,12 @@ static void yy_reduce(
  yylhsminor.yy184->var->token = yymsp[0].minor.yy0;
  yylhsminor.yy184->token = yymsp[0].minor.yy0;
 }
-#line 2408 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2408 "src/parser_proc.c"
   yymsp[-2].minor.yy184 = yylhsminor.yy184;
         break;
       case 51: /* decl_arg ::= CONST VOID pointers NAME */
 {  yy_destructor(yypParser,74,&yymsp[-3].minor);
-#line 494 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 494 "src/parser_proc.y"
 {
  yymsp[-3].minor.yy184 = psi_decl_arg_init(
   psi_decl_type_init(yymsp[-2].minor.yy0->type, yymsp[-2].minor.yy0->text),
@@ -2419,54 +2419,54 @@ static void yy_reduce(
  yymsp[-3].minor.yy184->var->token = yymsp[0].minor.yy0;
  yymsp[-3].minor.yy184->token = yymsp[0].minor.yy0;
 }
-#line 2423 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2423 "src/parser_proc.c"
 }
         break;
       case 52: /* decl_args ::= */
-#line 503 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 503 "src/parser_proc.y"
 {
  yymsp[1].minor.yy163 = NULL;
 }
-#line 2431 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2431 "src/parser_proc.c"
         break;
       case 53: /* decl_args ::= VOID */
 {  yy_destructor(yypParser,49,&yymsp[0].minor);
-#line 506 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 506 "src/parser_proc.y"
 {
  yymsp[0].minor.yy163 = NULL;
 }
-#line 2439 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2439 "src/parser_proc.c"
 }
         break;
       case 54: /* decl_args ::= decl_arg */
       case 56: /* struct_args ::= struct_arg */ yytestcase(yyruleno==56);
-#line 509 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 509 "src/parser_proc.y"
 {
  yylhsminor.yy163 = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_decl_arg_free),
    &yymsp[0].minor.yy184);
 }
-#line 2449 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2449 "src/parser_proc.c"
   yymsp[0].minor.yy163 = yylhsminor.yy163;
         break;
       case 55: /* decl_args ::= decl_args COMMA decl_arg */
-#line 513 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 513 "src/parser_proc.y"
 {
  yylhsminor.yy163 = psi_plist_add(yymsp[-2].minor.yy163, &yymsp[0].minor.yy184);
 }
-#line 2457 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2457 "src/parser_proc.c"
   yy_destructor(yypParser,66,&yymsp[-1].minor);
   yymsp[-2].minor.yy163 = yylhsminor.yy163;
         break;
       case 57: /* struct_args ::= struct_args struct_arg */
-#line 520 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 520 "src/parser_proc.y"
 {
  yylhsminor.yy163 = psi_plist_add(yymsp[-1].minor.yy163, &yymsp[0].minor.yy184);
 }
-#line 2466 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2466 "src/parser_proc.c"
   yymsp[-1].minor.yy163 = yylhsminor.yy163;
         break;
       case 58: /* struct_arg ::= decl_typedef_body_ex EOS */
-#line 523 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 523 "src/parser_proc.y"
 {
  yylhsminor.yy184 = yymsp[-1].minor.yy184;
  switch (yymsp[-1].minor.yy184->type->type) {
@@ -2496,36 +2496,36 @@ static void yy_reduce(
   break;
  }
 }
-#line 2500 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2500 "src/parser_proc.c"
   yy_destructor(yypParser,63,&yymsp[0].minor);
   yymsp[-1].minor.yy184 = yylhsminor.yy184;
         break;
       case 59: /* struct_arg ::= decl_arg decl_layout EOS */
-#line 552 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 552 "src/parser_proc.y"
 {
  yymsp[-2].minor.yy184->layout = yymsp[-1].minor.yy141;
  yylhsminor.yy184 = yymsp[-2].minor.yy184;
 }
-#line 2510 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2510 "src/parser_proc.c"
   yy_destructor(yypParser,63,&yymsp[0].minor);
   yymsp[-2].minor.yy184 = yylhsminor.yy184;
         break;
       case 60: /* decl_layout ::= */
-#line 556 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 556 "src/parser_proc.y"
 {
  yymsp[1].minor.yy141 = NULL;
 }
-#line 2519 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2519 "src/parser_proc.c"
         break;
       case 61: /* decl_layout ::= COLON COLON LPAREN NUMBER COMMA NUMBER RPAREN */
 {  yy_destructor(yypParser,64,&yymsp[-6].minor);
-#line 559 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 559 "src/parser_proc.y"
 {
  yymsp[-6].minor.yy141 = psi_layout_init(atol(yymsp[-3].minor.yy0->text), atol(yymsp[-1].minor.yy0->text));
  free(yymsp[-3].minor.yy0);
  free(yymsp[-1].minor.yy0);
 }
-#line 2529 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2529 "src/parser_proc.c"
   yy_destructor(yypParser,64,&yymsp[-5].minor);
   yy_destructor(yypParser,65,&yymsp[-4].minor);
   yy_destructor(yypParser,66,&yymsp[-2].minor);
@@ -2535,7 +2535,7 @@ static void yy_reduce(
       case 63: /* decl_scalar_type ::= SHORT decl_scalar_type_short */
       case 67: /* decl_scalar_type ::= LONG decl_scalar_type_long */ yytestcase(yyruleno==67);
       case 70: /* decl_scalar_type_long ::= LONG decl_scalar_type_long_long */ yytestcase(yyruleno==70);
-#line 567 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 567 "src/parser_proc.y"
 {
  if (yymsp[0].minor.yy0) {
   yylhsminor.yy0 = psi_token_cat(2, yymsp[-1].minor.yy0, yymsp[0].minor.yy0);
@@ -2545,12 +2545,12 @@ static void yy_reduce(
   yylhsminor.yy0 = yymsp[-1].minor.yy0;
  }
 }
-#line 2549 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2549 "src/parser_proc.c"
   yymsp[-1].minor.yy0 = yylhsminor.yy0;
         break;
       case 73: /* decl_type ::= UNSIGNED decl_scalar_type */
       case 74: /* decl_type ::= SIGNED decl_scalar_type */ yytestcase(yyruleno==74);
-#line 615 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 615 "src/parser_proc.y"
 {
  struct psi_token *T = psi_token_cat(2, yymsp[-1].minor.yy0, yymsp[0].minor.yy0);
  yylhsminor.yy132 = psi_decl_type_init(T->type, T->text);
@@ -2558,89 +2558,89 @@ static void yy_reduce(
  free(yymsp[-1].minor.yy0);
  free(yymsp[0].minor.yy0);
 }
-#line 2562 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2562 "src/parser_proc.c"
   yymsp[-1].minor.yy132 = yylhsminor.yy132;
         break;
       case 75: /* decl_type ::= UNSIGNED */
       case 76: /* decl_type ::= SIGNED */ yytestcase(yyruleno==76);
-#line 629 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 629 "src/parser_proc.y"
 {
  yylhsminor.yy132 = psi_decl_type_init(PSI_T_NAME, yymsp[0].minor.yy0->text);
  yylhsminor.yy132->token = yymsp[0].minor.yy0;
 }
-#line 2572 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2572 "src/parser_proc.c"
   yymsp[0].minor.yy132 = yylhsminor.yy132;
         break;
       case 77: /* decl_type ::= decl_scalar_type */
       case 81: /* decl_type ::= FLOAT|DOUBLE|INT8|UINT8|INT16|UINT16|INT32|UINT32|INT64|UINT64|NAME */ yytestcase(yyruleno==81);
-#line 637 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 637 "src/parser_proc.y"
 {
  yylhsminor.yy132 = psi_decl_type_init(yymsp[0].minor.yy0->type, yymsp[0].minor.yy0->text);
  yylhsminor.yy132->token = yymsp[0].minor.yy0;
 }
-#line 2582 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2582 "src/parser_proc.c"
   yymsp[0].minor.yy132 = yylhsminor.yy132;
         break;
       case 78: /* decl_type ::= STRUCT NAME */
       case 79: /* decl_type ::= UNION NAME */ yytestcase(yyruleno==79);
       case 80: /* decl_type ::= ENUM NAME */ yytestcase(yyruleno==80);
-#line 641 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 641 "src/parser_proc.y"
 {
  yylhsminor.yy132 = psi_decl_type_init(yymsp[-1].minor.yy0->type, yymsp[0].minor.yy0->text);
  yylhsminor.yy132->token = yymsp[0].minor.yy0;
  free(yymsp[-1].minor.yy0);
 }
-#line 2594 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2594 "src/parser_proc.c"
   yymsp[-1].minor.yy132 = yylhsminor.yy132;
         break;
       case 82: /* const_decl_type ::= decl_type */
-#line 660 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 660 "src/parser_proc.y"
 {
  yylhsminor.yy132 = yymsp[0].minor.yy132;
 }
-#line 2602 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2602 "src/parser_proc.c"
   yymsp[0].minor.yy132 = yylhsminor.yy132;
         break;
       case 83: /* const_decl_type ::= CONST decl_type */
 {  yy_destructor(yypParser,74,&yymsp[-1].minor);
-#line 663 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 663 "src/parser_proc.y"
 {
  yymsp[-1].minor.yy132 = yymsp[0].minor.yy132;
 }
-#line 2611 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2611 "src/parser_proc.c"
 }
         break;
       case 84: /* impl ::= impl_func LBRACE impl_stmts RBRACE */
-#line 666 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 666 "src/parser_proc.y"
 {
  yylhsminor.yy97 = psi_impl_init(yymsp[-3].minor.yy168, yymsp[-1].minor.yy163);
 }
-#line 2619 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2619 "src/parser_proc.c"
   yy_destructor(yypParser,71,&yymsp[-2].minor);
   yy_destructor(yypParser,72,&yymsp[0].minor);
   yymsp[-3].minor.yy97 = yylhsminor.yy97;
         break;
       case 85: /* impl ::= STATIC impl_func LBRACE impl_stmts RBRACE */
 {  yy_destructor(yypParser,84,&yymsp[-4].minor);
-#line 669 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 669 "src/parser_proc.y"
 {
  yymsp[-3].minor.yy168->static_memory = 1;
  yymsp[-4].minor.yy97 = psi_impl_init(yymsp[-3].minor.yy168, yymsp[-1].minor.yy163);
 }
-#line 2631 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2631 "src/parser_proc.c"
   yy_destructor(yypParser,71,&yymsp[-2].minor);
   yy_destructor(yypParser,72,&yymsp[0].minor);
 }
         break;
       case 86: /* impl_func ::= FUNCTION reference NSNAME LPAREN RPAREN COLON impl_type */
 {  yy_destructor(yypParser,85,&yymsp[-6].minor);
-#line 673 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 673 "src/parser_proc.y"
 {
  yymsp[-6].minor.yy168 = psi_impl_func_init(yymsp[-4].minor.yy0->text, NULL, yymsp[0].minor.yy138);
  yymsp[-6].minor.yy168->token = yymsp[-4].minor.yy0;
  yymsp[-6].minor.yy168->return_reference = yymsp[-5].minor.yy121;
 }
-#line 2644 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2644 "src/parser_proc.c"
   yy_destructor(yypParser,65,&yymsp[-3].minor);
   yy_destructor(yypParser,67,&yymsp[-2].minor);
   yy_destructor(yypParser,64,&yymsp[-1].minor);
@@ -2648,13 +2648,13 @@ static void yy_reduce(
         break;
       case 87: /* impl_func ::= FUNCTION reference NSNAME LPAREN impl_args RPAREN COLON impl_type */
 {  yy_destructor(yypParser,85,&yymsp[-7].minor);
-#line 678 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 678 "src/parser_proc.y"
 {
  yymsp[-7].minor.yy168 = psi_impl_func_init(yymsp[-5].minor.yy0->text, yymsp[-3].minor.yy163, yymsp[0].minor.yy138);
  yymsp[-7].minor.yy168->token = yymsp[-5].minor.yy0;
  yymsp[-7].minor.yy168->return_reference = yymsp[-6].minor.yy121;
 }
-#line 2658 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2658 "src/parser_proc.c"
   yy_destructor(yypParser,65,&yymsp[-4].minor);
   yy_destructor(yypParser,67,&yymsp[-2].minor);
   yy_destructor(yypParser,64,&yymsp[-1].minor);
@@ -2662,7 +2662,7 @@ static void yy_reduce(
         break;
       case 88: /* impl_func ::= FUNCTION reference NSNAME LPAREN impl_args COMMA impl_type reference ELLIPSIS DOLLAR_NAME RPAREN COLON impl_type */
 {  yy_destructor(yypParser,85,&yymsp[-12].minor);
-#line 683 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 683 "src/parser_proc.y"
 {
  yymsp[-12].minor.yy168 = psi_impl_func_init(yymsp[-10].minor.yy0->text, yymsp[-8].minor.yy163, yymsp[0].minor.yy138);
  yymsp[-12].minor.yy168->token = yymsp[-10].minor.yy0;
@@ -2670,7 +2670,7 @@ static void yy_reduce(
  yymsp[-12].minor.yy168->vararg = psi_impl_arg_init(yymsp[-6].minor.yy138, psi_impl_var_init(yymsp[-3].minor.yy0->text, yymsp[-5].minor.yy121), NULL);
  free(yymsp[-3].minor.yy0);
 }
-#line 2674 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2674 "src/parser_proc.c"
   yy_destructor(yypParser,65,&yymsp[-9].minor);
   yy_destructor(yypParser,66,&yymsp[-7].minor);
   yy_destructor(yypParser,76,&yymsp[-4].minor);
@@ -2679,293 +2679,293 @@ static void yy_reduce(
 }
         break;
       case 89: /* impl_def_val ::= NULL|NUMBER|TRUE|FALSE|QUOTED_STRING */
-#line 690 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 690 "src/parser_proc.y"
 {
  yylhsminor.yy93 = psi_impl_def_val_init(yymsp[0].minor.yy0->type, yymsp[0].minor.yy0->text);
  yylhsminor.yy93->token = yymsp[0].minor.yy0;
 }
-#line 2688 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2688 "src/parser_proc.c"
   yymsp[0].minor.yy93 = yylhsminor.yy93;
         break;
       case 90: /* impl_var ::= reference DOLLAR_NAME */
-#line 694 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 694 "src/parser_proc.y"
 {
  yylhsminor.yy37 = psi_impl_var_init(yymsp[0].minor.yy0->text, yymsp[-1].minor.yy121);
  yylhsminor.yy37->token = yymsp[0].minor.yy0;
 }
-#line 2697 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2697 "src/parser_proc.c"
   yymsp[-1].minor.yy37 = yylhsminor.yy37;
         break;
       case 91: /* impl_type ::= VOID|MIXED|BOOL|INT|FLOAT|STRING|ARRAY|OBJECT|CALLABLE */
-#line 698 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 698 "src/parser_proc.y"
 {
  yylhsminor.yy138 = psi_impl_type_init(yymsp[0].minor.yy0->type, yymsp[0].minor.yy0->text);
  free(yymsp[0].minor.yy0);
 }
-#line 2706 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2706 "src/parser_proc.c"
   yymsp[0].minor.yy138 = yylhsminor.yy138;
         break;
       case 92: /* impl_arg ::= impl_type impl_var */
-#line 702 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 702 "src/parser_proc.y"
 {
  yylhsminor.yy210 = psi_impl_arg_init(yymsp[-1].minor.yy138, yymsp[0].minor.yy37, NULL);
 }
-#line 2714 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2714 "src/parser_proc.c"
   yymsp[-1].minor.yy210 = yylhsminor.yy210;
         break;
       case 93: /* impl_arg ::= impl_type impl_var EQUALS impl_def_val */
-#line 705 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 705 "src/parser_proc.y"
 {
  yylhsminor.yy210 = psi_impl_arg_init(yymsp[-3].minor.yy138, yymsp[-2].minor.yy37, yymsp[0].minor.yy93);
 }
-#line 2722 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2722 "src/parser_proc.c"
   yy_destructor(yypParser,73,&yymsp[-1].minor);
   yymsp[-3].minor.yy210 = yylhsminor.yy210;
         break;
       case 94: /* impl_args ::= impl_arg */
-#line 708 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 708 "src/parser_proc.y"
 {
  yylhsminor.yy163 = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_impl_arg_free),
    &yymsp[0].minor.yy210);
 }
-#line 2732 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2732 "src/parser_proc.c"
   yymsp[0].minor.yy163 = yylhsminor.yy163;
         break;
       case 95: /* impl_args ::= impl_args COMMA impl_arg */
-#line 712 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 712 "src/parser_proc.y"
 {
  yylhsminor.yy163 = psi_plist_add(yymsp[-2].minor.yy163, &yymsp[0].minor.yy210);
 }
-#line 2740 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2740 "src/parser_proc.c"
   yy_destructor(yypParser,66,&yymsp[-1].minor);
   yymsp[-2].minor.yy163 = yylhsminor.yy163;
         break;
       case 96: /* impl_stmts ::= impl_stmt */
-#line 715 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 715 "src/parser_proc.y"
 {
  yylhsminor.yy163 = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_impl_stmt_free),
    &yymsp[0].minor.yy78);
 }
-#line 2750 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2750 "src/parser_proc.c"
   yymsp[0].minor.yy163 = yylhsminor.yy163;
         break;
       case 97: /* impl_stmts ::= impl_stmts impl_stmt */
-#line 719 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 719 "src/parser_proc.y"
 {
  yylhsminor.yy163 = psi_plist_add(yymsp[-1].minor.yy163, &yymsp[0].minor.yy78);
 }
-#line 2758 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2758 "src/parser_proc.c"
   yymsp[-1].minor.yy163 = yylhsminor.yy163;
         break;
       case 98: /* impl_stmt ::= return_stmt */
-#line 722 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 722 "src/parser_proc.y"
 {
  yylhsminor.yy78 = (struct psi_token**) yymsp[0].minor.yy90;
 }
-#line 2766 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2766 "src/parser_proc.c"
   yymsp[0].minor.yy78 = yylhsminor.yy78;
         break;
       case 99: /* impl_stmt ::= let_stmt */
-#line 725 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 725 "src/parser_proc.y"
 {
  yylhsminor.yy78 = (struct psi_token**) yymsp[0].minor.yy311;
 }
-#line 2774 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2774 "src/parser_proc.c"
   yymsp[0].minor.yy78 = yylhsminor.yy78;
         break;
       case 100: /* impl_stmt ::= set_stmt */
-#line 728 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 728 "src/parser_proc.y"
 {
  yylhsminor.yy78 = (struct psi_token**) yymsp[0].minor.yy98;
 }
-#line 2782 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2782 "src/parser_proc.c"
   yymsp[0].minor.yy78 = yylhsminor.yy78;
         break;
       case 101: /* impl_stmt ::= free_stmt */
-#line 731 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 731 "src/parser_proc.y"
 {
  yylhsminor.yy78 = (struct psi_token**) yymsp[0].minor.yy192;
 }
-#line 2790 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2790 "src/parser_proc.c"
   yymsp[0].minor.yy78 = yylhsminor.yy78;
         break;
       case 102: /* number ::= NUMBER|NSNAME */
-#line 734 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 734 "src/parser_proc.y"
 {
  yylhsminor.yy188 = psi_number_init(yymsp[0].minor.yy0->type, yymsp[0].minor.yy0->text);
  yylhsminor.yy188->token = yymsp[0].minor.yy0;
 }
-#line 2799 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2799 "src/parser_proc.c"
   yymsp[0].minor.yy188 = yylhsminor.yy188;
         break;
       case 103: /* number ::= decl_var */
-#line 738 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 738 "src/parser_proc.y"
 {
  yylhsminor.yy188 = psi_number_init(PSI_T_NAME, yymsp[0].minor.yy11);
  yylhsminor.yy188->token = psi_token_copy(yymsp[0].minor.yy11->token);
 }
-#line 2808 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2808 "src/parser_proc.c"
   yymsp[0].minor.yy188 = yylhsminor.yy188;
         break;
       case 104: /* num_exp ::= number */
-#line 742 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 742 "src/parser_proc.y"
 {
  yylhsminor.yy259 = psi_num_exp_init_num(yymsp[0].minor.yy188);
  yylhsminor.yy259->token = psi_token_copy(yymsp[0].minor.yy188->token);
 }
-#line 2817 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2817 "src/parser_proc.c"
   yymsp[0].minor.yy259 = yylhsminor.yy259;
         break;
       case 105: /* num_exp ::= LPAREN num_exp RPAREN */
-#line 746 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 746 "src/parser_proc.y"
 {
  yylhsminor.yy259 = psi_num_exp_init_unary(PSI_T_LPAREN, yymsp[-1].minor.yy259);
  yylhsminor.yy259->token = yymsp[-2].minor.yy0;
 }
-#line 2826 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2826 "src/parser_proc.c"
   yy_destructor(yypParser,67,&yymsp[0].minor);
   yymsp[-2].minor.yy259 = yylhsminor.yy259;
         break;
       case 106: /* num_exp ::= num_exp PIPE|CARET|AMPERSAND|LSHIFT|RSHIFT|PLUS|MINUS|ASTERISK|SLASH|MODULO num_exp */
-#line 750 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 750 "src/parser_proc.y"
 {
  yylhsminor.yy259 = psi_num_exp_init_binary(yymsp[-1].minor.yy0->type, yymsp[-2].minor.yy259, yymsp[0].minor.yy259);
  yylhsminor.yy259->token = yymsp[-1].minor.yy0;
 }
-#line 2836 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2836 "src/parser_proc.c"
   yymsp[-2].minor.yy259 = yylhsminor.yy259;
         break;
       case 107: /* num_exp ::= TILDE|NOT|PLUS|MINUS num_exp */
-#line 754 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 754 "src/parser_proc.y"
 {
  yylhsminor.yy259 = psi_num_exp_init_unary(yymsp[-1].minor.yy0->type, yymsp[0].minor.yy259);
  yylhsminor.yy259->token = yymsp[-1].minor.yy0;
 }
-#line 2845 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2845 "src/parser_proc.c"
   yymsp[-1].minor.yy259 = yylhsminor.yy259;
         break;
       case 108: /* let_exp ::= NULL */
 {  yy_destructor(yypParser,15,&yymsp[0].minor);
-#line 758 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 758 "src/parser_proc.y"
 {
  yymsp[0].minor.yy20 = psi_let_exp_init(PSI_LET_NULL, NULL);
 }
-#line 2854 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2854 "src/parser_proc.c"
 }
         break;
       case 109: /* let_exp ::= AMPERSAND NULL */
 {  yy_destructor(yypParser,23,&yymsp[-1].minor);
-#line 761 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 761 "src/parser_proc.y"
 {
  yymsp[-1].minor.yy20 = psi_let_exp_init(PSI_LET_NULL, NULL);
  yymsp[-1].minor.yy20->is_reference = 1;
 }
-#line 2864 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2864 "src/parser_proc.c"
   yy_destructor(yypParser,15,&yymsp[0].minor);
 }
         break;
       case 110: /* let_exp ::= let_callback */
-#line 765 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 765 "src/parser_proc.y"
 {
  yylhsminor.yy20 = psi_let_exp_init(PSI_LET_CALLBACK, yymsp[0].minor.yy220);
 }
-#line 2873 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2873 "src/parser_proc.c"
   yymsp[0].minor.yy20 = yylhsminor.yy20;
         break;
       case 111: /* let_exp ::= let_calloc */
-#line 768 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 768 "src/parser_proc.y"
 {
  yylhsminor.yy20 = psi_let_exp_init(PSI_LET_CALLOC, yymsp[0].minor.yy9);
 }
-#line 2881 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2881 "src/parser_proc.c"
   yymsp[0].minor.yy20 = yylhsminor.yy20;
         break;
       case 112: /* let_exp ::= AMPERSAND let_calloc */
 {  yy_destructor(yypParser,23,&yymsp[-1].minor);
-#line 771 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 771 "src/parser_proc.y"
 {
  yymsp[-1].minor.yy20 = psi_let_exp_init(PSI_LET_CALLOC, yymsp[0].minor.yy9);
  yymsp[-1].minor.yy20->is_reference = 1;
 }
-#line 2891 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2891 "src/parser_proc.c"
 }
         break;
       case 113: /* let_exp ::= let_func */
-#line 775 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 775 "src/parser_proc.y"
 {
  yylhsminor.yy20 = psi_let_exp_init_ex(NULL, PSI_LET_FUNC, yymsp[0].minor.yy27);
 }
-#line 2899 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2899 "src/parser_proc.c"
   yymsp[0].minor.yy20 = yylhsminor.yy20;
         break;
       case 114: /* let_exp ::= AMPERSAND let_func */
 {  yy_destructor(yypParser,23,&yymsp[-1].minor);
-#line 778 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 778 "src/parser_proc.y"
 {
  yymsp[-1].minor.yy20 = psi_let_exp_init_ex(NULL, PSI_LET_FUNC, yymsp[0].minor.yy27);
  yymsp[-1].minor.yy20->is_reference = 1;
 }
-#line 2909 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2909 "src/parser_proc.c"
 }
         break;
       case 115: /* let_exp ::= num_exp */
-#line 782 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 782 "src/parser_proc.y"
 {
  yylhsminor.yy20 = psi_let_exp_init_ex(NULL, PSI_LET_NUMEXP, yymsp[0].minor.yy259);
 }
-#line 2917 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2917 "src/parser_proc.c"
   yymsp[0].minor.yy20 = yylhsminor.yy20;
         break;
       case 116: /* let_exp ::= AMPERSAND num_exp */
 {  yy_destructor(yypParser,23,&yymsp[-1].minor);
-#line 785 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 785 "src/parser_proc.y"
 {
  yymsp[-1].minor.yy20 = psi_let_exp_init_ex(NULL, PSI_LET_NUMEXP, yymsp[0].minor.yy259);
  yymsp[-1].minor.yy20->is_reference = 1;
 }
-#line 2927 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2927 "src/parser_proc.c"
 }
         break;
       case 117: /* let_exp ::= decl_var EQUALS let_exp */
-#line 789 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 789 "src/parser_proc.y"
 {
  yylhsminor.yy20 = yymsp[0].minor.yy20;
  yylhsminor.yy20->var = yymsp[-2].minor.yy11;
 }
-#line 2936 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2936 "src/parser_proc.c"
   yy_destructor(yypParser,73,&yymsp[-1].minor);
   yymsp[-2].minor.yy20 = yylhsminor.yy20;
         break;
       case 118: /* let_stmt ::= LET let_exp EOS */
-#line 793 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 793 "src/parser_proc.y"
 {
  yylhsminor.yy311 = psi_let_stmt_init(yymsp[-1].minor.yy20);
  yylhsminor.yy311->token = yymsp[-2].minor.yy0;
 }
-#line 2946 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2946 "src/parser_proc.c"
   yy_destructor(yypParser,63,&yymsp[0].minor);
   yymsp[-2].minor.yy311 = yylhsminor.yy311;
         break;
       case 119: /* let_stmt ::= TEMP decl_var EQUALS reference decl_var EOS */
-#line 797 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 797 "src/parser_proc.y"
 {
  yylhsminor.yy311 = psi_let_stmt_init(psi_let_exp_init_ex(yymsp[-4].minor.yy11, PSI_LET_TMP, yymsp[-1].minor.yy11));
  yylhsminor.yy311->token = yymsp[-5].minor.yy0;
  yylhsminor.yy311->exp->is_reference = yymsp[-2].minor.yy121 ? 1 : 0;
 }
-#line 2957 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2957 "src/parser_proc.c"
   yy_destructor(yypParser,73,&yymsp[-3].minor);
   yy_destructor(yypParser,63,&yymsp[0].minor);
   yymsp[-5].minor.yy311 = yylhsminor.yy311;
         break;
       case 120: /* let_callback ::= CALLBACK callback_rval LPAREN impl_var LPAREN callback_arg_list RPAREN RPAREN */
-#line 802 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 802 "src/parser_proc.y"
 {
  yylhsminor.yy220 = psi_let_callback_init(psi_let_func_init(yymsp[-6].minor.yy0->type, yymsp[-6].minor.yy0->text, yymsp[-4].minor.yy37), yymsp[-2].minor.yy43);
  yylhsminor.yy220->token = yymsp[-7].minor.yy0;
  free(yymsp[-6].minor.yy0);
 }
-#line 2969 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2969 "src/parser_proc.c"
   yy_destructor(yypParser,65,&yymsp[-5].minor);
   yy_destructor(yypParser,65,&yymsp[-3].minor);
   yy_destructor(yypParser,67,&yymsp[-1].minor);
@@ -2973,124 +2973,124 @@ static void yy_reduce(
   yymsp[-7].minor.yy220 = yylhsminor.yy220;
         break;
       case 121: /* let_calloc ::= CALLOC LPAREN num_exp COMMA num_exp RPAREN */
-#line 807 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 807 "src/parser_proc.y"
 {
  yylhsminor.yy9 = psi_let_calloc_init(yymsp[-3].minor.yy259, yymsp[-1].minor.yy259);
  yylhsminor.yy9->token = yymsp[-5].minor.yy0;
 }
-#line 2982 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2982 "src/parser_proc.c"
   yy_destructor(yypParser,65,&yymsp[-4].minor);
   yy_destructor(yypParser,66,&yymsp[-2].minor);
   yy_destructor(yypParser,67,&yymsp[0].minor);
   yymsp[-5].minor.yy9 = yylhsminor.yy9;
         break;
       case 122: /* let_func ::= ZVAL|OBJVAL|ARRVAL|PATHVAL|STRLEN|STRVAL|FLOATVAL|INTVAL|BOOLVAL|COUNT LPAREN impl_var RPAREN */
-#line 811 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 811 "src/parser_proc.y"
 {
  yylhsminor.yy27 = psi_let_func_init(yymsp[-3].minor.yy0->type, yymsp[-3].minor.yy0->text, yymsp[-1].minor.yy37);
  yylhsminor.yy27->token = yymsp[-3].minor.yy0;
 }
-#line 2994 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 2994 "src/parser_proc.c"
   yy_destructor(yypParser,65,&yymsp[-2].minor);
   yy_destructor(yypParser,67,&yymsp[0].minor);
   yymsp[-3].minor.yy27 = yylhsminor.yy27;
         break;
       case 123: /* let_func ::= ZVAL|OBJVAL|ARRVAL|PATHVAL|STRLEN|STRVAL|FLOATVAL|INTVAL|BOOLVAL|COUNT LPAREN impl_var COMMA let_exps RPAREN */
-#line 815 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 815 "src/parser_proc.y"
 {
  yylhsminor.yy27 = psi_let_func_init(yymsp[-5].minor.yy0->type, yymsp[-5].minor.yy0->text, yymsp[-3].minor.yy37);
  yylhsminor.yy27->token = yymsp[-5].minor.yy0;
  yylhsminor.yy27->inner = yymsp[-1].minor.yy163;
 }
-#line 3006 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3006 "src/parser_proc.c"
   yy_destructor(yypParser,65,&yymsp[-4].minor);
   yy_destructor(yypParser,66,&yymsp[-2].minor);
   yy_destructor(yypParser,67,&yymsp[0].minor);
   yymsp[-5].minor.yy27 = yylhsminor.yy27;
         break;
       case 124: /* let_exps ::= let_exp */
-#line 820 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 820 "src/parser_proc.y"
 {
  yylhsminor.yy163 = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_let_exp_free),
    &yymsp[0].minor.yy20);
 }
-#line 3018 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3018 "src/parser_proc.c"
   yymsp[0].minor.yy163 = yylhsminor.yy163;
         break;
       case 125: /* let_exps ::= let_exps COMMA let_exp */
-#line 824 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 824 "src/parser_proc.y"
 {
  yylhsminor.yy163 = psi_plist_add(yymsp[-2].minor.yy163, &yymsp[0].minor.yy20);
 }
-#line 3026 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3026 "src/parser_proc.c"
   yy_destructor(yypParser,66,&yymsp[-1].minor);
   yymsp[-2].minor.yy163 = yylhsminor.yy163;
         break;
       case 126: /* callback_arg_list ::= */
-#line 827 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 827 "src/parser_proc.y"
 {
  yymsp[1].minor.yy43 = NULL;
 }
-#line 3035 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3035 "src/parser_proc.c"
         break;
       case 127: /* callback_arg_list ::= callback_args */
-#line 830 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 830 "src/parser_proc.y"
 {
  yylhsminor.yy43 = yymsp[0].minor.yy43;
 }
-#line 3042 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3042 "src/parser_proc.c"
   yymsp[0].minor.yy43 = yylhsminor.yy43;
         break;
       case 128: /* callback_args ::= set_exp */
-#line 833 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 833 "src/parser_proc.y"
 {
  yylhsminor.yy43 = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_set_exp_free),
    &yymsp[0].minor.yy147);
 }
-#line 3051 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3051 "src/parser_proc.c"
   yymsp[0].minor.yy43 = yylhsminor.yy43;
         break;
       case 129: /* callback_args ::= callback_args COMMA set_exp */
-#line 837 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 837 "src/parser_proc.y"
 {
  yylhsminor.yy43 = psi_plist_add(yymsp[-2].minor.yy43, &yymsp[0].minor.yy147);
 }
-#line 3059 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3059 "src/parser_proc.c"
   yy_destructor(yypParser,66,&yymsp[-1].minor);
   yymsp[-2].minor.yy43 = yylhsminor.yy43;
         break;
       case 132: /* set_func ::= TO_OBJECT|TO_ARRAY|TO_STRING|TO_INT|TO_FLOAT|TO_BOOL|ZVAL|VOID LPAREN decl_var RPAREN */
-#line 846 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 846 "src/parser_proc.y"
 {
  yylhsminor.yy26 = psi_set_func_init(yymsp[-3].minor.yy0->type, yymsp[-3].minor.yy0->text, yymsp[-1].minor.yy11);
  yylhsminor.yy26->token = yymsp[-3].minor.yy0;
 }
-#line 3069 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3069 "src/parser_proc.c"
   yy_destructor(yypParser,65,&yymsp[-2].minor);
   yy_destructor(yypParser,67,&yymsp[0].minor);
   yymsp[-3].minor.yy26 = yylhsminor.yy26;
         break;
       case 133: /* set_func ::= TO_OBJECT|TO_ARRAY|TO_STRING|TO_INT|TO_FLOAT|TO_BOOL|ZVAL|VOID LPAREN decl_var COMMA set_exps RPAREN */
-#line 850 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 850 "src/parser_proc.y"
 {
  yylhsminor.yy26 = psi_set_func_init(yymsp[-5].minor.yy0->type, yymsp[-5].minor.yy0->text, yymsp[-3].minor.yy11);
  yylhsminor.yy26->token = yymsp[-5].minor.yy0;
  yylhsminor.yy26->inner = yymsp[-1].minor.yy163;
 }
-#line 3081 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3081 "src/parser_proc.c"
   yy_destructor(yypParser,65,&yymsp[-4].minor);
   yy_destructor(yypParser,66,&yymsp[-2].minor);
   yy_destructor(yypParser,67,&yymsp[0].minor);
   yymsp[-5].minor.yy26 = yylhsminor.yy26;
         break;
       case 134: /* set_func ::= TO_OBJECT|TO_ARRAY|TO_STRING|TO_INT|TO_FLOAT|TO_BOOL|ZVAL|VOID LPAREN decl_var COMMA ELLIPSIS RPAREN */
-#line 855 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 855 "src/parser_proc.y"
 {
  yylhsminor.yy26 = psi_set_func_init(yymsp[-5].minor.yy0->type, yymsp[-5].minor.yy0->text, yymsp[-3].minor.yy11);
  yylhsminor.yy26->token = yymsp[-5].minor.yy0;
  yylhsminor.yy26->recursive = 1;
 }
-#line 3094 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3094 "src/parser_proc.c"
   yy_destructor(yypParser,65,&yymsp[-4].minor);
   yy_destructor(yypParser,66,&yymsp[-2].minor);
   yy_destructor(yypParser,76,&yymsp[-1].minor);
@@ -3098,196 +3098,196 @@ static void yy_reduce(
   yymsp[-5].minor.yy26 = yylhsminor.yy26;
         break;
       case 135: /* set_exp ::= set_func */
-#line 860 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 860 "src/parser_proc.y"
 {
  yylhsminor.yy147 = psi_set_exp_init(PSI_SET_FUNC, yymsp[0].minor.yy26);
 }
-#line 3106 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3106 "src/parser_proc.c"
   yymsp[0].minor.yy147 = yylhsminor.yy147;
         break;
       case 136: /* set_exp ::= num_exp */
-#line 863 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 863 "src/parser_proc.y"
 {
  yylhsminor.yy147 = psi_set_exp_init(PSI_SET_NUMEXP, yymsp[0].minor.yy259);
 }
-#line 3114 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3114 "src/parser_proc.c"
   yymsp[0].minor.yy147 = yylhsminor.yy147;
         break;
       case 137: /* set_exps ::= set_exp */
-#line 866 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 866 "src/parser_proc.y"
 {
  yylhsminor.yy163 = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_set_exp_free),
    &yymsp[0].minor.yy147);
 }
-#line 3123 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3123 "src/parser_proc.c"
   yymsp[0].minor.yy163 = yylhsminor.yy163;
         break;
       case 138: /* set_exps ::= set_exps COMMA set_exp */
-#line 870 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 870 "src/parser_proc.y"
 {
  yylhsminor.yy163 = psi_plist_add(yymsp[-2].minor.yy163, &yymsp[0].minor.yy147);
 }
-#line 3131 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3131 "src/parser_proc.c"
   yy_destructor(yypParser,66,&yymsp[-1].minor);
   yymsp[-2].minor.yy163 = yylhsminor.yy163;
         break;
       case 139: /* set_exp ::= impl_var EQUALS set_exp */
-#line 873 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 873 "src/parser_proc.y"
 {
  yylhsminor.yy147 = yymsp[0].minor.yy147;
  yylhsminor.yy147->var = yymsp[-2].minor.yy37;
 }
-#line 3141 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3141 "src/parser_proc.c"
   yy_destructor(yypParser,73,&yymsp[-1].minor);
   yymsp[-2].minor.yy147 = yylhsminor.yy147;
         break;
       case 140: /* set_stmt ::= SET set_exp EOS */
-#line 877 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 877 "src/parser_proc.y"
 {
  yylhsminor.yy98 = psi_set_stmt_init(yymsp[-1].minor.yy147);
  yylhsminor.yy98->token = yymsp[-2].minor.yy0;
 }
-#line 3151 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3151 "src/parser_proc.c"
   yy_destructor(yypParser,63,&yymsp[0].minor);
   yymsp[-2].minor.yy98 = yylhsminor.yy98;
         break;
       case 141: /* return_stmt ::= RETURN set_func EOS */
-#line 881 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 881 "src/parser_proc.y"
 {
  yylhsminor.yy90 = psi_return_stmt_init(psi_set_exp_init(PSI_SET_FUNC, yymsp[-1].minor.yy26));
  yylhsminor.yy90->token = yymsp[-2].minor.yy0;
 }
-#line 3161 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3161 "src/parser_proc.c"
   yy_destructor(yypParser,63,&yymsp[0].minor);
   yymsp[-2].minor.yy90 = yylhsminor.yy90;
         break;
       case 142: /* free_stmt ::= FREE free_exps EOS */
-#line 885 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 885 "src/parser_proc.y"
 {
  yylhsminor.yy192 = psi_free_stmt_init(yymsp[-1].minor.yy163);
  yylhsminor.yy192->token = yymsp[-2].minor.yy0;
 }
-#line 3171 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3171 "src/parser_proc.c"
   yy_destructor(yypParser,63,&yymsp[0].minor);
   yymsp[-2].minor.yy192 = yylhsminor.yy192;
         break;
       case 143: /* free_exps ::= free_exp */
-#line 889 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 889 "src/parser_proc.y"
 {
  yylhsminor.yy163 = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_free_exp_free),
    &yymsp[0].minor.yy94);
 }
-#line 3181 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3181 "src/parser_proc.c"
   yymsp[0].minor.yy163 = yylhsminor.yy163;
         break;
       case 144: /* free_exps ::= free_exps COMMA free_exp */
-#line 893 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 893 "src/parser_proc.y"
 {
  yylhsminor.yy163 = psi_plist_add(yymsp[-2].minor.yy163, &yymsp[0].minor.yy94);
 }
-#line 3189 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3189 "src/parser_proc.c"
   yy_destructor(yypParser,66,&yymsp[-1].minor);
   yymsp[-2].minor.yy163 = yylhsminor.yy163;
         break;
       case 145: /* free_exp ::= NAME LPAREN decl_vars RPAREN */
-#line 896 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 896 "src/parser_proc.y"
 {
  yylhsminor.yy94 = psi_free_exp_init(yymsp[-3].minor.yy0->text, yymsp[-1].minor.yy163);
  yylhsminor.yy94->token = yymsp[-3].minor.yy0;
 }
-#line 3199 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3199 "src/parser_proc.c"
   yy_destructor(yypParser,65,&yymsp[-2].minor);
   yy_destructor(yypParser,67,&yymsp[0].minor);
   yymsp[-3].minor.yy94 = yylhsminor.yy94;
         break;
       case 146: /* reference ::= */
-#line 900 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 900 "src/parser_proc.y"
 {
  yymsp[1].minor.yy121 = false;
 }
-#line 3209 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3209 "src/parser_proc.c"
         break;
       case 147: /* reference ::= AMPERSAND */
 {  yy_destructor(yypParser,23,&yymsp[0].minor);
-#line 903 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 903 "src/parser_proc.y"
 {
  yymsp[0].minor.yy121 = true;
 }
-#line 3217 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3217 "src/parser_proc.c"
 }
         break;
       case 148: /* indirection ::= */
-#line 906 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 906 "src/parser_proc.y"
 {
  yymsp[1].minor.yy202 = 0;
 }
-#line 3225 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3225 "src/parser_proc.c"
         break;
       case 149: /* indirection ::= pointers */
-#line 909 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 909 "src/parser_proc.y"
 {
  yylhsminor.yy202 = yymsp[0].minor.yy202;
 }
-#line 3232 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3232 "src/parser_proc.c"
   yymsp[0].minor.yy202 = yylhsminor.yy202;
         break;
       case 150: /* pointers ::= ASTERISK */
 {  yy_destructor(yypParser,28,&yymsp[0].minor);
-#line 912 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 912 "src/parser_proc.y"
 {
  yymsp[0].minor.yy202 = 1;
 }
-#line 3241 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3241 "src/parser_proc.c"
 }
         break;
       case 151: /* pointers ::= pointers ASTERISK */
-#line 915 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 915 "src/parser_proc.y"
 {
  yylhsminor.yy202 = yymsp[-1].minor.yy202+1;
 }
-#line 3249 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3249 "src/parser_proc.c"
   yy_destructor(yypParser,28,&yymsp[0].minor);
   yymsp[-1].minor.yy202 = yylhsminor.yy202;
         break;
       case 152: /* file ::= blocks */
 {  yy_destructor(yypParser,146,&yymsp[0].minor);
-#line 169 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 169 "src/parser_proc.y"
 {
 }
-#line 3258 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3258 "src/parser_proc.c"
 }
         break;
       case 153: /* blocks ::= block */
 {  yy_destructor(yypParser,147,&yymsp[0].minor);
-#line 170 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 170 "src/parser_proc.y"
 {
 }
-#line 3266 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3266 "src/parser_proc.c"
 }
         break;
       case 154: /* blocks ::= blocks block */
 {  yy_destructor(yypParser,146,&yymsp[-1].minor);
-#line 171 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 171 "src/parser_proc.y"
 {
 }
-#line 3274 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3274 "src/parser_proc.c"
   yy_destructor(yypParser,147,&yymsp[0].minor);
 }
         break;
       case 155: /* block ::= EOF */
 {  yy_destructor(yypParser,62,&yymsp[0].minor);
-#line 172 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 172 "src/parser_proc.y"
 {
 }
-#line 3283 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3283 "src/parser_proc.c"
 }
         break;
       case 156: /* block ::= EOS */
 {  yy_destructor(yypParser,63,&yymsp[0].minor);
-#line 173 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 173 "src/parser_proc.y"
 {
 }
-#line 3291 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3291 "src/parser_proc.c"
 }
         break;
       default:
@@ -3347,9 +3347,9 @@ static void yy_syntax_error(
   ParseARG_FETCH;
 #define TOKEN yyminor
 /************ Begin %syntax_error code ****************************************/
-#line 40 "/home/mike/src/php-master/ext/psi/src/parser_proc.y"
+#line 40 "src/parser_proc.y"
  ++P->errors; if (TOKEN && TOKEN->type != PSI_T_EOF) { psi_error(PSI_WARNING, TOKEN->file, TOKEN->line, "PSI syntax error: Unexpected token '%s' at pos %u", TOKEN->text, TOKEN->col); } else { psi_error(PSI_WARNING, P->file.fn, P->line, "PSI syntax error: Unexpected end of input"); } 
-#line 3353 "/home/mike/src/php-master/ext/psi/src/parser_proc.c"
+#line 3353 "src/parser_proc.c"
 /************ End %syntax_error code ******************************************/
   ParseARG_STORE; /* Suppress warning about unused %extra_argument variable */
 }

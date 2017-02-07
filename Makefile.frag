@@ -27,7 +27,8 @@ $(PHP_PSI_SRCDIR)/src/parser_proc.y: $(PHP_PSI_SRCDIR)/src/parser_def.h $(PHP_PS
 	cat $(PHP_PSI_SRCDIR)/src/parser_proc.inc >$@
 	$(CPP) -P -DGENERATE $< >>$@
 $(PHP_PSI_SRCDIR)/src/parser_proc.c: $(PHP_PSI_SRCDIR)/src/parser_proc.y $(LEMON)
-	$(LEMON) $<
+	# trickery needed for relative #line directives
+	cd $(PHP_PSI_SRCDIR) && $(LEMON_PATH)$(LEMON) $(patsubst $(PHP_PSI_SRCDIR)/%,%,$<)
 
 $(PHP_PSI_SRCDIR)/src/parser.re: $(PHP_PSI_SRCDIR)/src/parser_proc.h
 	touch $@

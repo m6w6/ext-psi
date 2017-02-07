@@ -17,16 +17,13 @@ dnl Check the value of a str/int constant and add it to the list of pre-defined
 dnl constants.
 AC_DEFUN(PSI_CONST, [
 	AC_CHECK_DECL($1, [
-		if test "$psi_cv_const_$1"
-		then
-			case $2 in
-			str*)
-				psi_add_str_const "$1"
-				;;
-			int)
-				psi_add_int_const "$1"
-				;;
-			esac
-		fi
+		case $2 in
+		str*)
+			psi_add_str_const "$1"
+			;;
+		int)
+			psi_add_int_const "$1"
+			;;
+		esac
 	],, [PSI_INCLUDES])
 ])

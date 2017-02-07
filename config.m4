@@ -60,8 +60,8 @@ if test "$PHP_PSI" != no; then
 	[  --enable-psi-maintainer-mode
                           PSI: enable maintainer mode
                            . parallel configure
-                           . source dependencies
-                           . extra decl wrappers], [no], [no])
+                           . make dependencies
+                           . extra debug wrappers], [no], [no])
 
 	PHP_ARG_WITH(psi-libjit, where to find libjit,
 	[  --with-psi-libjit=DIR   PSI: path to libjit], [ ], [ ])
@@ -102,7 +102,10 @@ if test "$PHP_PSI" != no; then
 	PSI_CHECK_STDDEF
 	
 	dnl parallel
-	AC_MSG_CHECKING([for POSIX modules: $PHP_PSI_POSIX])
+	AC_MSG_CHECKING([for POSIX modules])
+	if ! $PSI_FAST_CONFIG; then
+		AC_MSG_RESULT([$PHP_PSI_POSIX])
+	fi
 	
 	PSI_CONFIG_POSIX(signal, signal.h, [
 		PSI_CONFIG_POSIX(time, time.h, [
