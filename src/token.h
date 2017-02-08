@@ -118,6 +118,10 @@ static inline size_t psi_t_alignment(token_t t)
 		return ALIGNOF_VOID_P;
 	case PSI_T_ENUM:
 		return ALIGNOF_INT;
+#ifdef HAVE_LONG_DOUBLE
+	case PSI_T_LONG_DOUBLE:
+		return ALIGNOF_LONG_DOUBLE;
+#endif
 	default:
 		assert(0);
 	}
@@ -146,6 +150,10 @@ static inline size_t psi_t_size(token_t t)
 		return SIZEOF_VOID_P;
 	case PSI_T_ENUM:
 		return SIZEOF_INT;
+#ifdef HAVE_LONG_DOUBLE
+	case PSI_T_LONG_DOUBLE:
+		return SIZEOF_LONG_DOUBLE;
+#endif
 	default:
 		assert(!t);
 	}
