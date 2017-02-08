@@ -166,7 +166,7 @@ EOF
 		
 		_AC_CACHE_DUMP >>conf.env
 		dnl restore STDOUT,STDERR
-		exec >&$PSI_MESSAGE_FD 2>&$PSI_ERROR_FD
+		exec AS_MESSAGE_FD>&$PSI_MESSAGE_FD 2>&$PSI_ERROR_FD
 		
 		dnl done
 		AS_ECHO_N(["$1 "])
@@ -236,6 +236,9 @@ typedef bool _Bool;
 #endif
 #ifdef HAVE_ARPA_NAMESER_H
 # include <arpa/nameser.h>
+#endif
+#ifdef HAVE_ARPA_INET_H
+# include <arpa/inet.h>
 #endif
 #ifdef HAVE_FCNTL_H
 # include <fcntl.h>
