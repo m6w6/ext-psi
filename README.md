@@ -225,7 +225,7 @@ extern char *strerror(int errnum);
 
 You may specify a non-standard calling convention in place of `extern`, where `default` and `cdecl` have the same meaning as `extern`.
 
-Additionally recognized calling conventions include: `mscdecl`, `stdcall` and `fastcall`.
+Additionally recognized calling conventions include: `stdcall` and `fastcall`.
 
 ### Constants
 

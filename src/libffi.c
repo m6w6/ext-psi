@@ -156,6 +156,18 @@ static void psi_ffi_callback(ffi_cif *sig, void *result, void **args, void *data
 }
 
 static inline ffi_abi psi_ffi_abi(const char *convention) {
+	if (FFI_LAST_ABI - 2 != FFI_FIRST_ABI) {
+#ifdef HAVE_FFI_STDCALL
+		if (!strcasecmp(convention, "stdcall")) {
+			return FFI_STDCALL;
+		}
+#endif
+#ifdef HAVE_FFI_FASTCALL
+		if (!strcasecmp(convention, "fastcall")) {
+			return FFI_FASTCALL;
+		}
+#endif
+	}
 	return FFI_DEFAULT_ABI;
 }
 

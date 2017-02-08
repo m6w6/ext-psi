@@ -36,6 +36,12 @@ static inline jit_type_t psi_jit_decl_arg_type(struct psi_decl_arg *darg);
 
 static inline jit_abi_t psi_jit_abi(const char *convention)
 {
+	if (!strcasecmp(convention, "stdcall")) {
+		return jit_abi_stdcall;
+	}
+	if (!strcasecmp(convention, "fastcall")) {
+		return jit_abi_fastcall;
+	}
 	return jit_abi_cdecl;
 }
 static inline jit_type_t psi_jit_token_type(token_t t)

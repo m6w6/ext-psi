@@ -470,6 +470,13 @@ AC_DEFUN(PSI_CHECK_LIBFFI, [
 			AC_MSG_WARN([Could not find libffi, please provide the base install path])
 		fi
 	fi
+	
+	save_CFLAGS=$CFLAGS
+	CFLAGS="$CFLAGS $INCLUDES"
+	AC_CHECK_DECL(FFI_STDCALL,[AC_DEFINE([HAVE_FFI_STDCALL],[1],[ ])],,[#include "ffi.h"])
+	AC_CHECK_DECL(FFI_FASTCALL,[AC_DEFINE([HAVE_FFI_FASTCALL],[1],[ ])],,[#include "ffi.h"])
+	CFLAGS=$save_CFLAGS
+	
 	PHP_CHECK_LIBRARY(ffi, ffi_closure_alloc, [
 		PHP_CHECK_LIBRARY(ffi, ffi_prep_closure_loc, [
 			AC_DEFINE(PSI_HAVE_FFI_PREP_CLOSURE_LOC, 1, [ ])
