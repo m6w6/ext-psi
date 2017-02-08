@@ -1,0 +1,62 @@
+function test\calc1() : array {
+	let numerator = 3 * 5 + 2;
+	let denominator = 17;
+	return to_array(div,
+		to_int(quot),
+		to_int(rem)
+	);
+}
+
+function test\calc2() : array {
+	let numerator = 4 + 5 * 2;
+	let denominator = 14;
+	return to_array(div,
+		to_int(quot),
+		to_int(rem)
+	);
+}
+
+function test\calc3() : array {
+	let numerator = -1 + 2 - 3 * 2;
+	let denominator = -5;
+	return to_array(div,
+		to_int(quot),
+		to_int(rem)
+	);
+}
+
+function test\calc4() : array {
+	let numerator = 1 * 5 / 5 * -1 / -1 * 10 / 5 + 4 * 2;
+	let denominator = 10;
+	return to_array(div,
+		to_int(quot),
+		to_int(rem)
+	);
+}
+
+function test\calc5() : array {
+	let numerator = 5 % 3;
+	let denominator = 2;
+	return to_array(div,
+		to_int(quot),
+		to_int(rem)
+	);
+}
+
+function test\calc6() : array {
+	let numerator = 5 % 3 + 1;
+	let denominator = 3;
+	return to_array(div,
+		to_int(quot),
+		to_int(rem)
+	);
+}
+
+function test\calc7() : array {
+	let numerator = 5 % (3 + 1);
+	let denominator = 1;
+	return to_array(div,
+		to_int(quot),
+		to_int(rem)
+	);
+}
