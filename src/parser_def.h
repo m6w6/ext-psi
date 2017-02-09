@@ -89,17 +89,20 @@ TOKEN_CLASS(const_type, T(BOOL) T(INT) T(FLOAT) T(STRING))
 TOKEN_CLASS(decl_type, T(FLOAT) T(DOUBLE) T(INT8) T(UINT8) T(INT16) T(UINT16) T(INT32) T(UINT32) T(INT64) T(UINT64) T(NAME))
 TOKEN_CLASS(impl_def_val, T(NULL) T(NUMBER) T(TRUE) T(FALSE) T(QUOTED_STRING))
 TOKEN_CLASS(number, T(NUMBER) T(NSNAME))
-TOKEN_CLASS(num_exp_binary_op, T(PIPE) T(CARET) T(AMPERSAND) T(LSHIFT) T(RSHIFT) T(PLUS) T(MINUS) T(ASTERISK) T(SLASH) T(MODULO))
-TOKEN_CLASS(num_exp_unary_op, T(TILDE) T(NOT) T(PLUS) T(MINUS))
+TOKEN_CLASS(binary_op, T(PIPE) T(CARET) T(AMPERSAND) T(LSHIFT) T(RSHIFT) T(PLUS) T(MINUS) T(ASTERISK) T(SLASH) T(MODULO) T(RCHEVR) T(LCHEVR) T(CMP_GE) T(CMP_LE) T(OR) T(AND) T(CMP_EQ) T(CMP_NE))
+TOKEN_CLASS(unary_op, T(TILDE) T(NOT) T(PLUS) T(MINUS))
 TOKEN_CLASS(let_func, T(ZVAL) T(OBJVAL) T(ARRVAL) T(PATHVAL) T(STRLEN) T(STRVAL) T(FLOATVAL) T(INTVAL) T(BOOLVAL) T(COUNT))
 TOKEN_CLASS(set_func, T(TO_OBJECT) T(TO_ARRAY) T(TO_STRING) T(TO_INT) T(TO_FLOAT) T(TO_BOOL) T(ZVAL) T(VOID))
 TOKEN_CLASS(impl_type, T(VOID) T(MIXED) T(BOOL) T(INT) T(FLOAT) T(STRING) T(ARRAY) T(OBJECT) T(CALLABLE))
 
 DEF(%nonassoc, NAME.)
 DEF(%right, NOT TILDE.)
+DEF(%left, AND OR.)
 DEF(%left, PIPE.)
 DEF(%left, CARET.)
 DEF(%left, AMPERSAND.)
+DEF(%left, CMP_EQ CMP_NE.)
+DEF(%left, LCHEVR CMP_LE RCHEVR CMP_GE.)
 DEF(%left, LSHIFT RSHIFT.)
 DEF(%left, PLUS MINUS.)
 DEF(%left, ASTERISK SLASH MODULO.)
@@ -1426,7 +1429,7 @@ PARSE_TYPED(number, exp,
 }
 
 /*
- * num_exp: decl_var
+ * number: decl_var
  */
 PARSE_TYPED(number, exp,
 		TYPED(decl_var, var)) {
@@ -1435,7 +1438,7 @@ PARSE_TYPED(number, exp,
 }
 
 /*
- * num_exp: num_exp
+ * num_exp: number
  */
 PARSE_TYPED(num_exp, exp,
 		TYPED(number, num)) {
@@ -1455,21 +1458,21 @@ PARSE_TYPED(num_exp, exp,
 }
 
 /*
- * num_exp: num_exp num_exp_binary_op_token num_exp
+ * num_exp: num_exp binary_op_token num_exp
  */
 PARSE_TYPED(num_exp, exp,
 		TYPED(num_exp, lhs_)
-		NAMED(num_exp_binary_op_token, OP)
+		NAMED(binary_op_token, OP)
 		TYPED(num_exp, rhs_)) {
 	exp = psi_num_exp_init_binary(OP->type, lhs_, rhs_);
 	exp->token = OP;
 }
 
 /*
- * num_exp: num_exp_unary_op_token num_exp
+ * num_exp: unary_op_token num_exp
  */
 PARSE_TYPED(num_exp, exp,
-		NAMED(num_exp_unary_op_token, OP)
+		NAMED(unary_op_token, OP)
 		TYPED(num_exp, exp_)) {
 	exp = psi_num_exp_init_unary(OP->type, exp_);
 	exp->token = OP;

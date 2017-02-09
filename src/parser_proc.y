@@ -42,16 +42,19 @@ void psi_parser_proc_free(void **parser_proc)
 %token_class decl_type_token FLOAT DOUBLE INT8 UINT8 INT16 UINT16 INT32 UINT32 INT64 UINT64 NAME .
 %token_class impl_def_val_token NULL NUMBER TRUE FALSE QUOTED_STRING .
 %token_class number_token NUMBER NSNAME .
-%token_class num_exp_binary_op_token PIPE CARET AMPERSAND LSHIFT RSHIFT PLUS MINUS ASTERISK SLASH MODULO .
-%token_class num_exp_unary_op_token TILDE NOT PLUS MINUS .
+%token_class binary_op_token PIPE CARET AMPERSAND LSHIFT RSHIFT PLUS MINUS ASTERISK SLASH MODULO RCHEVR LCHEVR CMP_GE CMP_LE OR AND CMP_EQ CMP_NE .
+%token_class unary_op_token TILDE NOT PLUS MINUS .
 %token_class let_func_token ZVAL OBJVAL ARRVAL PATHVAL STRLEN STRVAL FLOATVAL INTVAL BOOLVAL COUNT .
 %token_class set_func_token TO_OBJECT TO_ARRAY TO_STRING TO_INT TO_FLOAT TO_BOOL ZVAL VOID .
 %token_class impl_type_token VOID MIXED BOOL INT FLOAT STRING ARRAY OBJECT CALLABLE .
 %nonassoc NAME.
 %right NOT TILDE.
+%left AND OR.
 %left PIPE.
 %left CARET.
 %left AMPERSAND.
+%left CMP_EQ CMP_NE.
+%left LCHEVR CMP_LE RCHEVR CMP_GE.
 %left LSHIFT RSHIFT.
 %left PLUS MINUS.
 %left ASTERISK SLASH MODULO.
@@ -747,11 +750,11 @@ num_exp(exp) ::= LPAREN(L) num_exp(exp_) RPAREN. {
  exp = psi_num_exp_init_unary(PSI_T_LPAREN, exp_);
  exp->token = L;
 }
-num_exp(exp) ::= num_exp(lhs_) num_exp_binary_op_token(OP) num_exp(rhs_). {
+num_exp(exp) ::= num_exp(lhs_) binary_op_token(OP) num_exp(rhs_). {
  exp = psi_num_exp_init_binary(OP->type, lhs_, rhs_);
  exp->token = OP;
 }
-num_exp(exp) ::= num_exp_unary_op_token(OP) num_exp(exp_). {
+num_exp(exp) ::= unary_op_token(OP) num_exp(exp_). {
  exp = psi_num_exp_init_unary(OP->type, exp_);
  exp->token = OP;
 }

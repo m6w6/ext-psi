@@ -50,6 +50,16 @@ token_t psi_calc_bin_and(token_t t1, impl_val *v1, token_t t2, impl_val *v2, imp
 token_t psi_calc_bin_xor(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
 token_t psi_calc_bin_or(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
 
+token_t psi_calc_and(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
+token_t psi_calc_or(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
+
+token_t psi_calc_cmp_eq(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
+token_t psi_calc_cmp_ne(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
+token_t psi_calc_cmp_le(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
+token_t psi_calc_cmp_ge(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
+token_t psi_calc_cmp_lt(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
+token_t psi_calc_cmp_gt(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
+
 void psi_calc_cast(token_t in_type, impl_val *in_val, token_t out_type, impl_val *out_val);
 
 #endif

@@ -255,6 +255,10 @@ token_t psi_parser_scan(struct psi_parser *P)
 		"}" {RETURN(PSI_T_RBRACE);}
 		"[" {RETURN(PSI_T_LBRACKET);}
 		"]" {RETURN(PSI_T_RBRACKET);}
+		"!=" {RETURN(PSI_T_CMP_NE);}
+		"==" {RETURN(PSI_T_CMP_EQ);}
+		"&&" {RETURN(PSI_T_AND);}
+		"||" {RETURN(PSI_T_OR);}
 		"=" {RETURN(PSI_T_EQUALS);}
 		"*" {RETURN(PSI_T_ASTERISK);}
 		"~" {RETURN(PSI_T_TILDE);}
@@ -268,6 +272,10 @@ token_t psi_parser_scan(struct psi_parser *P)
 		"^" {RETURN(PSI_T_CARET);}
 		"<<" {RETURN(PSI_T_LSHIFT);}
 		">>" {RETURN(PSI_T_RSHIFT);}
+		"<=" {RETURN(PSI_T_CMP_LE);}
+		">=" {RETURN(PSI_T_CMP_GE);}
+		"<" {RETURN(PSI_T_LCHEVR);}
+		">" {RETURN(PSI_T_RCHEVR);}
 		"..." {RETURN(PSI_T_ELLIPSIS);}
 		[\r\n] { NEWLINE(nextline); }
 		[\t ]+ { continue; }

@@ -9,7 +9,7 @@ extension_loaded("psi") or die("skip need ext/psi");
 --FILE--
 ===TEST===
 <?php
-for ($i = 0; $i < 10; ++$i) {
+for ($i = 0; $i < 20; ++$i) {
 	$func = "test\\calc$i";
 	if (function_exists($func)) {
 		$res = $func();

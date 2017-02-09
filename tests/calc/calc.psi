@@ -60,3 +60,48 @@ function test\calc7() : array {
 		to_int(rem)
 	);
 }
+
+function test\calc8() : array {
+	let numerator = !0 + !0 + !0;
+	let denominator = 3;
+	return to_array(div,
+		to_int(quot),
+		to_int(rem)
+	);
+}
+
+function test\calc9() : array {
+	let numerator = 1 && 2;
+	let denominator = 1;
+	return to_array(div,
+		to_int(quot),
+		to_int(rem)
+	);
+}
+
+function test\calc10() : array {
+	let numerator = (1 | 2 | 4) & ~3;
+	let denominator = 4;
+	return to_array(div,
+		to_int(quot),
+		to_int(rem)
+	);
+}
+
+function test\calc11() : array {
+	let numerator = 1 + (1 + 1 < 2);
+	let denominator = 1;
+	return to_array(div,
+		to_int(quot),
+		to_int(rem)
+	);
+}
+
+function test\calc12() : array {
+	let numerator = 1 + (1 + 1 < 3);
+	let denominator = 2;
+	return to_array(div,
+		to_int(quot),
+		to_int(rem)
+	);
+}

@@ -87,6 +87,16 @@ struct psi_num_exp *psi_num_exp_copy(struct psi_num_exp *exp)
 		cpy->data.u = psi_num_exp_copy(exp->data.u);
 		break;
 
+	case PSI_T_OR:
+	case PSI_T_AND:
+
+	case PSI_T_CMP_EQ:
+	case PSI_T_CMP_NE:
+	case PSI_T_CMP_LE:
+	case PSI_T_CMP_GE:
+	case PSI_T_RCHEVR:
+	case PSI_T_LCHEVR:
+
 	case PSI_T_PIPE:
 	case PSI_T_CARET:
 	case PSI_T_AMPERSAND:
@@ -128,6 +138,16 @@ void psi_num_exp_free(struct psi_num_exp **c_ptr)
 		case PSI_T_LPAREN:
 			psi_num_exp_free(&c->data.u);
 			break;
+
+		case PSI_T_OR:
+		case PSI_T_AND:
+
+		case PSI_T_CMP_EQ:
+		case PSI_T_CMP_NE:
+		case PSI_T_CMP_LE:
+		case PSI_T_CMP_GE:
+		case PSI_T_RCHEVR:
+		case PSI_T_LCHEVR:
 
 		case PSI_T_PIPE:
 		case PSI_T_CARET:
@@ -189,6 +209,24 @@ static inline wint_t psi_num_exp_op_tok(token_t op)
 	case PSI_T_MODULO:
 		return L'%';
 
+	case PSI_T_OR:
+		return L'∨';
+	case PSI_T_AND:
+		return L'∧';
+
+	case PSI_T_CMP_EQ:
+		return L'≣';
+	case PSI_T_CMP_NE:
+		return L'≠';
+	case PSI_T_CMP_LE:
+		return L'≤';
+	case PSI_T_CMP_GE:
+		return L'≥';
+	case PSI_T_RCHEVR:
+		return L'>';
+	case PSI_T_LCHEVR:
+		return L'<';
+
 	default:
 		assert(0);
 	}
@@ -213,6 +251,17 @@ void psi_num_exp_dump(int fd, struct psi_num_exp *exp)
 		psi_num_exp_dump(fd, exp->data.u);
 		dprintf(fd, ")");
 		break;
+
+
+	case PSI_T_OR:
+	case PSI_T_AND:
+
+	case PSI_T_CMP_EQ:
+	case PSI_T_CMP_NE:
+	case PSI_T_CMP_LE:
+	case PSI_T_CMP_GE:
+	case PSI_T_RCHEVR:
+	case PSI_T_LCHEVR:
 
 	case PSI_T_PIPE:
 	case PSI_T_CARET:
@@ -245,6 +294,31 @@ bool psi_num_exp_validate(struct psi_data *data, struct psi_num_exp *exp,
 			break;
 		case PSI_T_TILDE:
 			exp->calc = psi_calc_bin_not;
+			break;
+
+		case PSI_T_OR:
+			exp->calc = psi_calc_or;
+			break;
+		case PSI_T_AND:
+			exp->calc = psi_calc_and;
+			break;
+		case PSI_T_CMP_EQ:
+			exp->calc = psi_calc_cmp_eq;
+			break;
+		case PSI_T_CMP_NE:
+			exp->calc = psi_calc_cmp_ne;
+			break;
+		case PSI_T_CMP_LE:
+			exp->calc = psi_calc_cmp_le;
+			break;
+		case PSI_T_CMP_GE:
+			exp->calc = psi_calc_cmp_ge;
+			break;
+		case PSI_T_LCHEVR:
+			exp->calc = psi_calc_cmp_lt;
+			break;
+		case PSI_T_RCHEVR:
+			exp->calc = psi_calc_cmp_gt;
 			break;
 
 		case PSI_T_LPAREN:
@@ -297,6 +371,16 @@ bool psi_num_exp_validate(struct psi_data *data, struct psi_num_exp *exp,
 		return psi_num_exp_validate(data, exp->data.u, impl, cb_decl, current_let, current_set, current_enum);
 		break;
 
+	case PSI_T_OR:
+	case PSI_T_AND:
+
+	case PSI_T_CMP_EQ:
+	case PSI_T_CMP_NE:
+	case PSI_T_CMP_LE:
+	case PSI_T_CMP_GE:
+	case PSI_T_RCHEVR:
+	case PSI_T_LCHEVR:
+
 	case PSI_T_PIPE:
 	case PSI_T_CARET:
 	case PSI_T_AMPERSAND:
@@ -346,11 +430,29 @@ static inline void psi_impl_val_dump(token_t t, impl_val *res,
 		assert(0);
 	}
 }
+
 static inline void psi_num_exp_verify_result(token_t t, impl_val *res, struct psi_call_frame *frame)
 {
 	if (frame) PSI_DEBUG_PRINT(frame->context, "%s", " = ");
 	psi_impl_val_dump(t, res, frame);
 	if (frame) PSI_DEBUG_PRINT(frame->context, "%s", "\n");
+}
+
+static inline int psi_num_exp_op_cmp(token_t op1, token_t op2)
+{
+	if (PSI_T_LPAREN == op2) {
+		return -1;
+	} else if (PSI_T_LPAREN == op1) {
+		return 1;
+	} else if (op1 == op2) {
+		return 0;
+	} else if (!op1) {
+		return 1;
+	} else if (!op2) {
+		return -1;
+	}
+
+	return psi_token_oper_cmp(op1, op2);
 }
 
 static void psi_num_exp_reduce(struct psi_num_exp *exp, struct psi_plist **output_ptr,
@@ -462,6 +564,16 @@ token_t psi_num_exp_exec(struct psi_num_exp *exp, impl_val *res,
 			input = psi_plist_add(input, &entry);
 			psi_num_exp_verify_result(entry.type, &entry.data.value, frame);
 			break;
+
+		case PSI_T_OR:
+		case PSI_T_AND:
+
+		case PSI_T_CMP_EQ:
+		case PSI_T_CMP_NE:
+		case PSI_T_CMP_LE:
+		case PSI_T_CMP_GE:
+		case PSI_T_RCHEVR:
+		case PSI_T_LCHEVR:
 
 		case PSI_T_PIPE:
 		case PSI_T_CARET:

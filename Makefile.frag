@@ -35,6 +35,10 @@ $(PHP_PSI_SRCDIR)/src/parser.re: $(PHP_PSI_SRCDIR)/src/parser_proc.h
 $(PHP_PSI_SRCDIR)/src/parser.c: $(PHP_PSI_SRCDIR)/src/parser.re
 	$(RE2C) -o $@ $<
 
+$(PHP_PSI_SRCDIR)/src/token.h: $(PHP_PSI_SRCDIR)/src/token_oper_cmp.h
+$(PHP_PSI_SRCDIR)/src/token_oper_cmp.h: $(PHP_PSI_SRCDIR)/scripts/gen_oper.php
+	$(PHP_EXECUTABLE) $< >$@
+
 PHP_PSI_DEPEND = $(patsubst $(PHP_PSI_SRCDIR)/%,$(PHP_PSI_BUILDDIR)/%,$(PHP_PSI_SOURCES:.c=.dep))
 
 $(PHP_PSI_BUILDDIR)/%.dep: $(PHP_PSI_SRCDIR)/%.c
@@ -42,7 +46,9 @@ $(PHP_PSI_BUILDDIR)/%.dep: $(PHP_PSI_SRCDIR)/%.c
 		$(CPPFLAGS) $(DEFS) $(INCLUDES) $< \
 			|| touch $@
 
+token_oper_cmp.h: $(PHP_PSI_SRCDIR)/src/token_oper_cmp.h
 php_psi_stdinc.h:
+php_psi_posix.h:
 
 ifneq ($(findstring clean,$(MAKECMDGOALS)),clean)
 ifneq ($(PSI_DEPS),)
