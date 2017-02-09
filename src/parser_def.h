@@ -94,6 +94,7 @@ TOKEN_CLASS(unary_op, T(TILDE) T(NOT) T(PLUS) T(MINUS))
 TOKEN_CLASS(let_func, T(ZVAL) T(OBJVAL) T(ARRVAL) T(PATHVAL) T(STRLEN) T(STRVAL) T(FLOATVAL) T(INTVAL) T(BOOLVAL) T(COUNT))
 TOKEN_CLASS(set_func, T(TO_OBJECT) T(TO_ARRAY) T(TO_STRING) T(TO_INT) T(TO_FLOAT) T(TO_BOOL) T(ZVAL) T(VOID))
 TOKEN_CLASS(impl_type, T(VOID) T(MIXED) T(BOOL) T(INT) T(FLOAT) T(STRING) T(ARRAY) T(OBJECT) T(CALLABLE))
+TOKEN_CLASS(assert_stmt, T(PRE_ASSERT) T(POST_ASSERT))
 
 DEF(%nonassoc, NAME.)
 DEF(%right, NOT TILDE.)
@@ -198,6 +199,8 @@ TOKEN_TYPE(let_exp, struct psi_let_exp*)
 TOKEN_DTOR(let_exp, psi_let_exp_free(&$$);)
 TOKEN_TYPE(let_exps, struct psi_plist*)
 TOKEN_DTOR(let_exps, psi_plist_free($$);)
+TOKEN_TYPE(assert_stmt, struct psi_assert_stmt*)
+TOKEN_DTOR(assert_stmt, psi_assert_stmt_free(&$$);)
 TOKEN_TYPE(set_stmt, struct psi_set_stmt*)
 TOKEN_DTOR(set_stmt, psi_set_stmt_free(&$$);)
 TOKEN_TYPE(set_exp, struct psi_set_exp*)
@@ -1412,6 +1415,14 @@ PARSE_TYPED(impl_stmt, i,
 }
 
 /*
+ * impl_stmt: assert_stmt
+ */
+PARSE_TYPED(impl_stmt, i,
+		TYPED(assert_stmt, s)) {
+	i = (struct psi_token **) s;
+}
+
+/*
  * impl_stmt: free_stmt
  */
 PARSE_TYPED(impl_stmt, i,
@@ -1870,6 +1881,17 @@ PARSE_TYPED(free_exp, call,
 		TOKEN(RPAREN)) {
 	call = psi_free_exp_init(F->text, vars);
 	call->token = F;
+}
+
+/*
+ * assert_stmt: assert_stmt_token num_exp ;
+ */
+PARSE_TYPED(assert_stmt, ass,
+		NAMED(assert_stmt_token, T)
+		TYPED(num_exp, exp)
+		TOKEN(EOS)) {
+	ass = psi_assert_stmt_init(T->type, exp);
+	ass->token = T;
 }
 
 /*

@@ -6,18 +6,21 @@ function psi\abs(int $i) : int {
 function psi\div(int $numerator, int $denominator) : array {
 	let numerator = intval($numerator);
 	let denominator = intval($denominator);
+	pre_assert denominator != 0;
 	return to_array(div, to_int(quot), to_int(rem));
 }
 
 function psi\ldiv(int $numerator, int $denominator) : array {
 	let numerator = intval($numerator);
 	let denominator = intval($denominator);
+	pre_assert denominator != 0;
 	return to_array(ldiv, to_int(quot), to_int(rem));
 }
 
 function psi\lldiv(int $numerator, int $denominator) : array {
 	let numerator = intval($numerator);
 	let denominator = intval($denominator);
+	pre_assert denominator != 0;
 	return to_array(lldiv, to_int(quot), to_int(rem));
 }
 

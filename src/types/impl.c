@@ -39,6 +39,7 @@ struct psi_impl *psi_impl_init(struct psi_impl_func *func,
 	impl->stmts.let = psi_plist_init((psi_plist_dtor) psi_let_stmt_free);
 	impl->stmts.set = psi_plist_init((psi_plist_dtor) psi_set_stmt_free);
 	impl->stmts.fre = psi_plist_init((psi_plist_dtor) psi_free_stmt_free);
+	impl->stmts.ass = psi_plist_init((psi_plist_dtor) psi_assert_stmt_free);
 
 	while (psi_plist_get(stmts, i++, &abstract_stmt)) {
 		switch ((*abstract_stmt)->type) {
@@ -54,6 +55,10 @@ struct psi_impl *psi_impl_init(struct psi_impl_func *func,
 			break;
 		case PSI_T_FREE:
 			impl->stmts.fre = psi_plist_add(impl->stmts.fre, &abstract_stmt);
+			break;
+		case PSI_T_PRE_ASSERT:
+		case PSI_T_POST_ASSERT:
+			impl->stmts.ass = psi_plist_add(impl->stmts.ass, &abstract_stmt);
 			break;
 		default:
 			assert(0);
@@ -77,6 +82,7 @@ void psi_impl_free(struct psi_impl **impl_ptr)
 		psi_plist_free(impl->stmts.let);
 		psi_plist_free(impl->stmts.set);
 		psi_plist_free(impl->stmts.fre);
+		psi_plist_free(impl->stmts.ass);
 		free(impl);
 	}
 }
@@ -88,11 +94,15 @@ void psi_impl_dump(int fd, struct psi_impl *impl)
 	struct psi_let_stmt *let;
 	struct psi_set_stmt *set;
 	struct psi_free_stmt *fre;
+	struct psi_assert_stmt *ass;
 
 	psi_impl_func_dump(fd, impl->func);
 	dprintf(fd, " {\n");
 	for (i = 0; psi_plist_get(impl->stmts.let, i, &let); ++i) {
 		psi_let_stmt_dump(fd, let);
+	}
+	for (i = 0; psi_plist_get(impl->stmts.ass, i, &ass); ++i) {
+		psi_assert_stmt_dump(fd, ass);
 	}
 	for (i = 0; psi_plist_get(impl->stmts.ret, i, &ret); ++i) {
 		psi_return_stmt_dump(fd, ret);
@@ -118,6 +128,9 @@ bool psi_impl_validate(struct psi_data *data, struct psi_impl *impl)
 		return false;
 	}
 	if (!psi_set_stmts_validate(data, impl)) {
+		return false;
+	}
+	if (!psi_assert_stmts_validate(data, impl)) {
 		return false;
 	}
 	if (!psi_free_stmts_validate(data, impl)) {
@@ -153,6 +166,10 @@ void psi_impl_stmt_free(struct psi_token ***abstract_stmt)
 		break;
 	case PSI_T_FREE:
 		psi_free_stmt_free((void *) abstract_stmt);
+		break;
+	case PSI_T_PRE_ASSERT:
+	case PSI_T_POST_ASSERT:
+		psi_assert_stmt_free((void *) abstract_stmt);
 		break;
 	default:
 		assert(0);

@@ -316,6 +316,8 @@ token_t psi_parser_scan(struct psi_parser *P)
 		'LIB' {RETURN(PSI_T_LIB);}
 		'LET' {RETURN(PSI_T_LET);}
 		'SET' {RETURN(PSI_T_SET);}
+		'PRE_ASSERT' {RETURN(PSI_T_PRE_ASSERT);}
+		'POST_ASSERT' {RETURN(PSI_T_POST_ASSERT);}
 		'RETURN' {RETURN(PSI_T_RETURN);}
 		'FREE' {RETURN(PSI_T_FREE);}
 		'TEMP' {RETURN(PSI_T_TEMP);}

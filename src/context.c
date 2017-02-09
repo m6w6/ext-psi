@@ -373,7 +373,22 @@ ZEND_RESULT_CODE psi_context_call(struct psi_context *C, zend_execute_data *exec
 		return FAILURE;
 	}
 
+	if (SUCCESS != psi_call_frame_do_assert(frame, PSI_ASSERT_PRE)) {
+		psi_call_frame_do_return(frame, return_value);
+		psi_call_frame_free(frame);
+
+		return FAILURE;
+	}
+
 	psi_call_frame_do_call(frame);
+
+	if (SUCCESS != psi_call_frame_do_assert(frame, PSI_ASSERT_POST)) {
+		psi_call_frame_do_return(frame, return_value);
+		psi_call_frame_free(frame);
+
+		return FAILURE;
+	}
+
 	psi_call_frame_do_return(frame, return_value);
 	psi_call_frame_do_set(frame);
 	psi_call_frame_do_free(frame);

@@ -60,6 +60,7 @@
 #include "types/decl_file.h"
 #include "types/free_exp.h"
 #include "types/free_stmt.h"
+#include "types/assert_stmt.h"
 #include "types/layout.h"
 
 static inline impl_val *deref_impl_val(impl_val *ret_val, struct psi_decl_var *var) {

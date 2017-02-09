@@ -30,6 +30,7 @@
 
 #include "php.h"
 #include "zend_exceptions.h"
+#include "ext/spl/spl_exceptions.h"
 
 struct psi_call_frame_argument *psi_call_frame_argument_init(struct psi_impl_arg *spec,
 		impl_val *ival, zval *zptr, int is_vararg) {
@@ -391,6 +392,26 @@ ZEND_RESULT_CODE psi_call_frame_do_let(struct psi_call_frame *frame) {
 			}
 
 			frame->pointers[argc + i] = frame_arg->ival_ptr;
+		}
+	}
+
+	return SUCCESS;
+}
+
+ZEND_RESULT_CODE psi_call_frame_do_assert(struct psi_call_frame *frame, enum psi_assert_kind kind) {
+	size_t i = 0;
+	struct psi_assert_stmt *ass;
+
+	while (psi_plist_get(frame->impl->stmts.ass, i++, &ass)) {
+		if (ass->kind == kind) {
+			if (!psi_assert_stmt_exec(ass, frame)) {
+				char *message = psi_assert_stmt_message(ass);
+				zend_throw_exception(kind == PSI_ASSERT_PRE
+						? spl_ce_InvalidArgumentException
+						: spl_ce_UnexpectedValueException, message, 0);
+				free(message);
+				return FAILURE;
+			}
 		}
 	}
 

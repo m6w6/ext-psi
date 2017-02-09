@@ -1,5 +1,5 @@
 /*******************************************************************************
- Copyright (c) 2016, Michael Wallner <mike@php.net>.
+ Copyright (c) 2017, Michael Wallner <mike@php.net>.
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -23,42 +23,32 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef PSI_TYPES_IMPL_H
-#define PSI_TYPES_IMPL_H
+#ifndef PSI_TYPES_ASSERT_STMT_H
+#define PSI_TYPES_ASSERT_STMT_H
 
-struct psi_data;
 struct psi_token;
-struct psi_plist;
-struct psi_decl;
-struct psi_decl_var;
-struct psi_impl_var;
-struct psi_impl_func;
+struct psi_data;
+struct psi_impl;
+struct psi_num_exp;
+struct psi_call_frame;
 
-struct psi_impl {
-	struct psi_impl_func *func;
-	struct psi_decl *decl;
-	struct {
-		struct psi_plist *ret;
-		struct psi_plist *let;
-		struct psi_plist *set;
-		struct psi_plist *fre;
-		struct psi_plist *ass;
-	} stmts;
+struct psi_assert_stmt {
+	struct psi_token *token;
+	struct psi_num_exp *exp;
+	enum psi_assert_kind {
+		PSI_ASSERT_PRE = PSI_T_PRE_ASSERT,
+		PSI_ASSERT_POST = PSI_T_POST_ASSERT
+	} kind;
 };
 
-struct psi_impl *psi_impl_init(struct psi_impl_func *func, struct psi_plist *stmts);
-void psi_impl_free(struct psi_impl **impl_ptr);
-void psi_impl_dump(int fd, struct psi_impl *impl);
-bool psi_impl_validate(struct psi_data *data, struct psi_impl *impl);
+struct psi_assert_stmt *psi_assert_stmt_init(enum psi_assert_kind kind, struct psi_num_exp *exp);
+bool psi_assert_stmt_exec(struct psi_assert_stmt *stmt, struct psi_call_frame *frame);
 
-size_t psi_impl_num_min_args(struct psi_impl *impl);
+void psi_assert_stmt_dump(int fd, struct psi_assert_stmt *stmt);
+void psi_assert_stmt_free(struct psi_assert_stmt **stmt);
 
-void psi_impl_stmt_free(struct psi_token ***abstract_stm);
+bool psi_assert_stmts_validate(struct psi_data *data, struct psi_impl *impl);
 
-struct psi_let_stmt *psi_impl_get_let(struct psi_impl *impl, struct psi_decl_var *var);
-struct psi_impl_arg *psi_impl_get_arg(struct psi_impl *impl, struct psi_impl_var *var);
-
-struct psi_decl_arg *psi_impl_get_temp_let_arg(struct psi_impl *impl,
-		struct psi_decl_var *var);
+char *psi_assert_stmt_message(struct psi_assert_stmt *stmt);
 
 #endif

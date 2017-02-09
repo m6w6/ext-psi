@@ -47,6 +47,7 @@ void psi_parser_proc_free(void **parser_proc)
 %token_class let_func_token ZVAL OBJVAL ARRVAL PATHVAL STRLEN STRVAL FLOATVAL INTVAL BOOLVAL COUNT .
 %token_class set_func_token TO_OBJECT TO_ARRAY TO_STRING TO_INT TO_FLOAT TO_BOOL ZVAL VOID .
 %token_class impl_type_token VOID MIXED BOOL INT FLOAT STRING ARRAY OBJECT CALLABLE .
+%token_class assert_stmt_token PRE_ASSERT POST_ASSERT .
 %nonassoc NAME.
 %right NOT TILDE.
 %left AND OR.
@@ -148,6 +149,8 @@ void psi_parser_proc_free(void **parser_proc)
 %destructor let_exp {psi_let_exp_free(&$$);}
 %type let_exps {struct psi_plist*}
 %destructor let_exps {psi_plist_free($$);}
+%type assert_stmt {struct psi_assert_stmt*}
+%destructor assert_stmt {psi_assert_stmt_free(&$$);}
 %type set_stmt {struct psi_set_stmt*}
 %destructor set_stmt {psi_set_stmt_free(&$$);}
 %type set_exp {struct psi_set_exp*}
@@ -731,6 +734,9 @@ impl_stmt(i) ::= let_stmt(l). {
 impl_stmt(i) ::= set_stmt(s). {
  i = (struct psi_token**) s;
 }
+impl_stmt(i) ::= assert_stmt(s). {
+ i = (struct psi_token **) s;
+}
 impl_stmt(i) ::= free_stmt(f). {
  i = (struct psi_token**) f;
 }
@@ -899,6 +905,10 @@ free_exps(calls) ::= free_exps(calls_) COMMA free_exp(call). {
 free_exp(call) ::= NAME(F) LPAREN decl_vars(vars) RPAREN. {
  call = psi_free_exp_init(F->text, vars);
  call->token = F;
+}
+assert_stmt(ass) ::= assert_stmt_token(T) num_exp(exp) EOS. {
+ ass = psi_assert_stmt_init(T->type, exp);
+ ass->token = T;
 }
 reference(r) ::= . {
  r = false;
