@@ -24,19 +24,6 @@ AC_DEFUN(PSI_REDIR, [
 	psi_add_redir $1 ifelse([$2],[],[$1],[$2])
 ])
 
-dnl PSI_FUNC_LIBC_MAIN()
-dnl Check for the platforms default stub in executables.
-AC_DEFUN(PSI_FUNC_LIBC_MAIN, [
-	AC_REQUIRE([AC_PROG_AWK])
-	AC_CACHE_CHECK(for libc start main symbol, psi_cv_libc_main, [
-		psi_libc_main=
-		AC_TRY_LINK(PSI_INCLUDES, [(void)0;], [
-			psi_libc_main=`nm -g conftest$ac_exeext | $AWK -F ' *|@' '/^@<:@@<:@:space:@:>@@:>@+U / {print$[]3; exit}'`
-		])
-		psi_cv_libc_main=$psi_libc_main
-	])
-])
-
 dnl PSI_DECL_ARGS(decl func, decl args, options)
 dnl INTERNAL: build psi_decl_args
 AC_DEFUN(PSI_DECL_ARGS, [
@@ -69,8 +56,6 @@ dnl Check for a function or macro declaration and a possible asm redirection.
 dnl Adds a pre-defined (vararg) decl to $PSI_VA_DECLS_H/$PSI_DECLS_H.
 dnl Calls PSI_MACRO if PSI_FUNC fails.
 AC_DEFUN(PSI_DECL, [
-	AC_REQUIRE([PSI_FUNC_LIBC_MAIN])dnl
-
 	PSI_DECL_ARGS($1, $2, $3)
 
 	psi_symbol="PSI_VAR_NAME($1)"

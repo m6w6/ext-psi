@@ -7,6 +7,16 @@ AC_DEFUN(PSI_CONFIG_INIT, [
 	psi_save_LIBS=$LIBS
 	LIBS=
 
+	AC_PROG_AWK
+	AC_PATH_PROG(NM, nm)
+	AC_CACHE_CHECK(for libc start main symbol, psi_cv_libc_main, [
+		psi_libc_main=
+		AC_TRY_LINK(PSI_INCLUDES, [(void)0;], [
+			psi_libc_main=`nm -g conftest$ac_exeext | $AWK -F ' *|@' '/^@<:@@<:@:space:@:>@@:>@+U / {print$[]3; exit}'`
+		])
+		psi_cv_libc_main=$psi_libc_main
+	])
+
 	if test "$PHP_PSI_MAINTAINER_MODE" = "yes"; then
 		PSI_FAST_CONFIG=true
 		PSI_DEPS=true
@@ -15,7 +25,6 @@ AC_DEFUN(PSI_CONFIG_INIT, [
 		PHP_SUBST(PSI_DEPS)
 		
 		PSI_CONFIG_TMP=$(mktemp -d)
-		PSI_FUNC_LIBC_MAIN
 	else
 		PSI_FAST_CONFIG=false
 		PSI_DEPS=false

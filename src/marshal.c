@@ -99,7 +99,12 @@ zend_internal_arg_info *psi_internal_arginfo(struct psi_impl *impl)
 	aip = calloc(argc + 1 + !!impl->func->vararg, sizeof(*aip));
 
 	fi = (zend_internal_function_info *) &aip[0];
+#ifdef ZEND_TYPE_ENCODE
 	fi->type = ZEND_TYPE_ENCODE(psi_internal_type(impl->func->return_type), 1);
+#else
+	fi->allow_null = 1;
+	fi->type_hint = psi_internal_type(impl->func->return_type);
+#endif
 	fi->required_num_args = psi_impl_num_min_args(impl);
 	fi->return_reference = impl->func->return_reference;
 
@@ -108,7 +113,12 @@ zend_internal_arg_info *psi_internal_arginfo(struct psi_impl *impl)
 		zend_internal_arg_info *ai = &aip[argc];
 
 		ai->name = vararg->var->name;
+#ifdef ZEND_TYPE_ENCODE
 		ai->type = ZEND_TYPE_ENCODE(psi_internal_type(vararg->type), 1);
+#else
+		ai->allow_null = 1;
+		ai->type_hint = psi_internal_type(vararg->type);
+#endif
 		if (vararg->var->reference) {
 			ai->pass_by_reference = 1;
 		}
@@ -119,7 +129,12 @@ zend_internal_arg_info *psi_internal_arginfo(struct psi_impl *impl)
 		zend_internal_arg_info *ai = &aip[i];
 
 		ai->name = iarg->var->name;
+#ifdef ZEND_TYPE_ENCODE
 		ai->type = ZEND_TYPE_ENCODE(psi_internal_type(iarg->type), 1);
+#else
+		ai->allow_null = 1;
+		ai->type_hint = psi_internal_type(iarg->type);
+#endif
 		if (iarg->var->reference) {
 			ai->pass_by_reference = 1;
 		}

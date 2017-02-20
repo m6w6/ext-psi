@@ -52,7 +52,7 @@ AC_DEFUN(PSI_TYPE, [
 	psi_basic_type=AS_TR_SH($2)
 	case $psi_basic_type in
 	int)
-		AX_CHECK_SIGN($1, :, [psi_basic_type=uint], PSI_INCLUDES)
+		AX_CHECK_SIGN($1, :, [psi_basic_type=uint], [PSI_INCLUDES])
 		;;
 	sint)
 		psi_basic_type=int
@@ -74,7 +74,7 @@ AC_DEFUN(PSI_STDTYPE, [
 		[double],[psi_add_stdtype "{PSI_T_DOUBLE, \"double\", NULL}"],
 		[long double],[psi_add_stdtype "{PSI_T_LONG_DOUBLE, \"long double\", NULL}"],
 		[
-			AX_CHECK_SIGN($1, psi_basic_type=int, psi_basic_type=uint, PSI_INCLUDES)
+			AX_CHECK_SIGN($1, psi_basic_type=int, psi_basic_type=uint, [PSI_INCLUDES])
 			AS_TR_SH(psi_basic_type_$1)=$psi_basic_type
 			psi_add_stdtype "{`psi_type_pair $psi_basic_type PSI_SH_SIZEOF($1)`, \"$1\"}"
 		])
@@ -113,7 +113,7 @@ AC_DEFUN(PSI_OPAQUE_TYPE, [
 		])
 		case "$AS_TR_SH([psi_cv_type_class_]$1)" in
 		scalar)
-			AX_CHECK_SIGN($1, [psi_basic_type=int], [psi_basic_type=uint], PSI_INCLUDES)
+			AX_CHECK_SIGN($1, [psi_basic_type=int], [psi_basic_type=uint], [PSI_INCLUDES])
 			psi_add_type "{`psi_type_pair $psi_basic_type PSI_SH_SIZEOF($1)`, \"$1\"}"
 			;;
 		struct)
@@ -232,7 +232,7 @@ AC_DEFUN(PSI_CHECK_STD_TYPES, [
 	AC_CHECK_ALIGNOF(long double)
 
 	PSI_STDTYPE(bool)
-	AC_CHECK_ALIGNOF(bool, PSI_INCLUDES)
+	AC_CHECK_ALIGNOF(bool, [PSI_INCLUDES])
 
 	PSI_STDTYPE(char, int)
 	AC_CHECK_ALIGNOF(char)
