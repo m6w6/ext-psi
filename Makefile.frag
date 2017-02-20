@@ -34,7 +34,7 @@ $(PHP_PSI_SRCDIR)/src/parser.re: $(PHP_PSI_SRCDIR)/src/parser_proc.h
 	touch $@
 $(PHP_PSI_SRCDIR)/src/parser.c: $(PHP_PSI_SRCDIR)/src/parser.re
 	# trickery needed for relative #line directives
-	cd $(PHP_PSI_SRCDIR) && $(RE2C) -o $@ $(patsubst $(PHP_PSI_SRCDIR)/%,%,$<)
+	cd $(PHP_PSI_SRCDIR) && $(RE2C) -o $(patsubst $(PHP_PSI_SRCDIR)/%,%,$@) $(patsubst $(PHP_PSI_SRCDIR)/%,%,$<)
 
 $(PHP_PSI_SRCDIR)/src/calc/basic.h: $(PHP_PSI_SRCDIR)/scripts/gen_calc_basic.php
 	$(PHP_EXECUTABLE) $< >$@
@@ -49,12 +49,14 @@ $(PHP_PSI_SRCDIR)/src/calc/cmp.h: $(PHP_PSI_SRCDIR)/scripts/gen_calc_cmp.php
 $(PHP_PSI_SRCDIR)/src/calc/oper.h: $(PHP_PSI_SRCDIR)/scripts/gen_calc_oper.php
 	$(PHP_EXECUTABLE) $< >$@
 
+$(PHP_PSI_SRCDIR)/src/calc.h: | $(PHP_PSI_SRCDIR)/src/calc/basic.h $(PHP_PSI_SRCDIR)/src/calc/bin.h $(PHP_PSI_SRCDIR)/src/calc/bool.h $(PHP_PSI_SRCDIR)/src/calc/cast.h $(PHP_PSI_SRCDIR)/src/calc/cmp.h $(PHP_PSI_SRCDIR)/src/calc/oper.h
+
 .PHONY: psi-generated
 psi-generated: $(PHP_PSI_GENERATED)
 
 PHP_PSI_DEPEND = $(patsubst $(PHP_PSI_SRCDIR)/%,$(PHP_PSI_BUILDDIR)/%,$(PHP_PSI_SOURCES:.c=.dep))
 
-$(PHP_PSI_BUILDDIR)/%.dep: $(PHP_PSI_SRCDIR)/%.c
+$(PHP_PSI_BUILDDIR)/%.dep: $(PHP_PSI_SRCDIR)/%.c | $(PHP_PSI_GENERATED)
 	$(CC) -MM -MG -MF $@ -MT $(patsubst $(PHP_PSI_SRCDIR)/%,$(PHP_PSI_BUILDDIR)/%,$(@:.dep=.lo)) \
 		$(CPPFLAGS) $(DEFS) $(INCLUDES) $< \
 			|| touch $@

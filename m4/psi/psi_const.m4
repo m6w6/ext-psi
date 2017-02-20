@@ -25,5 +25,5 @@ AC_DEFUN(PSI_CONST, [
 			psi_add_int_const "$1"
 			;;
 		esac
-	],, [PSI_INCLUDES])
+	],, PSI_INCLUDES)
 ])

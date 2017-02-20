@@ -48,7 +48,7 @@ AC_DEFUN(PSI_MACRO, [
 		$3
 		psi_add_macro "$macro_return _psi_${macro_action}_$macro_name$macro_decl { $macro_body }"
 		PSI_REDIR($macro_name, _psi_${macro_action}_$macro_name)
-	], [], [PSI_INCLUDES])
+	], [], PSI_INCLUDES)
 ])
 
 dnl PSI_EXTVAR(type var)

@@ -7,6 +7,8 @@ AC_DEFUN(PSI_CONFIG_INIT, [
 	psi_save_LIBS=$LIBS
 	LIBS=
 
+	ac_includes_default="AC_INCLUDES_DEFAULT"
+	
 	AC_PROG_AWK
 	AC_PATH_PROG(NM, nm)
 	AC_CACHE_CHECK(for libc start main symbol, psi_cv_libc_main, [
@@ -200,16 +202,15 @@ AC_DEFUN(PSI_PTHREAD, [
 
 dnl PSI_INCLUDES()
 dnl Expands to a complete list of include statements including
-dnl AC_INCLUDES_DEFAULT().
-AC_DEFUN(PSI_INCLUDES, [dnl
-#define PSI_INCLUDES
+dnl autoconf's defaults.
+AC_DEFUN(PSI_INCLUDES, [
 #ifndef _GNU_SOURCE
 # define _GNU_SOURCE
 #endif
 #ifndef _REENTRANT
 # define _REENTRANT
 #endif
-AC_INCLUDES_DEFAULT()
+$ac_includes_default
 #ifdef HAVE_STDBOOL_H
 # include <stdbool.h>
 #else
@@ -383,7 +384,7 @@ AC_DEFUN(PSI_CHECK_OFFSETOF, [
 		[offset of $2 in $1],
 		[AS_TR_SH([ac_cv_offsetof_$1_$2])],
 		[(long int) (offsetof ($1, $2))],
-		[PSI_INCLUDES],
+		PSI_INCLUDES,
 		[AC_MSG_FAILURE([cannot compute offsetof ($1, $2)])]
 	)
 	AC_DEFINE_UNQUOTED(

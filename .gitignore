@@ -62,6 +62,7 @@ tests/*/*.sh
 /token.h
 /types.h
 /src/parser_proc.out
-/src/php_psi_stdinc.h
-/src/php_psi_posix.h
+/php_psi_stdinc.h
+/php_psi_posix.h
 /types/
+/calc/

@@ -86,6 +86,11 @@ if test "$PHP_PSI" != no; then
 		AC_MSG_RESULT([already defined])
 	])
 
+	AC_MSG_CHECKING([psi source dir])
+	AC_MSG_RESULT([$PHP_PSI_SRCDIR])
+	AC_MSG_CHECKING([psi build dir])
+	AC_MSG_RESULT([$PHP_PSI_BUILDDIR])
+	
 	PSI_LEMON
 	PSI_CHECK_LIBJIT
 	PSI_CHECK_LIBFFI
