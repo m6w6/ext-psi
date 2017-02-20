@@ -151,18 +151,29 @@ if test "$PHP_PSI" != no; then
 
 	PHP_ADD_INCLUDE($PHP_PSI_SRCDIR)
 	PHP_ADD_INCLUDE($PHP_PSI_SRCDIR/src)
+	PHP_ADD_INCLUDE($PHP_PSI_SRCDIR/src/calc)
 	PHP_ADD_INCLUDE($PHP_PSI_SRCDIR/src/types)
 	PHP_ADD_INCLUDE($PHP_PSI_BUILDDIR)
 	PHP_ADD_BUILD_DIR($PHP_PSI_BUILDDIR/src)
 	PHP_ADD_BUILD_DIR($PHP_PSI_BUILDDIR/src/types)
 
-	PHP_PSI_HEADERS=`(cd $PHP_PSI_SRCDIR/src && ls *.h types/*.h)`
+	PHP_PSI_HEADERS=" \
+		src/calc/basic.h src/calc/bin.h src/calc/bool.h src/calc/cast.h \
+		src/calc/cmp.h src/calc/oper.h \
+		`(cd $PHP_PSI_SRCDIR/src && ls *.h types/*.h)` \
+	"
 	# parser* should come first
 	PHP_PSI_SOURCES=" \
-		src/parser_proc.c src/parser.c
-		`(cd $PHP_PSI_SRCDIR && ls src/*.c src/types/*.c | $EGREP -v '^src/parser')` \
+		src/parser_proc.c src/parser.c \
+		`(cd $PHP_PSI_SRCDIR && ls src/*.c src/types/*.c \
+			| $EGREP -v '^src/parser' \
+		)` \
 	"
-	PHP_PSI_GENERATED="src/parser_proc.y src/parser_proc.c src/parser.c"
+	PHP_PSI_GENERATED=" \
+		src/parser_proc.y src/parser_proc.c src/parser.c \
+		src/calc/basic.h src/calc/bin.h src/calc/bool.h src/calc/cast.h \
+		src/calc/cmp.h src/calc/oper.h \
+	"
 
 	PHP_NEW_EXTENSION(psi, $PHP_PSI_SOURCES, $ext_shared)
 	PHP_INSTALL_HEADERS(ext/psi, php_psi.h $PHP_PSI_HEADERS)

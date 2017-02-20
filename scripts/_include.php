@@ -1,3 +1,42 @@
+<?php
+ob_start(function($s) {
+	return preg_replace("/(?<=[^ \t])[ \t]+\$/m", "", $s);
+});
+
+$types = [
+		"INT8" => "i8",
+		"UINT8" => "u8",
+		"INT16" => "i16",
+		"UINT16" => "u16",
+		"INT32" => "i32",
+		"UINT32" => "u32",
+		"INT64" => "i64",
+		"UINT64" => "u64",
+		"FLOAT" => "fval",
+		"DOUBLE" => "dval",
+		"LONG_DOUBLE" => "ldval",
+];
+
+function t_is_int($t) {
+	switch ($t{0}) {
+		case "U":
+		case "I":
+			return true;
+		default:
+			return false;
+	}
+}
+
+function t_is_special($t) {
+	switch ($t) {
+		case "LONG_DOUBLE":
+			return true;
+		default:
+			return false;
+	}
+}
+
+?>
 /*******************************************************************************
  Copyright (c) 2016, Michael Wallner <mike@php.net>.
  All rights reserved.
@@ -23,41 +62,7 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-static inline int psi_token_oper_cmp(token_t op1, token_t op2) {
-	switch (op1) {
-<?php
+#include "php_psi_stdinc.h"
+#include <assert.h>
 
-$oper = [
-		["NOT", "TILDE"],
-		["ASTERISK", "SLASH", "MODULO"],
-		["PLUS", "MINUS"],
-		["LSHIFT", "RSHIFT"],
-		["LCHEVR", "CMP_LE", "RCHEVR", "CMP_GE"],
-		["AMPERSAND"],
-		["CMP_EQ", "CMP_NE"],
-		["CARET"],
-		["PIPE"],
-		["AND"],
-		["OR"]
-];
-
-
-foreach ($oper as $prec1 => $ops1) {
-	foreach ($ops1 as $op1) {
-		printf("\tcase PSI_T_%s:\n", $op1);
-		printf("\t\tswitch (op2) {\n");
-		foreach ($oper as $prec2 => $ops2) {
-			foreach ($ops2 as $op2) {
-				printf("\t\t\tcase PSI_T_%s: %sreturn %2d;\n", $op2,
-						str_repeat(" ", 10 - strlen($op2)),
-						$prec1==$prec2?0:($prec1>$prec2?1:-1));
-			}
-		}
-		printf("\t\t}\n\t\tassert(0);\n\t\tbreak;\n");
-	}
-}
-?>
-	}
-	assert(0);
-	return 0;
-}
+#include "token.h"

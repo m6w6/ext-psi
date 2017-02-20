@@ -35,31 +35,11 @@
 
 typedef token_t (*psi_calc)(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
 
-token_t psi_calc_add(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
-token_t psi_calc_sub(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
-token_t psi_calc_mul(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
-token_t psi_calc_div(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
-token_t psi_calc_mod(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
-
-token_t psi_calc_not(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
-token_t psi_calc_bin_not(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
-
-token_t psi_calc_bin_lshift(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
-token_t psi_calc_bin_rshift(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
-token_t psi_calc_bin_and(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
-token_t psi_calc_bin_xor(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
-token_t psi_calc_bin_or(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
-
-token_t psi_calc_and(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
-token_t psi_calc_or(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
-
-token_t psi_calc_cmp_eq(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
-token_t psi_calc_cmp_ne(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
-token_t psi_calc_cmp_le(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
-token_t psi_calc_cmp_ge(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
-token_t psi_calc_cmp_lt(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
-token_t psi_calc_cmp_gt(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
-
-void psi_calc_cast(token_t in_type, impl_val *in_val, token_t out_type, impl_val *out_val);
+#include "calc/basic.h"
+#include "calc/bin.h"
+#include "calc/bool.h"
+#include "calc/cast.h"
+#include "calc/cmp.h"
+#include "calc/oper.h"
 
 #endif

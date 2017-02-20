@@ -51,8 +51,6 @@ static inline size_t psi_offset_padding(size_t diff, size_t alignment) {
 
 typedef int token_t;
 
-#include "token_oper_cmp.h"
-
 static inline size_t psi_t_alignment(token_t t)
 {
 #define PSI_ALIGNOF(T) case PSI_T_## T: return ALIGNOF_## T ##_T;

@@ -290,17 +290,17 @@ bool psi_num_exp_validate(struct psi_data *data, struct psi_num_exp *exp,
 	if (exp->op) {
 		switch (exp->op) {
 		case PSI_T_NOT:
-			exp->calc = psi_calc_not;
+			exp->calc = psi_calc_bool_not;
 			break;
 		case PSI_T_TILDE:
 			exp->calc = psi_calc_bin_not;
 			break;
 
 		case PSI_T_OR:
-			exp->calc = psi_calc_or;
+			exp->calc = psi_calc_bool_or;
 			break;
 		case PSI_T_AND:
-			exp->calc = psi_calc_and;
+			exp->calc = psi_calc_bool_and;
 			break;
 		case PSI_T_CMP_EQ:
 			exp->calc = psi_calc_cmp_eq;
@@ -438,23 +438,6 @@ static inline void psi_num_exp_verify_result(token_t t, impl_val *res, struct ps
 	if (frame) PSI_DEBUG_PRINT(frame->context, "%s", "\n");
 }
 
-static inline int psi_num_exp_op_cmp(token_t op1, token_t op2)
-{
-	if (PSI_T_LPAREN == op2) {
-		return -1;
-	} else if (PSI_T_LPAREN == op1) {
-		return 1;
-	} else if (op1 == op2) {
-		return 0;
-	} else if (!op1) {
-		return 1;
-	} else if (!op2) {
-		return -1;
-	}
-
-	return psi_token_oper_cmp(op1, op2);
-}
-
 static void psi_num_exp_reduce(struct psi_num_exp *exp, struct psi_plist **output_ptr,
 		struct psi_plist **input_ptr, struct psi_call_frame *frame)
 {
@@ -490,7 +473,7 @@ static void psi_num_exp_reduce(struct psi_num_exp *exp, struct psi_plist **outpu
 	case PSI_T_TILDE:
 		while (psi_plist_top(input, &entry)) {
 			/* bail out if exp->op >= entry.type */
-			if (psi_num_exp_op_cmp(exp->op, entry.type) != 1) {
+			if (psi_calc_oper(exp->op, entry.type) != 1) {
 				break;
 			}
 			psi_plist_pop(input, NULL);
@@ -507,7 +490,7 @@ static void psi_num_exp_reduce(struct psi_num_exp *exp, struct psi_plist **outpu
 		psi_num_exp_reduce(exp->data.b.lhs, &output, &input, frame);
 		while (psi_plist_top(input, &entry)) {
 			/* bail out if exp->op > entry.type */
-			if (psi_num_exp_op_cmp(exp->op, entry.type) == -1) {
+			if (psi_calc_oper(exp->op, entry.type) == -1) {
 				break;
 			}
 			psi_plist_pop(input, NULL);
