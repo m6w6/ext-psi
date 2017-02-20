@@ -175,57 +175,57 @@ void psi_num_exp_free(struct psi_num_exp **c_ptr)
 	}
 }
 
-static inline wint_t psi_num_exp_op_tok(token_t op)
+static inline const char *psi_num_exp_op_tok(token_t op)
 {
 	switch (op) {
 	case PSI_T_NOT:
-		return L'!';
+		return "!";
 	case PSI_T_TILDE:
-		return L'~';
+		return "~";
 	case PSI_T_LPAREN:
-		return L'(';
+		return "(";
 
 	case PSI_T_PIPE:
-		return L'|';
+		return "|";
 	case PSI_T_CARET:
-		return L'^';
+		return "^";
 	case PSI_T_AMPERSAND:
-		return L'&';
+		return "&";
 
 	case PSI_T_LSHIFT:
-		return L'«';
+		return "<<";
 	case PSI_T_RSHIFT:
-		return L'»';
+		return ">>";
 
 	case PSI_T_PLUS:
-		return L'+';
+		return "+";
 	case PSI_T_MINUS:
-		return L'-';
+		return "-";
 
 	case PSI_T_ASTERISK:
-		return L'*';
+		return "*";
 	case PSI_T_SLASH:
-		return L'/';
+		return "/";
 	case PSI_T_MODULO:
-		return L'%';
+		return "%";
 
 	case PSI_T_OR:
-		return L'∨';
+		return "||";
 	case PSI_T_AND:
-		return L'∧';
+		return "&&";
 
 	case PSI_T_CMP_EQ:
-		return L'≣';
+		return "==";
 	case PSI_T_CMP_NE:
-		return L'≠';
+		return "!=";
 	case PSI_T_CMP_LE:
-		return L'≤';
+		return "<=";
 	case PSI_T_CMP_GE:
-		return L'≥';
+		return ">=";
 	case PSI_T_RCHEVR:
-		return L'>';
+		return ">";
 	case PSI_T_LCHEVR:
-		return L'<';
+		return "<";
 
 	default:
 		assert(0);
@@ -242,7 +242,7 @@ void psi_num_exp_dump(int fd, struct psi_num_exp *exp)
 
 	case PSI_T_NOT:
 	case PSI_T_TILDE:
-		dprintf(fd, "%lc", psi_num_exp_op_tok(exp->op));
+		dprintf(fd, "%s", psi_num_exp_op_tok(exp->op));
 		psi_num_exp_dump(fd, exp->data.u);
 		break;
 
@@ -273,7 +273,7 @@ void psi_num_exp_dump(int fd, struct psi_num_exp *exp)
 	case PSI_T_ASTERISK:
 	case PSI_T_SLASH:
 		psi_num_exp_dump(fd, exp->data.b.lhs);
-		dprintf(fd, " %lc ", psi_num_exp_op_tok(exp->op));
+		dprintf(fd, " %s ", psi_num_exp_op_tok(exp->op));
 		psi_num_exp_dump(fd, exp->data.b.rhs);
 		break;
 
@@ -481,7 +481,7 @@ static void psi_num_exp_reduce(struct psi_num_exp *exp, struct psi_plist **outpu
 			if (entry.type == PSI_T_LPAREN) {
 				break;
 			}
-			if (frame) PSI_DEBUG_PRINT(frame->context, " %lc", psi_num_exp_op_tok(entry.type));
+			if (frame) PSI_DEBUG_PRINT(frame->context, " %s", psi_num_exp_op_tok(entry.type));
 			output = psi_plist_add(output, &entry);
 		}
 		break;
@@ -494,7 +494,7 @@ static void psi_num_exp_reduce(struct psi_num_exp *exp, struct psi_plist **outpu
 				break;
 			}
 			psi_plist_pop(input, NULL);
-			if (frame) PSI_DEBUG_PRINT(frame->context, " %lc", psi_num_exp_op_tok(entry.type));
+			if (frame) PSI_DEBUG_PRINT(frame->context, " %s", psi_num_exp_op_tok(entry.type));
 			output = psi_plist_add(output, &entry);
 		}
 		entry.type = exp->op;
@@ -511,7 +511,7 @@ static void psi_num_exp_reduce(struct psi_num_exp *exp, struct psi_plist **outpu
 				break;
 			}
 			psi_plist_pop(input, NULL);
-			if (frame) PSI_DEBUG_PRINT(frame->context, " %lc", psi_num_exp_op_tok(entry.type));
+			if (frame) PSI_DEBUG_PRINT(frame->context, " %s", psi_num_exp_op_tok(entry.type));
 			output = psi_plist_add(output, &entry);
 		}
 		entry.type = exp->op;
@@ -543,7 +543,7 @@ token_t psi_num_exp_exec(struct psi_num_exp *exp, impl_val *res,
 	psi_num_exp_reduce(exp, &output, &input, frame);
 
 	while (psi_plist_pop(input, &entry)) {
-		if (frame) PSI_DEBUG_PRINT(frame->context, " %lc", psi_num_exp_op_tok(entry.type));
+		if (frame) PSI_DEBUG_PRINT(frame->context, " %s", psi_num_exp_op_tok(entry.type));
 		output = psi_plist_add(output, &entry);
 	}
 	if (frame) PSI_DEBUG_PRINT(frame->context, "%s", "\n");
@@ -557,7 +557,7 @@ token_t psi_num_exp_exec(struct psi_num_exp *exp, impl_val *res,
 		case PSI_T_NOT:
 		case PSI_T_TILDE:
 			psi_plist_pop(input, &rhs);
-			if (frame) PSI_DEBUG_PRINT(frame->context, " %lc", psi_num_exp_op_tok(entry.type));
+			if (frame) PSI_DEBUG_PRINT(frame->context, " %s", psi_num_exp_op_tok(entry.type));
 			psi_impl_val_dump(rhs.type, &rhs.data.value, frame);
 
 			entry.type = entry.data.calc(rhs.type, &rhs.data.value, 0, NULL, &entry.data.value);
@@ -589,7 +589,7 @@ token_t psi_num_exp_exec(struct psi_num_exp *exp, impl_val *res,
 			psi_plist_pop(input, &lhs);
 
 			psi_impl_val_dump(lhs.type, &lhs.data.value, frame);
-			if (frame) PSI_DEBUG_PRINT(frame->context, " %lc", psi_num_exp_op_tok(entry.type));
+			if (frame) PSI_DEBUG_PRINT(frame->context, " %s", psi_num_exp_op_tok(entry.type));
 			psi_impl_val_dump(rhs.type, &rhs.data.value, frame);
 
 			entry.type = entry.data.calc(
