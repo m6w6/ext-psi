@@ -5,3 +5,4 @@
 * pemalloc
 * CPP style #if(def(ined)) support in parser.re with a HashTable
 * think about a better system for EXTVARs, separate \set and \get functions are clunky
+* impl_def_val: allow num_exp
