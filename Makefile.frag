@@ -1,4 +1,4 @@
-# provide headers in builddir, so they do not end up in /usr/include/ext/psi/src
+git# provide headers in builddir, so they do not end up in /usr/include/ext/psi/src
 
 PHP_PSI_HEADERS := $(addprefix $(PHP_PSI_BUILDDIR)/,$(PHP_PSI_HEADERS))
 PHP_PSI_SOURCES := $(addprefix $(PHP_PSI_SRCDIR)/,$(PHP_PSI_SOURCES))
@@ -70,10 +70,6 @@ ifneq ($(PSI_DEPS),)
 endif
 endif
 
-install-headers: psi-build-headers
-.PHONY: psi-clean
-clean: psi-clean
-
 .PHONY: psi-build-headers
 psi-build-headers: $(PHP_PSI_HEADERS)
 
@@ -81,6 +77,7 @@ psi-build-headers: $(PHP_PSI_HEADERS)
 psi-clean-headers:
 	-rm -f $(PHP_PSI_HEADERS)
 
+.PHONY: psi-clean
 psi-clean: psi-clean-headers
 
 .PHONY: psi-clean-objects
@@ -95,8 +92,15 @@ psi-clean-generated:
 	-rm -f $(PHP_PSI_GENERATED)
 
 .PHONY: psi-clean-aux
-psi-clean-aux:
-	-rm -f $(PHP_PSI_BUILDDIR)/lempar.c $(PHP_PSI_BUILDDIR)/lemon.c $(PHP_PSI_BUILDDIR)/lemon
+psi-clean-aux: psi-clean-aux-bin psi-clean-aux-src
+
+.PHONY: psi-clean-aux-src
+psi-clean-aux-src:
+	-rm -f $(PHP_PSI_BUILDDIR)/lempar.c $(PHP_PSI_BUILDDIR)/lemon.c
+
+.PHONY: psi-clean-aux-bin
+psi-clean-aux-bin:
+	-rm -f $(PHP_PSI_BUILDDIR)/lemon
 
 psi-clean: psi-clean-aux
 
@@ -106,3 +110,8 @@ psi-clean-depend:
 
 psi-clean: psi-clean-depend
 
+install-headers: psi-build-headers
+clean: psi-clean-headers psi-clean-aux
+ifneq ($(PSI_DEPS),)
+clean: psi-clean-depend
+endif
