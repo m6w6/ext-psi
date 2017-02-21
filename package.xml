@@ -1,12 +1,5 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<package version="2.0" xmlns="http://pear.php.net/dtd/package-2.0"
- xmlns:tasks="http://pear.php.net/dtd/tasks-1.0"
- xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
- xsi:schemaLocation="
-  http://pear.php.net/dtd/tasks-1.0
-  http://pear.php.net/dtd/tasks-1.0.xsd
-  http://pear.php.net/dtd/package-2.0
-  http://pear.php.net/dtd/package-2.0.xsd">
+<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://pear.php.net/dtd/package-2.0" xmlns:tasks="http://pear.php.net/dtd/tasks-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.0" xsi:schemaLocation="   http://pear.php.net/dtd/tasks-1.0   http://pear.php.net/dtd/tasks-1.0.xsd   http://pear.php.net/dtd/package-2.0   http://pear.php.net/dtd/package-2.0.xsd">
  <name>psi</name>
  <channel>pecl.php.net</channel>
  <summary>PHP System Interface / POSIX Standard Interface</summary>
@@ -54,102 +47,197 @@ and system interfaces of POSIX.1-2008 (http://pubs.opengroup.org/onlinepubs/9699
    <file role="src" name="Makefile.frag"/>
    <file role="src" name="php_psi.h"/>
    <dir name="src">
-    <file role="src" name="calc.c"/>
-    <file role="src" name="calc.h"/>
     <file role="src" name="call.c"/>
-    <file role="src" name="call.h"/>
     <file role="src" name="context.c"/>
-    <file role="src" name="context.h"/>
     <file role="src" name="data.c"/>
-    <file role="src" name="data.h"/>
     <file role="src" name="error.c"/>
-    <file role="src" name="error.h"/>
     <file role="src" name="libffi.c"/>
-    <file role="src" name="libffi.h"/>
     <file role="src" name="libjit.c"/>
-    <file role="src" name="libjit.h"/>
     <file role="src" name="marshal.c"/>
-    <file role="src" name="marshal.h"/>
     <file role="src" name="module.c"/>
     <file role="src" name="parser.c"/>
-    <file role="src" name="parser_def.h"/>
-    <file role="src" name="parser.h"/>
     <file role="src" name="parser_proc.c"/>
-    <file role="src" name="parser_proc.h"/>
-    <file role="src" name="parser_proc.y"/>
-    <file role="src" name="parser.re"/>
     <file role="src" name="plist.c"/>
-    <file role="src" name="plist.h"/>
     <file role="src" name="token.c"/>
+    <file role="src" name="calc.h"/>
+    <file role="src" name="call.h"/>
+    <file role="src" name="context.h"/>
+    <file role="src" name="data.h"/>
+    <file role="src" name="error.h"/>
+    <file role="src" name="libffi.h"/>
+    <file role="src" name="libjit.h"/>
+    <file role="src" name="marshal.h"/>
+    <file role="src" name="parser.h"/>
+    <file role="src" name="parser_def.h"/>
+    <file role="src" name="parser_proc.h"/>
+    <file role="src" name="plist.h"/>
     <file role="src" name="token.h"/>
     <file role="src" name="types.h"/>
+    <file role="src" name="parser_proc.y"/>
+    <file role="src" name="parser.re"/>
+    <file role="src" name="parser_proc.inc"/>
+    <dir name="calc">
+     <file role="src" name="basic.h"/>
+     <file role="src" name="bin.h"/>
+     <file role="src" name="bool.h"/>
+     <file role="src" name="cast.h"/>
+     <file role="src" name="cmp.h"/>
+     <file role="src" name="oper.h"/>
+    </dir>
     <dir name="types">
+     <file role="src" name="assert_stmt.c"/>
      <file role="src" name="const.c"/>
-     <file role="src" name="const.h"/>
      <file role="src" name="const_type.c"/>
-     <file role="src" name="const_type.h"/>
-     <file role="src" name="decl_abi.c"/>
-     <file role="src" name="decl_abi.h"/>
-     <file role="src" name="decl_arg.c"/>
-     <file role="src" name="decl_arg.h"/>
      <file role="src" name="decl.c"/>
+     <file role="src" name="decl_abi.c"/>
+     <file role="src" name="decl_arg.c"/>
      <file role="src" name="decl_enum.c"/>
-     <file role="src" name="decl_enum.h"/>
      <file role="src" name="decl_enum_item.c"/>
-     <file role="src" name="decl_enum_item.h"/>
      <file role="src" name="decl_file.c"/>
-     <file role="src" name="decl_file.h"/>
-     <file role="src" name="decl.h"/>
      <file role="src" name="decl_struct.c"/>
-     <file role="src" name="decl_struct.h"/>
      <file role="src" name="decl_type.c"/>
-     <file role="src" name="decl_type.h"/>
      <file role="src" name="decl_union.c"/>
-     <file role="src" name="decl_union.h"/>
      <file role="src" name="decl_var.c"/>
-     <file role="src" name="decl_var.h"/>
      <file role="src" name="free_exp.c"/>
-     <file role="src" name="free_exp.h"/>
      <file role="src" name="free_stmt.c"/>
-     <file role="src" name="free_stmt.h"/>
-     <file role="src" name="impl_arg.c"/>
-     <file role="src" name="impl_arg.h"/>
      <file role="src" name="impl.c"/>
+     <file role="src" name="impl_arg.c"/>
      <file role="src" name="impl_def_val.c"/>
-     <file role="src" name="impl_def_val.h"/>
      <file role="src" name="impl_func.c"/>
-     <file role="src" name="impl_func.h"/>
-     <file role="src" name="impl.h"/>
      <file role="src" name="impl_type.c"/>
+     <file role="src" name="impl_var.c"/>
+     <file role="src" name="layout.c"/>
+     <file role="src" name="let_callback.c"/>
+     <file role="src" name="let_calloc.c"/>
+     <file role="src" name="let_exp.c"/>
+     <file role="src" name="let_func.c"/>
+     <file role="src" name="let_stmt.c"/>
+     <file role="src" name="num_exp.c"/>
+     <file role="src" name="number.c"/>
+     <file role="src" name="return_stmt.c"/>
+     <file role="src" name="set_exp.c"/>
+     <file role="src" name="set_func.c"/>
+     <file role="src" name="set_stmt.c"/>
+     <file role="src" name="assert_stmt.h"/>
+     <file role="src" name="const.h"/>
+     <file role="src" name="const_type.h"/>
+     <file role="src" name="decl.h"/>
+     <file role="src" name="decl_abi.h"/>
+     <file role="src" name="decl_arg.h"/>
+     <file role="src" name="decl_enum.h"/>
+     <file role="src" name="decl_enum_item.h"/>
+     <file role="src" name="decl_file.h"/>
+     <file role="src" name="decl_struct.h"/>
+     <file role="src" name="decl_type.h"/>
+     <file role="src" name="decl_union.h"/>
+     <file role="src" name="decl_var.h"/>
+     <file role="src" name="free_exp.h"/>
+     <file role="src" name="free_stmt.h"/>
+     <file role="src" name="impl.h"/>
+     <file role="src" name="impl_arg.h"/>
+     <file role="src" name="impl_def_val.h"/>
+     <file role="src" name="impl_func.h"/>
      <file role="src" name="impl_type.h"/>
      <file role="src" name="impl_val.h"/>
-     <file role="src" name="impl_var.c"/>
      <file role="src" name="impl_var.h"/>
-     <file role="src" name="layout.c"/>
      <file role="src" name="layout.h"/>
-     <file role="src" name="let_callback.c"/>
      <file role="src" name="let_callback.h"/>
-     <file role="src" name="let_calloc.c"/>
      <file role="src" name="let_calloc.h"/>
-     <file role="src" name="let_exp.c"/>
      <file role="src" name="let_exp.h"/>
-     <file role="src" name="let_func.c"/>
      <file role="src" name="let_func.h"/>
-     <file role="src" name="let_stmt.c"/>
      <file role="src" name="let_stmt.h"/>
-     <file role="src" name="num_exp.c"/>
      <file role="src" name="num_exp.h"/>
-     <file role="src" name="return_stmt.c"/>
+     <file role="src" name="number.h"/>
      <file role="src" name="return_stmt.h"/>
-     <file role="src" name="set_exp.c"/>
      <file role="src" name="set_exp.h"/>
-     <file role="src" name="set_func.c"/>
      <file role="src" name="set_func.h"/>
-     <file role="src" name="set_stmt.c"/>
      <file role="src" name="set_stmt.h"/>
     </dir>
    </dir>
    <dir name="tests">
+    <dir name="arpa_inet">
+     <file role="test" name="inet001.phpt"/>
+     <file role="test" name="inet002.phpt"/>
+     <file role="test" name="ntoh001.phpt"/>
+    </dir>
+    <dir name="calc">
+     <file role="test" name="calc001.phpt"/>
+     <file role="test" name="calc.psi"/>
+    </dir>
+    <dir name="div">
+     <file role="test" name="div001.phpt"/>
+     <file role="test" name="ldiv001.phpt"/>
+     <file role="test" name="lldiv001.phpt"/>
+    </dir>
+    <dir name="getopt">
+     <file role="test" name="getopt001.phpt"/>
+     <file role="test" name="getopt002.phpt"/>
+    </dir>
+    <dir name="glob">
+     <file role="test" name="glob001.phpt"/>
+     <file role="test" name="glob002.phpt"/>
+     <file role="test" name="glob003.phpt"/>
+     <file role="test" name="glob004.phpt"/>
+    </dir>
+    <dir name="iconv">
+     <file role="test" name="iconv001.phpt"/>
+     <file role="test" name="iconv002.phpt"/>
+     <file role="test" name="iconv.psi"/>
+    </dir>
+    <dir name="idn">
+     <file role="test" name="idn001.phpt"/>
+     <file role="test" name="idn002.phpt"/>
+     <file role="test" name="idn003.phpt"/>
+     <file role="test" name="idn004.phpt"/>
+     <file role="test" name="idn.psi"/>
+    </dir>
+    <dir name="ndbm">
+     <file role="test" name="ndbm001.phpt"/>
+     <file role="test" name="ndbm.psi"/>
+    </dir>
+    <dir name="netdb">
+     <file role="test" name="gai001.phpt"/>
+    </dir>
+    <dir name="parser">
+     <file role="test" name="validate001.phpt"/>
+     <dir name="dump">
+      <file role="test" name="dump001.phpt"/>
+     </dir>
+     <dir name="enum">
+      <file role="test" name="enum001.phpt"/>
+      <file role="test" name="enum001.psi"/>
+     </dir>
+    </dir>
+    <dir name="pipe">
+     <file role="test" name="pipe001.phpt"/>
+     <file role="test" name="pipe.psi"/>
+    </dir>
+    <dir name="sqlite">
+     <file role="test" name="sqlite001.phpt"/>
+     <file role="test" name="sqlite.psi"/>
+    </dir>
+    <dir name="stat">
+     <file role="test" name="stat001.phpt"/>
+     <file role="test" name="stat002.phpt"/>
+    </dir>
+    <dir name="stdio">
+     <file role="test" name="fopen001.phpt"/>
+     <file role="test" name="printf001.phpt"/>
+    </dir>
+    <dir name="time">
+     <file role="test" name="asc_gmtime001.phpt"/>
+     <file role="test" name="gettimeofday001.phpt"/>
+     <file role="test" name="nanosleep001.phpt"/>
+     <file role="test" name="times001.phpt"/>
+    </dir>
+    <dir name="uname">
+     <file role="test" name="uname001.phpt"/>
+     <file role="test" name="uname002.phpt"/>
+    </dir>
+    <dir name="yaml">
+     <file role="test" name="yaml001.phpt"/>
+     <file role="test" name="yaml.psi"/>
+    </dir>
    </dir>
   </dir>
  </contents>
@@ -166,5 +254,5 @@ and system interfaces of POSIX.1-2008 (http://pubs.opengroup.org/onlinepubs/9699
  <providesextension>psi</providesextension>
  <extsrcrelease>
  </extsrcrelease>
- <changelog />
+ <changelog/>
 </package>
