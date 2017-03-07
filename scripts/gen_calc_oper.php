@@ -3,7 +3,7 @@
 include __DIR__."/_include.php";
 
 $oper = [
-		["NOT", "TILDE"],
+		["NOT", "TILDE", "CAST"],
 		["ASTERISK", "SLASH", "MODULO"],
 		["PLUS", "MINUS"],
 		["LSHIFT", "RSHIFT"],
@@ -27,9 +27,9 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 		return 1;
 	} else if (op1 == op2) {
 		return 0;
-	} else if (!op1) {
+	} else if (!op1 || op1 == PSI_T_NUMBER) {
 		return 1;
-	} else if (!op2) {
+	} else if (!op2 || op2 == PSI_T_NUMBER) {
 		return -1;
 	}
 

@@ -61,9 +61,10 @@ void psi_decl_arg_dump(int fd, struct psi_decl_arg *arg, unsigned level)
 {
 	if (arg->type->type == PSI_T_FUNCTION) {
 		psi_decl_type_dump(fd, arg->type->real.func->func->type, level);
-		dprintf(fd, " (*");
-		psi_decl_var_dump(fd, arg->var);
-		dprintf(fd, ")(");
+		dprintf(fd, " %s(*%s)",
+				psi_t_indirection(arg->var->pointer_level - !! arg->var->array_size),
+				arg->var->name);
+		dprintf(fd, "(");
 		if (arg->type->real.func->args) {
 			size_t j = 0;
 			struct psi_decl_arg *farg;
@@ -81,6 +82,9 @@ void psi_decl_arg_dump(int fd, struct psi_decl_arg *arg, unsigned level)
 			}
 		}
 		dprintf(fd, ")");
+		if (arg->var->array_size) {
+			dprintf(fd, "[%u]", arg->var->array_size);
+		}
 	} else {
 		psi_decl_type_dump(fd, arg->type, level);
 		dprintf(fd, " ");

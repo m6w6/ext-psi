@@ -34,29 +34,22 @@ size_t psi_token_alloc_size(size_t token_len, size_t fname_len) {
 	return sizeof(struct psi_token) + token_len + fname_len + 2;
 }
 
-struct psi_token *psi_token_alloc(struct psi_parser *P) {
+struct psi_token *psi_token_init(token_t token_typ, const char *token_txt,
+		size_t token_len, unsigned col, unsigned line, const char *file)
+{
 	struct psi_token *T;
-	size_t token_len, fname_len;
-	token_t token_typ;
+	size_t file_len = strlen(file);
 
-	if (P->cur < P->tok) {
-		return NULL;
-	}
-
-	token_typ = P->num;
-	token_len = P->cur - P->tok;
-	fname_len = strlen(P->file.fn);
-
-	T = calloc(1, psi_token_alloc_size(token_len, fname_len));
+	T = calloc(1, psi_token_alloc_size(token_len, file_len));
 	T->type = token_typ;
 	T->size = token_len;
 	T->text = &T->buf[0];
 	T->file = &T->buf[token_len + 1];
-	T->line = P->line;
-	T->col = P->col;
+	T->line = line;
+	T->col = col;
 
-	memcpy(T->text, P->tok, token_len);
-	memcpy(T->file, P->file.fn, fname_len);
+	memcpy(T->text, token_txt, token_len);
+	memcpy(T->file, file, file_len);
 
 	return T;
 }
@@ -110,7 +103,7 @@ struct psi_token *psi_token_cat(const char *sep, unsigned argc, ...) {
 
 			T->text = &T->buf[0];
 			T->file = &T->buf[T->size + 1];
-			memmove(&T->buf[T->size + 1], &T->buf[token_len + sep_len], fname_len + 1);
+			memmove(&T->buf[T->size + 1], &T->buf[token_len + 1], fname_len + 1);
 			memcpy(&T->buf[token_len], sep, sep_len);
 			memcpy(&T->buf[token_len + sep_len], arg->text, arg->size + 1);
 		} else {
@@ -136,7 +129,7 @@ struct psi_token *psi_token_prepend(const char *sep, struct psi_token *T, unsign
 		T = realloc(T, psi_token_alloc_size(T->size += str_len + sep_len, fname_len));
 		T->text = &T->buf[0];
 		T->file = &T->buf[T->size + 1];
-		memmove(&T->buf[str_len + sep_len], &T->buf[0], T->size + 1 + fname_len + 1);
+		memmove(&T->buf[str_len + sep_len], &T->buf[0], token_len + 1 + fname_len + 1);
 		memcpy(&T->buf[0], str, str_len);
 		memcpy(&T->buf[str_len], sep, sep_len);
 		T->buf[T->size] = '\0';
@@ -158,7 +151,7 @@ struct psi_token *psi_token_append(const char *sep, struct psi_token *T, unsigne
 		T = realloc(T, psi_token_alloc_size(T->size += str_len + sep_len, fname_len));
 		T->text = &T->buf[0];
 		T->file = &T->buf[T->size + 1];
-		memmove(&T->buf[T->size + 1], &T->buf[token_len + sep_len], fname_len + 1);
+		memmove(&T->buf[T->size + 1], &T->buf[token_len + 1], fname_len + 1);
 		memcpy(&T->buf[token_len], sep, sep_len);
 		memcpy(&T->buf[token_len + sep_len], str, str_len + 1);
 	}
@@ -206,44 +199,50 @@ void psi_token_dump(int fd, struct psi_token *t)
 {
 	size_t i;
 
-	dprintf(fd, "TOKEN %p (%d) \"", t, t->type);
-	for (i = 0; i < MIN(t->size, 16); ++i) {
-		switch (t->text[i]) {
-		case '\0':
-			dprintf(fd, "\\0");
-			break;
-		case '\a':
-			dprintf(fd, "\\a");
-			break;
-		case '\b':
-			dprintf(fd, "\\b");
-			break;
-		case '\f':
-			dprintf(fd, "\\f");
-			break;
-		case '\n':
-			dprintf(fd, "\\n");
-			break;
-		case '\r':
-			dprintf(fd, "\\r");
-			break;
-		case '\t':
-			dprintf(fd, "\\t");
-			break;
-		case '\v':
-			dprintf(fd, "\\v");
-			break;
-		case '"':
-			dprintf(fd, "\\\"");
-			break;
-		default:
-			if (isprint(t->text[i])) {
-				dprintf(fd, "%c", t->text[i]);
-			} else {
-				dprintf(fd, "\\%03hho", t->text[i]);
+	dprintf(fd, "TOKEN %p (%d) ", t, t->type);
+	if (t->type == PSI_T_EOF) {
+		dprintf(fd, "EOF");
+	} else {
+		dprintf(fd, "\"");
+		for (i = 0; i < MIN(t->size, 16); ++i) {
+			switch (t->text[i]) {
+			case '\0':
+				dprintf(fd, "\\0");
+				break;
+			case '\a':
+				dprintf(fd, "\\a");
+				break;
+			case '\b':
+				dprintf(fd, "\\b");
+				break;
+			case '\f':
+				dprintf(fd, "\\f");
+				break;
+			case '\n':
+				dprintf(fd, "\\n");
+				break;
+			case '\r':
+				dprintf(fd, "\\r");
+				break;
+			case '\t':
+				dprintf(fd, "\\t");
+				break;
+			case '\v':
+				dprintf(fd, "\\v");
+				break;
+			case '"':
+				dprintf(fd, "\\\"");
+				break;
+			default:
+				if (isprint(t->text[i])) {
+					dprintf(fd, "%c", t->text[i]);
+				} else {
+					dprintf(fd, "\\x%02hhX", t->text[i]);
+				}
+				break;
 			}
-			break;
 		}
+		dprintf(fd, "%s\"", t->size > 16 ? "..." : "");
 	}
-	dprintf(fd, "\" at col %u in %s on line %u\n", t->col, t->file, t->line);
+	dprintf(fd, " at col %u in %s on line %u\n", t->col, t->file, t->line);
 }

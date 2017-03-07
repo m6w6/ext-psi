@@ -11,43 +11,19 @@ $(PHP_PSI_BUILDDIR)/types/%.h: $(PHP_PSI_SRCDIR)/src/types/%.h | $(PHP_PSI_BUILD
 $(PHP_PSI_BUILDDIR)/%.h: $(PHP_PSI_SRCDIR)/src/%.h
 	@cat >$@ <$<
 
-$(PHP_PSI_BUILDDIR)/lempar.c:
-	curl -sSo $@ "http://www.sqlite.org/src/raw/tool/lempar.c?name=db1bdb4821f2d8fbd76e577cf3ab18642c8d08d1"
-
-$(PHP_PSI_BUILDDIR)/lemon.c:
-	curl -sSo $@ "http://www.sqlite.org/src/raw/tool/lemon.c?name=5ccba178a8e8a4b21e1c9232944d23973da38ad7"
-
-$(PHP_PSI_BUILDDIR)/lemon: $(PHP_PSI_BUILDDIR)/lemon.c | $(PHP_PSI_BUILDDIR)/lempar.c
-	$(CC) -o $@ $<
-
 $(PHP_PSI_SRCDIR)/src/parser_proc.h: $(PHP_PSI_SRCDIR)/src/parser_proc.c
 
-$(PHP_PSI_SRCDIR)/src/parser_proc.inc:
-$(PHP_PSI_SRCDIR)/src/parser_proc_def.h: $(PHP_PSI_SRCDIR)/src/parser_def.h
-$(PHP_PSI_SRCDIR)/src/parser_proc.y: $(PHP_PSI_SRCDIR)/src/parser_proc_def.h $(PHP_PSI_SRCDIR)/src/parser_proc.inc
-	cat $(PHP_PSI_SRCDIR)/src/parser_proc.inc >$@
-	$(CPP) -P -DGENERATE $< >>$@
-$(PHP_PSI_SRCDIR)/src/parser_proc.c: $(PHP_PSI_SRCDIR)/src/parser_proc.y $(LEMON)
+$(PHP_PSI_SRCDIR)/src/parser_proc.c: $(PHP_PSI_SRCDIR)/src/parser_proc_grammar.y
 	# trickery needed for relative #line directives
-	cd $(PHP_PSI_SRCDIR) && $(LEMON_PATH)$(LEMON) $(patsubst $(PHP_PSI_SRCDIR)/%,%,$<)
+	cd $(PHP_PSI_SRCDIR) && bison -Wall -v -d -o $(patsubst $(PHP_PSI_SRCDIR)/%,%,$@) $(patsubst $(PHP_PSI_SRCDIR)/%,%,$<)
 
 $(PHP_PSI_SRCDIR)/src/parser.re: $(PHP_PSI_SRCDIR)/src/parser_proc.h
 	touch $@
 $(PHP_PSI_SRCDIR)/src/parser.c: $(PHP_PSI_SRCDIR)/src/parser.re
 	# trickery needed for relative #line directives
-	cd $(PHP_PSI_SRCDIR) && $(RE2C) -o $(patsubst $(PHP_PSI_SRCDIR)/%,%,$@) $(patsubst $(PHP_PSI_SRCDIR)/%,%,$<)
+	cd $(PHP_PSI_SRCDIR) && $(RE2C) -W -o $(patsubst $(PHP_PSI_SRCDIR)/%,%,$@) $(patsubst $(PHP_PSI_SRCDIR)/%,%,$<)
 
-$(PHP_PSI_SRCDIR)/src/calc/basic.h: $(PHP_PSI_SRCDIR)/scripts/gen_calc_basic.php
-	$(PHP_EXECUTABLE) $< >$@
-$(PHP_PSI_SRCDIR)/src/calc/bin.h: $(PHP_PSI_SRCDIR)/scripts/gen_calc_bin.php
-	$(PHP_EXECUTABLE) $< >$@
-$(PHP_PSI_SRCDIR)/src/calc/bool.h: $(PHP_PSI_SRCDIR)/scripts/gen_calc_bool.php
-	$(PHP_EXECUTABLE) $< >$@
-$(PHP_PSI_SRCDIR)/src/calc/cast.h: $(PHP_PSI_SRCDIR)/scripts/gen_calc_cast.php
-	$(PHP_EXECUTABLE) $< >$@
-$(PHP_PSI_SRCDIR)/src/calc/cmp.h: $(PHP_PSI_SRCDIR)/scripts/gen_calc_cmp.php
-	$(PHP_EXECUTABLE) $< >$@
-$(PHP_PSI_SRCDIR)/src/calc/oper.h: $(PHP_PSI_SRCDIR)/scripts/gen_calc_oper.php
+$(PHP_PSI_SRCDIR)/src/calc/%.h: $(PHP_PSI_SRCDIR)/scripts/gen_calc_%.php
 	$(PHP_EXECUTABLE) $< >$@
 
 $(PHP_PSI_SRCDIR)/src/calc.h: | $(PHP_PSI_SRCDIR)/src/calc/basic.h $(PHP_PSI_SRCDIR)/src/calc/bin.h $(PHP_PSI_SRCDIR)/src/calc/bool.h $(PHP_PSI_SRCDIR)/src/calc/cast.h $(PHP_PSI_SRCDIR)/src/calc/cmp.h $(PHP_PSI_SRCDIR)/src/calc/oper.h

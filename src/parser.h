@@ -26,38 +26,51 @@
 #ifndef PSI_PARSER_H
 #define PSI_PARSER_H
 
+struct psi_parser;
+
+#include "parser_proc.h"
+#undef YYDEBUG
+
+#include "data.h"
 #include "token.h"
 #include "types.h"
-#include "data.h"
 #include "cpp.h"
+
+struct psi_cpp;
 
 struct psi_parser {
 	PSI_DATA_MEMBERS;
-	token_t num;
-	unsigned line, col;
-	char *cur, *tok, *lim, *ctx, *mrk;
 
-	/* internals */
-	void *proc;
+	struct psi_cpp *preproc;
+};
 
-	struct psi_cpp_data cpp;
-	struct {
-		char *buffer;
-		size_t length;
-	} input;
+struct psi_parser_input {
+	size_t length;
+	char *file;
+	unsigned lines;
+	char buffer[1];
+};
+
+struct psi_parser_data {
+	enum {
+		PSI_PARSER_DATA_SELF,
+		PSI_PARSER_DATA_CPP
+	} type;
+	union {
+		struct psi_parser *parser;
+		struct psi_cpp *cpp;
+	} data;
 };
 
 struct psi_parser *psi_parser_init(struct psi_parser *P, psi_error_cb error, unsigned flags);
-bool psi_parser_open_file(struct psi_parser *P, const char *filename);
-bool psi_parser_open_string(struct psi_parser *P, const char *string, size_t length);
-struct psi_plist *psi_parser_scan(struct psi_parser *P);
-void psi_parser_parse(struct psi_parser *P);
+struct psi_parser_input *psi_parser_open_file(struct psi_parser *P, const char *filename, bool report_errors);
+struct psi_parser_input *psi_parser_open_string(struct psi_parser *P, const char *string, size_t length);
+struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input *I);
+struct psi_plist *psi_parser_preprocess(struct psi_parser *P, struct psi_plist *tokens);
+bool psi_parser_process(struct psi_parser *P, struct psi_plist *tokens, size_t *processed);
+bool psi_parser_parse(struct psi_parser *P, struct psi_parser_input *I);
 void psi_parser_dtor(struct psi_parser *P);
 void psi_parser_free(struct psi_parser **P);
 
-void *psi_parser_proc_init(void);
-void psi_parser_proc_free(void **parser_proc);
-void psi_parser_proc_parse(void *parser_proc, token_t r, struct psi_token *token, struct psi_parser *parser);
-void psi_parser_proc_trace(FILE *out, char *prefix);
 
 #endif

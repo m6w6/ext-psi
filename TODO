@@ -6,3 +6,5 @@
 * CPP style #if(def(ined)) support in parser.re with a HashTable
 * think about a better system for EXTVARs, separate \set and \get functions are clunky
 * impl_def_val: allow num_exp
+* fix right recursion of let_exp and set_exp
+* numeral suffixes

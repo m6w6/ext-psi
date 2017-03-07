@@ -60,7 +60,20 @@ struct psi_num_exp *psi_num_exp_init_num(struct psi_number *n)
 {
 	struct psi_num_exp *exp = calloc(1, sizeof(*exp));
 
+	exp->op = PSI_T_NUMBER;
 	exp->data.n = n;
+
+	return exp;
+}
+
+struct psi_num_exp *psi_num_exp_init_cast(struct psi_decl_type *typ,
+		struct psi_num_exp *num)
+{
+	struct psi_num_exp *exp = calloc(1, sizeof(*exp));
+
+	exp->op = PSI_T_CAST;
+	exp->data.c.typ = typ;
+	exp->data.c.num = num;
 
 	return exp;
 }
@@ -77,8 +90,13 @@ struct psi_num_exp *psi_num_exp_copy(struct psi_num_exp *exp)
 	*cpy = *exp;
 
 	switch (exp->op) {
-	case 0:
+	case PSI_T_NUMBER:
 		cpy->data.n = psi_number_copy(exp->data.n);
+		break;
+
+	case PSI_T_CAST:
+		cpy->data.c.typ = psi_decl_type_copy(exp->data.c.typ);
+		cpy->data.c.num = psi_num_exp_copy(exp->data.c.num);
 		break;
 
 	case PSI_T_NOT:
@@ -130,9 +148,15 @@ void psi_num_exp_free(struct psi_num_exp **c_ptr)
 		*c_ptr = NULL;
 
 		switch (c->op) {
-		case 0:
+		case PSI_T_NUMBER:
 			psi_number_free(&c->data.n);
 			break;
+
+		case PSI_T_CAST:
+			psi_decl_type_free(&c->data.c.typ);
+			psi_num_exp_free(&c->data.c.num);
+			break;
+
 		case PSI_T_NOT:
 		case PSI_T_TILDE:
 		case PSI_T_LPAREN:
@@ -184,6 +208,8 @@ static inline const char *psi_num_exp_op_tok(token_t op)
 		return "~";
 	case PSI_T_LPAREN:
 		return "(";
+	case PSI_T_CAST:
+		return "(cast)";
 
 	case PSI_T_PIPE:
 		return "|";
@@ -236,7 +262,7 @@ static inline const char *psi_num_exp_op_tok(token_t op)
 void psi_num_exp_dump(int fd, struct psi_num_exp *exp)
 {
 	switch (exp->op) {
-	case 0:
+	case PSI_T_NUMBER:
 		psi_number_dump(fd, exp->data.n);
 		break;
 
@@ -287,7 +313,7 @@ bool psi_num_exp_validate(struct psi_data *data, struct psi_num_exp *exp,
 		struct psi_impl *impl, struct psi_decl *cb_decl, struct psi_let_exp *current_let,
 		struct psi_set_exp *current_set, struct psi_decl_enum *current_enum)
 {
-	if (exp->op) {
+	if (exp->op && exp->op != PSI_T_NUMBER) {
 		switch (exp->op) {
 		case PSI_T_NOT:
 			exp->calc = psi_calc_bool_not;
@@ -321,6 +347,7 @@ bool psi_num_exp_validate(struct psi_data *data, struct psi_num_exp *exp,
 			exp->calc = psi_calc_cmp_gt;
 			break;
 
+		case PSI_T_CAST:
 		case PSI_T_LPAREN:
 			break;
 
@@ -362,8 +389,13 @@ bool psi_num_exp_validate(struct psi_data *data, struct psi_num_exp *exp,
 	}
 
 	switch (exp->op) {
-	case 0:
+	case PSI_T_NUMBER:
 		return psi_number_validate(data, exp->data.n, impl, cb_decl, current_let, current_set, current_enum);
+
+	case PSI_T_CAST:
+		return psi_num_exp_validate(data, exp->data.c.num, impl, cb_decl, current_let, current_set, current_enum)
+				&& psi_decl_type_validate(data, exp->data.c.typ, NULL);
+		break;
 
 	case PSI_T_NOT:
 	case PSI_T_TILDE:
@@ -447,11 +479,12 @@ static void psi_num_exp_reduce(struct psi_num_exp *exp, struct psi_plist **outpu
 		union {
 			impl_val value;
 			psi_calc calc;
+			struct psi_decl_type *cast;
 		} data;
 	} entry;
 
 	switch (exp->op) {
-	case 0:
+	case PSI_T_NUMBER:
 		entry.type = psi_number_eval(exp->data.n, &entry.data.value, frame, defs);
 		output = psi_plist_add(output, &entry);
 		break;
@@ -467,6 +500,22 @@ static void psi_num_exp_reduce(struct psi_num_exp *exp, struct psi_plist **outpu
 			if (frame) PSI_DEBUG_PRINT(frame->context, " %s", psi_num_exp_op_tok(entry.type));
 			output = psi_plist_add(output, &entry);
 		}
+		break;
+
+	case PSI_T_CAST:
+		while (psi_plist_top(input, &entry)) {
+			/* bail out if exp->op >= entry.type */
+			if (psi_calc_oper(exp->op, entry.type) != 1) {
+				break;
+			}
+			psi_plist_pop(input, NULL);
+			if (frame) PSI_DEBUG_PRINT(frame->context, " %s", psi_num_exp_op_tok(entry.type));
+			output = psi_plist_add(output, &entry);
+		}
+		entry.type = exp->op;
+		entry.data.cast = exp->data.c.typ;
+		input = psi_plist_add(input, &entry);
+		psi_num_exp_reduce(exp->data.c.num, &output, &input, frame, defs);
 		break;
 
 	case PSI_T_NOT:
@@ -517,6 +566,7 @@ token_t psi_num_exp_exec(struct psi_num_exp *exp, impl_val *res,
 		union {
 			impl_val value;
 			psi_calc calc;
+			struct psi_decl_type *cast;
 		} data;
 	} entry, lhs, rhs;
 
@@ -535,6 +585,17 @@ token_t psi_num_exp_exec(struct psi_num_exp *exp, impl_val *res,
 		switch (entry.type) {
 		default:
 			input = psi_plist_add(input, &entry);
+			break;
+
+		case PSI_T_CAST:
+			psi_plist_pop(input, &rhs);
+			if (frame) PSI_DEBUG_PRINT(frame->context, " %s", psi_num_exp_op_tok(entry.type));
+			psi_impl_val_dump(rhs.type, &rhs.data.value, frame);
+
+			entry.type = psi_decl_type_get_real(entry.data.cast)->type;
+			psi_calc_cast(rhs.type, &rhs.data.value, entry.type, &entry.data.value);
+			input = psi_plist_add(input, &entry);
+			psi_num_exp_verify_result(entry.type, &entry.data.value, frame);
 			break;
 
 		case PSI_T_NOT:

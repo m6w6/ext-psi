@@ -459,12 +459,14 @@ impl_val *psi_let_strlen(impl_val *tmp, struct psi_decl_type *spec, token_t impl
 	return tmp;
 }
 
+#if 0
 static impl_val *iterate(impl_val *val, size_t size, unsigned i, impl_val *tmp)
 {
 	memset(tmp, 0, sizeof(*tmp));
 	memcpy(tmp, ((char *) val) + size * i, size);
 	return tmp;
 }
+#endif
 
 /*
  * set $ivar = to_array(dvar,

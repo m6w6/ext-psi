@@ -46,6 +46,10 @@ struct psi_num_exp {
 			struct psi_num_exp *lhs;
 			struct psi_num_exp *rhs;
 		} b;
+		struct {
+			struct psi_decl_type *typ;
+			struct psi_num_exp *num;
+		} c;
 		struct psi_num_exp *u;
 		struct psi_number *n;
 	} data;
@@ -57,6 +61,8 @@ struct psi_num_exp *psi_num_exp_init_binary(token_t op,
 struct psi_num_exp *psi_num_exp_init_unary(token_t op,
 		struct psi_num_exp *u);
 struct psi_num_exp *psi_num_exp_init_num(struct psi_number *n);
+struct psi_num_exp *psi_num_exp_init_cast(struct psi_decl_type *typ,
+		struct psi_num_exp *num);
 void psi_num_exp_free(struct psi_num_exp **c_ptr);
 
 struct psi_num_exp *psi_num_exp_copy(struct psi_num_exp *exp);

@@ -55,6 +55,20 @@ void psi_decl_type_free(struct psi_decl_type **type_ptr)
 	}
 }
 
+struct psi_decl_type *psi_decl_type_copy(struct psi_decl_type *src)
+{
+	struct psi_decl_type *dst = calloc(1, sizeof(*dst));
+
+	dst->type = src->type;
+	if (src->name) {
+		dst->name = strdup(src->name);
+	}
+	if (src->token) {
+		dst->token = psi_token_copy(src->token);
+	}
+	return dst;
+}
+
 struct psi_plist *psi_decl_type_get_args(struct psi_decl_type *dtyp,
 		struct psi_decl_type **real_typ_ptr)
 {
@@ -324,6 +338,8 @@ int psi_decl_type_is_weak(struct psi_decl_type *type)
 	case PSI_T_SHORT:
 	case PSI_T_INT:
 	case PSI_T_LONG:
+	case PSI_T_UNSIGNED:
+	case PSI_T_SIGNED:
 	case PSI_T_NAME:
 		return type->type;
 	default:

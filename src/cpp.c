@@ -28,164 +28,70 @@
 #include "cpp.h"
 #include "parser.h"
 
-static inline bool psi_cpp_level_skipped(struct psi_cpp_data *cpp)
+#define PSI_CPP_SEARCH
+#define PSI_CPP_PREDEF
+#include "php_psi_cpp.h"
+
+static void free_cpp_def(zval *p)
 {
-	return cpp->skip == cpp->level;
-}
-static inline void psi_cpp_level_skip(struct psi_cpp_data *cpp)
-{
-	assert(!cpp->skip);
-	cpp->skip = cpp->level;
-}
-static inline void psi_cpp_level_unskip(struct psi_cpp_data *cpp)
-{
-	if (psi_cpp_level_skipped(cpp)) {
-		cpp->skip = 0;
+	if (Z_TYPE_P(p) == IS_PTR) {
+		psi_cpp_macro_decl_free((void *) &Z_PTR_P(p));
 	}
 }
-static inline bool psi_cpp_level_masked(struct psi_cpp_data *cpp)
+
+struct psi_cpp *psi_cpp_init(struct psi_parser *P)
 {
-	return cpp->seen & (1 << cpp->level);
-}
-static inline void psi_cpp_level_mask(struct psi_cpp_data *cpp)
-{
-	assert(!psi_cpp_level_masked(cpp));
-	cpp->seen |= (1 << cpp->level);
-}
-static inline void psi_cpp_level_unmask(struct psi_cpp_data *cpp)
-{
-	cpp->seen &= ~(1 << cpp->level);
+	struct psi_cpp *cpp = calloc(1, sizeof(*cpp));
+
+	cpp->parser = P;
+	ALLOC_HASHTABLE(cpp->defs);
+	zend_hash_init(cpp->defs, 0, NULL, free_cpp_def, 1);
+
+	return cpp;
 }
 
-static void psi_cpp_eval(struct psi_data *D, struct psi_cpp_data *cpp)
+bool psi_cpp_load_defaults(struct psi_cpp *cpp)
 {
-	assert(cpp->exp);
+	struct psi_parser_input *predef;
 
-	PSI_DEBUG_PRINT(D, "PSI: CPP EVAL < %s (level=%u, skip=%u)\n",
-			cpp->exp->token->text, cpp->level, cpp->skip);
-
-#if PSI_CPP_DEBUG
-	psi_cpp_exp_dump(2, cpp->exp);
-#endif
-
-	switch (cpp->exp->type) {
-	case PSI_T_ERROR:
-		if (!cpp->skip) {
-			D->error(D, cpp->exp->token, PSI_ERROR, "%s",
-					cpp->exp->data.tok->text);
-		}
-		break;
-	case PSI_T_WARNING:
-		if (!cpp->skip) {
-			D->error(D, cpp->exp->token, PSI_WARNING, "%s",
-					cpp->exp->data.tok->text);
-		}
-		break;
-	case PSI_T_UNDEF:
-		if (!cpp->skip) {
-			psi_cpp_undef(cpp, cpp->exp->data.tok);
-		}
-		break;
-	case PSI_T_DEFINE:
-		if (!cpp->skip) {
-			psi_cpp_define(cpp, cpp->exp->data.decl);
-			/* FIXME: copy */
-			cpp->exp->data.decl = NULL;
-		}
-		break;
-	case PSI_T_IFDEF:
-		++cpp->level;
-		if (!cpp->skip) {
-			if (psi_cpp_defined(cpp, cpp->exp->data.tok)) {
-				psi_cpp_level_mask(cpp);
-			} else {
-				psi_cpp_level_skip(cpp);
-			}
-		}
-		break;
-	case PSI_T_IFNDEF:
-		++cpp->level;
-		if (!cpp->skip) {
-			if (psi_cpp_defined(cpp, cpp->exp->data.tok)) {
-				psi_cpp_level_skip(cpp);
-			} else {
-				psi_cpp_level_mask(cpp);
-			}
-		}
-		break;
-	case PSI_T_IF:
-		++cpp->level;
-		if (!cpp->skip) {
-			if (psi_cpp_if(cpp->exp, &cpp->defs, D)) {
-				psi_cpp_level_mask(cpp);
-			} else {
-				psi_cpp_level_skip(cpp);
-			}
-		}
-		break;
-	case PSI_T_ENDIF:
-		if (!cpp->level) {
-			D->error(D, cpp->exp->token, PSI_WARNING, "Ingoring lone #endif");
-		} else {
-			psi_cpp_level_unskip(cpp);
-			psi_cpp_level_unmask(cpp);
-			--cpp->level;
-		}
-		break;
-	case PSI_T_ELSE:
-		/* FIXME: catch "else" after "else" */
-		if (!cpp->level) {
-			D->error(D, cpp->exp->token, PSI_WARNING, "Ingoring lone #else");
-		} else if (psi_cpp_level_skipped(cpp) && !psi_cpp_level_masked(cpp)) {
-			/*
-			 * if skip is set on this level and the level has
-			 * not been masked yet, then unskip and mask this level
-			 */
-			psi_cpp_level_unskip(cpp);
-			psi_cpp_level_mask(cpp);
-		} else if (!cpp->skip && psi_cpp_level_masked(cpp)) {
-			/*
-			 * previous block masked this level
-			 */
-			psi_cpp_level_skip(cpp);
-		} else {
-			assert(cpp->skip < cpp->level);
-		}
-		break;
-	case PSI_T_ELIF:
-		if (!cpp->level) {
-			D->error(D, cpp->exp->token, PSI_WARNING, "Ingoring lone #elif");
-		} else if (psi_cpp_level_skipped(cpp) && !psi_cpp_level_masked(cpp)) {
-			/*
-			 * if skip is set on this level and the level has
-			 * not been masked yet, then unskip and mask this
-			 * level, if the condition evals truthy
-			 */
-			if (psi_cpp_if(cpp->exp, &cpp->defs, D)) {
-				psi_cpp_level_unskip(cpp);
-				psi_cpp_level_mask(cpp);
-			}
-		} else if (!cpp->skip && psi_cpp_level_masked(cpp)) {
-			/*
-			 * previous block masked this level
-			 */
-			psi_cpp_level_skip(cpp);
-		} else {
-			assert(cpp->skip < cpp->level);
-		}
-		break;
-	default:
-		assert(0);
-		break;
+	if ((predef = psi_parser_open_string(cpp->parser, psi_cpp_predef, sizeof(psi_cpp_predef) - 1))) {
+		bool parsed = psi_parser_parse(cpp->parser, predef);
+		free(predef);
+		return parsed;
 	}
 
-	PSI_DEBUG_PRINT(D, "PSI: CPP EVAL > %s (level=%u, skip=%u)\n",
-			cpp->exp->token->text, cpp->level, cpp->skip);
-
-	psi_cpp_exp_free(&cpp->exp);
+	return false;
 }
 
-static bool psi_cpp_stage1(struct psi_parser *P, struct psi_cpp_data *cpp)
+static int dump_def(zval *p)
+{
+	struct psi_cpp_macro_decl *decl = Z_PTR_P(p);
+
+	if (decl) {
+		dprintf(2, "#define ");
+		psi_cpp_macro_decl_dump(2, decl);
+		dprintf(2, "\n");
+	}
+	return ZEND_HASH_APPLY_KEEP;
+}
+
+void psi_cpp_free(struct psi_cpp **cpp_ptr)
+{
+	if (*cpp_ptr) {
+		struct psi_cpp *cpp = *cpp_ptr;
+
+		*cpp_ptr = NULL;
+		if (cpp->parser->flags & PSI_DEBUG) {
+			fprintf(stderr, "PSI: CPP decls:\n");
+			zend_hash_apply(cpp->defs, dump_def);
+		}
+		zend_hash_destroy(cpp->defs);
+		FREE_HASHTABLE(cpp->defs);
+		free(cpp);
+	}
+}
+
+static bool psi_cpp_stage1(struct psi_cpp *cpp)
 {
 	bool name = false, define = false, hash = false, eol = true, esc = false, ws = false;
 
@@ -272,8 +178,10 @@ static bool psi_cpp_stage1(struct psi_parser *P, struct psi_cpp_data *cpp)
 	return true;
 }
 
-static bool psi_cpp_stage2(struct psi_parser *P, struct psi_cpp_data *cpp)
+static bool psi_cpp_stage2(struct psi_cpp *cpp)
 {
+	struct psi_plist *parser_tokens = psi_plist_init((psi_plist_dtor) psi_token_free);
+
 	do {
 		bool is_eol = true, do_cpp = false, do_expansion = true, skip_paren = false, skip_all = false;
 
@@ -322,6 +230,7 @@ static bool psi_cpp_stage2(struct psi_parser *P, struct psi_cpp_data *cpp)
 						do_expansion = false;
 						break;
 					case PSI_T_LPAREN:
+
 						if (!skip_all) {
 							if (skip_paren) {
 								skip_paren = false;
@@ -338,7 +247,7 @@ static bool psi_cpp_stage2(struct psi_parser *P, struct psi_cpp_data *cpp)
 					default:
 						do_expansion = !skip_all;
 #if PSI_CPP_DEBUG
-						fprintf(stderr, "PSI CPP do_expansion=%s, <- !skip_all\n", do_expansion?"true":"false");
+						fprintf(stderr, "PSI: CPP do_expansion=%s, <- !skip_all\n", do_expansion?"true":"false");
 #endif
 					}
 				}
@@ -368,25 +277,21 @@ static bool psi_cpp_stage2(struct psi_parser *P, struct psi_cpp_data *cpp)
 			}
 
 			if (do_cpp) {
-				if (is_eol) {
-					do_cpp = false;
-					skip_all = false;
-				}
-
-				if (P->flags & PSI_DEBUG) {
-					fprintf(stderr, "PSI> Parse (%zu) ", psi_cpp_tokiter_index(cpp));
-					psi_token_dump(2, current);
-				}
-
-				psi_parser_proc_parse(P->proc, current->type, current, P);
+				parser_tokens = psi_plist_add(parser_tokens, &current);
 				psi_cpp_tokiter_del_cur(cpp, false);
 
 				if (is_eol) {
-					psi_parser_proc_parse(P->proc, 0, NULL, P);
-					psi_cpp_eval(PSI_DATA(P), cpp);
+					size_t processed = 0;
+
+					if (!psi_parser_process(cpp->parser, parser_tokens, &processed)) {
+						psi_plist_free(parser_tokens);
+						return false;
+					}
+					psi_plist_clean(parser_tokens);
+					do_cpp = false;
 				}
 
-#if PSI_CPP_DEBUG
+#if PSI_CPP_DEBUG > 1
 				psi_cpp_tokiter_dump(2, cpp);
 #endif
 
@@ -397,28 +302,32 @@ static bool psi_cpp_stage2(struct psi_parser *P, struct psi_cpp_data *cpp)
 		}
 	} while (cpp->expanded);
 
+	psi_plist_free(parser_tokens);
+
 	return true;
 }
 
-bool psi_cpp_preprocess(struct psi_parser *P, struct psi_cpp_data *cpp)
+bool psi_cpp_process(struct psi_cpp *cpp, struct psi_plist **tokens)
 {
-	if (!psi_cpp_stage1(P, cpp)) {
-		return false;
+	struct psi_cpp temp = *cpp;
+
+	temp.tokens = *tokens;
+
+	if (psi_cpp_stage1(&temp) && psi_cpp_stage2(&temp)) {
+		*tokens = temp.tokens;
+		return true;
 	}
 
-	if (!psi_cpp_stage2(P, cpp)) {
-		return false;
-	}
-
-	return true;
+	*tokens = temp.tokens;
+	return false;
 }
 
-bool psi_cpp_defined(struct psi_cpp_data *cpp, struct psi_token *tok)
+bool psi_cpp_defined(struct psi_cpp *cpp, struct psi_token *tok)
 {
 	bool defined;
 
 	if (tok->type == PSI_T_NAME) {
-		defined = zend_hash_str_exists(&cpp->defs, tok->text, tok->size);
+		defined = zend_hash_str_exists(cpp->defs, tok->text, tok->size);
 	} else {
 		defined = false;
 	}
@@ -431,23 +340,97 @@ bool psi_cpp_defined(struct psi_cpp_data *cpp, struct psi_token *tok)
 	return defined;
 }
 
-void psi_cpp_define(struct psi_cpp_data *cpp, struct psi_cpp_macro_decl *decl)
+void psi_cpp_define(struct psi_cpp *cpp, struct psi_cpp_macro_decl *decl)
 {
-	zend_hash_str_add_ptr(&cpp->defs, decl->token->text, decl->token->size, decl);
+	struct psi_cpp_macro_decl *old = zend_hash_str_find_ptr(cpp->defs, decl->token->text, decl->token->size);
+
+	if (old && !psi_cpp_macro_decl_equal(old, decl)) {
+		cpp->parser->error(PSI_DATA(cpp->parser), decl->token, PSI_WARNING,
+				"'%s' redefined", decl->token->text);
+		cpp->parser->error(PSI_DATA(cpp->parser), old->token, PSI_WARNING,
+				"'%s' previously defined", old->token->text);
+	}
+	zend_hash_str_update_ptr(cpp->defs, decl->token->text, decl->token->size, decl);
 }
 
-bool psi_cpp_undef(struct psi_cpp_data *cpp, struct psi_token *tok)
+bool psi_cpp_undef(struct psi_cpp *cpp, struct psi_token *tok)
 {
-	return SUCCESS == zend_hash_str_del(&cpp->defs, tok->text, tok->size);
+	return SUCCESS == zend_hash_str_del(cpp->defs, tok->text, tok->size);
 }
 
-bool psi_cpp_if(struct psi_cpp_exp *exp, HashTable *defs, struct psi_data *D)
+bool psi_cpp_if(struct psi_cpp *cpp, struct psi_cpp_exp *exp)
 {
-	if (!psi_num_exp_validate(D, exp->data.num, NULL, NULL, NULL, NULL, NULL)) {
+	if (!psi_num_exp_validate(PSI_DATA(cpp->parser), exp->data.num, NULL, NULL, NULL, NULL, NULL)) {
 		return false;
 	}
-	if (!psi_long_num_exp(exp->data.num, NULL, defs)) {
+	if (!psi_long_num_exp(exp->data.num, NULL, cpp->defs)) {
 		return false;
 	}
 	return true;
+}
+
+static inline bool try_include(struct psi_cpp *cpp, const char *path, bool *parsed)
+{
+	struct psi_parser_input *include;
+
+	PSI_DEBUG_PRINT(cpp->parser, "PSI: CPP include trying %s\n", path);
+
+	include = psi_parser_open_file(cpp->parser, path, false);
+	if (include) {
+		struct psi_plist *tokens;
+
+		PSI_DEBUG_PRINT(cpp->parser, "PSI: CPP include scanning %s\n", path);
+
+		tokens = psi_parser_scan(cpp->parser, include);
+		if (tokens) {
+			if ((*parsed = psi_cpp_process(cpp, &tokens))) {
+				psi_cpp_tokiter_ins_range(cpp, psi_cpp_tokiter_index(cpp),
+						psi_plist_count(tokens), psi_plist_eles(tokens));
+			}
+			psi_plist_free(tokens);
+		}
+		free(include);
+		return true;
+	}
+	return false;
+}
+
+bool psi_cpp_include(struct psi_cpp *cpp, const char *file, unsigned flags)
+{
+	char path[PATH_MAX];
+	bool parsed = false;
+	int f_len = strlen(file) - 2;
+
+	if (file[1] == '/' && PATH_MAX > snprintf(path, PATH_MAX, "%.*s", f_len, file + 1)) {
+		return try_include(cpp, path, &parsed) && parsed;
+	} else {
+		const char *sep;
+
+		if ((flags & PSI_CPP_INCLUDE_NEXT) && cpp->search) {
+			if ((sep = strchr(cpp->search, ':'))) {
+				cpp->search = sep + 1;
+			} else {
+				cpp->search += strlen(cpp->search); /* point to end of string */
+			}
+		}
+		if (!(flags & PSI_CPP_INCLUDE_NEXT) || !cpp->search) {
+			cpp->search = &psi_cpp_search[0];
+		}
+
+		do {
+			int d_len;
+
+			sep = strchr(cpp->search, ':');
+			d_len = sep ? sep - cpp->search : strlen(cpp->search);
+
+			if (PATH_MAX > snprintf(path, PATH_MAX, "%.*s/%.*s", d_len, cpp->search, f_len, file + 1)) {
+				if (try_include(cpp, path, &parsed)) {
+					break;
+				}
+			}
+			cpp->search = sep + 1;
+		} while (sep);
+	}
+
+	return parsed;
 }

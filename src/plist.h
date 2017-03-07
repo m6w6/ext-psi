@@ -32,6 +32,7 @@ typedef void (*psi_plist_dtor)(void *);
 
 struct psi_plist *psi_plist_init(void (*dtor)(void *));
 struct psi_plist *psi_plist_init_ex(size_t size, void (*dtor)(void *));
+void psi_plist_clean(struct psi_plist *list);
 void psi_plist_free(struct psi_plist *list);
 struct psi_plist *psi_plist_copy(struct psi_plist *list, void (*ctor)(void *));
 

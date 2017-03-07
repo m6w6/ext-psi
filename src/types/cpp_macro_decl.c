@@ -87,3 +87,52 @@ void psi_cpp_macro_decl_dump(int fd, struct psi_cpp_macro_decl *macro)
 		}
 	}
 }
+
+static inline bool cmp_token_list(struct psi_plist *l1, struct psi_plist *l2)
+{
+	size_t c = psi_plist_count(l1), i;
+
+	if (c != psi_plist_count(l2)) {
+		return false;
+	}
+
+	for (i = 0; i < c; ++i) {
+		struct psi_token *t1, *t2;
+
+		psi_plist_get(l1, i, &t1);
+		psi_plist_get(l2, i, &t2);
+
+		if (strcmp(t1->text, t2->text)) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool psi_cpp_macro_decl_equal(struct psi_cpp_macro_decl *d1, struct psi_cpp_macro_decl *d2)
+{
+	if (d1->sig) {
+		if (!d2->sig) {
+			return false;
+		}
+
+		if (!cmp_token_list(d1->sig, d2->sig)) {
+			return false;
+		}
+	}
+
+	if (d1->tokens) {
+		if (!d2->tokens) {
+			return false;
+		}
+
+		if (!cmp_token_list(d1->tokens, d2->tokens)) {
+			return false;
+		}
+	}
+
+	/* FIXME compare num_exps */
+
+	return true;
+}

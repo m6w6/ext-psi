@@ -47,7 +47,7 @@ void psi_decl_enum_item_free(struct psi_decl_enum_item **i_ptr)
 		if (i->num) {
 			if (i->num == &i->inc) {
 				switch (i->inc.op) {
-				case 0:
+				case PSI_T_NUMBER:
 					psi_number_free(&i->inc.data.n);
 					break;
 				case PSI_T_PLUS:
@@ -91,6 +91,7 @@ bool psi_decl_enum_item_validate(struct psi_data *data,
 		} else {
 			int64_t nil = 0;
 
+			item->inc.op = PSI_T_NUMBER;
 			item->inc.data.n = psi_number_init(PSI_T_INT64, &nil);
 			item->num = &item->inc;
 		}

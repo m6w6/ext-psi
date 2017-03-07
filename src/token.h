@@ -45,11 +45,13 @@ static inline size_t psi_offset_padding(size_t diff, size_t alignment) {
 }
 
 #include "parser_proc.h"
+#undef YYDEBUG
 
-#define PSI_T_POINTER PSI_T_ASTERISK
-#define PSI_T_LONG_DOUBLE (PSI_T_DOUBLE << 16)
-#define PSI_T_BSLASH (PSI_T_SLASH << 16)
-#define PSI_T_WHITESPACE -PSI_T_NO_WHITESPACE
+#define PSI_T_CAST			PSI_T_EQUALS
+#define PSI_T_POINTER		PSI_T_ASTERISK
+#define PSI_T_LONG_DOUBLE	(PSI_T_DOUBLE << 16)
+#define PSI_T_BSLASH		(PSI_T_SLASH << 16)
+#define PSI_T_WHITESPACE	-PSI_T_NO_WHITESPACE
 
 typedef int token_t;
 
@@ -136,7 +138,8 @@ struct psi_token {
 
 struct psi_parser;
 
-struct psi_token *psi_token_alloc(struct psi_parser *P);
+struct psi_token *psi_token_init(token_t token_typ, const char *token_txt,
+		size_t token_len, unsigned col, unsigned line, const char *file);
 size_t psi_token_alloc_size(size_t token_len, size_t fname_len);
 struct psi_token *psi_token_copy(struct psi_token *src);
 void psi_token_copy_ctor(struct psi_token **src);

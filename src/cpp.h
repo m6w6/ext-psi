@@ -32,38 +32,52 @@
 # define PSI_CPP_DEBUG 0
 #endif
 
-struct psi_cpp_data {
-	HashTable defs;
+struct psi_cpp_tokiter {
+};
+
+struct psi_cpp {
+	HashTable *defs;
+	struct psi_parser *parser;
+	struct psi_plist *tokens;
+	const char *search;
+	size_t index;
 	unsigned level;
 	unsigned skip;
 	unsigned seen;
-	size_t index;
-	struct psi_plist *tokens;
 	unsigned expanded;
-	struct psi_cpp_exp *exp;
 };
 
-bool psi_cpp_preprocess(struct psi_parser *P, struct psi_cpp_data *cpp);
-bool psi_cpp_if(struct psi_cpp_exp *exp, HashTable *defs, struct psi_data *D);
-bool psi_cpp_defined(struct psi_cpp_data *cpp, struct psi_token *tok);
-void psi_cpp_define(struct psi_cpp_data *cpp, struct psi_cpp_macro_decl *decl);
-bool psi_cpp_undef(struct psi_cpp_data *cpp, struct psi_token *tok);
+struct psi_cpp *psi_cpp_init(struct psi_parser *parser);
+bool psi_cpp_load_defaults(struct psi_cpp *cpp);
+bool psi_cpp_process(struct psi_cpp *cpp, struct psi_plist **tokens);
+void psi_cpp_free(struct psi_cpp **cpp_ptr);
 
-void psi_cpp_tokiter_reset(struct psi_cpp_data *cpp);
-bool psi_cpp_tokiter_seek(struct psi_cpp_data *cpp, size_t index);
-void psi_cpp_tokiter_dump(int fd, struct psi_cpp_data *cpp);
-struct psi_token *psi_cpp_tokiter_current(struct psi_cpp_data *cpp);
-size_t psi_cpp_tokiter_index(struct psi_cpp_data *cpp);
-void psi_cpp_tokiter_next(struct psi_cpp_data *cpp);
-void psi_cpp_tokiter_prev(struct psi_cpp_data *cpp);
-bool psi_cpp_tokiter_valid(struct psi_cpp_data *cpp);
-bool psi_cpp_tokiter_del_cur(struct psi_cpp_data *cpp, bool free_token);
-bool psi_cpp_tokiter_del_range(struct psi_cpp_data *cpp, size_t offset,
+bool psi_cpp_if(struct psi_cpp *cpp, struct psi_cpp_exp *exp);
+bool psi_cpp_defined(struct psi_cpp *cpp, struct psi_token *tok);
+void psi_cpp_define(struct psi_cpp *cpp, struct psi_cpp_macro_decl *decl);
+bool psi_cpp_undef(struct psi_cpp *cpp, struct psi_token *tok);
+
+#define PSI_CPP_INCLUDE 0x0
+#define PSI_CPP_INCLUDE_NEXT 0x1
+#define PSI_CPP_INCLUDE_ONCE 0x2
+
+bool psi_cpp_include(struct psi_cpp *cpp, const char *file, unsigned flags);
+
+void psi_cpp_tokiter_reset(struct psi_cpp *cpp);
+bool psi_cpp_tokiter_seek(struct psi_cpp *cpp, size_t index);
+void psi_cpp_tokiter_dump(int fd, struct psi_cpp *cpp);
+struct psi_token *psi_cpp_tokiter_current(struct psi_cpp *cpp);
+size_t psi_cpp_tokiter_index(struct psi_cpp *cpp);
+void psi_cpp_tokiter_next(struct psi_cpp *cpp);
+void psi_cpp_tokiter_prev(struct psi_cpp *cpp);
+bool psi_cpp_tokiter_valid(struct psi_cpp *cpp);
+bool psi_cpp_tokiter_del_cur(struct psi_cpp *cpp, bool free_token);
+bool psi_cpp_tokiter_del_range(struct psi_cpp *cpp, size_t offset,
 		size_t num_eles, bool free_tokens);
-bool psi_cpp_tokiter_ins_cur(struct psi_cpp_data *cpp, struct psi_token *tok);
-bool psi_cpp_tokiter_ins_range(struct psi_cpp_data *cpp, size_t offset,
+bool psi_cpp_tokiter_ins_cur(struct psi_cpp *cpp, struct psi_token *tok);
+bool psi_cpp_tokiter_ins_range(struct psi_cpp *cpp, size_t offset,
 		size_t num_eles, void **eles);
-bool psi_cpp_tokiter_defined(struct psi_cpp_data *cpp);
-bool psi_cpp_tokiter_expand(struct psi_cpp_data *cpp);
+bool psi_cpp_tokiter_defined(struct psi_cpp *cpp);
+bool psi_cpp_tokiter_expand(struct psi_cpp *cpp);
 
 #endif

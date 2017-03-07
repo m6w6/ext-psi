@@ -18,6 +18,42 @@ AC_DEFUN(PSI_CONFIG_INIT, [
 		])
 		psi_cv_libc_main=$psi_libc_main
 	])
+	
+	AC_MSG_CHECKING(for preprocessor defaults)
+	psi_cpp_predef=`$CPP -Wp,-dM - </dev/null`
+	psi_cpp_search=`$CPP -Wp,-v - </dev/null 2>&1 >/dev/null \
+		| $AWK '
+			/include.*search.*start/ { 
+				capture = 1
+				next
+			}
+			/[Ee]nd.*search/ {
+				capture = 0
+			}
+			{ 
+				if (capture)
+					print $1
+			}
+		' \
+	`
+	psi_cpp_predef_count=`printf %s "$psi_cpp_predef" | wc -l`
+	psi_cpp_search_count=`printf %s "$psi_cpp_search" | wc -l`
+	AC_MSG_RESULT([$psi_cpp_predef_count predefined macros, and $psi_cpp_search_count search paths])
+	PSI_CPP_PREDEF=`printf "%s\n" "$psi_cpp_predef" | \
+		$AWK '{
+			gsub(/"/, "\\\\\"");
+			printf "\"%s\\\n\"\n", $[]0
+		}' \
+	`
+	PSI_CPP_SEARCH=`printf %s "$psi_cpp_search" | \
+		$AWK '{
+			if (i) printf ":";
+			gsub(/^@<:@@<:@:space:@:>@@:>@+/,"");
+			gsub(/@<:@@<:@:space:@:>@@:>@+$/,"");
+			printf "%s", $[]0;
+			++i
+		}' \
+	`
 
 	if test "$PHP_PSI_MAINTAINER_MODE" = "yes"; then
 		PSI_FAST_CONFIG=true
@@ -48,6 +84,7 @@ AC_DEFUN(PSI_CONFIG_INIT, [
 	AC_CONFIG_FILES(
 		[$PHP_PSI_BUILDDIR/php_psi_stdinc.h:$PHP_PSI_SRCDIR/php_psi_stdinc.h.in]
 		[$PHP_PSI_BUILDDIR/php_psi_posix.h:$PHP_PSI_SRCDIR/php_psi_posix.h.in]
+		[$PHP_PSI_BUILDDIR/php_psi_cpp.h:$PHP_PSI_SRCDIR/php_psi_cpp.h.in]
 	)
 
 ])
@@ -86,6 +123,8 @@ AC_DEFUN(PSI_CONFIG_DONE, [
 	AC_SUBST([PSI_REDIRS])
 	AC_SUBST([PSI_MACROS])
 	AC_SUBST([PSI_DECLS])
+	AC_SUBST([PSI_CPP_SEARCH])
+	AC_SUBST([PSI_CPP_PREDEF])
 ])
 
 dnl PSI_SH_CONFIG_POSIX_ENABLED(section)

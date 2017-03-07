@@ -36,9 +36,9 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 		return 1;
 	} else if (op1 == op2) {
 		return 0;
-	} else if (!op1) {
+	} else if (!op1 || op1 == PSI_T_NUMBER) {
 		return 1;
-	} else if (!op2) {
+	} else if (!op2 || op2 == PSI_T_NUMBER) {
 		return -1;
 	}
 
@@ -48,6 +48,8 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 		case PSI_T_NOT:
 			return 0;
 		case PSI_T_TILDE:
+			return 0;
+		case PSI_T_CAST:
 			return 0;
 		case PSI_T_ASTERISK:
 			return -1;
@@ -97,6 +99,58 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 			return 0;
 		case PSI_T_TILDE:
 			return 0;
+		case PSI_T_CAST:
+			return 0;
+		case PSI_T_ASTERISK:
+			return -1;
+		case PSI_T_SLASH:
+			return -1;
+		case PSI_T_MODULO:
+			return -1;
+		case PSI_T_PLUS:
+			return -1;
+		case PSI_T_MINUS:
+			return -1;
+		case PSI_T_LSHIFT:
+			return -1;
+		case PSI_T_RSHIFT:
+			return -1;
+		case PSI_T_LCHEVR:
+			return -1;
+		case PSI_T_CMP_LE:
+			return -1;
+		case PSI_T_RCHEVR:
+			return -1;
+		case PSI_T_CMP_GE:
+			return -1;
+		case PSI_T_AMPERSAND:
+			return -1;
+		case PSI_T_CMP_EQ:
+			return -1;
+		case PSI_T_CMP_NE:
+			return -1;
+		case PSI_T_CARET:
+			return -1;
+		case PSI_T_PIPE:
+			return -1;
+		case PSI_T_AND:
+			return -1;
+		case PSI_T_OR:
+			return -1;
+		default:
+			assert(0);
+			break;
+		}
+		break;
+
+	case PSI_T_CAST:
+		switch (op2) {
+		case PSI_T_NOT:
+			return 0;
+		case PSI_T_TILDE:
+			return 0;
+		case PSI_T_CAST:
+			return 0;
 		case PSI_T_ASTERISK:
 			return -1;
 		case PSI_T_SLASH:
@@ -144,6 +198,8 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 		case PSI_T_NOT:
 			return 1;
 		case PSI_T_TILDE:
+			return 1;
+		case PSI_T_CAST:
 			return 1;
 		case PSI_T_ASTERISK:
 			return 0;
@@ -193,6 +249,8 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 			return 1;
 		case PSI_T_TILDE:
 			return 1;
+		case PSI_T_CAST:
+			return 1;
 		case PSI_T_ASTERISK:
 			return 0;
 		case PSI_T_SLASH:
@@ -240,6 +298,8 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 		case PSI_T_NOT:
 			return 1;
 		case PSI_T_TILDE:
+			return 1;
+		case PSI_T_CAST:
 			return 1;
 		case PSI_T_ASTERISK:
 			return 0;
@@ -289,6 +349,8 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 			return 1;
 		case PSI_T_TILDE:
 			return 1;
+		case PSI_T_CAST:
+			return 1;
 		case PSI_T_ASTERISK:
 			return 1;
 		case PSI_T_SLASH:
@@ -336,6 +398,8 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 		case PSI_T_NOT:
 			return 1;
 		case PSI_T_TILDE:
+			return 1;
+		case PSI_T_CAST:
 			return 1;
 		case PSI_T_ASTERISK:
 			return 1;
@@ -385,6 +449,8 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 			return 1;
 		case PSI_T_TILDE:
 			return 1;
+		case PSI_T_CAST:
+			return 1;
 		case PSI_T_ASTERISK:
 			return 1;
 		case PSI_T_SLASH:
@@ -432,6 +498,8 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 		case PSI_T_NOT:
 			return 1;
 		case PSI_T_TILDE:
+			return 1;
+		case PSI_T_CAST:
 			return 1;
 		case PSI_T_ASTERISK:
 			return 1;
@@ -481,6 +549,8 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 			return 1;
 		case PSI_T_TILDE:
 			return 1;
+		case PSI_T_CAST:
+			return 1;
 		case PSI_T_ASTERISK:
 			return 1;
 		case PSI_T_SLASH:
@@ -528,6 +598,8 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 		case PSI_T_NOT:
 			return 1;
 		case PSI_T_TILDE:
+			return 1;
+		case PSI_T_CAST:
 			return 1;
 		case PSI_T_ASTERISK:
 			return 1;
@@ -577,6 +649,8 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 			return 1;
 		case PSI_T_TILDE:
 			return 1;
+		case PSI_T_CAST:
+			return 1;
 		case PSI_T_ASTERISK:
 			return 1;
 		case PSI_T_SLASH:
@@ -624,6 +698,8 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 		case PSI_T_NOT:
 			return 1;
 		case PSI_T_TILDE:
+			return 1;
+		case PSI_T_CAST:
 			return 1;
 		case PSI_T_ASTERISK:
 			return 1;
@@ -673,6 +749,8 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 			return 1;
 		case PSI_T_TILDE:
 			return 1;
+		case PSI_T_CAST:
+			return 1;
 		case PSI_T_ASTERISK:
 			return 1;
 		case PSI_T_SLASH:
@@ -720,6 +798,8 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 		case PSI_T_NOT:
 			return 1;
 		case PSI_T_TILDE:
+			return 1;
+		case PSI_T_CAST:
 			return 1;
 		case PSI_T_ASTERISK:
 			return 1;
@@ -769,6 +849,8 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 			return 1;
 		case PSI_T_TILDE:
 			return 1;
+		case PSI_T_CAST:
+			return 1;
 		case PSI_T_ASTERISK:
 			return 1;
 		case PSI_T_SLASH:
@@ -816,6 +898,8 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 		case PSI_T_NOT:
 			return 1;
 		case PSI_T_TILDE:
+			return 1;
+		case PSI_T_CAST:
 			return 1;
 		case PSI_T_ASTERISK:
 			return 1;
@@ -865,6 +949,8 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 			return 1;
 		case PSI_T_TILDE:
 			return 1;
+		case PSI_T_CAST:
+			return 1;
 		case PSI_T_ASTERISK:
 			return 1;
 		case PSI_T_SLASH:
@@ -913,6 +999,8 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 			return 1;
 		case PSI_T_TILDE:
 			return 1;
+		case PSI_T_CAST:
+			return 1;
 		case PSI_T_ASTERISK:
 			return 1;
 		case PSI_T_SLASH:
@@ -960,6 +1048,8 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 		case PSI_T_NOT:
 			return 1;
 		case PSI_T_TILDE:
+			return 1;
+		case PSI_T_CAST:
 			return 1;
 		case PSI_T_ASTERISK:
 			return 1;

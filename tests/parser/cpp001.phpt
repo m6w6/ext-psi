@@ -1,3 +1,14 @@
+--TEST--
+CPP defines
+--SKIPIF--
+<?php 
+extension_loaded("psi") or die("skip - need ext/psi");
+?>
+--FILE--
+===TEST===
+<?php 
+
+var_dump(psi_validate_string(<<<PSI
 #define FOO
 #ifndef FOO
 # error FOO is not defined
@@ -49,3 +60,11 @@ enum a{b};
 #endif
 
 enum b{a=b};
+PSI
+));
+?>
+===DONE===
+--EXPECT--
+===TEST===
+bool(true)
+===DONE===

@@ -34,36 +34,6 @@
 #ifndef YYMAXFILL
 # define YYMAXFILL 256
 #endif
-/*!re2c
-
-re2c:indent:top = 2;
-re2c:define:YYCTYPE = "unsigned char";
-re2c:define:YYCURSOR = P->cur;
-re2c:define:YYLIMIT = P->lim;
-re2c:define:YYMARKER = P->mrk;
-re2c:define:YYFILL = "if (P->cur >= P->lim) goto done;";
-re2c:yyfill:parameter = 0;
-
-B = [^a-zA-Z0-9_];
-W = [a-zA-Z0-9_];
-SP = [ \t];
-EOL = [\r\n];
-NAME = [a-zA-Z_]W*;
-NSNAME = (NAME)? ("\\" NAME)+;
-DOLLAR_NAME = '$' W+;
-QUOTED_STRING = "\"" ([^"])+ "\"";
-NUMBER = [+-]? [0-9]* "."? [0-9]+ ([eE] [+-]? [0-9]+)?;
-
-*/
-
-static void free_cpp_def(zval *p)
-{
-	if (Z_TYPE_P(p) == IS_PTR) {
-		psi_cpp_macro_decl_free((void *) &Z_PTR_P(p));
-	} else if (Z_REFCOUNTED_P(p)) {
-		zval_ptr_dtor(p);
-	}
-}
 
 struct psi_parser *psi_parser_init(struct psi_parser *P, psi_error_cb error, unsigned flags)
 {
@@ -74,104 +44,85 @@ struct psi_parser *psi_parser_init(struct psi_parser *P, psi_error_cb error, uns
 
 	psi_data_ctor_with_dtors(PSI_DATA(P), error, flags);
 
-	P->col = 1;
-	P->line = 1;
-	P->proc = psi_parser_proc_init();
+	P->preproc = psi_cpp_init(P);
 
-	zend_hash_init(&P->cpp.defs, 0, NULL, free_cpp_def, 1);
-	zval tmp;
-	ZVAL_ARR(&tmp, &P->cpp.defs);
-	add_assoc_string(&tmp, "PHP_OS", PHP_OS);
-
-	if (flags & PSI_DEBUG) {
-		psi_parser_proc_trace(stderr, "PSI> ");
-	}
+	psi_cpp_load_defaults(P->preproc);
 
 	return P;
 }
 
-void psi_parser_reset(struct psi_parser *P)
-{
-	P->cur = P->tok = P->mrk = P->input.buffer;
-	P->lim = P->input.buffer + P->input.length;
-}
-
-bool psi_parser_open_file(struct psi_parser *P, const char *filename)
+struct psi_parser_input *psi_parser_open_file(struct psi_parser *P, const char *filename, bool report_errors)
 {
 	struct stat sb;
 	FILE *fp;
-	char *fb;
+	struct psi_parser_input *fb;
 
 	if (stat(filename, &sb)) {
-		P->error(PSI_DATA(P), NULL, PSI_WARNING,
-				"Could not stat '%s': %s",
-				filename, strerror(errno));
-		return false;
+		if (report_errors) {
+			P->error(PSI_DATA(P), NULL, PSI_WARNING,
+					"Could not stat '%s': %s",
+					filename, strerror(errno));
+		}
+		return NULL;
 	}
 
-	if (!(fb = malloc(sb.st_size + YYMAXFILL))) {
-		P->error(PSI_DATA(P), NULL, PSI_WARNING,
-				"Could not allocate %zu bytes for reading '%s': %s",
-				sb.st_size + YYMAXFILL, filename, strerror(errno));
-		return false;
+	if (!(fb = malloc(sizeof(*fb) + strlen(filename) + 1 + sb.st_size + YYMAXFILL))) {
+		if (report_errors) {
+			P->error(PSI_DATA(P), NULL, PSI_WARNING,
+					"Could not allocate %zu bytes for reading '%s': %s",
+					sb.st_size + YYMAXFILL, filename, strerror(errno));
+		}
+		return NULL;
 	}
 
 	if (!(fp = fopen(filename, "r"))) {
 		free(fb);
-		P->error(PSI_DATA(P), NULL, PSI_WARNING,
-				"Could not open '%s' for reading: %s",
-				filename, strerror(errno));
-		return false;
+		if (report_errors) {
+			P->error(PSI_DATA(P), NULL, PSI_WARNING,
+					"Could not open '%s' for reading: %s",
+					filename, strerror(errno));
+		}
+		return NULL;
 	}
 
-	if (sb.st_size != fread(fb, 1, sb.st_size, fp)) {
+	if (sb.st_size != fread(fb->buffer, 1, sb.st_size, fp)) {
 		free(fb);
 		fclose(fp);
-		P->error(PSI_DATA(P), NULL, PSI_WARNING,
-				"Could not read %zu bytes from '%s': %s",
-				sb.st_size + YYMAXFILL, filename, strerror(errno));
-		return false;
+		if (report_errors) {
+			P->error(PSI_DATA(P), NULL, PSI_WARNING,
+					"Could not read %zu bytes from '%s': %s",
+					sb.st_size + YYMAXFILL, filename, strerror(errno));
+		}
+		return NULL;
 	}
-	memset(fb + sb.st_size, 0, YYMAXFILL);
 
-	if (P->input.buffer) {
-		free(P->input.buffer);
-	}
-	P->input.buffer = fb;
-	P->input.length = sb.st_size;
+	memset(fb->buffer + sb.st_size, 0, YYMAXFILL);
+	fb->length = sb.st_size;
+	fb->file = &fb->buffer[sb.st_size + YYMAXFILL];
+	memcpy(fb->file, filename, strlen(filename) + 1);
 
-	P->file.fn = strdup(filename);
-
-	psi_parser_reset(P);
-
-	return true;
+	return fb;
 }
 
-bool psi_parser_open_string(struct psi_parser *P, const char *string, size_t length)
+struct psi_parser_input *psi_parser_open_string(struct psi_parser *P, const char *string, size_t length)
 {
-	char *sb;
+	struct psi_parser_input *sb;
 
-	if (!(sb = malloc(length + YYMAXFILL))) {
+	if (!(sb = malloc(sizeof(*sb) + sizeof("<stdin>") + length + YYMAXFILL))) {
 		P->error(PSI_DATA(P), NULL, PSI_WARNING,
 				"Could not allocate %zu bytes: %s",
 				length + YYMAXFILL, strerror(errno));
-		return false;
+		return NULL;
 	}
 
-	memcpy(sb, string, length);
-	memset(sb + length, 0, YYMAXFILL);
+	memcpy(sb->buffer, string, length);
+	memset(sb->buffer + length, 0, YYMAXFILL);
 
-	if (P->input.buffer) {
-		free(P->input.buffer);
-	}
-	P->input.buffer = sb;
-	P->input.length = length;
+	sb->length = length;
+	sb->file = &sb->buffer[length + YYMAXFILL];
+	memcpy(sb->file, "<stdin>", sizeof("<stdin>"));
 
-	P->file.fn = strdup("<input>");
-
-	psi_parser_reset(P);
-
-	return true;
+	return sb;
 }
 
 #if 0
@@ -230,42 +181,58 @@ static void psi_parser_register_constants(struct psi_parser *P)
 }
 #endif
 
-void psi_parser_parse(struct psi_parser *P)
+struct psi_plist *psi_parser_preprocess(struct psi_parser *P, struct psi_plist *tokens)
 {
-	size_t i = 0;
-	struct psi_token *T;
+	if (psi_cpp_process(P->preproc, &tokens)) {
+		return tokens;
+	}
+	return NULL;
+}
 
-	P->cpp.tokens = psi_parser_scan(P);
+bool psi_parser_process(struct psi_parser *P, struct psi_plist *tokens, size_t *processed)
+{
+	if (psi_plist_count(tokens)) {
+		int rc;
 
-	psi_cpp_preprocess(P, &P->cpp);
-
-	if (psi_plist_count(P->cpp.tokens)) {
-		while (psi_plist_get(P->cpp.tokens, i++, &T)) {
-			if (P->flags & PSI_DEBUG) {
-				fprintf(stderr, "PSI> ");
-				psi_token_dump(2, T);
-			}
-			psi_parser_proc_parse(P->proc, T->type, T, P);
+		if (P->flags & PSI_DEBUG) {
+			psi_parser_proc_debug = 1;
 		}
-		psi_parser_proc_parse(P->proc, 0, NULL, P);
+		rc = psi_parser_proc_parse(P, tokens, processed);
+		if (P->flags & PSI_DEBUG) {
+			psi_parser_proc_debug = 0;
+		}
+		return rc == 0;
+	}
+	return true;
+}
+
+bool psi_parser_parse(struct psi_parser *P, struct psi_parser_input *I)
+{
+	struct psi_plist *scanned, *preproc;
+	size_t processed = 0;
+
+	if (!(scanned = psi_parser_scan(P, I))) {
+		return false;
 	}
 
-	psi_plist_free(P->cpp.tokens);
-	P->cpp.tokens = NULL;
+	if (!(preproc = psi_parser_preprocess(P, scanned))) {
+		psi_plist_free(scanned);
+		return false;
+	}
+
+	if (!psi_parser_process(P, preproc, &processed)) {
+		psi_plist_free(preproc);
+		return false;
+	}
+
+	psi_plist_free(preproc);
+	return true;
 }
 
 void psi_parser_dtor(struct psi_parser *P)
 {
-	psi_parser_proc_free(&P->proc);
-
-	if (P->input.buffer) {
-		free(P->input.buffer);
-		P->input.buffer = NULL;
-	}
-
+	psi_cpp_free(&P->preproc);
 	psi_data_dtor(PSI_DATA(P));
-
-	zend_hash_destroy(&P->cpp.defs);
 
 	memset(P, 0, sizeof(*P));
 }
@@ -280,36 +247,71 @@ void psi_parser_free(struct psi_parser **P)
 }
 
 #define NEWLINE() \
-	P->col = 1; \
-	++P->line
+	eol = cur; \
+	++I->lines
 
 #define NEWTOKEN(t) \
-	P->num = t; \
-	token = psi_token_alloc(P); \
+	token = psi_token_init(t, tok, cur - tok, tok - eol + 1, I->lines, I->file); \
 	tokens = psi_plist_add(tokens, &token); \
-	P->col += P->cur - P->tok; \
 	if (P->flags & PSI_DEBUG) { \
 		fprintf(stderr, "PSI< "); \
 		psi_token_dump(2, token); \
-	} \
-	token = NULL
+	}
 
 
-struct psi_plist *psi_parser_scan(struct psi_parser *P)
+struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input *I)
 {
 	struct psi_plist *tokens;
 	struct psi_token *token;
+	const char *tok, *cur, *lim, *mrk, *eol;
 
-	if (!P->cur) {
-		return NULL;
-	}
-
-	tokens = psi_plist_init(NULL);
+	tok = mrk = eol = cur = I->buffer;
+	lim = I->buffer + I->length;
+	I->lines = 1;
+	tokens = psi_plist_init((void (*)(void *)) psi_token_free);
 
 	start: ;
-		P->tok = P->cur;
+		tok = cur;
 
 		/*!re2c
+
+		re2c:indent:top = 2;
+		re2c:define:YYCTYPE = "unsigned char";
+		re2c:define:YYCURSOR = cur;
+		re2c:define:YYLIMIT = lim;
+		re2c:define:YYMARKER = mrk;
+		re2c:define:YYFILL = "if (cur >= lim) goto done;";
+		re2c:yyfill:parameter = 0;
+
+		W = [a-zA-Z0-9_\x80-\xff];
+		SP = [ \t];
+		EOL = [\r\n];
+		NAME = [a-zA-Z_\x80-\xff]W*;
+		NSNAME = (NAME)? ("\\" NAME)+;
+		DOLLAR_NAME = '$' W+;
+		QUOTED_STRING = "L"? "\"" ([^"])+ "\"";
+		QUOTED_CHAR = "L"? "'" ([^']+ "\\'"?)+ "'";
+		CPP_HEADER = "<" [-._/a-zA-Z0-9]+ ">";
+
+		DEC_CONST = [1-9] [0-9]*;
+		OCT_CONST = "0" [0-7]*;
+		HEX_CONST = '0x' [0-9a-fA-F]+;
+		INT_SUFFIX = 'u'('l' 'l'? )? | 'l'('l'? 'u')?;
+		INT_NUMBER = (DEC_CONST | OCT_CONST | HEX_CONST) INT_SUFFIX?;
+
+		FLT_HEX_FRAC = [0-9a-fA-F]*;
+		FLT_HEX_SIG = HEX_CONST ("." FLT_HEX_FRAC)?;
+		FLT_HEX_EXPO = 'p' [+-]? [0-9]+;
+		FLT_HEX_CONST = FLT_HEX_SIG FLT_HEX_EXPO;
+		FLT_DEC_NUM = "0" | DEC_CONST;
+		FLT_DEC_FRAC = [0-9]*;
+		FLT_DEC_SIG = FLT_DEC_NUM ("." FLT_DEC_FRAC)?;
+		FLT_DEC_EXPO = 'e' [+-]? [0-9]+;
+		FLT_DEC_CONST = (FLT_DEC_SIG FLT_DEC_EXPO) | (FLT_DEC_NUM? "." FLT_DEC_FRAC);
+		FLT_SUFFIX = 'f' | 'l' | ('d' ('f' | 'd' | 'l'));
+		FLT_NUMBER = (FLT_DEC_CONST | FLT_HEX_CONST) FLT_SUFFIX?;
+
+		NUMBER = [+-]? (INT_NUMBER | FLT_NUMBER);
 
 		"/*"			{ goto comment; }
 		"//"			{ goto comment_sl; }
@@ -345,6 +347,7 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P)
 		">="			{ NEWTOKEN(PSI_T_CMP_GE); goto start; }
 		"<"				{ NEWTOKEN(PSI_T_LCHEVR); goto start; }
 		">"				{ NEWTOKEN(PSI_T_RCHEVR); goto start; }
+		"."				{ NEWTOKEN(PSI_T_PERIOD); goto start; }
 		"..."			{ NEWTOKEN(PSI_T_ELLIPSIS); goto start; }
 		'IF'			{ NEWTOKEN(PSI_T_IF); goto start; }
 		'IFDEF'			{ NEWTOKEN(PSI_T_IFDEF); goto start; }
@@ -357,6 +360,8 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P)
 		'UNDEF'			{ NEWTOKEN(PSI_T_UNDEF); goto start; }
 		'WARNING'		{ NEWTOKEN(PSI_T_WARNING); goto start; }
 		'ERROR'			{ NEWTOKEN(PSI_T_ERROR); goto start; }
+		'INCLUDE'		{ NEWTOKEN(PSI_T_INCLUDE); goto start; }
+		'INCLUDE_NEXT'	{ NEWTOKEN(PSI_T_INCLUDE_NEXT); goto start; }
 		'TRUE'			{ NEWTOKEN(PSI_T_TRUE); goto start; }
 		'FALSE'			{ NEWTOKEN(PSI_T_FALSE); goto start; }
 		'NULL'			{ NEWTOKEN(PSI_T_NULL); goto start; }
@@ -421,9 +426,12 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P)
 		NSNAME			{ NEWTOKEN(PSI_T_NSNAME); goto start; }
 		DOLLAR_NAME		{ NEWTOKEN(PSI_T_DOLLAR_NAME); goto start; }
 		QUOTED_STRING	{ NEWTOKEN(PSI_T_QUOTED_STRING); goto start; }
+		QUOTED_CHAR		{ NEWTOKEN(PSI_T_QUOTED_CHAR); goto start; }
+		CPP_HEADER		{ NEWTOKEN(PSI_T_CPP_HEADER); goto start; }
 		EOL				{ NEWTOKEN(PSI_T_EOL); NEWLINE(); goto start; }
 		SP+				{ NEWTOKEN(PSI_T_WHITESPACE); goto start; }
-		*				{ goto error; }
+		[^]				{ NEWTOKEN(-2); goto error; }
+		*				{ NEWTOKEN(-1); goto error; }
 
 		*/
 
@@ -443,9 +451,16 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P)
 		*	{ goto comment_sl; }
 
 		*/
-error:
+error: ;
+
+	P->error(PSI_DATA(P), token, PSI_WARNING, "PSI syntax error: unexpected input (%d) '%.*s' at col %tu",
+			token->type, token->size, token->text, tok - eol + 1);
 	psi_plist_free(tokens);
 	return NULL;
+
 done:
+
+	PSI_DEBUG_PRINT(P, "PSI: EOF cur=%p lim=%p\n", cur, lim);
+
 	return tokens;
 }

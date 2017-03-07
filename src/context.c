@@ -240,6 +240,7 @@ void psi_context_build(struct psi_context *C, const char *paths)
 			for (i = 0; i < n; ++i) {
 				char psi[MAXPATHLEN];
 				struct psi_parser P;
+				struct psi_parser_input *I;
 
 				if (MAXPATHLEN <= slprintf(psi, MAXPATHLEN, "%s/%s", ptr, entries[i]->d_name)) {
 					C->error(PSI_DATA(C), NULL, PSI_WARNING, "Path to PSI file too long: %s/%s",
@@ -250,15 +251,15 @@ void psi_context_build(struct psi_context *C, const char *paths)
 						psi, strerror(errno));
 					continue;
 				}
-				if (!psi_parser_open_file(&P, psi)) {
+				if (!(I = psi_parser_open_file(&P, psi, true))) {
 					C->error(PSI_DATA(C), NULL, PSI_WARNING, "Failed to open PSI file (%s): %s",
 						psi, strerror(errno));
 					continue;
 				}
-
-				psi_parser_parse(&P);
+				psi_parser_parse(&P, I);
 				psi_context_add_data(C, PSI_DATA(&P));
 				psi_parser_dtor(&P);
+				free(I);
 			}
 		}
 

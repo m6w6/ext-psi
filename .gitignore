@@ -44,9 +44,6 @@ tests/*/*.sh
 /*.diff
 /*.phar
 /tmp/
-/lemon.c
-/lempar.c
-/lemon
 /context.h
 /libffi.h
 /libjit.h
@@ -61,7 +58,7 @@ tests/*/*.sh
 /parser_proc.h
 /token.h
 /types.h
-/src/parser_proc.out
+/src/parser_proc.output
 /php_psi_stdinc.h
 /php_psi_posix.h
 /types/

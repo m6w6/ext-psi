@@ -127,9 +127,16 @@ ZEND_END_ARG_INFO();
 static PHP_FUNCTION(psi_validate)
 {
 	zend_string *file;
+	struct psi_parser_input *I;
 	struct psi_parser P;
 	struct psi_data D = {0};
 	zend_long flags = 0;
+
+#if PHP_DEBUG
+	if (psi_check_env("PSI_DEBUG")) {
+		flags |= PSI_DEBUG;
+	}
+#endif
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "P|l", &file, &flags)) {
 		return;
@@ -138,17 +145,17 @@ static PHP_FUNCTION(psi_validate)
 	if (!psi_parser_init(&P, psi_error_wrapper, flags)) {
 		RETURN_FALSE;
 	}
-	if (!psi_parser_open_file(&P, file->val)) {
+	if (!(I = psi_parser_open_file(&P, file->val, true))) {
 		psi_parser_dtor(&P);
 		RETURN_FALSE;
 	}
 
-	psi_parser_parse(&P);
+	psi_parser_parse(&P, I);
 	psi_data_ctor(&D, P.error, P.flags);
 	RETVAL_BOOL(psi_data_validate(&D, PSI_DATA(&P)) && !P.errors);
 	psi_data_dtor(&D);
-
 	psi_parser_dtor(&P);
+	free(I);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_psi_validate_string, 0, 0, 1)
@@ -157,9 +164,16 @@ ZEND_END_ARG_INFO();
 static PHP_FUNCTION(psi_validate_string)
 {
 	zend_string *string;
+	struct psi_parser_input *I;
 	struct psi_parser P;
 	struct psi_data D = {0};
 	zend_long flags = 0;
+
+#if PHP_DEBUG
+	if (psi_check_env("PSI_DEBUG")) {
+		flags |= PSI_DEBUG;
+	}
+#endif
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "S|l", &string, &flags)) {
 		return;
@@ -168,17 +182,17 @@ static PHP_FUNCTION(psi_validate_string)
 	if (!psi_parser_init(&P, psi_error_wrapper, flags)) {
 		RETURN_FALSE;
 	}
-	if (!psi_parser_open_string(&P, string->val, string->len)) {
+	if (!(I = psi_parser_open_string(&P, string->val, string->len))) {
 		psi_parser_dtor(&P);
 		RETURN_FALSE;
 	}
 
-	psi_parser_parse(&P);
+	psi_parser_parse(&P, I);
 	psi_data_ctor(&D, P.error, P.flags);
 	RETVAL_BOOL(psi_data_validate(&D, PSI_DATA(&P)) && !P.errors);
 	psi_data_dtor(&D);
-
 	psi_parser_dtor(&P);
+	free(I);
 }
 
 static PHP_MINIT_FUNCTION(psi)
