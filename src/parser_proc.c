@@ -2438,7 +2438,7 @@ static void yy_reduce(
  } else {
   char digest[17];
   psi_token_hash(yymsp[-1].minor.yy0, digest);
-  yylhsminor.yy0 = psi_token_translit(psi_token_append(yymsp[-1].minor.yy0, 1, digest), " ", "@");
+  yylhsminor.yy0 = psi_token_append("@", yymsp[-1].minor.yy0, 1, digest);
  }
 }
 #line 2445 "src/parser_proc.c"
@@ -2956,7 +2956,7 @@ static void yy_reduce(
 #line 712 "src/parser_proc.y"
 {
  if (yymsp[0].minor.yy0) {
-  yylhsminor.yy0 = psi_token_cat(2, yymsp[-1].minor.yy0, yymsp[0].minor.yy0);
+  yylhsminor.yy0 = psi_token_cat(" ", 2, yymsp[-1].minor.yy0, yymsp[0].minor.yy0);
   free(yymsp[-1].minor.yy0);
   free(yymsp[0].minor.yy0);
  } else {
@@ -2970,7 +2970,7 @@ static void yy_reduce(
       case 105: /* decl_type ::= SIGNED decl_scalar_type */ yytestcase(yyruleno==105);
 #line 760 "src/parser_proc.y"
 {
- struct psi_token *T = psi_token_cat(2, yymsp[-1].minor.yy0, yymsp[0].minor.yy0);
+ struct psi_token *T = psi_token_cat(" ", 2, yymsp[-1].minor.yy0, yymsp[0].minor.yy0);
  yylhsminor.yy172 = psi_decl_type_init(T->type, T->text);
  yylhsminor.yy172->token = T;
  free(yymsp[-1].minor.yy0);

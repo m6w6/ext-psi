@@ -74,4 +74,16 @@ void psi_cpp_macro_decl_dump(int fd, struct psi_cpp_macro_decl *macro)
 		}
 		dprintf(fd, ")");
 	}
+
+	if (macro->exp) {
+		dprintf(fd, " ");
+		psi_num_exp_dump(fd, macro->exp);
+	} else if (macro->tokens) {
+		size_t i = 0;
+		struct psi_token *tok;
+
+		while (psi_plist_get(macro->tokens, i++, &tok)) {
+			dprintf(fd, " %s", tok->text);
+		}
+	}
 }

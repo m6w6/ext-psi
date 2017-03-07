@@ -39,11 +39,12 @@ size_t psi_plist_count(struct psi_plist *list);
 void **psi_plist_eles(struct psi_plist *list);
 
 struct psi_plist *psi_plist_add(struct psi_plist *list, void *ptr);
+struct psi_plist *psi_plist_add_r(struct psi_plist *list, size_t num_eles, void **eles);
 bool psi_plist_get(struct psi_plist *list, size_t index, void *ptr);
 bool psi_plist_del(struct psi_plist *list, size_t index, void *ptr);
-bool psi_plist_del_range(struct psi_plist *list, size_t offset_start, size_t offset_end, void **eles);
+bool psi_plist_del_r(struct psi_plist *list, size_t offset_start, size_t offset_end, void **eles);
 struct psi_plist *psi_plist_ins(struct psi_plist *list, size_t index, void *ptr);
-struct psi_plist *psi_plist_ins_range(struct psi_plist *list, size_t offset_start, size_t num_eles, void **eles);
+struct psi_plist *psi_plist_ins_r(struct psi_plist *list, size_t offset_start, size_t num_eles, void **eles);
 
 bool psi_plist_shift(struct psi_plist *list, void *ptr);
 bool psi_plist_pop(struct psi_plist *list, void *ptr);

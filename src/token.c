@@ -86,9 +86,10 @@ void psi_token_copy_ctor(struct psi_token **tok) {
 	*tok = psi_token_copy(*tok);
 }
 
-struct psi_token *psi_token_cat(unsigned argc, ...) {
+struct psi_token *psi_token_cat(const char *sep, unsigned argc, ...) {
 	va_list argv;
 	unsigned i;
+	size_t sep_len = sep ? strlen(sep) : 0;
 	struct psi_token *T = NULL;
 
 	va_start(argv, argc);
@@ -97,7 +98,7 @@ struct psi_token *psi_token_cat(unsigned argc, ...) {
 
 		if (T) {
 			size_t token_len = T->size, fname_len = strlen(T->file);
-			struct psi_token *tmp = realloc(T, psi_token_alloc_size(T->size += arg->size + 1, fname_len));
+			struct psi_token *tmp = realloc(T, psi_token_alloc_size(T->size += arg->size + sep_len, fname_len));
 
 			if (tmp) {
 				T = tmp;
@@ -109,9 +110,9 @@ struct psi_token *psi_token_cat(unsigned argc, ...) {
 
 			T->text = &T->buf[0];
 			T->file = &T->buf[T->size + 1];
-			T->buf[token_len] = ' ';
-			memmove(&T->buf[T->size + 1], &T->buf[token_len + 1], fname_len + 1);
-			memcpy(&T->buf[token_len + 1], arg->text, arg->size + 1);
+			memmove(&T->buf[T->size + 1], &T->buf[token_len + sep_len], fname_len + 1);
+			memcpy(&T->buf[token_len], sep, sep_len);
+			memcpy(&T->buf[token_len + sep_len], arg->text, arg->size + 1);
 		} else {
 			T = psi_token_copy(arg);
 			T->type = PSI_T_NAME;
@@ -122,21 +123,44 @@ struct psi_token *psi_token_cat(unsigned argc, ...) {
 	return T;
 }
 
-struct psi_token *psi_token_append(struct psi_token *T, unsigned argc, ...) {
+struct psi_token *psi_token_prepend(const char *sep, struct psi_token *T, unsigned argc, ...) {
 	va_list argv;
 	unsigned i;
+	size_t sep_len = sep ? strlen(sep) : 0;
 
 	va_start(argv, argc);
 	for (i = 0; i < argc; ++i) {
 		char *str = va_arg(argv, char *);
 		size_t str_len = strlen(str), token_len = T->size, fname_len = strlen(T->file);
 
-		T = realloc(T, psi_token_alloc_size(T->size += str_len + 1, fname_len));
+		T = realloc(T, psi_token_alloc_size(T->size += str_len + sep_len, fname_len));
 		T->text = &T->buf[0];
 		T->file = &T->buf[T->size + 1];
-		T->buf[token_len] = ' ';
-		memmove(&T->buf[T->size + 1], &T->buf[token_len + 1], fname_len + 1);
-		memcpy(&T->buf[token_len + 1], str, str_len + 1);
+		memmove(&T->buf[str_len + sep_len], &T->buf[0], T->size + 1 + fname_len + 1);
+		memcpy(&T->buf[0], str, str_len);
+		memcpy(&T->buf[str_len], sep, sep_len);
+		T->buf[T->size] = '\0';
+	}
+	va_end(argv);
+
+	return T;
+}
+struct psi_token *psi_token_append(const char *sep, struct psi_token *T, unsigned argc, ...) {
+	va_list argv;
+	unsigned i;
+	size_t sep_len = sep ? strlen(sep) : 0;
+
+	va_start(argv, argc);
+	for (i = 0; i < argc; ++i) {
+		char *str = va_arg(argv, char *);
+		size_t str_len = strlen(str), token_len = T->size, fname_len = strlen(T->file);
+
+		T = realloc(T, psi_token_alloc_size(T->size += str_len + sep_len, fname_len));
+		T->text = &T->buf[0];
+		T->file = &T->buf[T->size + 1];
+		memmove(&T->buf[T->size + 1], &T->buf[token_len + sep_len], fname_len + 1);
+		memcpy(&T->buf[token_len], sep, sep_len);
+		memcpy(&T->buf[token_len + sep_len], str, str_len + 1);
 	}
 	va_end(argv);
 

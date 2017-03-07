@@ -111,6 +111,17 @@ struct psi_plist *psi_plist_add(struct psi_plist *list, void *ptr) {
 	return list;
 }
 
+struct psi_plist *psi_plist_add_r(struct psi_plist *list, size_t num_eles, void **eles) {
+	if (list && list->count) {
+		list = realloc(list, sizeof(*list) + list->size + (num_eles + list->count) * list->size);
+	}
+	if (list) {
+		memcpy(PLIST_ELE(list, list->count), eles, num_eles * list->size);
+		list->count += num_eles;
+	}
+	return list;
+}
+
 bool psi_plist_get(struct psi_plist *list, size_t index, void *ptr) {
 	if (list && list->count > index) {
 		PLIST_CPY(list, ptr, PLIST_ELE(list, index));
@@ -132,7 +143,7 @@ bool psi_plist_del(struct psi_plist *list, size_t index, void *ptr) {
 	return false;
 }
 
-bool psi_plist_del_range(struct psi_plist *list, size_t offset_start, size_t num_eles, void **eles) {
+bool psi_plist_del_r(struct psi_plist *list, size_t offset_start, size_t num_eles, void **eles) {
 	if (list) {
 		size_t offset_end = offset_start + num_eles - 1;
 
@@ -169,7 +180,7 @@ struct psi_plist *psi_plist_ins(struct psi_plist *list, size_t index, void *ptr)
 	return list;
 }
 
-struct psi_plist *psi_plist_ins_range(struct psi_plist *list, size_t offset_start, size_t num_eles, void **eles) {
+struct psi_plist *psi_plist_ins_r(struct psi_plist *list, size_t offset_start, size_t num_eles, void **eles) {
 	size_t new_count = MAX(offset_start, list->count) + num_eles;
 
 	if (list && new_count) {

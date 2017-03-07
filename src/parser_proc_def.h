@@ -648,7 +648,7 @@ PARSE_NAMED(enum_name, n,
 		char digest[17];
 
 		psi_token_hash(E, digest);
-		n = psi_token_translit(psi_token_append(E, 1, digest), " ", "@");
+		n = psi_token_append("@", E, 1, digest);
 	}
 }
 
@@ -665,7 +665,7 @@ PARSE_NAMED(struct_name, n,
 		char digest[17];
 
 		psi_token_hash(S, digest);
-		n = psi_token_translit(psi_token_append(S, 1, digest), " ", "@");
+		n = psi_token_append("@", S, 1, digest);
 	}
 }
 
@@ -682,7 +682,7 @@ PARSE_NAMED(union_name, n,
 		char digest[17];
 
 		psi_token_hash(U, digest);
-		n = psi_token_translit(psi_token_append(U, 1, digest), " ", "@");
+		n = psi_token_append("@", U, 1, digest);
 	}
 }
 
@@ -1296,7 +1296,7 @@ PARSE_NAMED(decl_scalar_type, type_,
 		NAMED(SHORT, S)
 		NAMED(decl_scalar_type_short, s)) {
 	if (s) {
-		type_ = psi_token_cat(2, S, s);
+		type_ = psi_token_cat(" ", 2, S, s);
 		free(S);
 		free(s);
 	} else {
@@ -1334,7 +1334,7 @@ PARSE_NAMED(decl_scalar_type, type_,
 		NAMED(LONG, L)
 		NAMED(decl_scalar_type_long, l)) {
 	if (l) {
-		type_ = psi_token_cat(2, L, l);
+		type_ = psi_token_cat(" ", 2, L, l);
 		free(L);
 		free(l);
 	} else {
@@ -1364,7 +1364,7 @@ PARSE_NAMED(decl_scalar_type_long, l,
 		NAMED(LONG, L)
 		NAMED(decl_scalar_type_long_long, ll)) {
 	if (ll) {
-		l = psi_token_cat(2, L, ll);
+		l = psi_token_cat(" ", 2, L, ll);
 		free(L);
 		free(ll);
 	} else {
@@ -1393,7 +1393,7 @@ PARSE_NAMED(decl_scalar_type_long_long, ll,
 PARSE_TYPED(decl_type, type_,
 		NAMED(UNSIGNED, U)
 		NAMED(decl_scalar_type, N)) {
-	struct psi_token *T = psi_token_cat(2, U, N);
+	struct psi_token *T = psi_token_cat(" ", 2, U, N);
 	type_ = psi_decl_type_init(T->type, T->text);
 	type_->token = T;
 	free(U);
@@ -1406,7 +1406,7 @@ PARSE_TYPED(decl_type, type_,
 PARSE_TYPED(decl_type, type_,
 		NAMED(SIGNED, S)
 		NAMED(decl_scalar_type, N)) {
-	struct psi_token *T = psi_token_cat(2, S, N);
+	struct psi_token *T = psi_token_cat(" ", 2, S, N);
 	type_ = psi_decl_type_init(T->type, T->text);
 	type_->token = T;
 	free(S);

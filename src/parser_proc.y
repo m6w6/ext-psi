@@ -416,7 +416,7 @@ enum_name(n) ::= ENUM(E) optional_name(N). {
  } else {
   char digest[17];
   psi_token_hash(E, digest);
-  n = psi_token_translit(psi_token_append(E, 1, digest), " ", "@");
+  n = psi_token_append("@", E, 1, digest);
  }
 }
 struct_name(n) ::= STRUCT(S) optional_name(N). {
@@ -426,7 +426,7 @@ struct_name(n) ::= STRUCT(S) optional_name(N). {
  } else {
   char digest[17];
   psi_token_hash(S, digest);
-  n = psi_token_translit(psi_token_append(S, 1, digest), " ", "@");
+  n = psi_token_append("@", S, 1, digest);
  }
 }
 union_name(n) ::= UNION(U) optional_name(N). {
@@ -436,7 +436,7 @@ union_name(n) ::= UNION(U) optional_name(N). {
  } else {
   char digest[17];
   psi_token_hash(U, digest);
-  n = psi_token_translit(psi_token_append(U, 1, digest), " ", "@");
+  n = psi_token_append("@", U, 1, digest);
  }
 }
 decl_enum(e) ::= enum_name(N) LBRACE decl_enum_items(list) RBRACE. {
@@ -711,7 +711,7 @@ decl_scalar_type(type_) ::= CHAR(C). {
 }
 decl_scalar_type(type_) ::= SHORT(S) decl_scalar_type_short(s). {
  if (s) {
-  type_ = psi_token_cat(2, S, s);
+  type_ = psi_token_cat(" ", 2, S, s);
   free(S);
   free(s);
  } else {
@@ -729,7 +729,7 @@ decl_scalar_type(type_) ::= INT(I). {
 }
 decl_scalar_type(type_) ::= LONG(L) decl_scalar_type_long(l). {
  if (l) {
-  type_ = psi_token_cat(2, L, l);
+  type_ = psi_token_cat(" ", 2, L, l);
   free(L);
   free(l);
  } else {
@@ -744,7 +744,7 @@ decl_scalar_type_long(l) ::= DOUBLE(D). {
 }
 decl_scalar_type_long(l) ::= LONG(L) decl_scalar_type_long_long(ll). {
  if (ll) {
-  l = psi_token_cat(2, L, ll);
+  l = psi_token_cat(" ", 2, L, ll);
   free(L);
   free(ll);
  } else {
@@ -758,14 +758,14 @@ decl_scalar_type_long_long(ll) ::= INT(I). {
  ll = I;
 }
 decl_type(type_) ::= UNSIGNED(U) decl_scalar_type(N). {
- struct psi_token *T = psi_token_cat(2, U, N);
+ struct psi_token *T = psi_token_cat(" ", 2, U, N);
  type_ = psi_decl_type_init(T->type, T->text);
  type_->token = T;
  free(U);
  free(N);
 }
 decl_type(type_) ::= SIGNED(S) decl_scalar_type(N). {
- struct psi_token *T = psi_token_cat(2, S, N);
+ struct psi_token *T = psi_token_cat(" ", 2, S, N);
  type_ = psi_decl_type_init(T->type, T->text);
  type_->token = T;
  free(S);
