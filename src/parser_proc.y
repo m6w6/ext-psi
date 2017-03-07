@@ -60,7 +60,7 @@ void psi_parser_proc_free(void **parser_proc)
 %left LSHIFT RSHIFT.
 %left PLUS MINUS.
 %left ASTERISK SLASH MODULO.
-%fallback NAME TEMP FREE SET LET RETURN CALLOC CALLBACK ZVAL LIB STRING COUNT.
+%fallback NAME TEMP FREE SET LET RETURN CALLOC CALLBACK ZVAL LIB STRING COUNT ERROR WARNING.
 %wildcard ANY.
 %type decl_enum {struct psi_decl_enum *}
 %destructor decl_enum {psi_decl_enum_free(&$$);}

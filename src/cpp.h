@@ -29,7 +29,7 @@
 #include "data.h"
 
 #ifndef PSI_CPP_DEBUG
-# define PSI_CPP_DEBUG 1
+# define PSI_CPP_DEBUG 0
 #endif
 
 struct psi_cpp_data {

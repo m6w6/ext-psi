@@ -371,9 +371,7 @@ static void psi_cpp_tokiter_expand_call_tokens(struct psi_cpp_data *cpp,
 	}
 
 	psi_cpp_tokiter_expand_tokens(cpp, tokens);
-	psi_cpp_tokiter_seek(cpp, psi_cpp_tokiter_index(cpp) + psi_plist_count(tokens));
 	psi_plist_free(tokens);
-
 }
 
 static bool psi_cpp_tokiter_expand_call(struct psi_cpp_data *cpp,
