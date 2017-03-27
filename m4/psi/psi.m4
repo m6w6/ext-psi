@@ -27,7 +27,7 @@ AC_DEFUN(PSI_CONFIG_INIT, [
 				capture = 1
 				next
 			}
-			/[Ee]nd.*search/ {
+			/@<:@Ee@:>@nd.*search/ {
 				capture = 0
 			}
 			{ 
