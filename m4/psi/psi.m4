@@ -20,8 +20,8 @@ AC_DEFUN(PSI_CONFIG_INIT, [
 	])
 	
 	AC_MSG_CHECKING(for preprocessor defaults)
-	psi_cpp_predef=`$CPP -Wp,-dM - </dev/null`
-	psi_cpp_search=`$CPP -Wp,-v - </dev/null 2>&1 >/dev/null \
+	psi_cpp_predef=`$CPP -Wp,-dM $CPPFLAGS -D_GNU_SOURCE - </dev/null`
+	psi_cpp_search=`$CPP -Wp,-v $CPPFLAGS -D_GNU_SOURCE - </dev/null 2>&1 >/dev/null \
 		| $AWK '
 			/include.*search.*start/ { 
 				capture = 1

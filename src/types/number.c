@@ -32,10 +32,11 @@
 #include "call.h"
 #include "parser.h"
 
-struct psi_number *psi_number_init(token_t t, void *num)
+struct psi_number *psi_number_init(token_t t, void *num, unsigned flags)
 {
 	struct psi_number *exp = calloc(1, sizeof(*exp));
 
+	exp->flags = flags;
 	switch (exp->type = t) {
 	case PSI_T_INT8:
 		exp->data.ival.i8 = *(int8_t *) num;
@@ -68,6 +69,11 @@ struct psi_number *psi_number_init(token_t t, void *num)
 	case PSI_T_DOUBLE:
 		exp->data.ival.dval = *(double *) num;
 		break;
+#if HAVE_LONG_DOUBLE
+	case PSI_T_LONG_DOUBLE:
+		exp->data.ival.ldval = *(long double *) num;
+		break;
+#endif
 	case PSI_T_QUOTED_CHAR:
 	case PSI_T_NUMBER:
 	case PSI_T_NSNAME:
@@ -106,6 +112,9 @@ struct psi_number *psi_number_copy(struct psi_number *exp)
 	case PSI_T_INT64:
 	case PSI_T_UINT64:
 	case PSI_T_DOUBLE:
+#if HAVE_LONG_DOUBLE
+	case PSI_T_LONG_DOUBLE:
+#endif
 	case PSI_T_ENUM:
 	case PSI_T_CONST:
 		break;
@@ -146,6 +155,9 @@ void psi_number_free(struct psi_number **exp_ptr)
 		case PSI_T_INT64:
 		case PSI_T_UINT64:
 		case PSI_T_DOUBLE:
+#if HAVE_LONG_DOUBLE
+		case PSI_T_LONG_DOUBLE:
+#endif
 		case PSI_T_ENUM:
 		case PSI_T_CONST:
 			break;
@@ -198,6 +210,11 @@ void psi_number_dump(int fd, struct psi_number *exp)
 	case PSI_T_DOUBLE:
 		dprintf(fd, "%F", exp->data.ival.dval);
 		break;
+#if HAVE_LONG_DOUBLE
+	case PSI_T_LONG_DOUBLE:
+		dprintf(fd, "%lF", exp->data.ival.ldval);
+		break;
+#endif
 	case PSI_T_NUMBER:
 	case PSI_T_NSNAME:
 	case PSI_T_DEFINE:
@@ -236,12 +253,174 @@ static inline bool psi_number_validate_enum(struct psi_data *data, struct psi_nu
 	return false;
 }
 
+static inline bool psi_number_validate_char(struct psi_data *data, struct psi_number *exp)
+{
+	impl_val tmp = {0};
+	/* FIXME L */
+	tmp.i8 = exp->data.numb[1 + (*exp->data.numb == 'L')];
+	switch(tmp.i8) {
+	case '\\':
+		tmp.i8 = exp->data.numb[2 + (*exp->data.numb == 'L')];
+		switch(tmp.i8) {
+		case 'x':
+			tmp.i8 = strtol(&exp->data.numb[3 + (*exp->data.numb == 'L')], NULL, 16);
+			free(exp->data.numb);
+			exp->type = PSI_T_INT8;
+			exp->data.ival.i8 = tmp.i8;
+			return true;
+		case '\'':
+			free(exp->data.numb);
+			exp->type = PSI_T_INT8;
+			exp->data.ival.i8 = '\'';
+			return true;
+		case 'a':
+			free(exp->data.numb);
+			exp->type = PSI_T_INT8;
+			exp->data.ival.i8 = '\a';
+			return true;
+		case 'b':
+			free(exp->data.numb);
+			exp->type = PSI_T_INT8;
+			exp->data.ival.i8 = '\b';
+			return true;
+		case 'f':
+			free(exp->data.numb);
+			exp->type = PSI_T_INT8;
+			exp->data.ival.i8 = '\f';
+			return true;
+		case 'n':
+			free(exp->data.numb);
+			exp->type = PSI_T_INT8;
+			exp->data.ival.i8 = '\n';
+			return true;
+		case 'r':
+			free(exp->data.numb);
+			exp->type = PSI_T_INT8;
+			exp->data.ival.i8 = '\r';
+			return true;
+		case 't':
+			free(exp->data.numb);
+			exp->type = PSI_T_INT8;
+			exp->data.ival.i8 = '\t';
+			return true;
+		case 'v':
+			free(exp->data.numb);
+			exp->type = PSI_T_INT8;
+			exp->data.ival.i8 = '\v';
+			return true;
+		case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7':
+			tmp.i8 = strtol(&exp->data.numb[2 + (*exp->data.numb == 'L')], NULL, 8);
+			free(exp->data.numb);
+			exp->type = PSI_T_INT8;
+			exp->data.ival.i8 = tmp.i8;
+			return true;
+		default:
+			free(exp->data.numb);
+			exp->type = PSI_T_INT8;
+			exp->data.ival.i8 = tmp.i8;
+			return true;
+		}
+		break;
+	default:
+		free(exp->data.numb);
+		exp->type = PSI_T_INT8;
+		exp->data.ival.i8 = tmp.i8;
+		return true;
+	}
+}
+
+static inline bool psi_number_validate_number(struct psi_data *data, struct psi_number *exp)
+{
+	impl_val tmp = {0};
+
+	if (exp->flags) {
+		switch (exp->flags & 0x0f) {
+		case PSI_NUMBER_INT:
+			switch (exp->flags & 0x0f00) {
+			case PSI_NUMBER_L:
+			default:
+				tmp.i64 = strtol(exp->data.numb, NULL, 0);
+				free(exp->data.numb);
+				exp->type = PSI_T_INT64;
+				exp->data.ival.i64 = tmp.i64;
+				break;
+			case PSI_NUMBER_LL:
+				tmp.i64 = strtoll(exp->data.numb, NULL, 0);
+				free(exp->data.numb);
+				exp->type = PSI_T_INT64;
+				exp->data.ival.i64 = tmp.i64;
+				break;
+			case PSI_NUMBER_U:
+			case PSI_NUMBER_UL:
+				tmp.u64 = strtoul(exp->data.numb, NULL, 0);
+				free(exp->data.numb);
+				exp->type = PSI_T_UINT64;
+				exp->data.ival.u64 = tmp.u64;
+				break;
+			case PSI_NUMBER_ULL:
+				tmp.u64 = strtoull(exp->data.numb, NULL, 0);
+				free(exp->data.numb);
+				exp->type = PSI_T_UINT64;
+				exp->data.ival.u64 = tmp.u64;
+				break;
+			}
+			return true;
+
+		case PSI_NUMBER_FLT:
+			switch (exp->flags & 0x0ff00) {
+			case PSI_NUMBER_F:
+			case PSI_NUMBER_DF:
+				tmp.fval = strtof(exp->data.numb, NULL);
+				free(exp->data.numb);
+				exp->type = PSI_T_FLOAT;
+				exp->data.ival.fval = tmp.fval;
+				break;
+			case PSI_NUMBER_L:
+			case PSI_NUMBER_DL:
+#if HAVE_LONG_DOUBLE
+				tmp.ldval = strtold(exp->data.numb, NULL);
+				free(exp->data.numb);
+				exp->type = PSI_T_LONG_DOUBLE;
+				exp->data.ival.ldval = tmp.ldval;
+				break;
+#endif
+			case PSI_NUMBER_DD:
+			default:
+				tmp.dval = strtod(exp->data.numb, NULL);
+				free(exp->data.numb);
+				exp->type = PSI_T_DOUBLE;
+				exp->data.ival.dval = tmp.dval;
+				break;
+			}
+			return true;
+		default:
+			assert(0);
+			break;
+		}
+	} else {
+		switch (is_numeric_string(exp->data.numb, strlen(exp->data.numb), (zend_long *) &tmp, (double *) &tmp, 1)) {
+		case IS_LONG:
+			free(exp->data.numb);
+			exp->type = PSI_T_INT64;
+			exp->data.ival.i64 = tmp.zend.lval;
+			return true;
+
+		case IS_DOUBLE:
+			free(exp->data.numb);
+			exp->type = PSI_T_DOUBLE;
+			exp->data.ival.dval = tmp.dval;
+			return true;
+		}
+	}
+	data->error(data, exp->token, PSI_WARNING, "Expected numeric entity (parser error?)");
+	return false;
+
+}
 bool psi_number_validate(struct psi_data *data, struct psi_number *exp,
 		struct psi_impl *impl, struct psi_decl *cb_decl, struct psi_let_exp *current_let,
 		struct psi_set_exp *current_set, struct psi_decl_enum *current_enum)
 {
 	size_t i = 0;
-	impl_val tmp = {0};
 	struct psi_const *cnst;
 	struct psi_decl_enum *enm;
 
@@ -256,6 +435,9 @@ bool psi_number_validate(struct psi_data *data, struct psi_number *exp,
 	case PSI_T_INT64:
 	case PSI_T_UINT64:
 	case PSI_T_DOUBLE:
+#if HAVE_LONG_DOUBLE
+	case PSI_T_LONG_DOUBLE:
+#endif
 	case PSI_T_ENUM:
 	case PSI_T_DEFINE:
 	case PSI_T_FUNCTION:
@@ -300,95 +482,10 @@ bool psi_number_validate(struct psi_data *data, struct psi_number *exp,
 		return false;
 
 	case PSI_T_NUMBER:
-		switch (is_numeric_string(exp->data.numb, strlen(exp->data.numb), (zend_long *) &tmp, (double *) &tmp, 1)) {
-		case IS_LONG:
-			free(exp->data.numb);
-			exp->type = PSI_T_INT64;
-			exp->data.ival.i64 = tmp.zend.lval;
-			return true;
-
-		case IS_DOUBLE:
-			free(exp->data.numb);
-			exp->type = PSI_T_DOUBLE;
-			exp->data.ival.dval = tmp.dval;
-			return true;
-		}
-		data->error(data, exp->token, PSI_WARNING, "Expected numeric entity (parser error?)");
-		return false;
+		return psi_number_validate_number(data, exp);
 
 	case PSI_T_QUOTED_CHAR:
-		/* FIXME L */
-		tmp.i8 = exp->data.numb[1 + (*exp->data.numb == 'L')];
-		switch(tmp.i8) {
-		case '\\':
-			tmp.i8 = exp->data.numb[2 + (*exp->data.numb == 'L')];
-			switch(tmp.i8) {
-			case 'x':
-				tmp.i8 = strtol(&exp->data.numb[3 + (*exp->data.numb == 'L')], &exp->data.numb[strlen(exp->data.numb)-1], 16);
-				free(exp->data.numb);
-				exp->type = PSI_T_INT8;
-				exp->data.ival.i8 = tmp.i8;
-				return true;
-			case '\'':
-				free(exp->data.numb);
-				exp->type = PSI_T_INT8;
-				exp->data.ival.i8 = '\'';
-				return true;
-			case 'a':
-				free(exp->data.numb);
-				exp->type = PSI_T_INT8;
-				exp->data.ival.i8 = '\a';
-				return true;
-			case 'b':
-				free(exp->data.numb);
-				exp->type = PSI_T_INT8;
-				exp->data.ival.i8 = '\b';
-				return true;
-			case 'f':
-				free(exp->data.numb);
-				exp->type = PSI_T_INT8;
-				exp->data.ival.i8 = '\f';
-				return true;
-			case 'n':
-				free(exp->data.numb);
-				exp->type = PSI_T_INT8;
-				exp->data.ival.i8 = '\n';
-				return true;
-			case 'r':
-				free(exp->data.numb);
-				exp->type = PSI_T_INT8;
-				exp->data.ival.i8 = '\r';
-				return true;
-			case 't':
-				free(exp->data.numb);
-				exp->type = PSI_T_INT8;
-				exp->data.ival.i8 = '\t';
-				return true;
-			case 'v':
-				free(exp->data.numb);
-				exp->type = PSI_T_INT8;
-				exp->data.ival.i8 = '\v';
-				return true;
-			case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7':
-				tmp.i8 = strtol(&exp->data.numb[2 + (*exp->data.numb == 'L')], &exp->data.numb[strlen(exp->data.numb)-1], 8);
-				free(exp->data.numb);
-				exp->type = PSI_T_INT8;
-				exp->data.ival.i8 = tmp.i8;
-				return true;
-			default:
-				free(exp->data.numb);
-				exp->type = PSI_T_INT8;
-				exp->data.ival.i8 = tmp.i8;
-				return true;
-			}
-			break;
-		default:
-			free(exp->data.numb);
-			exp->type = PSI_T_INT8;
-			exp->data.ival.i8 = tmp.i8;
-			return true;
-		}
-		break;
+		return psi_number_validate_char(data, exp);
 
 	default:
 		assert(0);
@@ -443,9 +540,7 @@ static inline token_t psi_number_eval_define(struct psi_number *exp,
 {
 	struct psi_cpp_macro_decl *macro = zend_hash_str_find_ptr(defs, exp->data.numb, strlen(exp->data.numb));
 
-	//WHATT?
-	fprintf(stderr, "number_eval_define: %s %s(%p)\n",
-			exp->token->text, macro ? macro->token->text : "", macro);
+	assert(!macro);
 
 	res->u8 = 0;
 	return PSI_T_UINT8;
@@ -491,6 +586,13 @@ token_t psi_number_eval(struct psi_number *exp, impl_val *res, struct psi_call_f
 		*res = exp->data.ival;
 		if (frame) PSI_DEBUG_PRINT(frame->context, " %" PRIdval, res->dval);
 		return exp->type;
+
+#if HAVE_LONG_DOUBLE
+	case PSI_T_LONG_DOUBLE:
+		*res = exp->data.ival;
+		if (frame) PSI_DEBUG_PRINT(frame->context, " %" PRIdval, res->dval);
+		return exp->type;
+#endif
 
 	case PSI_T_ENUM:
 		res->i64 = exp->data.enm->val;

@@ -192,16 +192,7 @@ struct psi_plist *psi_parser_preprocess(struct psi_parser *P, struct psi_plist *
 bool psi_parser_process(struct psi_parser *P, struct psi_plist *tokens, size_t *processed)
 {
 	if (psi_plist_count(tokens)) {
-		int rc;
-
-		if (P->flags & PSI_DEBUG) {
-			psi_parser_proc_debug = 1;
-		}
-		rc = psi_parser_proc_parse(P, tokens, processed);
-		if (P->flags & PSI_DEBUG) {
-			psi_parser_proc_debug = 0;
-		}
-		return rc == 0;
+		return 0 == psi_parser_proc_parse(P, tokens, processed);
 	}
 	return true;
 }
@@ -258,12 +249,17 @@ void psi_parser_free(struct psi_parser **P)
 		psi_token_dump(2, token); \
 	}
 
+union int_suffix {
+	char s[SIZEOF_UINT32_T];
+	uint32_t i;
+};
 
 struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input *I)
 {
 	struct psi_plist *tokens;
 	struct psi_token *token;
-	const char *tok, *cur, *lim, *mrk, *eol;
+	const char *tok, *cur, *lim, *mrk, *eol, *ctxmrk;
+	unsigned parens;
 
 	tok = mrk = eol = cur = I->buffer;
 	lim = I->buffer + I->length;
@@ -271,6 +267,7 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input 
 	tokens = psi_plist_init((void (*)(void *)) psi_token_free);
 
 	start: ;
+		ctxmrk = NULL;
 		tok = cur;
 
 		/*!re2c
@@ -280,6 +277,7 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input 
 		re2c:define:YYCURSOR = cur;
 		re2c:define:YYLIMIT = lim;
 		re2c:define:YYMARKER = mrk;
+		re2c:define:YYCTXMARKER = ctxmrk;
 		re2c:define:YYFILL = "if (cur >= lim) goto done;";
 		re2c:yyfill:parameter = 0;
 
@@ -292,10 +290,13 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input 
 		QUOTED_STRING = "L"? "\"" ([^"])+ "\"";
 		QUOTED_CHAR = "L"? "'" ([^']+ "\\'"?)+ "'";
 		CPP_HEADER = "<" [-._/a-zA-Z0-9]+ ">";
+		CPP_ATTRIBUTE = "__attribute__" W* "((";
+		CPP_PRAGMA_ONCE = "pragma" W+ "once";
 
 		DEC_CONST = [1-9] [0-9]*;
 		OCT_CONST = "0" [0-7]*;
 		HEX_CONST = '0x' [0-9a-fA-F]+;
+		INT_CONST = (DEC_CONST | OCT_CONST | HEX_CONST);
 		INT_SUFFIX = 'u'('l' 'l'? )? | 'l'('l'? 'u')?;
 		INT_NUMBER = (DEC_CONST | OCT_CONST | HEX_CONST) INT_SUFFIX?;
 
@@ -307,11 +308,23 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input 
 		FLT_DEC_FRAC = [0-9]*;
 		FLT_DEC_SIG = FLT_DEC_NUM ("." FLT_DEC_FRAC)?;
 		FLT_DEC_EXPO = 'e' [+-]? [0-9]+;
-		FLT_DEC_CONST = (FLT_DEC_SIG FLT_DEC_EXPO) | (FLT_DEC_NUM? "." FLT_DEC_FRAC);
+		FLT_DEC_CONST = (FLT_DEC_SIG FLT_DEC_EXPO) | (FLT_DEC_NUM "." FLT_DEC_FRAC) | ("." [0-9]+);
+		FLT_CONST = (FLT_DEC_CONST | FLT_HEX_CONST);
 		FLT_SUFFIX = 'f' | 'l' | ('d' ('f' | 'd' | 'l'));
 		FLT_NUMBER = (FLT_DEC_CONST | FLT_HEX_CONST) FLT_SUFFIX?;
 
-		NUMBER = [+-]? (INT_NUMBER | FLT_NUMBER);
+		[+-]? INT_CONST						{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_INT; goto start; }
+		[+-]? INT_CONST / 'u'				{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_INT | PSI_NUMBER_U; cur += 1; goto start; }
+		[+-]? INT_CONST / 'l'				{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_INT | PSI_NUMBER_L; cur += 1; goto start; }
+		[+-]? INT_CONST / ('lu' | 'ul')		{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_INT | PSI_NUMBER_UL; cur += 2; goto start; }
+		[+-]? INT_CONST / ('llu' | 'ull')	{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_INT | PSI_NUMBER_ULL; cur += 3; goto start; }
+
+		[+-]? FLT_CONST					{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_FLT; goto start; }
+		[+-]? FLT_CONST / 'f'			{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_FLT | PSI_NUMBER_F; cur += 1; goto start; }
+		[+-]? FLT_CONST / 'l'			{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_FLT | PSI_NUMBER_L; cur += 1; goto start; }
+		[+-]? FLT_CONST	/ 'df'			{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_FLT | PSI_NUMBER_DF; cur += 2; goto start; }
+		[+-]? FLT_CONST	/ 'dd'			{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_FLT | PSI_NUMBER_DD; cur += 2; goto start; }
+		[+-]? FLT_CONST	/ 'dl'			{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_FLT | PSI_NUMBER_DL; cur += 2; goto start; }
 
 		"/*"			{ goto comment; }
 		"//"			{ goto comment_sl; }
@@ -349,6 +362,9 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input 
 		">"				{ NEWTOKEN(PSI_T_RCHEVR); goto start; }
 		"."				{ NEWTOKEN(PSI_T_PERIOD); goto start; }
 		"..."			{ NEWTOKEN(PSI_T_ELLIPSIS); goto start; }
+		"?"				{ NEWTOKEN(PSI_T_IIF); goto start; }
+		"pragma"		{ NEWTOKEN(PSI_T_PRAGMA); goto start; }
+		"once"			{ NEWTOKEN(PSI_T_ONCE); goto start; }
 		'IF'			{ NEWTOKEN(PSI_T_IF); goto start; }
 		'IFDEF'			{ NEWTOKEN(PSI_T_IFDEF); goto start; }
 		'IFNDEF'		{ NEWTOKEN(PSI_T_IFNDEF); goto start; }
@@ -421,13 +437,13 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input 
 		'TO_INT'		{ NEWTOKEN(PSI_T_TO_INT); goto start; }
 		'TO_FLOAT'		{ NEWTOKEN(PSI_T_TO_FLOAT); goto start; }
 		'TO_BOOL'		{ NEWTOKEN(PSI_T_TO_BOOL); goto start; }
-		NUMBER			{ NEWTOKEN(PSI_T_NUMBER); goto start; }
 		NAME			{ NEWTOKEN(PSI_T_NAME); goto start; }
 		NSNAME			{ NEWTOKEN(PSI_T_NSNAME); goto start; }
 		DOLLAR_NAME		{ NEWTOKEN(PSI_T_DOLLAR_NAME); goto start; }
 		QUOTED_STRING	{ NEWTOKEN(PSI_T_QUOTED_STRING); goto start; }
 		QUOTED_CHAR		{ NEWTOKEN(PSI_T_QUOTED_CHAR); goto start; }
 		CPP_HEADER		{ NEWTOKEN(PSI_T_CPP_HEADER); goto start; }
+		CPP_ATTRIBUTE	{ parens = 2; goto cpp_attribute; }
 		EOL				{ NEWTOKEN(PSI_T_EOL); NEWLINE(); goto start; }
 		SP+				{ NEWTOKEN(PSI_T_WHITESPACE); goto start; }
 		[^]				{ NEWTOKEN(-2); goto error; }
@@ -449,6 +465,17 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input 
 
 		EOL	{ NEWTOKEN(PSI_T_COMMENT); NEWLINE(); goto start; }
 		*	{ goto comment_sl; }
+
+		*/
+
+	cpp_attribute: ;
+
+		/*!re2c
+
+		"("	{ ++parens; goto cpp_attribute; }
+		")" { if (parens == 1) { NEWTOKEN(PSI_T_CPP_ATTRIBUTE); goto start; } else { --parens; goto cpp_attribute; } }
+		EOL	{ NEWLINE(); goto cpp_attribute; }
+		 *	{ goto cpp_attribute; }
 
 		*/
 error: ;

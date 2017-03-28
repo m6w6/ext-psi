@@ -131,7 +131,7 @@ static inline const char *psi_t_indirection(unsigned pointer_level) {
 
 struct psi_token {
 	token_t type;
-	unsigned size, line, col;
+	unsigned size, line, col, flags;
 	char *text, *file;
 	char buf[1];
 };

@@ -32,6 +32,19 @@
 #include "call.h"
 #include "calc.h"
 
+struct psi_num_exp *psi_num_exp_init_ternary(token_t op,
+		struct psi_num_exp *cond, struct psi_num_exp *truthy,
+		struct psi_num_exp *falsy)
+{
+	struct psi_num_exp *exp = calloc(1, sizeof(*exp));
+
+	exp->op = op;
+	exp->data.t.cond = cond;
+	exp->data.t.truthy = truthy;
+	exp->data.t.falsy = falsy;
+
+	return exp;
+}
 
 struct psi_num_exp *psi_num_exp_init_binary(token_t op,
 		struct psi_num_exp *lhs, struct psi_num_exp *rhs)
@@ -129,6 +142,12 @@ struct psi_num_exp *psi_num_exp_copy(struct psi_num_exp *exp)
 		cpy->data.b.rhs = psi_num_exp_copy(exp->data.b.rhs);
 		break;
 
+	case PSI_T_IIF:
+		cpy->data.t.cond = psi_num_exp_copy(exp->data.t.cond);
+		cpy->data.t.truthy = psi_num_exp_copy(exp->data.t.truthy);
+		cpy->data.t.falsy = psi_num_exp_copy(exp->data.t.falsy);
+		break;
+
 	default:
 		assert(0);
 	}
@@ -185,6 +204,12 @@ void psi_num_exp_free(struct psi_num_exp **c_ptr)
 		case PSI_T_MODULO:
 			psi_num_exp_free(&c->data.b.lhs);
 			psi_num_exp_free(&c->data.b.rhs);
+			break;
+
+		case PSI_T_IIF:
+			psi_num_exp_free(&c->data.t.cond);
+			psi_num_exp_free(&c->data.t.truthy);
+			psi_num_exp_free(&c->data.t.falsy);
 			break;
 
 		default:
@@ -253,6 +278,9 @@ static inline const char *psi_num_exp_op_tok(token_t op)
 	case PSI_T_LCHEVR:
 		return "<";
 
+	case PSI_T_IIF:
+		return "?";
+
 	default:
 		assert(0);
 	}
@@ -303,6 +331,14 @@ void psi_num_exp_dump(int fd, struct psi_num_exp *exp)
 		psi_num_exp_dump(fd, exp->data.b.rhs);
 		break;
 
+	case PSI_T_IIF:
+		psi_num_exp_dump(fd, exp->data.t.cond);
+		dprintf(fd, " ? ");
+		psi_num_exp_dump(fd, exp->data.t.truthy);
+		dprintf(fd, " : ");
+		psi_num_exp_dump(fd, exp->data.t.falsy);
+		break;
+
 	default:
 		assert(0);
 	}
@@ -349,6 +385,7 @@ bool psi_num_exp_validate(struct psi_data *data, struct psi_num_exp *exp,
 
 		case PSI_T_CAST:
 		case PSI_T_LPAREN:
+		case PSI_T_IIF:
 			break;
 
 		case PSI_T_PIPE:
@@ -425,6 +462,12 @@ bool psi_num_exp_validate(struct psi_data *data, struct psi_num_exp *exp,
 	case PSI_T_MODULO:
 		return psi_num_exp_validate(data, exp->data.b.lhs, impl, cb_decl, current_let, current_set, current_enum)
 				&& psi_num_exp_validate(data, exp->data.b.rhs, impl, cb_decl, current_let, current_set, current_enum);
+
+	case PSI_T_IIF:
+		return psi_num_exp_validate(data, exp->data.t.cond, impl, cb_decl, current_let, current_set, current_enum)
+				&& psi_num_exp_validate(data, exp->data.t.truthy, impl, cb_decl, current_let, current_set, current_enum)
+				&& psi_num_exp_validate(data, exp->data.t.falsy, impl, cb_decl, current_let, current_set, current_enum);
+
 	default:
 		assert(0);
 	}
@@ -533,6 +576,20 @@ static void psi_num_exp_reduce(struct psi_num_exp *exp, struct psi_plist **outpu
 		entry.data.calc = exp->calc;
 		input = psi_plist_add(input, &entry);
 		psi_num_exp_reduce(exp->data.u, &output, &input, frame, defs);
+		break;
+
+	case PSI_T_IIF:
+		{
+			impl_val cond_val = {0};
+			token_t cond_typ = psi_num_exp_exec(exp->data.t.cond, &cond_val, frame, defs);
+
+			psi_calc_bool_not(cond_typ, &cond_val, 0, NULL, &cond_val);
+			if (cond_val.u8) {
+				psi_num_exp_reduce(exp->data.t.falsy, &output, &input, frame, defs);
+			} else {
+				psi_num_exp_reduce(exp->data.t.truthy, &output, &input, frame, defs);
+			}
+		}
 		break;
 
 	default:

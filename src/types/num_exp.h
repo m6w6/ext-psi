@@ -50,12 +50,20 @@ struct psi_num_exp {
 			struct psi_decl_type *typ;
 			struct psi_num_exp *num;
 		} c;
+		struct {
+			struct psi_num_exp *cond;
+			struct psi_num_exp *truthy;
+			struct psi_num_exp *falsy;
+		} t;
 		struct psi_num_exp *u;
 		struct psi_number *n;
 	} data;
 	token_t (*calc)(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
 };
 
+struct psi_num_exp *psi_num_exp_init_ternary(token_t op,
+		struct psi_num_exp *cond, struct psi_num_exp *truthy,
+		struct psi_num_exp *falsy);
 struct psi_num_exp *psi_num_exp_init_binary(token_t op,
 		struct psi_num_exp *lhs, struct psi_num_exp *rhs);
 struct psi_num_exp *psi_num_exp_init_unary(token_t op,

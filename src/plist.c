@@ -44,10 +44,10 @@ struct psi_plist {
 } while (0)
 /* !!! adjust list->count prior reduction */
 #define PLIST_MOV_REDUCE(l, i) PLIST_MOV_REDUCE_EX(l, i, 1)
-#define PLIST_MOV_REDUCE_EX(l, i, n) memmove(PLIST_ELE(l, i), PLIST_ELE(l, i + n), (l)->size * ((l)->count - i))
+#define PLIST_MOV_REDUCE_EX(l, i, n) memmove(PLIST_ELE(l, i), PLIST_ELE(l, (i) + (n)), (l)->size * ((l)->count - (i)))
 /* !!! adjust list->count after expansion */
 #define PLIST_MOV_EXPAND(l, i) PLIST_MOV_EXPAND_EX(l, i, 1)
-#define PLIST_MOV_EXPAND_EX(l, i, n) memmove(PLIST_ELE(l, i + n), PLIST_ELE(l, i), (l)->size * ((l)->count - i))
+#define PLIST_MOV_EXPAND_EX(l, i, n) memmove(PLIST_ELE(l, (i) + (n)), PLIST_ELE(l, i), (l)->size * ((l)->count - (i)))
 
 struct psi_plist *psi_plist_init(void (*dtor)(void *)) {
 	return psi_plist_init_ex(0, dtor);
@@ -192,7 +192,7 @@ struct psi_plist *psi_plist_ins_r(struct psi_plist *list, size_t offset_start, s
 	size_t new_count;
 
 	if (list) {
-		new_count = MAX(offset_start + 1, list->count) + num_eles;
+		new_count = MAX(offset_start, list->count) + num_eles;
 		if (new_count) {
 			list = realloc(list, sizeof(*list) + list->size + new_count * list->size);
 		}

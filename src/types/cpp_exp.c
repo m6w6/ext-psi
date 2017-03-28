@@ -54,6 +54,7 @@ struct psi_cpp_exp *psi_cpp_exp_init(token_t type, void *data)
 		break;
 	case PSI_T_ENDIF:
 	case PSI_T_ELSE:
+	case PSI_T_ONCE:
 		break;
 	default:
 		assert(0);
@@ -94,6 +95,7 @@ void psi_cpp_exp_free(struct psi_cpp_exp **exp_ptr)
 			break;
 		case PSI_T_ENDIF:
 		case PSI_T_ELSE:
+		case PSI_T_ONCE:
 			break;
 		default:
 			assert(0);
@@ -133,6 +135,7 @@ void psi_cpp_exp_dump(int fd, struct psi_cpp_exp *exp)
 		break;
 	case PSI_T_ENDIF:
 	case PSI_T_ELSE:
+	case PSI_T_ONCE:
 		break;
 	default:
 		assert(0);
@@ -303,6 +306,17 @@ void psi_cpp_exp_exec(struct psi_cpp_exp *exp, struct psi_cpp *cpp, struct psi_d
 			if (!psi_cpp_include(cpp, exp->data.tok->text, PSI_CPP_INCLUDE_NEXT)) {
 				D->error(D, exp->token, PSI_WARNING, "Failed to include %s", exp->data.tok->text);
 			}
+		}
+		break;
+	case PSI_T_IMPORT:
+		if (!cpp->skip) {
+			if (!psi_cpp_include(cpp, exp->data.tok->text, PSI_CPP_INCLUDE_ONCE)) {
+				D->error(D, exp->token, PSI_WARNING, "Failed to include %s", exp->data.tok->text);
+			}
+		}
+	case PSI_T_ONCE:
+		if (!cpp->skip) {
+			zend_hash_str_add_empty_element(&cpp->once, exp->token->file, strlen(exp->token->file));
 		}
 		break;
 	default:

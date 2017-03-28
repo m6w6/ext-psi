@@ -37,9 +37,30 @@ struct psi_set_exp;
 struct psi_call_frame;
 struct psi_cpp_macro_call;
 
+enum psi_number_suffix {
+	PSI_NUMBER_U	= 0x0100,
+	PSI_NUMBER_L	= 0x0200,
+	PSI_NUMBER_UL	= 0x0300,
+
+	PSI_NUMBER_LL	= 0x0400,
+	PSI_NUMBER_ULL	= 0x0500,
+
+	PSI_NUMBER_F	= 0x1000,
+	PSI_NUMBER_D	= 0x2000,
+	PSI_NUMBER_DF	= 0x3000,
+	PSI_NUMBER_DD	= 0x4000,
+	PSI_NUMBER_DL	= 0x2200,
+};
+
+enum psi_number_kind {
+	PSI_NUMBER_INT		= 0x01,
+	PSI_NUMBER_FLT		= 0x02,
+};
+
 struct psi_number {
 	struct psi_token *token;
 	token_t type;
+	unsigned flags;
 	union {
 		char *numb;
 		impl_val ival;
@@ -50,7 +71,7 @@ struct psi_number {
 	} data;
 };
 
-struct psi_number *psi_number_init(token_t t, void *num);
+struct psi_number *psi_number_init(token_t t, void *num, unsigned flags);
 struct psi_number *psi_number_copy(struct psi_number *exp);
 void psi_number_free(struct psi_number **exp_ptr);
 void psi_number_dump(int fd, struct psi_number *exp);

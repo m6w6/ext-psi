@@ -239,15 +239,15 @@ static PHP_MINIT_FUNCTION(psi)
 	PSI_G(context) = psi_context_init(NULL, ops, psi_error_wrapper, flags);
 	psi_context_build(PSI_G(context), PSI_G(directory));
 
-	if (psi_check_env("PSI_DUMP")) {
-		psi_context_dump(PSI_G(context), STDOUT_FILENO);
-	}
-
 	return SUCCESS;
 }
 
 static PHP_MSHUTDOWN_FUNCTION(psi)
 {
+	if (psi_check_env("PSI_DUMP")) {
+		psi_context_dump(PSI_G(context), STDOUT_FILENO);
+	}
+
 	psi_context_free(&PSI_G(context));
 
 	UNREGISTER_INI_ENTRIES();

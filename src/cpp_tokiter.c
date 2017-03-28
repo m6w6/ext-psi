@@ -28,17 +28,28 @@
 #include "cpp.h"
 #include "parser.h"
 
-
+#if PSI_CPP_DEBUG > 1
 void psi_cpp_tokiter_dump(int fd, struct psi_cpp *cpp)
 {
-	size_t i;
+	size_t i = cpp->index;
 	struct psi_token *T;
 
-	for (i = 0; psi_plist_get(cpp->tokens, i, &T); ++i) {
+	if (i > 20) {
+		i -= 20;
+	} else {
+		i = 0;
+	}
+	while (psi_plist_get(cpp->tokens, i, &T)) {
 		dprintf(fd, "PSI: CPP tokens %5zu %c ", i, cpp->index == i ? '*' : ' ');
 		psi_token_dump(fd, T);
+		if (i >= cpp->index + 10) {
+			dprintf(fd, "PSI: CPP tokens .....\n");
+			break;
+		}
+		++i;
 	}
 }
+#endif
 
 void psi_cpp_tokiter_reset(struct psi_cpp *cpp)
 {
@@ -150,9 +161,16 @@ bool psi_cpp_tokiter_del_range(struct psi_cpp *cpp, size_t offset, size_t num_el
 	deleted = psi_plist_del_r(cpp->tokens, offset, num_eles, (void *) ptr);
 
 	if (deleted) {
-		if (cpp->index >= psi_plist_count(cpp->tokens)) {
-			cpp->index = MAX(0, psi_plist_count(cpp->tokens)-1);
+		size_t count = psi_plist_count(cpp->tokens);
+
+		if (cpp->index >= count) {
+			if (count > 0) {
+				cpp->index = count - 1;
+			} else {
+				cpp->index = 0;
+			}
 		}
+
 		if (free_tokens) {
 			while (num_eles--) {
 				if (ptr[num_eles]) {
@@ -427,7 +445,7 @@ bool psi_cpp_tokiter_expand(struct psi_cpp *cpp)
 
 		if (current) {
 			struct psi_cpp_macro_decl *macro = zend_hash_str_find_ptr(
-					cpp->defs, current->text, current->size);
+					&cpp->defs, current->text, current->size);
 
 			/* don't expand itself */
 			if (macro && macro->token != current) {

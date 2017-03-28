@@ -86,13 +86,13 @@ bool psi_decl_enum_item_validate(struct psi_data *data,
 			item->inc.data.b.lhs = psi_num_exp_init_unary(PSI_T_LPAREN,
 					psi_num_exp_copy(item->prev->num));
 			item->inc.data.b.rhs = psi_num_exp_init_num(
-							psi_number_init(PSI_T_INT64, &one));
+							psi_number_init(PSI_T_INT64, &one, 0));
 			item->num = &item->inc;
 		} else {
 			int64_t nil = 0;
 
 			item->inc.op = PSI_T_NUMBER;
-			item->inc.data.n = psi_number_init(PSI_T_INT64, &nil);
+			item->inc.data.n = psi_number_init(PSI_T_INT64, &nil, 0);
 			item->num = &item->inc;
 		}
 	}
