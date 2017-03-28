@@ -181,10 +181,10 @@ static void psi_parser_register_constants(struct psi_parser *P)
 }
 #endif
 
-struct psi_plist *psi_parser_preprocess(struct psi_parser *P, struct psi_plist *tokens)
+struct psi_plist *psi_parser_preprocess(struct psi_parser *P, struct psi_plist **tokens)
 {
-	if (psi_cpp_process(P->preproc, &tokens)) {
-		return tokens;
+	if (psi_cpp_process(P->preproc, tokens)) {
+		return *tokens;
 	}
 	return NULL;
 }
@@ -206,7 +206,7 @@ bool psi_parser_parse(struct psi_parser *P, struct psi_parser_input *I)
 		return false;
 	}
 
-	if (!(preproc = psi_parser_preprocess(P, scanned))) {
+	if (!(preproc = psi_parser_preprocess(P, &scanned))) {
 		psi_plist_free(scanned);
 		return false;
 	}

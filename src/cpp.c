@@ -281,17 +281,20 @@ static bool psi_cpp_stage2(struct psi_cpp *cpp)
 
 				if (is_eol) {
 					size_t processed = 0;
+					bool parsed = psi_parser_process(cpp->parser, parser_tokens, &processed);
 
-					if (!psi_parser_process(cpp->parser, parser_tokens, &processed)) {
-						psi_plist_free(parser_tokens);
-						return false;
-					}
+					/* EOL */
 					psi_plist_pop(parser_tokens, NULL);
 					psi_plist_clean(parser_tokens);
 					do_cpp = false;
+
+					if (!parsed) {
+						psi_plist_free(parser_tokens);
+						return false;
+					}
 				} else {
 					/* leave EOLs in the input stream, else we might end up
-					 * with a hash not preceeded with a new line after include */
+					 * with a hash not preceded with a new line after include */
 					psi_cpp_tokiter_del_cur(cpp, false);
 				}
 
