@@ -78,11 +78,8 @@ bool psi_impl_def_val_validate(struct psi_data *data,
 			def->ival.dval = zend_strtod(def->text, NULL);
 			break;
 		case PSI_T_STRING:
-			/* used for consts */
-			def->ival.zend.str = zend_string_init(def->text, strlen(def->text), 1);
-			break;
 		case PSI_T_QUOTED_STRING:
-			def->ival.zend.str = zend_string_init(&def->text[1], strlen(def->text) - 2, 1);
+			def->ival.zend.str = zend_string_init(def->text, strlen(def->text), 1);
 			break;
 		default:
 			data->error(data, def->token, PSI_WARNING,

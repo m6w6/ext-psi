@@ -100,7 +100,8 @@ static bool psi_cpp_stage1(struct psi_cpp *cpp)
 		struct psi_token *token = psi_cpp_tokiter_current(cpp);
 
 		/* strip comments and attributes */
-		if (token->type == PSI_T_COMMENT || token->type == PSI_T_CPP_ATTRIBUTE) {
+		if (token->type == PSI_T_COMMENT
+				|| token->type == PSI_T_CPP_ATTRIBUTE) {
 			psi_cpp_tokiter_del_cur(cpp, true);
 			continue;
 		}
@@ -125,6 +126,9 @@ static bool psi_cpp_stage1(struct psi_cpp *cpp)
 		 */
 
 		if (token->type == PSI_T_WHITESPACE) {
+			if (name) {
+				name = false;
+			}
 			ws = true;
 			psi_cpp_tokiter_del_cur(cpp, true);
 			continue;
@@ -415,19 +419,25 @@ static inline bool try_include(struct psi_cpp *cpp, const char *path, bool *pars
 
 bool psi_cpp_include(struct psi_cpp *cpp, const char *file, unsigned flags)
 {
-	char path[PATH_MAX];
 	bool parsed = false;
-	int p_len, f_len = strlen(file) - 2;
+	int f_len = strlen(file);
 
-	if (file[1] == '/') {
-		if (PATH_MAX > (p_len = snprintf(path, PATH_MAX, "%.*s", f_len, file + 1))) {
-			if ((flags & PSI_CPP_INCLUDE_ONCE) && zend_hash_str_exists(&cpp->once, path, p_len)) {
-				return true;
-			}
-			return try_include(cpp, path, &parsed) && parsed;
+	if (!(flags & PSI_CPP_INCLUDE_NEXT) || *file == '/') {
+		/* first try as is, full or relative path */
+		if ((flags & PSI_CPP_INCLUDE_ONCE) && zend_hash_str_exists(&cpp->once, file, f_len)) {
+			return true;
 		}
-	} else {
+		if (try_include(cpp, file, &parsed)) {
+			/* found */
+			return parsed;
+		}
+	}
+
+	/* look through search paths */
+	if (*file != '/') {
+		char path[PATH_MAX];
 		const char *sep;
+		int p_len;
 
 		if ((flags & PSI_CPP_INCLUDE_NEXT) && cpp->search) {
 			if ((sep = strchr(cpp->search, ':'))) {
@@ -448,7 +458,7 @@ bool psi_cpp_include(struct psi_cpp *cpp, const char *file, unsigned flags)
 			sep = strchr(cpp->search, ':');
 			d_len = sep ? sep - cpp->search : strlen(cpp->search);
 
-			if (PATH_MAX > (p_len = snprintf(path, PATH_MAX, "%.*s/%.*s", d_len, cpp->search, f_len, file + 1))) {
+			if (PATH_MAX > (p_len = snprintf(path, PATH_MAX, "%.*s/%.*s", d_len, cpp->search, f_len, file))) {
 				if ((flags & PSI_CPP_INCLUDE_ONCE) && zend_hash_str_exists(&cpp->once, path, p_len)) {
 					return true;
 				}

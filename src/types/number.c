@@ -207,12 +207,15 @@ void psi_number_dump(int fd, struct psi_number *exp)
 	case PSI_T_UINT64:
 		dprintf(fd, "%" PRIu64, exp->data.ival.u64);
 		break;
+	case PSI_T_FLOAT:
+		dprintf(fd, "%" PRIfval, exp->data.ival.dval);
+		break;
 	case PSI_T_DOUBLE:
-		dprintf(fd, "%F", exp->data.ival.dval);
+		dprintf(fd, "%" PRIdval, exp->data.ival.dval);
 		break;
 #if HAVE_LONG_DOUBLE
 	case PSI_T_LONG_DOUBLE:
-		dprintf(fd, "%lF", exp->data.ival.ldval);
+		dprintf(fd, "%" PRIldval, exp->data.ival.ldval);
 		break;
 #endif
 	case PSI_T_NUMBER:
@@ -253,80 +256,88 @@ static inline bool psi_number_validate_enum(struct psi_data *data, struct psi_nu
 	return false;
 }
 
-static inline bool psi_number_validate_char(struct psi_data *data, struct psi_number *exp)
+static inline token_t validate_char(char *numb, impl_val *res, unsigned *lvl)
 {
-	impl_val tmp = {0};
-	/* FIXME L */
-	tmp.i8 = exp->data.numb[1 + (*exp->data.numb == 'L')];
-	switch(tmp.i8) {
+	char *endptr;
+	token_t typ = PSI_T_INT8;
+
+	res->i8 = numb[0];
+	endptr = &numb[1];
+
+	switch(res->i8) {
 	case '\\':
-		tmp.i8 = exp->data.numb[2 + (*exp->data.numb == 'L')];
-		switch(tmp.i8) {
-		case 'x':
-			tmp.i8 = strtol(&exp->data.numb[3 + (*exp->data.numb == 'L')], NULL, 16);
-			free(exp->data.numb);
-			exp->type = PSI_T_INT8;
-			exp->data.ival.i8 = tmp.i8;
-			return true;
-		case '\'':
-			free(exp->data.numb);
-			exp->type = PSI_T_INT8;
-			exp->data.ival.i8 = '\'';
-			return true;
-		case 'a':
-			free(exp->data.numb);
-			exp->type = PSI_T_INT8;
-			exp->data.ival.i8 = '\a';
-			return true;
-		case 'b':
-			free(exp->data.numb);
-			exp->type = PSI_T_INT8;
-			exp->data.ival.i8 = '\b';
-			return true;
-		case 'f':
-			free(exp->data.numb);
-			exp->type = PSI_T_INT8;
-			exp->data.ival.i8 = '\f';
-			return true;
-		case 'n':
-			free(exp->data.numb);
-			exp->type = PSI_T_INT8;
-			exp->data.ival.i8 = '\n';
-			return true;
-		case 'r':
-			free(exp->data.numb);
-			exp->type = PSI_T_INT8;
-			exp->data.ival.i8 = '\r';
-			return true;
-		case 't':
-			free(exp->data.numb);
-			exp->type = PSI_T_INT8;
-			exp->data.ival.i8 = '\t';
-			return true;
-		case 'v':
-			free(exp->data.numb);
-			exp->type = PSI_T_INT8;
-			exp->data.ival.i8 = '\v';
-			return true;
+		res->i8 = numb[1];
+		endptr = &numb[2];
+
+		switch(res->i8) {
 		case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7':
-			tmp.i8 = strtol(&exp->data.numb[2 + (*exp->data.numb == 'L')], NULL, 8);
-			free(exp->data.numb);
-			exp->type = PSI_T_INT8;
-			exp->data.ival.i8 = tmp.i8;
-			return true;
+			res->i8 = strtol(&numb[1], &endptr, 8);
+			break;
+
+		case 'x':
+			res->i8 = strtol(&numb[2], &endptr, 16);
+			break;
+
+		case 'a':
+			res->i8 = '\a';
+			break;
+		case 'b':
+			res->i8 = '\b';
+			break;
+		case 'f':
+			res->i8 = '\f';
+			break;
+		case 'n':
+			res->i8 = '\n';
+			break;
+		case 'r':
+			res->i8 = '\r';
+			break;
+		case 't':
+			res->i8 = '\t';
+			break;
+		case 'v':
+			res->i8 = '\v';
+			break;
 		default:
-			free(exp->data.numb);
-			exp->type = PSI_T_INT8;
-			exp->data.ival.i8 = tmp.i8;
-			return true;
+			break;
 		}
 		break;
 	default:
-		free(exp->data.numb);
-		exp->type = PSI_T_INT8;
-		exp->data.ival.i8 = tmp.i8;
-		return true;
+		break;
 	}
+
+	/* more to grok? */
+	if (*endptr) {
+		impl_val tmp_val = {0};
+		token_t tmp_typ = validate_char(endptr, &tmp_val, lvl);
+
+		if (!tmp_typ) {
+			return 0;
+		}
+
+		res->i32 = res->i8 << (8 * *lvl);
+		typ = psi_calc_add(PSI_T_INT32, res, tmp_typ, &tmp_val, res);
+	}
+
+	++(*lvl);
+
+	return typ;
+}
+static inline bool psi_number_validate_char(struct psi_data *data, struct psi_number *exp)
+{
+	impl_val val = {0};
+	unsigned lvl = 1;
+	token_t typ = validate_char(exp->data.numb, &val, &lvl);
+
+	if (!typ) {
+		return false;
+	}
+
+	free(exp->data.numb);
+	exp->type = typ;
+	exp->data.ival = val;
+	return true;
 }
 
 static inline bool psi_number_validate_number(struct psi_data *data, struct psi_number *exp)
@@ -590,7 +601,7 @@ token_t psi_number_eval(struct psi_number *exp, impl_val *res, struct psi_call_f
 #if HAVE_LONG_DOUBLE
 	case PSI_T_LONG_DOUBLE:
 		*res = exp->data.ival;
-		if (frame) PSI_DEBUG_PRINT(frame->context, " %" PRIdval, res->dval);
+		if (frame) PSI_DEBUG_PRINT(frame->context, " %" PRIldval, res->ldval);
 		return exp->type;
 #endif
 

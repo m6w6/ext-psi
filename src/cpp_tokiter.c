@@ -243,13 +243,15 @@ void psi_cpp_tokiter_expand_tokens(struct psi_cpp *cpp, struct psi_plist *tokens
 		while (psi_plist_get(tokens, i++, &tok)) {
 			struct psi_token *new_tok;
 
+			if (tok->type == PSI_T_EOL) {
+				continue;
+			}
 			if (tok->type == PSI_T_HASH) {
-				if (stringify) {
-					stringify = false;
-					paste = true;
-				} else {
-					stringify = true;
-				}
+				stringify = true;
+				continue;
+			}
+			if (tok->type == PSI_T_CPP_PASTE) {
+				paste = true;
 				continue;
 			}
 
@@ -261,8 +263,6 @@ void psi_cpp_tokiter_expand_tokens(struct psi_cpp *cpp, struct psi_plist *tokens
 				struct psi_token *cpy = psi_token_copy(tok);
 
 				if (stringify) {
-					cpy = psi_token_append(NULL,
-							psi_token_prepend(NULL, cpy, 1, "\""), 1, "\"");
 					cpy->type = PSI_T_QUOTED_STRING;
 				}
 				exp_tokens[n++] = cpy;
@@ -272,6 +272,7 @@ void psi_cpp_tokiter_expand_tokens(struct psi_cpp *cpp, struct psi_plist *tokens
 			fprintf(stderr, "PSI: CPP expand > ");
 			psi_token_dump(2, tok);
 #endif
+
 			paste = false;
 			stringify = false;
 		}

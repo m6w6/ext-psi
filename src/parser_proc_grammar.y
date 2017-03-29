@@ -192,7 +192,8 @@ struct psi_parser;
 %token <struct psi_token *> IIF			"?"
 
 %token <struct psi_token *> PRAGMA
-%token <struct psi_token *> ONCE
+%token <struct psi_token *> PRAGMA_ONCE
+%token <struct psi_token *> LINE
 %token <struct psi_token *> ERROR
 %token <struct psi_token *> WARNING
 %token <struct psi_token *> IF
@@ -246,6 +247,10 @@ struct psi_parser;
 %token <struct psi_token *> NO_WHITESPACE
 %token <struct psi_token *> CPP_HEADER
 %token <struct psi_token *> CPP_ATTRIBUTE
+%token <struct psi_token *> CPP_EXTENSION
+%token <struct psi_token *> CPP_PASTE
+%token <struct psi_token *> CPP_RESTRICT
+%token <struct psi_token *> CPP_ASM
 
 %precedence IIF COLON
 %precedence OR
@@ -265,8 +270,8 @@ struct psi_parser;
 %type		<struct psi_token *>				lib optional_name enum_name struct_name union_name
 %destructor	{psi_token_free(&$$);}				lib optional_name enum_name struct_name union_name
 
-%type		<struct psi_token *>				cpp_message_token cpp_include_token cpp_header_token cpp_no_arg_token cpp_name_arg_token cpp_exp_arg_token
-%destructor	{}									cpp_message_token cpp_include_token cpp_header_token cpp_no_arg_token cpp_name_arg_token cpp_exp_arg_token
+%type		<struct psi_token *>				cpp_message_token cpp_include_token cpp_header_token cpp_no_arg_token cpp_name_arg_token cpp_exp_arg_token cpp_special_name_token
+%destructor	{}									cpp_message_token cpp_include_token cpp_header_token cpp_no_arg_token cpp_name_arg_token cpp_exp_arg_token cpp_special_name_token
 
 %type		<struct psi_token *>				name_token any_noeol_token binary_op_token unary_op_token
 %destructor	{}									name_token any_noeol_token binary_op_token unary_op_token
@@ -374,12 +379,10 @@ struct psi_parser;
 %type		<struct psi_number *>				number
 %destructor	{psi_number_free(&$$);}				number
 
-%type		<size_t>							indirection pointers array_size
-%destructor	{}									indirection pointers array_size
+%type		<size_t>							indirection pointers asterisks array_size
+%destructor	{}									indirection pointers asterisks array_size
 %type		<bool>								reference
 %destructor	{}									reference
-
-//%destructor {}									file blocks block
 
 %%
 
@@ -388,8 +391,8 @@ struct psi_parser;
 
 binary_op_token: PIPE | CARET | AMPERSAND | LSHIFT | RSHIFT | PLUS | MINUS | ASTERISK | SLASH | MODULO | RCHEVR | LCHEVR | CMP_GE | CMP_LE | OR | AND | CMP_EQ | CMP_NE ; 
 unary_op_token: TILDE | NOT | PLUS | MINUS ;
-name_token: NAME | TEMP | FREE | SET | LET | CALLOC | CALLBACK | ZVAL | LIB | STRING | COUNT | ERROR | WARNING | ONCE | PRAGMA | BOOL ;
-any_noeol_token: BOOL | CHAR | SHORT | INT | SIGNED | UNSIGNED | LONG | FLOAT | DOUBLE | STRING | MIXED | ARRAY | OBJECT | CALLABLE | VOID | ZVAL | INT8 | UINT8 | INT16 | UINT16 | INT32 | UINT32 | INT64 | UINT64 | NULL | TRUE | FALSE | NAME | NSNAME | DOLLAR_NAME | NUMBER | QUOTED_STRING | QUOTED_CHAR | EOF | EOS | LPAREN | RPAREN | COMMA | COLON | LBRACE | RBRACE | LBRACKET | RBRACKET | EQUALS | HASH | PIPE | CARET | AMPERSAND | LSHIFT | RSHIFT | PLUS | MINUS | ASTERISK | SLASH | MODULO | LCHEVR | RCHEVR | CMP_GE | CMP_LE | OR | AND | CMP_EQ | CMP_NE | TILDE | NOT | PERIOD | BACKSLASH | ELLIPSIS | ERROR | WARNING | IIF | IF | IFDEF | IFNDEF | ELSE | ELIF | ENDIF | DEFINE | DEFINED | UNDEF | INCLUDE | TYPEDEF | STRUCT | UNION | ENUM | CONST | LIB | STATIC | CALLBACK | FUNCTION | LET | SET | TEMP | FREE | RETURN | PRE_ASSERT | POST_ASSERT | BOOLVAL | INTVAL | STRVAL | PATHVAL | STRLEN | FLOATVAL | ARRVAL | OBJVAL | COUNT | CALLOC | TO_BOOL | TO_INT | TO_STRING | TO_FLOAT | TO_ARRAY | TO_OBJECT | COMMENT | CPP_HEADER;
+name_token: NAME | TEMP | FREE | SET | LET | CALLOC | CALLBACK | LIB | BOOL | STRING | ERROR | WARNING | LINE | PRAGMA_ONCE | PRAGMA | let_func_token | set_func_token;
+any_noeol_token: BOOL | CHAR | SHORT | INT | SIGNED | UNSIGNED | LONG | FLOAT | DOUBLE | STRING | MIXED | ARRAY | OBJECT | CALLABLE | VOID | ZVAL | INT8 | UINT8 | INT16 | UINT16 | INT32 | UINT32 | INT64 | UINT64 | NULL | TRUE | FALSE | NAME | NSNAME | DOLLAR_NAME | NUMBER | QUOTED_STRING | QUOTED_CHAR | EOF | EOS | LPAREN | RPAREN | COMMA | COLON | LBRACE | RBRACE | LBRACKET | RBRACKET | EQUALS | HASH | PIPE | CARET | AMPERSAND | LSHIFT | RSHIFT | PLUS | MINUS | ASTERISK | SLASH | MODULO | LCHEVR | RCHEVR | CMP_GE | CMP_LE | OR | AND | CMP_EQ | CMP_NE | TILDE | NOT | PERIOD | BACKSLASH | ELLIPSIS | ERROR | WARNING | LINE | PRAGMA | PRAGMA_ONCE | IIF | IF | IFDEF | IFNDEF | ELSE | ELIF | ENDIF | DEFINE | DEFINED | UNDEF | INCLUDE | TYPEDEF | STRUCT | UNION | ENUM | CONST | LIB | STATIC | CALLBACK | FUNCTION | LET | SET | TEMP | FREE | RETURN | PRE_ASSERT | POST_ASSERT | BOOLVAL | INTVAL | STRVAL | PATHVAL | STRLEN | FLOATVAL | ARRVAL | OBJVAL | COUNT | CALLOC | TO_BOOL | TO_INT | TO_STRING | TO_FLOAT | TO_ARRAY | TO_OBJECT | COMMENT | CPP_HEADER | CPP_PASTE | CPP_RESTRICT | CPP_EXTENSION | CPP_ASM;
 
 
 file:
@@ -413,9 +416,9 @@ block:
 |	lib {
 	if (P->file.ln) {
 		P->error(PSI_DATA(P), $lib, PSI_WARNING,
-				"Extra 'lib %s' statement has no effect", $lib->text);
+				"Extra 'lib \"%s\"' statement has no effect", $lib->text);
 	} else {
-		P->file.ln = strndup($lib->text + 1, $lib->size - 2);
+		P->file.ln = strndup($lib->text, $lib->size);
 	}
 }
 |	constant {
@@ -424,6 +427,7 @@ block:
 |	decl_stmt {
 	psi_parser_proc_add_decl(P, $decl_stmt);
 }
+|	decl_ext_var_stmt
 |	decl_typedef[def] {
 	psi_parser_proc_add_typedef(P, $def);
 }
@@ -448,7 +452,10 @@ lib:
 ;
 
 cpp:
-	HASH cpp_exp[exp] EOL {
+	HASH EOL {
+	$cpp = NULL;
+}
+|	HASH cpp_exp[exp] EOL {
 	$cpp = $exp;
 }
 ;
@@ -485,12 +492,7 @@ cpp_exp[exp]:
 	$exp = psi_cpp_exp_init($cpp_no_arg_token->type, NULL);
 	$exp->token = psi_token_copy($cpp_no_arg_token);
 }
-|	cpp_name_arg_token name_token {
-	$name_token->type = PSI_T_NAME;
-	$exp = psi_cpp_exp_init($cpp_name_arg_token->type, psi_token_copy($name_token));
-	$exp->token = psi_token_copy($cpp_name_arg_token);
-}
-|	cpp_name_arg_token NULL[name_token] {
+|	cpp_name_arg_token cpp_special_name_token[name_token] {
 	$name_token->type = PSI_T_NAME;
 	$exp = psi_cpp_exp_init($cpp_name_arg_token->type, psi_token_copy($name_token));
 	$exp->token = psi_token_copy($cpp_name_arg_token);
@@ -503,14 +505,19 @@ cpp_exp[exp]:
 	$exp = psi_cpp_exp_init($cpp_exp_arg_token->type, $cpp_macro_exp);
 	$exp->token = psi_token_copy($cpp_exp_arg_token);
 }
-| 	PRAGMA ONCE {
-	$exp = psi_cpp_exp_init($ONCE->type, NULL);
-	$exp->token = psi_token_copy($ONCE);
+| 	PRAGMA_ONCE {
+	$exp = psi_cpp_exp_init($PRAGMA_ONCE->type, NULL);
+	$exp->token = psi_token_copy($PRAGMA_ONCE);
 }
-|	PRAGMA cpp_macro_decl_tokens[tokens] {
+|	cpp_ignored_token cpp_macro_decl_tokens[tokens] {
 	psi_plist_free($tokens);
 	$exp = NULL;
 }
+;
+
+cpp_ignored_token:
+	LINE
+|	PRAGMA
 ;
 
 cpp_message_token: 
@@ -545,18 +552,22 @@ cpp_exp_arg_token:
 |	ELIF
 ;
 
+cpp_special_name_token:
+	name_token
+|	NULL
+|	TRUE
+|	FALSE
+|	CPP_RESTRICT
+|	CPP_EXTENSION
+;
+
 cpp_macro_decl[macro]:
 	name_token NO_WHITESPACE LPAREN cpp_macro_sig RPAREN cpp_macro_decl_tokens {
 	$name_token->type = PSI_T_NAME;
 	$macro = psi_cpp_macro_decl_init($cpp_macro_sig, $cpp_macro_decl_tokens, NULL);
 	$macro->token = psi_token_copy($name_token);
 }
-|	name_token cpp_macro_decl_tokens {
-	$name_token->type = PSI_T_NAME;
-	$macro = psi_cpp_macro_decl_init(NULL, $cpp_macro_decl_tokens, NULL);
-	$macro->token = psi_token_copy($name_token);
-}
-|	NULL[name_token] cpp_macro_decl_tokens {
+|	cpp_special_name_token[name_token] cpp_macro_decl_tokens {
 	$name_token->type = PSI_T_NAME;
 	$macro = psi_cpp_macro_decl_init(NULL, $cpp_macro_decl_tokens, NULL);
 	$macro->token = psi_token_copy($name_token);
@@ -672,7 +683,7 @@ cpp_macro_call_args[args]:
 
 cpp_macro_call_arg_list[args]:
 	cpp_macro_exp {
-	$args = psi_plist_add(psi_plist_init((void (*)(void *)) psi_num_exp_free), 
+	$args = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_num_exp_free), 
 		&$cpp_macro_exp);
 }
 |	cpp_macro_call_arg_list[args_] COMMA cpp_macro_exp {
@@ -935,8 +946,38 @@ int_width_types[type]:
 ;
 
 decl_stmt:
-	decl EOS {
+	decl decl_asm EOS {
 	$decl_stmt = $decl;
+}
+|	CPP_EXTENSION decl decl_asm EOS {
+	$decl_stmt = $decl;
+}
+;
+
+decl_asm:
+	%empty
+|	CPP_ASM LPAREN ignored_quoted_strings RPAREN
+;
+
+ignored_quoted_strings:
+	QUOTED_STRING
+|	ignored_quoted_strings QUOTED_STRING
+;
+
+decl_ext_var_stmt:
+	decl_ext_var EOS
+;
+
+decl_ext_var: 
+	NAME decl_arg decl_ext_var_list {
+	psi_decl_arg_free(&$decl_arg);
+}
+;
+
+decl_ext_var_list:
+	%empty
+|	COMMA decl_vars {
+	psi_plist_free($decl_vars);
 }
 ;
 
@@ -979,13 +1020,15 @@ decl_fn:
 ;
 
 decl_functor[arg]:
-	const_decl_type[type] indirection[i] LPAREN indirection name_token[NAME] RPAREN {
+	const_decl_type[type] indirection[i] LPAREN indirection[unused1] name_token[NAME] RPAREN {
+	(void) $unused1;
 	$NAME->type = PSI_T_NAME;
 	$arg = psi_decl_arg_init($type, psi_decl_var_init($NAME->text, $i, 0));
 	$arg->var->token = psi_token_copy($NAME);
 	$arg->token = psi_token_copy($NAME);
 }
-|	CONST VOID pointers LPAREN indirection name_token[NAME] RPAREN {
+|	CONST VOID pointers LPAREN indirection[unused1] name_token[NAME] RPAREN {
+	(void) $unused1;
 	$NAME->type = PSI_T_NAME;
 	$arg = psi_decl_arg_init(
 		psi_decl_type_init($VOID->type, $VOID->text),
@@ -995,7 +1038,8 @@ decl_functor[arg]:
 	$arg->var->token = psi_token_copy($NAME);
 	$arg->token = psi_token_copy($NAME);
 }
-|	VOID pointers LPAREN indirection name_token[NAME] RPAREN {
+|	VOID pointers LPAREN indirection[unused1] name_token[NAME] RPAREN {
+	(void) $unused1;
 	$NAME->type = PSI_T_NAME;
 	$arg = psi_decl_arg_init(
 		psi_decl_type_init($VOID->type, $VOID->text),
@@ -1005,7 +1049,8 @@ decl_functor[arg]:
 	$arg->var->token = psi_token_copy($NAME);
 	$arg->token = psi_token_copy($NAME);
 }
-|	VOID LPAREN indirection name_token[NAME] RPAREN {
+|	VOID LPAREN indirection[unused1] name_token[NAME] RPAREN {
+	(void) $unused1;
 	$NAME->type = PSI_T_NAME;
 	$arg = psi_decl_arg_init(
 		psi_decl_type_init($VOID->type, $VOID->text),
@@ -1297,11 +1342,18 @@ indirection[i]:
 ;
 
 pointers[p]:
-	ASTERISK {
-	$p = 1;
+	asterisks
+|	asterisks[a] CPP_RESTRICT {
+	$p = $a;
 }
-|	pointers[p_] ASTERISK {
-	$p = $p_ + 1;
+;
+
+asterisks[a]:
+	ASTERISK {
+	$a = 1;
+}
+|	asterisks[a_] ASTERISK {
+	$a = $a_ + 1;
 }
 ;
 

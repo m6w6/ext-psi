@@ -54,7 +54,7 @@ struct psi_cpp_exp *psi_cpp_exp_init(token_t type, void *data)
 		break;
 	case PSI_T_ENDIF:
 	case PSI_T_ELSE:
-	case PSI_T_ONCE:
+	case PSI_T_PRAGMA_ONCE:
 		break;
 	default:
 		assert(0);
@@ -95,7 +95,7 @@ void psi_cpp_exp_free(struct psi_cpp_exp **exp_ptr)
 			break;
 		case PSI_T_ENDIF:
 		case PSI_T_ELSE:
-		case PSI_T_ONCE:
+		case PSI_T_PRAGMA_ONCE:
 			break;
 		default:
 			assert(0);
@@ -121,10 +121,16 @@ void psi_cpp_exp_dump(int fd, struct psi_cpp_exp *exp)
 	case PSI_T_UNDEF:
 	case PSI_T_IFDEF:
 	case PSI_T_IFNDEF:
+		dprintf(fd, "%s", exp->data.tok->text);
+		break;
 	case PSI_T_IMPORT:
 	case PSI_T_INCLUDE:
 	case PSI_T_INCLUDE_NEXT:
-		dprintf(fd, "%s", exp->data.tok->text);
+		if (exp->data.tok->type == PSI_T_CPP_HEADER) {
+			dprintf(fd, "<%s>", exp->data.tok->text);
+		} else {
+			dprintf(fd, "\"%s\"", exp->data.tok->text);
+		}
 		break;
 	case PSI_T_DEFINE:
 		psi_cpp_macro_decl_dump(fd, exp->data.decl);
@@ -135,7 +141,7 @@ void psi_cpp_exp_dump(int fd, struct psi_cpp_exp *exp)
 		break;
 	case PSI_T_ENDIF:
 	case PSI_T_ELSE:
-	case PSI_T_ONCE:
+	case PSI_T_PRAGMA_ONCE:
 		break;
 	default:
 		assert(0);
@@ -314,7 +320,8 @@ void psi_cpp_exp_exec(struct psi_cpp_exp *exp, struct psi_cpp *cpp, struct psi_d
 				D->error(D, exp->token, PSI_WARNING, "Failed to include %s", exp->data.tok->text);
 			}
 		}
-	case PSI_T_ONCE:
+		break;
+	case PSI_T_PRAGMA_ONCE:
 		if (!cpp->skip) {
 			zend_hash_str_add_empty_element(&cpp->once, exp->token->file, strlen(exp->token->file));
 		}

@@ -126,60 +126,65 @@ struct psi_parser;
     PSI_T_ELLIPSIS = 325,
     PSI_T_IIF = 326,
     PSI_T_PRAGMA = 327,
-    PSI_T_ONCE = 328,
-    PSI_T_ERROR = 329,
-    PSI_T_WARNING = 330,
-    PSI_T_IF = 331,
-    PSI_T_IFDEF = 332,
-    PSI_T_IFNDEF = 333,
-    PSI_T_ELSE = 334,
-    PSI_T_ELIF = 335,
-    PSI_T_ENDIF = 336,
-    PSI_T_DEFINE = 337,
-    PSI_T_DEFINED = 338,
-    PSI_T_UNDEF = 339,
-    PSI_T_IMPORT = 340,
-    PSI_T_INCLUDE = 341,
-    PSI_T_INCLUDE_NEXT = 342,
-    PSI_T_TYPEDEF = 343,
-    PSI_T_STRUCT = 344,
-    PSI_T_UNION = 345,
-    PSI_T_ENUM = 346,
-    PSI_T_CONST = 347,
-    PSI_T_LIB = 348,
-    PSI_T_STATIC = 349,
-    PSI_T_CALLBACK = 350,
-    PSI_T_FUNCTION = 351,
-    PSI_T_LET = 352,
-    PSI_T_SET = 353,
-    PSI_T_TEMP = 354,
-    PSI_T_FREE = 355,
-    PSI_T_RETURN = 356,
-    PSI_T_PRE_ASSERT = 357,
-    PSI_T_POST_ASSERT = 358,
-    PSI_T_BOOLVAL = 359,
-    PSI_T_INTVAL = 360,
-    PSI_T_STRVAL = 361,
-    PSI_T_PATHVAL = 362,
-    PSI_T_STRLEN = 363,
-    PSI_T_FLOATVAL = 364,
-    PSI_T_ARRVAL = 365,
-    PSI_T_OBJVAL = 366,
-    PSI_T_COUNT = 367,
-    PSI_T_CALLOC = 368,
-    PSI_T_TO_BOOL = 369,
-    PSI_T_TO_INT = 370,
-    PSI_T_TO_STRING = 371,
-    PSI_T_TO_FLOAT = 372,
-    PSI_T_TO_ARRAY = 373,
-    PSI_T_TO_OBJECT = 374,
-    PSI_T_COMMENT = 375,
-    PSI_T_WHITESPACE = 376,
-    PSI_T_NO_WHITESPACE = 377,
-    PSI_T_CPP_HEADER = 378,
-    PSI_T_CPP_ATTRIBUTE = 379,
-    PSI_T_BINARY = 380,
-    PSI_T_UNARY = 381
+    PSI_T_PRAGMA_ONCE = 328,
+    PSI_T_LINE = 329,
+    PSI_T_ERROR = 330,
+    PSI_T_WARNING = 331,
+    PSI_T_IF = 332,
+    PSI_T_IFDEF = 333,
+    PSI_T_IFNDEF = 334,
+    PSI_T_ELSE = 335,
+    PSI_T_ELIF = 336,
+    PSI_T_ENDIF = 337,
+    PSI_T_DEFINE = 338,
+    PSI_T_DEFINED = 339,
+    PSI_T_UNDEF = 340,
+    PSI_T_IMPORT = 341,
+    PSI_T_INCLUDE = 342,
+    PSI_T_INCLUDE_NEXT = 343,
+    PSI_T_TYPEDEF = 344,
+    PSI_T_STRUCT = 345,
+    PSI_T_UNION = 346,
+    PSI_T_ENUM = 347,
+    PSI_T_CONST = 348,
+    PSI_T_LIB = 349,
+    PSI_T_STATIC = 350,
+    PSI_T_CALLBACK = 351,
+    PSI_T_FUNCTION = 352,
+    PSI_T_LET = 353,
+    PSI_T_SET = 354,
+    PSI_T_TEMP = 355,
+    PSI_T_FREE = 356,
+    PSI_T_RETURN = 357,
+    PSI_T_PRE_ASSERT = 358,
+    PSI_T_POST_ASSERT = 359,
+    PSI_T_BOOLVAL = 360,
+    PSI_T_INTVAL = 361,
+    PSI_T_STRVAL = 362,
+    PSI_T_PATHVAL = 363,
+    PSI_T_STRLEN = 364,
+    PSI_T_FLOATVAL = 365,
+    PSI_T_ARRVAL = 366,
+    PSI_T_OBJVAL = 367,
+    PSI_T_COUNT = 368,
+    PSI_T_CALLOC = 369,
+    PSI_T_TO_BOOL = 370,
+    PSI_T_TO_INT = 371,
+    PSI_T_TO_STRING = 372,
+    PSI_T_TO_FLOAT = 373,
+    PSI_T_TO_ARRAY = 374,
+    PSI_T_TO_OBJECT = 375,
+    PSI_T_COMMENT = 376,
+    PSI_T_WHITESPACE = 377,
+    PSI_T_NO_WHITESPACE = 378,
+    PSI_T_CPP_HEADER = 379,
+    PSI_T_CPP_ATTRIBUTE = 380,
+    PSI_T_CPP_EXTENSION = 381,
+    PSI_T_CPP_PASTE = 382,
+    PSI_T_CPP_RESTRICT = 383,
+    PSI_T_CPP_ASM = 384,
+    PSI_T_BINARY = 385,
+    PSI_T_UNARY = 386
   };
 #endif
 
@@ -197,6 +202,8 @@ union YYSTYPE
   size_t PSI_T_indirection;
   /* pointers  */
   size_t PSI_T_pointers;
+  /* asterisks  */
+  size_t PSI_T_asterisks;
   /* assert_stmt  */
   struct psi_assert_stmt * PSI_T_assert_stmt;
   /* constant  */
@@ -475,8 +482,10 @@ union YYSTYPE
   struct psi_token * PSI_T_IIF;
   /* PRAGMA  */
   struct psi_token * PSI_T_PRAGMA;
-  /* ONCE  */
-  struct psi_token * PSI_T_ONCE;
+  /* PRAGMA_ONCE  */
+  struct psi_token * PSI_T_PRAGMA_ONCE;
+  /* LINE  */
+  struct psi_token * PSI_T_LINE;
   /* ERROR  */
   struct psi_token * PSI_T_ERROR;
   /* WARNING  */
@@ -579,6 +588,14 @@ union YYSTYPE
   struct psi_token * PSI_T_CPP_HEADER;
   /* CPP_ATTRIBUTE  */
   struct psi_token * PSI_T_CPP_ATTRIBUTE;
+  /* CPP_EXTENSION  */
+  struct psi_token * PSI_T_CPP_EXTENSION;
+  /* CPP_PASTE  */
+  struct psi_token * PSI_T_CPP_PASTE;
+  /* CPP_RESTRICT  */
+  struct psi_token * PSI_T_CPP_RESTRICT;
+  /* CPP_ASM  */
+  struct psi_token * PSI_T_CPP_ASM;
   /* binary_op_token  */
   struct psi_token * PSI_T_binary_op_token;
   /* unary_op_token  */
@@ -601,6 +618,8 @@ union YYSTYPE
   struct psi_token * PSI_T_cpp_name_arg_token;
   /* cpp_exp_arg_token  */
   struct psi_token * PSI_T_cpp_exp_arg_token;
+  /* cpp_special_name_token  */
+  struct psi_token * PSI_T_cpp_special_name_token;
   /* constant_type_token  */
   struct psi_token * PSI_T_constant_type_token;
   /* impl_def_val_token  */
@@ -645,7 +664,7 @@ union YYSTYPE
   struct psi_token * PSI_T_assert_stmt_token;
   /* impl_stmt  */
   struct psi_token ** PSI_T_impl_stmt;
-#line 649 "src/parser_proc.h" /* glr.c:197  */
+#line 668 "src/parser_proc.h" /* glr.c:197  */
 };
 
 typedef union YYSTYPE YYSTYPE;
