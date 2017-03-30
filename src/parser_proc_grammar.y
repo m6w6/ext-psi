@@ -311,8 +311,8 @@ struct psi_parser;
 %destructor	{psi_decl_type_free(&$$);}			decl_type const_decl_type decl_type_complex
 %type		<struct psi_decl *>					decl_stmt decl decl_body decl_func_body decl_functor_body
 %destructor	{psi_decl_free(&$$);}				decl_stmt decl decl_body decl_func_body decl_functor_body
-%type		<struct psi_decl_arg *>				decl_typedef decl_func decl_functor decl_arg struct_arg typedef
-%destructor	{psi_decl_arg_free(&$$);}			decl_typedef decl_func decl_functor decl_arg struct_arg typedef
+%type		<struct psi_decl_arg *>				decl_typedef decl_func decl_functor decl_arg typedef
+%destructor	{psi_decl_arg_free(&$$);}			decl_typedef decl_func decl_functor decl_arg typedef
 %type		<struct psi_decl_var *>				decl_var
 %destructor	{psi_decl_var_free(&$$);}			decl_var
 %type		<struct psi_decl_struct *>			decl_struct
@@ -981,6 +981,15 @@ decl_ext_var_list:
 }
 ;
 
+decl_vars[vars]:
+	decl_var[var] {
+	$vars = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_decl_var_free), &$var);
+}
+|	decl_vars[vars_] COMMA decl_var[var] {
+	$vars = psi_plist_add($vars_, &$var);
+}
+;
+
 decl:
 	decl_body
 |	NAME[abi] decl_body {
@@ -1182,19 +1191,41 @@ struct_args_block[args]:
 ;
 
 struct_args[args]:
-	struct_arg[arg] {
+	typedef[arg] decl_layout[layout] EOS {
+	$arg->layout = $layout;
 	$args = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_decl_arg_free), &$arg);
 }
-|	struct_args[args_] struct_arg[arg] {
+|	typedef[arg] COMMA decl_vars[vars] EOS {
+	$args = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_decl_arg_free), &$arg);
+	{
+		size_t i = 0;
+		struct psi_decl_var *var;
+		
+		while (psi_plist_get($vars, i++, &var)) {
+			struct psi_decl_arg *arg = psi_decl_arg_init(psi_decl_type_copy($arg->type), var);
+			
+			$args = psi_plist_add($args, &arg);
+		}
+	}
+	free($vars);
+}
+|	struct_args[args_] typedef[arg] decl_layout[layout] EOS {
+	$arg->layout = $layout;
 	$args = psi_plist_add($args_, &$arg);
 }
-;
-
-struct_arg[arg]:
-	typedef[arg_] decl_layout[layout] EOS {
-	$arg = $arg_;
-	$arg->layout = $layout;
-	psi_parser_proc_add_from_typedef(P, $arg);
+|	struct_args[args_] typedef[arg] COMMA decl_vars[vars] EOS {
+	$args = psi_plist_add($args_, &$arg);
+	{
+		size_t i = 0;
+		struct psi_decl_var *var;
+		
+		while (psi_plist_get($vars, i++, &var)) {
+			struct psi_decl_arg *arg = psi_decl_arg_init(psi_decl_type_copy($arg->type), var);
+			
+			$args = psi_plist_add($args, &arg);
+		}
+	}
+	free($vars);
 }
 ;
 
@@ -1716,15 +1747,6 @@ free_exp[exp]:
 	$NAME->type = PSI_T_NAME;
 	$exp = psi_free_exp_init($NAME->text, $vars);
 	$exp->token = psi_token_copy($NAME);
-}
-;
-
-decl_vars[vars]:
-	decl_var[var] {
-	$vars = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_decl_var_free), &$var);
-}
-|	decl_vars[vars_] COMMA decl_var[var] {
-	$vars = psi_plist_add($vars_, &$var);
 }
 ;
 
