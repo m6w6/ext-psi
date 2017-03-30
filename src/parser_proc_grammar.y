@@ -309,10 +309,10 @@ struct psi_parser;
 
 %type		<struct psi_decl_type *>			decl_type const_decl_type decl_type_complex
 %destructor	{psi_decl_type_free(&$$);}			decl_type const_decl_type decl_type_complex
-%type		<struct psi_decl *>					decl_stmt decl
-%destructor	{psi_decl_free(&$$);}				decl_stmt decl
-%type		<struct psi_decl_arg *>				decl_typedef decl_fn decl_func decl_functor decl_arg struct_arg typedef
-%destructor	{psi_decl_arg_free(&$$);}			decl_typedef decl_fn decl_func decl_functor decl_arg struct_arg typedef
+%type		<struct psi_decl *>					decl_stmt decl decl_body decl_func_body decl_functor_body
+%destructor	{psi_decl_free(&$$);}				decl_stmt decl decl_body decl_func_body decl_functor_body
+%type		<struct psi_decl_arg *>				decl_typedef decl_func decl_functor decl_arg struct_arg typedef
+%destructor	{psi_decl_arg_free(&$$);}			decl_typedef decl_func decl_functor decl_arg struct_arg typedef
 %type		<struct psi_decl_var *>				decl_var
 %destructor	{psi_decl_var_free(&$$);}			decl_var
 %type		<struct psi_decl_struct *>			decl_struct
@@ -737,7 +737,7 @@ decl_typedef[def]:
 
 typedef[def]:
 	decl_arg
-|	decl {
+|	decl_func_body[decl] {
 	$def = psi_decl_arg_init(
 		psi_decl_type_init(PSI_T_FUNCTION, $decl->func->var->name),
 		psi_decl_var_copy($decl->func->var)
@@ -982,30 +982,28 @@ decl_ext_var_list:
 ;
 
 decl:
-	decl_fn[func] LPAREN decl_args[args] RPAREN array_size[as] {
-	$decl = psi_decl_init(psi_decl_abi_init("default"), $func, $args);
+	decl_body
+|	NAME[abi] decl_body {
+	$decl = $decl_body;
+	$decl->abi = psi_decl_abi_init($abi->text);
+}
+;
+
+decl_body:
+	decl_func_body
+|	decl_functor_body
+;
+
+decl_func_body[decl]:
+	decl_func[func] LPAREN decl_args[args] RPAREN array_size[as] {
+	$decl = psi_decl_init($func, $args);
 	if ($as) {
 		$decl->func->var->pointer_level += 1;
 		$decl->func->var->array_size = $as;
 	}
 }
-|	decl_fn[func] LPAREN decl_args[args] COMMA ELLIPSIS RPAREN array_size[as] {
-	$decl = psi_decl_init(psi_decl_abi_init("default"), $func, $args);
-	$decl->varargs = 1;
-	if ($as) {
-		$decl->func->var->pointer_level += 1;
-		$decl->func->var->array_size = $as;
-	}
-}
-|	NAME[abi] decl_fn[func] LPAREN decl_args[args] RPAREN array_size[as] {
-	$decl = psi_decl_init(psi_decl_abi_init($abi->text), $func, $args);
-	if ($as) {
-		$decl->func->var->pointer_level += 1;
-		$decl->func->var->array_size = $as;
-	}
-}
-|	NAME[abi] decl_fn[func] LPAREN decl_args[args] COMMA ELLIPSIS RPAREN array_size[as] {
-	$decl = psi_decl_init(psi_decl_abi_init($abi->text), $func, $args);
+|	decl_func[func] LPAREN decl_args[args] COMMA ELLIPSIS RPAREN array_size[as] {
+	$decl = psi_decl_init($func, $args);
 	$decl->varargs = 1;
 	if ($as) {
 		$decl->func->var->pointer_level += 1;
@@ -1014,9 +1012,22 @@ decl:
 }
 ;
 
-decl_fn:
-	decl_func
-|	decl_functor
+decl_functor_body[decl]:
+	decl_functor[func] LPAREN decl_args[args] RPAREN array_size[as] {
+	$decl = psi_decl_init($func, $args);
+	if ($as) {
+		$decl->func->var->pointer_level += 1;
+		$decl->func->var->array_size = $as;
+	}
+}
+|	decl_functor[func] LPAREN decl_args[args] COMMA ELLIPSIS RPAREN array_size[as] {
+	$decl = psi_decl_init($func, $args);
+	$decl->varargs = 1;
+	if ($as) {
+		$decl->func->var->pointer_level += 1;
+		$decl->func->var->array_size = $as;
+	}
+}
 ;
 
 decl_functor[arg]:
@@ -1091,7 +1102,15 @@ decl_args[args]:
 ;
 
 decl_arg[arg]:
-	const_decl_type[type] decl_var[var] {
+	decl_functor_body[decl] {
+	$arg = psi_decl_arg_init(
+		psi_decl_type_init(PSI_T_FUNCTION, $decl->func->var->name),
+		psi_decl_var_copy($decl->func->var)
+	);
+	$arg->type->token = psi_token_copy($decl->func->token);
+	$arg->type->real.func = $decl;
+}
+|	const_decl_type[type] decl_var[var] {
 	$arg = psi_decl_arg_init($type, $var);
 }
 |	CONST VOID pointers name_token[NAME] {

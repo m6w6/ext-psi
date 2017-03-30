@@ -40,7 +40,7 @@ struct psi_decl {
 	unsigned varargs:1;
 };
 
-struct psi_decl *psi_decl_init(struct psi_decl_abi *abi, struct psi_decl_arg *func, struct psi_plist *args);
+struct psi_decl *psi_decl_init(struct psi_decl_arg *func, struct psi_plist *args);
 void psi_decl_free(struct psi_decl **d_ptr);
 void psi_decl_dump(int fd, struct psi_decl *decl);
 

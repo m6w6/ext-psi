@@ -29,6 +29,7 @@
 struct psi_layout {
 	size_t pos;
 	size_t len;
+	size_t bfw;
 };
 
 struct psi_layout *psi_layout_init(size_t pos, size_t len);

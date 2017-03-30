@@ -220,12 +220,16 @@ union YYSTYPE
   struct psi_decl * PSI_T_decl_stmt;
   /* decl  */
   struct psi_decl * PSI_T_decl;
+  /* decl_body  */
+  struct psi_decl * PSI_T_decl_body;
+  /* decl_func_body  */
+  struct psi_decl * PSI_T_decl_func_body;
+  /* decl_functor_body  */
+  struct psi_decl * PSI_T_decl_functor_body;
   /* decl_typedef  */
   struct psi_decl_arg * PSI_T_decl_typedef;
   /* typedef  */
   struct psi_decl_arg * PSI_T_typedef;
-  /* decl_fn  */
-  struct psi_decl_arg * PSI_T_decl_fn;
   /* decl_functor  */
   struct psi_decl_arg * PSI_T_decl_functor;
   /* decl_func  */
@@ -664,7 +668,7 @@ union YYSTYPE
   struct psi_token * PSI_T_assert_stmt_token;
   /* impl_stmt  */
   struct psi_token ** PSI_T_impl_stmt;
-#line 668 "src/parser_proc.h" /* glr.c:197  */
+#line 672 "src/parser_proc.h" /* glr.c:197  */
 };
 
 typedef union YYSTYPE YYSTYPE;

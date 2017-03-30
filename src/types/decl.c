@@ -31,13 +31,13 @@
 #define PSI_FUNC_REDIRS
 #include "php_psi_posix.h"
 
-struct psi_decl *psi_decl_init(struct psi_decl_abi *abi,
-		struct psi_decl_arg *func, struct psi_plist *args)
+struct psi_decl *psi_decl_init(struct psi_decl_arg *func, struct psi_plist *args)
 {
 	struct psi_decl *d = calloc(1, sizeof(*d));
-	d->abi = abi;
+
 	d->func = func;
 	d->args = args;
+
 	return d;
 }
 
@@ -128,7 +128,9 @@ bool psi_decl_validate(struct psi_data *data, struct psi_decl *decl, void *dl)
 
 bool psi_decl_validate_nodl(struct psi_data *data, struct psi_decl *decl)
 {
-	if (!psi_decl_abi_validate(data, decl->abi)) {
+	if (!decl->abi) {
+		decl->abi = psi_decl_abi_init("default");
+	} else if (!psi_decl_abi_validate(data, decl->abi)) {
 		data->error(data, decl->abi->token, PSI_WARNING,
 				"Invalid calling convention: '%s'", decl->abi->token->text);
 		return false;

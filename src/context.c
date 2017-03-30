@@ -178,7 +178,7 @@ struct psi_context *psi_context_init(struct psi_context *C, struct psi_context_o
 		struct psi_decl_var *fname = psi_decl_var_init(predef_decl->var_name, predef_decl->pointer_level, predef_decl->array_size);
 		struct psi_decl_arg *tdef, *func = psi_decl_arg_init(ftype, fname);
 		struct psi_plist *args = psi_plist_init((psi_plist_dtor) psi_decl_arg_free);
-		struct psi_decl *decl = psi_decl_init(psi_decl_abi_init("default"), func, args);
+		struct psi_decl *decl = psi_decl_init(func, args);
 
 		for (farg = &predef_decl[1]; farg->type_tag; ++farg) {
 			struct psi_decl_type *arg_type = psi_decl_type_init(farg->type_tag, farg->type_name);
