@@ -92,7 +92,7 @@ bool psi_decl_union_validate(struct psi_data *data, struct psi_decl_union *u)
 			return false;
 		}
 
-		if (darg->layout) {
+		if (darg->layout && darg->layout->len) {
 			pos = darg->layout->pos;
 
 			align = psi_decl_arg_align(darg, &pos, &len);
@@ -114,7 +114,18 @@ bool psi_decl_union_validate(struct psi_data *data, struct psi_decl_union *u)
 			pos = 0;
 
 			align = psi_decl_arg_align(darg, &pos, &len);
-			darg->layout = psi_layout_init(pos, len);
+
+			if (darg->layout) {
+				if (darg->layout->pos != 0) {
+					data->error(data, darg->token, PSI_WARNING,
+							"Offset of %s.%s should be 0", u->name,
+							darg->var->name);
+					darg->layout->pos = 0;
+				}
+				darg->layout->len = len;
+			} else {
+				darg->layout = psi_layout_init(pos, len, NULL);
+			}
 		}
 		if (len > size) {
 			size = len;

@@ -128,14 +128,22 @@ static unsigned psi_jit_struct_type_elements(struct psi_decl_struct *strct,
 		jit_type_t **fields)
 {
 	size_t i = 0, argc = psi_plist_count(strct->args), nels = 0, offset = 0,
-			maxalign;
+			maxalign, last_arg_pos = -1;
 	struct psi_decl_arg *darg;
 
 	*fields = calloc(argc + 1, sizeof(*fields));
 
 	while (psi_plist_get(strct->args, i++, &darg)) {
-		jit_type_t type = jit_type_copy(psi_jit_decl_arg_type(darg));
+		jit_type_t type;
 		size_t padding, alignment;
+
+		if (darg->layout->pos == last_arg_pos) {
+			/* skip bit fields */
+			continue;
+		}
+		last_arg_pos = darg->layout->pos;
+
+		type = jit_type_copy(psi_jit_decl_arg_type(darg));
 
 		if ((alignment = jit_type_get_alignment(type)) > maxalign) {
 			maxalign = alignment;

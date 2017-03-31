@@ -28,14 +28,15 @@
 
 #include <assert.h>
 
-struct psi_layout *psi_layout_init(size_t pos, size_t len)
+struct psi_layout *psi_layout_init(size_t pos, size_t len, struct psi_layout *bfw)
 {
 	struct psi_layout *l = calloc(1, sizeof(*l));
 
-	assert(pos + len);
+	assert(pos + len + (intptr_t) bfw);
 
 	l->pos = pos;
 	l->len = len;
+	l->bfw = bfw;
 
 	return l;
 }
@@ -43,8 +44,13 @@ struct psi_layout *psi_layout_init(size_t pos, size_t len)
 void psi_layout_free(struct psi_layout **l_ptr)
 {
 	if (*l_ptr) {
-		free(*l_ptr);
+		struct psi_layout *l = *l_ptr;
 		*l_ptr = NULL;
+
+		if (l->bfw) {
+			psi_layout_free(&l->bfw);
+		}
+		free(l);
 	}
 }
 

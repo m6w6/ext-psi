@@ -300,14 +300,21 @@ static size_t psi_ffi_struct_type_pad(ffi_type **els, size_t padding) {
 }
 
 static ffi_type **psi_ffi_struct_type_elements(struct psi_decl_struct *strct) {
-	size_t i = 0, argc = psi_plist_count(strct->args), nels = 0, offset = 0, maxalign = 0;
+	size_t i = 0, argc = psi_plist_count(strct->args), nels = 0, offset = 0, maxalign = 0, last_arg_pos = -1;
 	ffi_type **tmp, **els = calloc(argc + 1, sizeof(*els));
 	struct psi_decl_arg *darg;
 
 	while (psi_plist_get(strct->args, i++, &darg)) {
-		ffi_type *type = malloc(sizeof(*type));
+		ffi_type *type;
 		size_t padding;
 
+		if (darg->layout->pos == last_arg_pos) {
+			/* skip bit fields */
+			continue;
+		}
+		last_arg_pos = darg->layout->pos;
+
+		type = malloc(sizeof(*type));
 		*type = *psi_ffi_decl_arg_type(darg);
 
 		if (type->alignment > maxalign) {

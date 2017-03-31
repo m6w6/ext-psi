@@ -29,10 +29,10 @@
 struct psi_layout {
 	size_t pos;
 	size_t len;
-	size_t bfw;
+	struct psi_layout *bfw;
 };
 
-struct psi_layout *psi_layout_init(size_t pos, size_t len);
+struct psi_layout *psi_layout_init(size_t pos, size_t len, struct psi_layout *bfw);
 void psi_layout_free(struct psi_layout **l_ptr);
 
 int psi_layout_sort_cmp(const void *_a, const void *_b);

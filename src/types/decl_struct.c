@@ -96,7 +96,7 @@ bool psi_decl_struct_validate(struct psi_data *data, struct psi_decl_struct *s)
 			return false;
 		}
 
-		if (darg->layout) {
+		if (darg->layout && darg->layout->len) {
 			pos = darg->layout->pos;
 			align = psi_decl_arg_align(darg, &pos, &len);
 
@@ -115,13 +115,53 @@ bool psi_decl_struct_validate(struct psi_data *data, struct psi_decl_struct *s)
 			}
 		} else {
 			if (i) {
-				pos = prev_arg->layout->pos + prev_arg->layout->len;
+				if (prev_arg->layout->bfw && darg->layout->bfw) {
+					struct psi_decl_type *real = NULL;
+					size_t max_bfw = 8 * psi_decl_type_get_size(prev_arg->type, &real);
+
+					switch (real->type) {
+					case PSI_T_INT8:
+					case PSI_T_UINT8:
+					case PSI_T_INT16:
+					case PSI_T_UINT16:
+					case PSI_T_INT32:
+					case PSI_T_UINT32:
+					case PSI_T_INT64:
+					case PSI_T_UINT64:
+						break;
+					default:
+						data->error(data, darg->token, PSI_WARNING,
+								"Unsupported type for bit field: %s", real->name);
+						return false;
+					}
+					darg->layout->bfw->pos = prev_arg->layout->bfw->pos + prev_arg->layout->bfw->len;
+					if (max_bfw >= darg->layout->bfw->pos + darg->layout->bfw->len) {
+						pos = prev_arg->layout->pos;
+					} else {
+						darg->layout->bfw->pos = 0;
+						pos = prev_arg->layout->pos + prev_arg->layout->len;
+					}
+				} else {
+					pos = prev_arg->layout->pos + prev_arg->layout->len;
+				}
 			} else {
 				pos = 0;
 			}
 
 			align = psi_decl_arg_align(darg, &pos, &len);
-			darg->layout = psi_layout_init(pos, len);
+
+			if (darg->layout) {
+				if (darg->layout->pos != pos) {
+					data->error(data, darg->token, PSI_WARNING,
+							"Computed offset %zu of %s.%s does not match"
+							" pre-defined offset %zu",
+							pos, s->name, darg->var->name, darg->layout->pos);
+				}
+				darg->layout->pos = pos;
+				darg->layout->len = len;
+			} else {
+				darg->layout = psi_layout_init(pos, len, NULL);
+			}
 		}
 
 		if (align > s->align) {

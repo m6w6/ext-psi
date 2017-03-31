@@ -146,7 +146,7 @@ struct psi_context *psi_context_init(struct psi_context *C, struct psi_context_o
 			type = psi_decl_type_init(member->type_tag, member->type_name);
 			dvar = psi_decl_var_init(member->var_name, member->pointer_level, member->array_size);
 			darg = psi_decl_arg_init(type, dvar);
-			darg->layout = psi_layout_init(member->offset, member->size);
+			darg->layout = psi_layout_init(member->offset, member->size, NULL);
 
 			switch (predef_composite->type_tag) {
 			case PSI_T_STRUCT:

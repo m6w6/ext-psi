@@ -204,7 +204,7 @@ void psi_token_dump(int fd, struct psi_token *t)
 		dprintf(fd, "EOF");
 	} else {
 		dprintf(fd, "\"");
-		for (i = 0; i < MIN(t->size, 16); ++i) {
+		for (i = 0; i < t->size; ++i) {
 			switch (t->text[i]) {
 			case '\0':
 				dprintf(fd, "\\0");
@@ -242,7 +242,7 @@ void psi_token_dump(int fd, struct psi_token *t)
 				break;
 			}
 		}
-		dprintf(fd, "%s\"", t->size > 16 ? "..." : "");
+		dprintf(fd, "\"");
 	}
 	dprintf(fd, " at col %u in %s on line %u\n", t->col, t->file, t->line);
 }

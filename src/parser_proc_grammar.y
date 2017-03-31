@@ -323,8 +323,8 @@ struct psi_parser;
 %destructor	{psi_decl_enum_free(&$$);}			decl_enum
 %type		<struct psi_decl_enum_item *>		decl_enum_item
 %destructor	{psi_decl_enum_item_free(&$$);}		decl_enum_item
-%type		<struct psi_plist *>				decl_args decl_struct_args struct_args_block struct_args decl_enum_items decl_vars
-%destructor	{psi_plist_free($$);}				decl_args decl_struct_args struct_args_block struct_args decl_enum_items decl_vars
+%type		<struct psi_plist *>				decl_args decl_struct_args struct_args_block struct_args struct_arg_var_list decl_enum_items decl_vars decl_vars_with_layout
+%destructor	{psi_plist_free($$);}				decl_args decl_struct_args struct_args_block struct_args struct_arg_var_list decl_enum_items decl_vars decl_vars_with_layout
 
 %type		<struct psi_layout>					align_and_size
 %destructor	{}									align_and_size
@@ -1191,41 +1191,59 @@ struct_args_block[args]:
 ;
 
 struct_args[args]:
-	typedef[arg] decl_layout[layout] EOS {
+	typedef[arg] decl_layout[layout] struct_arg_var_list[vars] EOS {
 	$arg->layout = $layout;
 	$args = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_decl_arg_free), &$arg);
-}
-|	typedef[arg] COMMA decl_vars[vars] EOS {
-	$args = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_decl_arg_free), &$arg);
-	{
+	if ($vars) {
 		size_t i = 0;
-		struct psi_decl_var *var;
+		struct psi_decl_arg *arg;
 		
-		while (psi_plist_get($vars, i++, &var)) {
-			struct psi_decl_arg *arg = psi_decl_arg_init(psi_decl_type_copy($arg->type), var);
-			
+		while (psi_plist_get($vars, i++, &arg)) {
+			arg->type = psi_decl_type_copy($arg->type);
 			$args = psi_plist_add($args, &arg);
 		}
+		free($vars);
 	}
-	free($vars);
 }
-|	struct_args[args_] typedef[arg] decl_layout[layout] EOS {
+|	struct_args[args_] typedef[arg] decl_layout[layout] struct_arg_var_list[vars] EOS {
 	$arg->layout = $layout;
 	$args = psi_plist_add($args_, &$arg);
-}
-|	struct_args[args_] typedef[arg] COMMA decl_vars[vars] EOS {
-	$args = psi_plist_add($args_, &$arg);
-	{
+	if ($vars) {
 		size_t i = 0;
-		struct psi_decl_var *var;
+		struct psi_decl_arg *arg;
 		
-		while (psi_plist_get($vars, i++, &var)) {
-			struct psi_decl_arg *arg = psi_decl_arg_init(psi_decl_type_copy($arg->type), var);
-			
+		while (psi_plist_get($vars, i++, &arg)) {
+			arg->type = psi_decl_type_copy($arg->type);
 			$args = psi_plist_add($args, &arg);
 		}
+		free($vars);
 	}
-	free($vars);
+}
+;
+
+struct_arg_var_list[vars]:
+	%empty {
+	$vars = NULL;
+}
+|	COMMA decl_vars_with_layout[vars_] {
+	$vars = $vars_;
+}
+;
+
+decl_vars_with_layout[vars]:
+	decl_var[var] decl_layout[layout] {
+	{
+		struct psi_decl_arg *arg = psi_decl_arg_init(NULL, $var);
+		arg->layout = $layout;
+		$vars = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_decl_arg_free), &arg);
+	}
+}
+|	decl_vars_with_layout[vars_] COMMA decl_var[var] decl_layout[layout] {
+	{
+		struct psi_decl_arg *arg = psi_decl_arg_init(NULL, $var);
+		arg->layout = $layout;
+		$vars = psi_plist_add($vars_, &arg);
+	}
 }
 ;
 
@@ -1357,8 +1375,14 @@ decl_layout[l]:
 	%empty {
 	$l = NULL;
 }
+|	COLON NUMBER[width] {
+	$l = psi_layout_init(0, 0, psi_layout_init(0, atol($width->text), NULL));
+}
 |	COLON COLON LPAREN NUMBER[align] COMMA NUMBER[size] RPAREN {
-	$l = psi_layout_init(atol($align->text), atol($size->text));
+	$l = psi_layout_init(atol($align->text), atol($size->text), NULL);
+}
+|	COLON NUMBER[width] COLON COLON LPAREN NUMBER[align] COMMA NUMBER[size] RPAREN {
+	$l = psi_layout_init(atol($align->text), atol($size->text), psi_layout_init(0, atol($width->text), NULL));
 }
 ;
 
