@@ -455,19 +455,40 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input 
 	character: ;
 		/*!re2c
 
-		"'"		{ if (escaped) goto character; cur -= 1; NEWTOKEN(PSI_T_QUOTED_CHAR); cur += 1; token->flags = char_width; goto start; }
 		EOL		{ NEWLINE(); goto character; }
 		"\\"	{ escaped = !escaped; }
-		*		{ goto character; }
+		"'"		{
+			if (escaped) {
+				escaped = false;
+				goto character;
+			}
+			cur -= 1;
+			NEWTOKEN(PSI_T_QUOTED_CHAR);
+			cur += 1;
+			token->flags = char_width;
+			goto start;
+		}
+		*		{ escaped = false; goto character; }
 
 		*/
+
 	string: ;
 		/*!re2c
 
-		"\""	{ if (escaped) goto string; cur -= 1; NEWTOKEN(PSI_T_QUOTED_STRING); cur += 1; token->flags = char_width; goto start; }
 		EOL		{ NEWLINE(); goto string; }
 		"\\" 	{ escaped = !escaped; goto string; }
-		*		{ goto string; }
+		"\""	{
+			if (escaped) {
+				escaped = false;
+				goto string;
+			}
+			cur -= 1;
+			NEWTOKEN(PSI_T_QUOTED_STRING);
+			cur += 1;
+			token->flags = char_width;
+			goto start;
+		}
+		*		{ escaped = false; goto string; }
 
 		*/
 
