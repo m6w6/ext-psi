@@ -255,7 +255,7 @@ static void *exec_let_func_arrval(struct psi_let_exp *val,
 		struct psi_call_frame *frame);
 
 void exec_let_func_arrval_seq(struct psi_let_func *func,
-		struct psi_decl_arg *darg, struct psi_decl_type *darg_type,
+		struct psi_decl_arg *darg,
 		struct psi_call_frame_argument *frame_arg,
 		struct psi_let_exp *inner_let_exp, void *container,
 		struct psi_call_frame *frame)
@@ -287,7 +287,7 @@ void exec_let_func_arrval_seq(struct psi_let_func *func,
 		impl_val val = {0}, *ptr, *sub;
 
 		if (let_fn) {
-			ptr = let_fn(&val, darg_type, 0, NULL, zval_ptr, &temp);
+			ptr = let_fn(&val, darg, 0, NULL, zval_ptr, &temp);
 			if (temp) {
 				psi_call_frame_push_auto(frame, temp);
 			}
@@ -315,10 +315,9 @@ static void *exec_let_func_arrval(struct psi_let_exp *val,
 {
 	void *container = NULL;
 	struct psi_call_frame_argument *frame_arg;
-	struct psi_decl_type *darg_type;
 	struct psi_plist *darg_members;
 
-	darg_members = psi_decl_type_get_args(darg->type, &darg_type);
+	darg_members = psi_decl_type_get_args(darg->type, NULL);
 	frame_arg = psi_call_frame_get_argument(frame, func->var->fqn);
 
 	if (frame_arg->zval_ptr && Z_TYPE_P(frame_arg->zval_ptr) != IS_ARRAY) {
@@ -368,8 +367,7 @@ static void *exec_let_func_arrval(struct psi_let_exp *val,
 		container = ecalloc(arcount + 1, psi_decl_var_get_size(inner->var));
 		inner->var->pointer_level -= inner->is_reference;
 
-		exec_let_func_arrval_seq(func, darg, darg_type, frame_arg, inner,
-				container, frame);
+		exec_let_func_arrval_seq(func, darg, frame_arg, inner, container, frame);
 	} else {
 		assert(0);
 	}
@@ -393,8 +391,7 @@ void *psi_let_func_exec(struct psi_let_exp *val, struct psi_let_func *func,
 
 		assert(iarg);
 
-		frame_sym->ival_ptr = let_fn(&frame_sym->temp_val,
-				psi_decl_type_get_real(darg->type),
+		frame_sym->ival_ptr = let_fn(&frame_sym->temp_val, darg,
 				iarg->spec ? iarg->spec->type->type : 0, iarg->ival_ptr,
 				iarg->zval_ptr, &temp);
 		if (temp) {

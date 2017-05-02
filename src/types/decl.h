@@ -44,8 +44,8 @@ struct psi_decl *psi_decl_init(struct psi_decl_arg *func, struct psi_plist *args
 void psi_decl_free(struct psi_decl **d_ptr);
 void psi_decl_dump(int fd, struct psi_decl *decl);
 
-bool psi_decl_validate(struct psi_data *data, struct psi_decl *decl, void *dl);
-bool psi_decl_validate_nodl(struct psi_data *data, struct psi_decl *decl);
+bool psi_decl_validate(struct psi_data *data, struct psi_decl *decl, void *dl, struct psi_validate_stack *type_stack);
+bool psi_decl_validate_nodl(struct psi_data *data, struct psi_decl *decl, struct psi_validate_stack *type_stack);
 
 static inline struct psi_decl_arg *psi_decl_get_arg(struct psi_decl *decl, struct psi_decl_var *var) {
 	return psi_decl_arg_get_by_var(var, decl->args, decl->func);

@@ -114,9 +114,10 @@ static inline bool psi_decl_validate_func(struct psi_data *data,
 	return true;
 }
 
-bool psi_decl_validate(struct psi_data *data, struct psi_decl *decl, void *dl)
+bool psi_decl_validate(struct psi_data *data, struct psi_decl *decl, void *dl,
+		struct psi_validate_stack *type_stack)
 {
-	if (!psi_decl_validate_nodl(data, decl)) {
+	if (!psi_decl_validate_nodl(data, decl, type_stack)) {
 		return false;
 	}
 	if (!psi_decl_validate_func(data, decl, decl->func, dl)) {
@@ -126,7 +127,8 @@ bool psi_decl_validate(struct psi_data *data, struct psi_decl *decl, void *dl)
 	return true;
 }
 
-bool psi_decl_validate_nodl(struct psi_data *data, struct psi_decl *decl)
+bool psi_decl_validate_nodl(struct psi_data *data, struct psi_decl *decl,
+		struct psi_validate_stack *type_stack)
 {
 	if (!decl->abi) {
 		decl->abi = psi_decl_abi_init("default");
@@ -135,7 +137,7 @@ bool psi_decl_validate_nodl(struct psi_data *data, struct psi_decl *decl)
 				"Invalid calling convention: '%s'", decl->abi->token->text);
 		return false;
 	}
-	if (!psi_decl_arg_validate(data, decl->func)) {
+	if (!psi_decl_arg_validate(data, decl->func, type_stack)) {
 		return false;
 	}
 	if (decl->args) {
@@ -143,7 +145,7 @@ bool psi_decl_validate_nodl(struct psi_data *data, struct psi_decl *decl)
 		struct psi_decl_arg *arg;
 
 		while (psi_plist_get(decl->args, i++, &arg)) {
-			if (!psi_decl_arg_validate(data, arg)) {
+			if (!psi_decl_arg_validate(data, arg, type_stack)) {
 				return false;
 			}
 		}

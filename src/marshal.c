@@ -154,7 +154,7 @@ void psi_set_void(zval *return_value, struct psi_set_exp *set, impl_val *ret_val
 /*
  * ?
  */
-impl_val *psi_let_void(impl_val *tmp, struct psi_decl_type *spec, token_t impl_type, impl_val *ival, zval *zvalue, void **to_free)
+impl_val *psi_let_void(impl_val *tmp, struct psi_decl_arg *spec, token_t impl_type, impl_val *ival, zval *zvalue, void **to_free)
 {
 	return tmp;
 }
@@ -169,7 +169,7 @@ void psi_set_zval(zval *return_value, struct psi_set_exp *set, impl_val *ret_val
 /*
  * let dvar = zval($ivar)
  */
-impl_val *psi_let_zval(impl_val *tmp, struct psi_decl_type *spec, token_t impl_type, impl_val *ival, zval *zvalue, void **to_free)
+impl_val *psi_let_zval(impl_val *tmp, struct psi_decl_arg *spec, token_t impl_type, impl_val *ival, zval *zvalue, void **to_free)
 {
 	*to_free = tmp->ptr = emalloc(sizeof(zval));
 	ZVAL_COPY_VALUE(tmp->ptr, zvalue);
@@ -208,10 +208,10 @@ static inline impl_val *psi_val_boolval(impl_val *tmp, token_t real_type, zend_b
 /*
  * let dvar = boolval($ivar)
  */
-impl_val *psi_let_boolval(impl_val *tmp, struct psi_decl_type *spec, token_t impl_type, impl_val *ival, zval *zvalue, void **to_free)
+impl_val *psi_let_boolval(impl_val *tmp, struct psi_decl_arg *spec, token_t impl_type, impl_val *ival, zval *zvalue, void **to_free)
 {
 	zend_bool boolval;
-	token_t real_type = spec ? psi_decl_type_get_real(spec)->type : PSI_T_UINT8;
+	token_t real_type = spec ? psi_decl_type_get_real(spec->type)->type : PSI_T_UINT8;
 
 	if (ival && impl_type == PSI_T_BOOL) {
 		boolval = ival->zend.bval;
@@ -248,15 +248,22 @@ void psi_set_to_int(zval *return_value, struct psi_set_exp *set, impl_val *ret_v
 	case PSI_T_UINT32:		RETVAL_LONG(v->u32);				break;
 	case PSI_T_INT64:		RETVAL_LONG(v->i64);				break;
 	case PSI_T_UINT64:		RETVAL_LONG_U64(v->u64);			break;
-	case PSI_T_FLOAT:		RETVAL_DOUBLE((double) v->fval);	break;
-	case PSI_T_DOUBLE:		RETVAL_DOUBLE(v->dval);				break;
+	case PSI_T_FLOAT:
+		RETVAL_DOUBLE((double) v->fval);
+		convert_to_long(return_value);
+		break;
+	case PSI_T_DOUBLE:
+		RETVAL_DOUBLE(v->dval);
+		convert_to_long(return_value);
+		break;
 #ifdef HAVE_LONG_DOUBLE
-	case PSI_T_LONG_DOUBLE:	RETVAL_DOUBLE((double) v->ldval);	break;
+	case PSI_T_LONG_DOUBLE:
+		RETVAL_DOUBLE((double) v->ldval);
+		convert_to_long(return_value);
+		break;
 #endif
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}
-
-	convert_to_long(return_value);
 }
 
 static inline impl_val *psi_val_intval(impl_val *tmp, token_t real_type, zend_long intval) {
@@ -285,10 +292,10 @@ static inline impl_val *psi_val_intval(impl_val *tmp, token_t real_type, zend_lo
 /*
  * let dvar = intval($ivar)
  */
-impl_val *psi_let_intval(impl_val *tmp, struct psi_decl_type *spec, token_t impl_type, impl_val *ival, zval *zvalue, void **to_free)
+impl_val *psi_let_intval(impl_val *tmp, struct psi_decl_arg *spec, token_t impl_type, impl_val *ival, zval *zvalue, void **to_free)
 {
 	zend_long intval;
-	token_t real_type = spec ? psi_decl_type_get_real(spec)->type : PSI_T_LONG;
+	token_t real_type = spec ? psi_decl_type_get_real(spec->type)->type : PSI_T_LONG;
 
 	if (ival && impl_type == PSI_T_INT) {
 		intval = ival->zend.lval;
@@ -350,10 +357,10 @@ static inline impl_val *psi_val_floatval(impl_val *tmp, token_t real_type, doubl
 /*
  * let dvar = floatval($ivar)
  */
-impl_val *psi_let_floatval(impl_val *tmp, struct psi_decl_type *spec, token_t impl_type, impl_val *ival, zval *zvalue, void **to_free)
+impl_val *psi_let_floatval(impl_val *tmp, struct psi_decl_arg *spec, token_t impl_type, impl_val *ival, zval *zvalue, void **to_free)
 {
 	double floatval;
-	token_t real_type = spec ? psi_decl_type_get_real(spec)->type : PSI_T_DOUBLE;
+	token_t real_type = spec ? psi_decl_type_get_real(spec->type)->type : PSI_T_DOUBLE;
 
 	if (ival && (impl_type == PSI_T_FLOAT || impl_type == PSI_T_DOUBLE)) {
 		floatval = ival->dval;
@@ -407,7 +414,7 @@ void psi_set_to_stringl(zval *return_value, struct psi_set_exp *set, impl_val *r
 /*
  * let dvar = strval($ivar)
  */
-impl_val *psi_let_strval(impl_val *tmp, struct psi_decl_type *spec, token_t impl_type, impl_val *ival, zval *zvalue, void **to_free)
+impl_val *psi_let_strval(impl_val *tmp, struct psi_decl_arg *spec, token_t impl_type, impl_val *ival, zval *zvalue, void **to_free)
 {
 	if (ival && impl_type == PSI_T_STRING) {
 		if (ival->zend.str) {
@@ -428,7 +435,7 @@ impl_val *psi_let_strval(impl_val *tmp, struct psi_decl_type *spec, token_t impl
 /*
  * let dvar = pathval($ivar)
  */
-impl_val *psi_let_pathval(impl_val *tmp, struct psi_decl_type *spec, token_t impl_type, impl_val *ival, zval *zvalue, void **to_free)
+impl_val *psi_let_pathval(impl_val *tmp, struct psi_decl_arg *spec, token_t impl_type, impl_val *ival, zval *zvalue, void **to_free)
 {
 	tmp = psi_let_strval(tmp, spec, impl_type, ival, zvalue, to_free);
 	if (SUCCESS != php_check_open_basedir(tmp->ptr)) {
@@ -442,7 +449,7 @@ impl_val *psi_let_pathval(impl_val *tmp, struct psi_decl_type *spec, token_t imp
 /*
  * let dvar = strlen($ivar)
  */
-impl_val *psi_let_strlen(impl_val *tmp, struct psi_decl_type *spec, token_t impl_type, impl_val *ival, zval *zvalue, void **to_free)
+impl_val *psi_let_strlen(impl_val *tmp, struct psi_decl_arg *spec, token_t impl_type, impl_val *ival, zval *zvalue, void **to_free)
 {
 	if (ival && impl_type == PSI_T_STRING) {
 		if (ival->zend.str) {
@@ -580,49 +587,12 @@ void psi_set_to_array(zval *return_value, struct psi_set_exp *set, impl_val *r_v
 	}
 }
 
-//impl_val *psi_let_arrval(impl_val *tmp, decl_type *spec, decl_var *spec_var, token_t impl_type, impl_val *ival, zval *zvalue, void **to_free)
-//{
-//	decl_type *real = real_decl_type(spec);
-//	HashTable *arr;
-//	zval *zv;
-//	size_t i, sz;
-//	decl_arg tmp_arg = {0};
-//
-//	if (impl_type != PSI_T_ARRAY) {
-//		SEPARATE_ARG_IF_REF(zvalue);
-//		convert_to_array(zvalue);
-//	}
-//	arr = HASH_OF(zvalue);
-//
-//	switch (real->type) {
-//	case PSI_T_STRUCT:
-//		*to_free = tmp = psi_array_to_struct(real->real.strct, arr);
-//		break;
-//	case PSI_T_UNION:
-//		*to_free = tmp = psi_array_to_union(real->real.unn, arr);
-//		break;
-//	default:
-//		sz = psi_t_size(real->type);
-//		tmp = *to_free = ecalloc(zend_hash_num_elements(arr), sz);
-//		tmp_arg.type = spec;
-//		tmp_arg.var = spec_var;
-//		ZEND_HASH_FOREACH_VAL_IND(arr, zv)
-//		{
-//			void *ptr = ((char *) tmp) + (i++ * sz);
-//			psi_from_zval_ex(NULL, (impl_val **) &ptr, &tmp_arg, 0, zv, NULL);
-//		}
-//		ZEND_HASH_FOREACH_END();
-//	}
-//
-//	return tmp;
-//}
-
 /*
  * let dvar = count($ivar)
  */
-impl_val *psi_let_count(impl_val *tmp, struct psi_decl_type *spec, token_t impl_type, impl_val *ival, zval *zvalue, void **to_free)
+impl_val *psi_let_count(impl_val *tmp, struct psi_decl_arg *spec, token_t impl_type, impl_val *ival, zval *zvalue, void **to_free)
 {
-	return psi_val_intval(tmp, psi_decl_type_get_real(spec)->type, psi_zval_count(zvalue));
+	return psi_val_intval(tmp, psi_decl_type_get_real(spec->type)->type, psi_zval_count(zvalue));
 }
 
 /*
@@ -644,7 +614,7 @@ void psi_set_to_object(zval *return_value, struct psi_set_exp *set, impl_val *r_
 /*
  * let dvar = objval($ivar)
  */
-impl_val *psi_let_objval(impl_val *tmp, struct psi_decl_type *spec, token_t impl_type, impl_val *ival, zval *zvalue, void **to_free)
+impl_val *psi_let_objval(impl_val *tmp, struct psi_decl_arg *spec, token_t impl_type, impl_val *ival, zval *zvalue, void **to_free)
 {
 	psi_object *obj;
 

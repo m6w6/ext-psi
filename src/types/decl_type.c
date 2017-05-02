@@ -213,36 +213,53 @@ bool psi_decl_type_get_decl(struct psi_decl_type *type, struct psi_plist *decls)
 }
 
 bool psi_decl_type_validate(struct psi_data *data, struct psi_decl_type *type,
-		struct psi_decl_arg *def)
+		struct psi_validate_stack *type_stack)
 {
 	if (psi_decl_type_is_weak(type)) {
 		if (!psi_decl_type_get_alias(type, data->types)) {
-			return false;
+			if (!psi_validate_stack_has_type(type_stack, type->name)) {
+				return false;
+			}
+			type->real.def = psi_validate_stack_get_type(type_stack, type->name);
 		}
 		if (type->real.def) {
 			return psi_decl_type_validate(data, type->real.def->type,
-					type->real.def);
+					type_stack);
 		}
 		return true;
 	}
 
 	switch (type->type) {
 	case PSI_T_STRUCT:
-		if (!psi_decl_type_get_struct(type, data->structs) && !def) {
-			data->error(data, type->token, PSI_WARNING,
-					"Unknown struct '%s'", type->name);
+		if (!psi_decl_type_get_struct(type, data->structs)) {
+			if (psi_validate_stack_has_struct(type_stack, type->name)) {
+				type->real.strct = psi_validate_stack_get_struct(type_stack, type->name);
+			} else {
+				data->error(data, type->token, PSI_WARNING,
+						"Unknown struct '%s'", type->name);
+				return false;
+			}
+		}
+		if (!psi_decl_struct_validate(data, type->real.strct, type_stack)) {
 			return false;
 		}
 		break;
 	case PSI_T_UNION:
-		if (!psi_decl_type_get_union(type, data->unions) && !def) {
-			data->error(data, type->token, PSI_WARNING,
-					"Unknown union '%s'", type->name);
+		if (!psi_decl_type_get_union(type, data->unions)) {
+			if (psi_validate_stack_has_union(type_stack, type->name)) {
+				type->real.unn = psi_validate_stack_get_union(type_stack, type->name);
+			} else {
+				data->error(data, type->token, PSI_WARNING,
+						"Unknown union '%s'", type->name);
+				return false;
+			}
+		}
+		if (!psi_decl_union_validate(data, type->real.unn, type_stack)) {
 			return false;
 		}
 		break;
 	case PSI_T_ENUM:
-		if (!psi_decl_type_get_enum(type, data->enums) && !def) {
+		if (!psi_decl_type_get_enum(type, data->enums)) {
 			data->error(data, type->token, PSI_WARNING,
 					"Unknown enum '%s'", type->name);
 			return false;
@@ -254,11 +271,14 @@ bool psi_decl_type_validate(struct psi_data *data, struct psi_decl_type *type,
 					"Unknown decl '%s'", type->name);
 			return false;
 		}
-		if (!psi_decl_validate_nodl(data, type->real.func)) {
+		if (!psi_decl_validate_nodl(data, type->real.func, type_stack)) {
 			return false;
 		}
 		break;
+	default:
+		break;
 	}
+
 	return true;
 }
 

@@ -78,10 +78,16 @@ struct psi_decl_arg *psi_decl_struct_get_arg(struct psi_decl_struct *s,
 	return NULL;
 }
 
-bool psi_decl_struct_validate(struct psi_data *data, struct psi_decl_struct *s)
+bool psi_decl_struct_validate(struct psi_data *data, struct psi_decl_struct *s,
+		struct psi_validate_stack *type_stack)
 {
 	size_t i, pos, len, size, align;
 	struct psi_decl_arg *darg, *prev_arg;
+
+	if (psi_validate_stack_has_struct(type_stack, s->name)) {
+		return true;
+	}
+	psi_validate_stack_add_struct(type_stack, s->name, s);
 
 	if (!s->size && !psi_plist_count(s->args)) {
 		data->error(data, s->token, PSI_WARNING,
@@ -92,13 +98,20 @@ bool psi_decl_struct_validate(struct psi_data *data, struct psi_decl_struct *s)
 	for (i = 0; psi_plist_get(s->args, i, &darg); ++i) {
 		darg->var->arg = darg;
 
-		if (!psi_decl_arg_validate(data, darg)) {
+		if (!psi_decl_arg_validate(data, darg, type_stack)) {
 			return false;
 		}
 
 		if (darg->layout && darg->layout->len) {
 			pos = darg->layout->pos;
 			align = psi_decl_arg_align(darg, &pos, &len);
+
+			if (!align) {
+				data->error(data, darg->token, PSI_WARNING,
+						"Computed zero alignment of %s.%s of type '%s'",
+						len, s->name, darg->var->name, darg->type->name);
+				return false;
+			}
 
 			if (darg->layout->len != len) {
 				data->error(data, darg->token, PSI_WARNING,

@@ -30,6 +30,7 @@ struct psi_data;
 struct psi_token;
 struct psi_plist;
 struct psi_decl_var;
+struct psi_validate_stack;
 
 struct psi_decl_struct {
 	struct psi_token *token;
@@ -47,7 +48,7 @@ struct psi_decl_struct *psi_decl_struct_init(const char *name, struct psi_plist 
 void psi_decl_struct_free(struct psi_decl_struct **s_ptr);
 void psi_decl_struct_dump(int fd, struct psi_decl_struct *strct);
 
-bool psi_decl_struct_validate(struct psi_data *data, struct psi_decl_struct *s);
+bool psi_decl_struct_validate(struct psi_data *data, struct psi_decl_struct *s, struct psi_validate_stack *type_stack);
 
 struct psi_decl_arg *psi_decl_struct_get_arg(struct psi_decl_struct *s, struct psi_decl_var *var);
 size_t psi_decl_struct_get_align(struct psi_decl_struct *s);

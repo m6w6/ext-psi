@@ -92,9 +92,10 @@ void psi_decl_arg_dump(int fd, struct psi_decl_arg *arg, unsigned level)
 	}
 }
 
-bool psi_decl_arg_validate(struct psi_data *data, struct psi_decl_arg *arg)
+bool psi_decl_arg_validate(struct psi_data *data, struct psi_decl_arg *arg,
+		struct psi_validate_stack *type_stack)
 {
-	if (!psi_decl_type_validate(data, arg->type, NULL)) {
+	if (!psi_decl_type_validate(data, arg->type, type_stack)) {
 		data->error(data, arg->type->token, PSI_WARNING,
 				"Cannot use '%s' as type for '%s': %s", arg->type->name,
 				arg->var->name, data->last_error);
@@ -103,36 +104,43 @@ bool psi_decl_arg_validate(struct psi_data *data, struct psi_decl_arg *arg)
 	return true;
 }
 
-bool psi_decl_arg_validate_typedef(struct psi_data *data, struct psi_decl_arg *def)
+bool psi_decl_arg_validate_typedef(struct psi_data *data,
+		struct psi_decl_arg *def, struct psi_validate_stack *type_stack)
 {
-	if (!psi_decl_type_validate(data, def->type, def)) {
-		const char *pre;
-
-		switch (def->type->type) {
-		case PSI_T_STRUCT:
-			pre = "struct ";
-			break;
-		case PSI_T_UNION:
-			pre = "union ";
-			break;
-		case PSI_T_ENUM:
-			pre = "enum ";
-			break;
-		default:
-			pre = "";
-			break;
-		}
-		data->error(data, def->token, PSI_WARNING,
-				"Type '%s' cannot be aliased to '%s%s': %s", def->var->name, pre,
-				def->type->name, data->last_error);
-		return false;
+	if (psi_validate_stack_has_type(type_stack, def->var->name)) {
+		return true;
 	}
+	psi_validate_stack_add_type(type_stack, def->var->name, def);
+
 	if (def->type->type == PSI_T_VOID) {
 		if (def->var->pointer_level) {
 			def->type->type = PSI_T_POINTER;
 		} else {
 			data->error(data, def->token, PSI_WARNING,
 					"Type '%s' cannot be aliased to 'void'", def->type->name);
+			return false;
+		}
+	} else if (!def->var->pointer_level) {
+		if (!psi_decl_type_validate(data, def->type, type_stack)) {
+			const char *pre;
+
+			switch (def->type->type) {
+			case PSI_T_STRUCT:
+				pre = "struct ";
+				break;
+			case PSI_T_UNION:
+				pre = "union ";
+				break;
+			case PSI_T_ENUM:
+				pre = "enum ";
+				break;
+			default:
+				pre = "";
+				break;
+			}
+			data->error(data, def->token, PSI_WARNING,
+					"Type '%s' cannot be aliased to '%s%s': %s", def->var->name, pre,
+					def->type->name, data->last_error);
 			return false;
 		}
 	}
@@ -144,10 +152,10 @@ size_t psi_decl_arg_align(struct psi_decl_arg *darg, size_t *pos, size_t *len)
 {
 	size_t align = psi_decl_arg_get_align(darg);
 
-	assert(align > 0);
-
-	*len = psi_decl_arg_get_size(darg);
-	*pos = psi_align(align, *pos);
+	if (align) {
+		*len = psi_decl_arg_get_size(darg);
+		*pos = psi_align(align, *pos);
+	}
 
 	return align;
 }

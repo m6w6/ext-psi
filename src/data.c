@@ -243,11 +243,14 @@ bool psi_data_validate(struct psi_data *dst, struct psi_data *src)
 	struct psi_plist *check_enums = src->enums;
 	unsigned flags = dst->flags;
 	unsigned errors = src->errors;
+	struct psi_validate_stack type_stack;
 
 	/* fail early if library is not found */
 	if (!psi_decl_file_validate(dst, src, &dlopened)) {
 		return false;
 	}
+
+	psi_validate_stack_ctor(&type_stack);
 
 	dst->flags |= PSI_SILENT;
 
@@ -293,13 +296,14 @@ bool psi_data_validate(struct psi_data *dst, struct psi_data *src)
 
 				while (psi_plist_get(check_types, i++, &def)) {
 					*dst->last_error = 0;
+					dst->types = psi_plist_add(dst->types, &def);
 					PSI_DEBUG_PRINT(dst, "PSI: validate typedef %s ", def->var->name);
-					if (psi_decl_arg_validate_typedef(PSI_DATA(dst), def)) {
+					if (psi_decl_arg_validate_typedef(PSI_DATA(dst), def, &type_stack)) {
 						PSI_DEBUG_PRINT(dst, "%s\n", "✔");
-						dst->types = psi_plist_add(dst->types, &def);
 					} else {
 						PSI_DEBUG_PRINT(dst, "%s (%s)\n", "✘", dst->last_error);
 						recheck_types = psi_plist_add(recheck_types, &def);
+						psi_plist_pop(dst->types, NULL);
 					}
 				}
 			}
@@ -311,7 +315,7 @@ bool psi_data_validate(struct psi_data *dst, struct psi_data *src)
 					*dst->last_error = 0;
 					dst->structs = psi_plist_add(dst->structs, &str);
 					PSI_DEBUG_PRINT(dst, "PSI: validate struct %s ", str->name);
-					if (psi_decl_struct_validate(PSI_DATA(dst), str)) {
+					if (psi_decl_struct_validate(PSI_DATA(dst), str, &type_stack)) {
 						PSI_DEBUG_PRINT(dst, "%s ::(%zu, %zu)\n", "✔", str->align, str->size);
 					} else {
 						PSI_DEBUG_PRINT(dst, "%s (%s)\n", "✘", dst->last_error);
@@ -328,7 +332,7 @@ bool psi_data_validate(struct psi_data *dst, struct psi_data *src)
 					*dst->last_error = 0;
 					dst->unions = psi_plist_add(dst->unions, &unn);
 					PSI_DEBUG_PRINT(dst, "PSI: validate union %s ", unn->name);
-					if (psi_decl_union_validate(PSI_DATA(dst), unn)) {
+					if (psi_decl_union_validate(PSI_DATA(dst), unn, &type_stack)) {
 						PSI_DEBUG_PRINT(dst, "%s ::(%zu, %zu)\n", "✔", unn->align, unn->size);
 
 					} else {
@@ -401,7 +405,7 @@ bool psi_data_validate(struct psi_data *dst, struct psi_data *src)
 		while (psi_plist_get(src->decls, i++, &decl)) {
 			*dst->last_error = 0;
 			PSI_DEBUG_PRINT(dst, "PSI: validate decl %s ", decl->func->var->name);
-			if (psi_decl_validate(PSI_DATA(dst), decl, dlopened)) {
+			if (psi_decl_validate(PSI_DATA(dst), decl, dlopened, &type_stack)) {
 				PSI_DEBUG_PRINT(dst, "%s\n", "✔");
 				dst->decls = psi_plist_add(dst->decls, &decl);
 			} else {
@@ -427,6 +431,8 @@ bool psi_data_validate(struct psi_data *dst, struct psi_data *src)
 			}
 		}
 	}
+
+	psi_validate_stack_dtor(&type_stack);
 
 	return true;
 }

@@ -74,10 +74,16 @@ struct psi_decl_arg *psi_decl_union_get_arg(struct psi_decl_union *u,
 	return NULL;
 }
 
-bool psi_decl_union_validate(struct psi_data *data, struct psi_decl_union *u)
+bool psi_decl_union_validate(struct psi_data *data, struct psi_decl_union *u,
+		struct psi_validate_stack *type_stack)
 {
 	size_t i, pos, len, size = 0, align;
 	struct psi_decl_arg *darg;
+
+	if (psi_validate_stack_has_union(type_stack, u->name)) {
+		return true;
+	}
+	psi_validate_stack_add_union(type_stack, u->name, u);
 
 	if (!u->size && !psi_plist_count(u->args)) {
 		data->error(data, u->token, PSI_WARNING,
@@ -88,7 +94,7 @@ bool psi_decl_union_validate(struct psi_data *data, struct psi_decl_union *u)
 	for (i = 0; psi_plist_get(u->args, i, &darg); ++i) {
 		darg->var->arg = darg;
 
-		if (!psi_decl_arg_validate(data, darg)) {
+		if (!psi_decl_arg_validate(data, darg, type_stack)) {
 			return false;
 		}
 

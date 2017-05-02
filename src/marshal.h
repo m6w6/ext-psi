@@ -31,7 +31,7 @@
 
 struct psi_let_exp;
 struct psi_set_exp;
-struct psi_decl_type;
+struct psi_decl_arg;
 struct psi_call_frame;
 struct psi_impl;
 struct psi_impl_type;
@@ -41,7 +41,7 @@ zend_internal_arg_info *psi_internal_arginfo(struct psi_impl *impl);
 int psi_internal_type(struct psi_impl_type *type);
 
 typedef void (*psi_marshal_set)(zval *return_value, struct psi_set_exp *set, impl_val *ret_val, struct psi_call_frame *frame);
-typedef impl_val *(*psi_marshal_let)(impl_val *tmp, struct psi_decl_type *psi_decl_type, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
+typedef impl_val *(*psi_marshal_let)(impl_val *tmp, struct psi_decl_arg *type_spec, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
 
 void psi_set_void(zval *return_value, struct psi_set_exp *set, impl_val *ret_val, struct psi_call_frame *frame);
 void psi_set_to_bool(zval *return_value, struct psi_set_exp *set, impl_val *ret_val, struct psi_call_frame *frame);
@@ -56,15 +56,15 @@ void psi_set_to_array(zval *return_value, struct psi_set_exp *set, impl_val *ret
 void psi_set_to_object(zval *return_value, struct psi_set_exp *set, impl_val *ret_val, struct psi_call_frame *frame);
 void psi_set_zval(zval *return_value, struct psi_set_exp *set, impl_val *ret_val, struct psi_call_frame *frame);
 
-impl_val *psi_let_void(impl_val *tmp, struct psi_decl_type *spec, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
-impl_val *psi_let_boolval(impl_val *tmp, struct psi_decl_type *spec, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
-impl_val *psi_let_intval(impl_val *tmp, struct psi_decl_type *spec, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
-impl_val *psi_let_floatval(impl_val *tmp, struct psi_decl_type *spec, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
-impl_val *psi_let_strval(impl_val *tmp, struct psi_decl_type *spec, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
-impl_val *psi_let_pathval(impl_val *tmp, struct psi_decl_type *spec, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
-impl_val *psi_let_strlen(impl_val *tmp, struct psi_decl_type *spec, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
-impl_val *psi_let_objval(impl_val *tmp, struct psi_decl_type *spec, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
-impl_val *psi_let_zval(impl_val *tmp, struct psi_decl_type *spec, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
-impl_val *psi_let_count(impl_val *tmp, struct psi_decl_type *spec, token_t impl_type, impl_val *ival, zval *zvalue, void **to_free);
+impl_val *psi_let_void(impl_val *tmp, struct psi_decl_arg *spec, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
+impl_val *psi_let_boolval(impl_val *tmp, struct psi_decl_arg *spec, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
+impl_val *psi_let_intval(impl_val *tmp, struct psi_decl_arg *spec, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
+impl_val *psi_let_floatval(impl_val *tmp, struct psi_decl_arg *spec, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
+impl_val *psi_let_strval(impl_val *tmp, struct psi_decl_arg *spec, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
+impl_val *psi_let_pathval(impl_val *tmp, struct psi_decl_arg *spec, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
+impl_val *psi_let_strlen(impl_val *tmp, struct psi_decl_arg *spec, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
+impl_val *psi_let_objval(impl_val *tmp, struct psi_decl_arg *spec, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
+impl_val *psi_let_zval(impl_val *tmp, struct psi_decl_arg *spec, token_t impl_type, impl_val *ivalue, zval *zvalue, void **to_free);
+impl_val *psi_let_count(impl_val *tmp, struct psi_decl_arg *spec, token_t impl_type, impl_val *ival, zval *zvalue, void **to_free);
 
 #endif

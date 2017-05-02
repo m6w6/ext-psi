@@ -74,7 +74,7 @@ bool psi_let_callback_validate(struct psi_data *data, struct psi_let_exp *exp,
 		}
 	}
 
-	if (!psi_decl_validate_nodl(data, cb_func)) {
+	if (!psi_decl_validate_nodl(data, cb_func,  NULL /* FIXME type_stack */)) {
 		return false;
 	}
 

@@ -32,6 +32,7 @@ struct psi_plist;
 struct psi_decl_type;
 struct psi_decl_var;
 struct psi_layout;
+struct psi_validate_stack;
 
 struct psi_decl_arg {
 	struct psi_token *token;
@@ -44,8 +45,8 @@ struct psi_decl_arg *psi_decl_arg_init(struct psi_decl_type *type, struct psi_de
 void psi_decl_arg_free(struct psi_decl_arg **arg_ptr);
 void psi_decl_arg_dump(int fd, struct psi_decl_arg *arg, unsigned level);
 
-bool psi_decl_arg_validate(struct psi_data *data, struct psi_decl_arg *arg);
-bool psi_decl_arg_validate_typedef(struct psi_data *data, struct psi_decl_arg *def);
+bool psi_decl_arg_validate(struct psi_data *data, struct psi_decl_arg *arg, struct psi_validate_stack *type_stack);
+bool psi_decl_arg_validate_typedef(struct psi_data *data, struct psi_decl_arg *def, struct psi_validate_stack *type_stack);
 
 size_t psi_decl_arg_align(struct psi_decl_arg *darg, size_t *pos, size_t *len);
 size_t psi_decl_arg_get_align(struct psi_decl_arg *darg);
