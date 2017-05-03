@@ -22,7 +22,7 @@ $(PHP_PSI_SRCDIR)/src/parser.re: $(PHP_PSI_SRCDIR)/src/parser_proc.h
 	touch $@
 $(PHP_PSI_SRCDIR)/src/parser.c: $(PHP_PSI_SRCDIR)/src/parser.re
 	# trickery needed for relative #line directives
-	cd $(PHP_PSI_SRCDIR) && $(RE2C) -W -o $(patsubst $(PHP_PSI_SRCDIR)/%,%,$@) $(patsubst $(PHP_PSI_SRCDIR)/%,%,$<)
+	cd $(PHP_PSI_SRCDIR) && $(RE2C) -o $(patsubst $(PHP_PSI_SRCDIR)/%,%,$@) $(patsubst $(PHP_PSI_SRCDIR)/%,%,$<)
 
 $(PHP_PSI_SRCDIR)/src/calc/%.h: $(PHP_PSI_SRCDIR)/scripts/gen_calc_%.php
 	$(PHP_EXECUTABLE) $< >$@
