@@ -68,14 +68,14 @@ and system interfaces of POSIX.1-2008 (http://pubs.opengroup.org/onlinepubs/9699
     <file role="src" name="libjit.h"/>
     <file role="src" name="marshal.h"/>
     <file role="src" name="parser.h"/>
-    <file role="src" name="parser_def.h"/>
+    <file role="src" name="parser_proc_def.h"/>
+    <file role="src" name="parser_proc_grammar.y"/>
+    <file role="src" name="parser_proc.c"/>
     <file role="src" name="parser_proc.h"/>
+    <file role="src" name="parser.re"/>
     <file role="src" name="plist.h"/>
     <file role="src" name="token.h"/>
     <file role="src" name="types.h"/>
-    <file role="src" name="parser_proc.y"/>
-    <file role="src" name="parser.re"/>
-    <file role="src" name="parser_proc.inc"/>
     <dir name="calc">
      <file role="src" name="basic.h"/>
      <file role="src" name="bin.h"/>
@@ -200,13 +200,14 @@ and system interfaces of POSIX.1-2008 (http://pubs.opengroup.org/onlinepubs/9699
     </dir>
     <dir name="parser">
      <file role="test" name="validate001.phpt"/>
-     <dir name="dump">
-      <file role="test" name="dump001.phpt"/>
-     </dir>
-     <dir name="enum">
-      <file role="test" name="enum001.phpt"/>
-      <file role="test" name="enum001.psi"/>
-     </dir>
+     <file role="test" name="dump001.phpt"/>
+     <file role="test" name="enum001.phpt"/>
+     <file role="test" name="validate001.phpt"/>
+     <file role="test" name="validate002.phpt"/>
+     <file role="test" name="validate003.phpt"/>
+     <file role="test" name="validate004.phpt"/>
+     <file role="test" name="validate005.phpt"/>
+     <file role="test" name="validate006.phpt"/>
     </dir>
     <dir name="pipe">
      <file role="test" name="pipe001.phpt"/>
