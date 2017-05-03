@@ -1,4 +1,5 @@
-git# provide headers in builddir, so they do not end up in /usr/include/ext/psi/src
+
+# provide headers in builddir, so they do not end up in /usr/include/ext/psi/src
 
 PHP_PSI_HEADERS := $(addprefix $(PHP_PSI_BUILDDIR)/,$(PHP_PSI_HEADERS))
 PHP_PSI_SOURCES := $(addprefix $(PHP_PSI_SRCDIR)/,$(PHP_PSI_SOURCES))
