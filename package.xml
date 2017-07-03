@@ -68,7 +68,6 @@ and system interfaces of POSIX.1-2008 (http://pubs.opengroup.org/onlinepubs/9699
     <file role="src" name="libjit.h"/>
     <file role="src" name="marshal.h"/>
     <file role="src" name="parser.h"/>
-    <file role="src" name="parser_proc_def.h"/>
     <file role="src" name="parser_proc_grammar.y"/>
     <file role="src" name="parser_proc.c"/>
     <file role="src" name="parser_proc.h"/>
