@@ -233,7 +233,8 @@ bool psi_cpp_tokiter_defined(struct psi_cpp *cpp)
 	return false;
 }
 
-void psi_cpp_tokiter_expand_tokens(struct psi_cpp *cpp, struct psi_plist *tokens)
+void psi_cpp_tokiter_expand_tokens(struct psi_cpp *cpp, struct psi_token *target,
+		struct psi_plist *tokens)
 {
 	if (tokens && psi_plist_count(tokens)) {
 		size_t i = 0, n = 0;
@@ -255,17 +256,21 @@ void psi_cpp_tokiter_expand_tokens(struct psi_cpp *cpp, struct psi_plist *tokens
 				continue;
 			}
 
-			if (paste && n > 0 && exp_tokens[n - 1] &&
-					(new_tok = psi_token_cat(NULL, 2, exp_tokens[n - 1], tok))) {
-				free(exp_tokens[n - 1]);
+			if (paste && n > 0 && exp_tokens[n - 1]) {
+				struct psi_token *old_tok = exp_tokens[n - 1];
+
+				new_tok = psi_token_init(old_tok->type, "", 0,
+						target->col, target->line, target->file);
+
+				new_tok = psi_token_cat(NULL, 2, new_tok, old_tok, tok);
+				free(old_tok);
+
 				exp_tokens[n - 1] = new_tok;
 			} else {
-				struct psi_token *cpy = psi_token_copy(tok);
+				new_tok = psi_token_init(stringify ? PSI_T_QUOTED_STRING : tok->type,
+						tok->text, tok->size, target->col, target->line, target->file);
 
-				if (stringify) {
-					cpy->type = PSI_T_QUOTED_STRING;
-				}
-				exp_tokens[n++] = cpy;
+				exp_tokens[n++] = new_tok;
 			}
 
 #if PSI_CPP_DEBUG
@@ -374,7 +379,8 @@ fail:
 }
 
 static void psi_cpp_tokiter_expand_call_tokens(struct psi_cpp *cpp,
-		struct psi_cpp_macro_decl *macro, struct psi_plist **arg_tokens_list)
+		struct psi_token *target, struct psi_cpp_macro_decl *macro,
+		struct psi_plist **arg_tokens_list)
 {
 	size_t i;
 	struct psi_token *tok;
@@ -404,12 +410,12 @@ static void psi_cpp_tokiter_expand_call_tokens(struct psi_cpp *cpp,
 		}
 	}
 
-	psi_cpp_tokiter_expand_tokens(cpp, tokens);
+	psi_cpp_tokiter_expand_tokens(cpp, target, tokens);
 	psi_plist_free(tokens);
 }
 
 static bool psi_cpp_tokiter_expand_call(struct psi_cpp *cpp,
-		struct psi_cpp_macro_decl *macro)
+		struct psi_token *target, struct psi_cpp_macro_decl *macro)
 {
 	/* function-like macro
 	 * #define FOO(a,b) a>b // macro->sig == {a, b}, macro->tokens = {a, >, b}
@@ -430,7 +436,7 @@ static bool psi_cpp_tokiter_expand_call(struct psi_cpp *cpp,
 	psi_cpp_tokiter_seek(cpp, start);
 
 	/* insert and expand macro tokens */
-	psi_cpp_tokiter_expand_call_tokens(cpp, macro, arg_tokens_list);
+	psi_cpp_tokiter_expand_call_tokens(cpp, target, macro, arg_tokens_list);
 	psi_cpp_tokiter_free_call_tokens(arg_tokens_list, psi_plist_count(macro->sig), true);
 
 	/* back to where we took off */
@@ -455,20 +461,21 @@ bool psi_cpp_tokiter_expand(struct psi_cpp *cpp)
 				psi_token_dump(2, current);
 #endif
 				if (macro->sig) {
-					return psi_cpp_tokiter_expand_call(cpp, macro);
+					return psi_cpp_tokiter_expand_call(cpp, current, macro);
 				} else {
 					size_t index = psi_cpp_tokiter_index(cpp);
 
 					/* delete current token from stream */
-					psi_cpp_tokiter_del_cur(cpp, true);
+					psi_cpp_tokiter_del_cur(cpp, false);
 
 					if (index != psi_cpp_tokiter_index(cpp)) {
 						/* might have been last token */
 						psi_cpp_tokiter_next(cpp);
 					}
 					/* replace with tokens from macro */
-					psi_cpp_tokiter_expand_tokens(cpp, macro->tokens);
+					psi_cpp_tokiter_expand_tokens(cpp, current, macro->tokens);
 
+					free(current);
 					++cpp->expanded;
 					return true;
 				}
