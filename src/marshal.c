@@ -277,6 +277,7 @@ static inline impl_val *psi_val_intval(impl_val *tmp, token_t real_type, zend_lo
 	case PSI_T_INT64:		tmp->i64 = intval;		break;
 	case PSI_T_UINT64:		tmp->u64 = intval;		break;
 	case PSI_T_INT:			tmp->ival = intval;		break;
+	case PSI_T_ENUM:
 	case PSI_T_LONG:		tmp->lval = intval;		break;
 	case PSI_T_FLOAT:		tmp->fval = intval;		break;
 	case PSI_T_DOUBLE:		tmp->dval = intval;		break;
