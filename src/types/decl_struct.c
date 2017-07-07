@@ -128,7 +128,7 @@ bool psi_decl_struct_validate(struct psi_data *data, struct psi_decl_struct *s,
 			}
 		} else {
 			if (i) {
-				if (prev_arg->layout->bfw && darg->layout->bfw) {
+				if (prev_arg->layout && prev_arg->layout->bfw && darg->layout && darg->layout->bfw) {
 					struct psi_decl_type *real = NULL;
 					size_t max_bfw = 8 * psi_decl_type_get_size(prev_arg->type, &real);
 

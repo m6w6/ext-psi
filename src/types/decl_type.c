@@ -101,9 +101,9 @@ size_t psi_decl_type_get_size(struct psi_decl_type *dtyp,
 
 	switch (var_typ->type) {
 	case PSI_T_STRUCT:
-		return var_typ->real.strct->size;
+		return var_typ->real.strct ? var_typ->real.strct->size : 0;
 	case PSI_T_UNION:
-		return var_typ->real.unn->size;
+		return var_typ->real.unn ? var_typ->real.unn->size : 0;
 	default:
 		return psi_t_size(var_typ->type);
 	}
@@ -118,7 +118,7 @@ bool psi_decl_type_get_alias(struct psi_decl_type *type, struct psi_plist *defs)
 	if (type->real.def) {
 		return true;
 	}
-	if (defs)
+	if (defs) {
 		while (psi_plist_get(defs, i++, &def)) {
 			if (def->type->type != type->type
 					&& !strcmp(def->var->name, type->name)) {
@@ -126,6 +126,7 @@ bool psi_decl_type_get_alias(struct psi_decl_type *type, struct psi_plist *defs)
 				return true;
 			}
 		}
+	}
 	for (stdtyp = &psi_std_types[0]; stdtyp->type_tag; ++stdtyp) {
 		if (!strcmp(type->name, stdtyp->alias ?: stdtyp->type_name)) {
 			type->type = stdtyp->type_tag;
@@ -213,7 +214,7 @@ bool psi_decl_type_get_decl(struct psi_decl_type *type, struct psi_plist *decls)
 }
 
 bool psi_decl_type_validate(struct psi_data *data, struct psi_decl_type *type,
-		struct psi_validate_stack *type_stack)
+		bool is_pointer, struct psi_validate_stack *type_stack)
 {
 	if (psi_decl_type_is_weak(type)) {
 		if (!psi_decl_type_get_alias(type, data->types)) {
@@ -224,7 +225,7 @@ bool psi_decl_type_validate(struct psi_data *data, struct psi_decl_type *type,
 		}
 		if (type->real.def) {
 			return psi_decl_type_validate(data, type->real.def->type,
-					type_stack);
+					is_pointer, type_stack);
 		}
 		return true;
 	}
@@ -234,6 +235,8 @@ bool psi_decl_type_validate(struct psi_data *data, struct psi_decl_type *type,
 		if (!psi_decl_type_get_struct(type, data->structs)) {
 			if (psi_validate_stack_has_struct(type_stack, type->name)) {
 				type->real.strct = psi_validate_stack_get_struct(type_stack, type->name);
+			} else if (is_pointer) {
+				return true;
 			} else {
 				data->error(data, type->token, PSI_WARNING,
 						"Unknown struct '%s'", type->name);
@@ -248,6 +251,8 @@ bool psi_decl_type_validate(struct psi_data *data, struct psi_decl_type *type,
 		if (!psi_decl_type_get_union(type, data->unions)) {
 			if (psi_validate_stack_has_union(type_stack, type->name)) {
 				type->real.unn = psi_validate_stack_get_union(type_stack, type->name);
+			} else if (is_pointer) {
+				return true;
 			} else {
 				data->error(data, type->token, PSI_WARNING,
 						"Unknown union '%s'", type->name);
@@ -330,7 +335,7 @@ void psi_decl_type_dump(int fd, struct psi_decl_type *t, unsigned level)
 				}
 			}
 			--level;
-			dprintf(fd, "%s} ", psi_t_indent(level));
+			dprintf(fd, "%s\n} ", psi_t_indent(level));
 			return;
 		}
 		break;

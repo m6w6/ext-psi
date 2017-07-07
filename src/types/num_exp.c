@@ -431,7 +431,7 @@ bool psi_num_exp_validate(struct psi_data *data, struct psi_num_exp *exp,
 
 	case PSI_T_CAST:
 		return psi_num_exp_validate(data, exp->data.c.num, impl, cb_decl, current_let, current_set, current_enum)
-				&& psi_decl_type_validate(data, exp->data.c.typ, NULL);
+				&& psi_decl_type_validate(data, exp->data.c.typ, 0, NULL);
 		break;
 
 	case PSI_T_NOT:
