@@ -35,6 +35,9 @@
 #include "token.h"
 #include "parser.h"
 
+#define PSI_CPP_SEARCH
+#include "php_psi_cpp.h"
+
 #if HAVE_LIBJIT
 # include "libjit.h"
 # ifndef HAVE_LIBFFI
@@ -236,6 +239,9 @@ static PHP_MINIT_FUNCTION(psi)
 		flags |= PSI_SILENT;
 	}
 
+	PSI_G(search_path) = pemalloc(strlen(PSI_G(directory)) + strlen(psi_cpp_search) + 1 + 1, 1);
+	sprintf(PSI_G(search_path), "%s:%s", PSI_G(directory), psi_cpp_search);
+
 	PSI_G(context) = psi_context_init(NULL, ops, psi_error_wrapper, flags);
 	psi_context_build(PSI_G(context), PSI_G(directory));
 
@@ -268,7 +274,9 @@ static PHP_MINFO_FUNCTION(psi)
 	php_info_print_table_start();
 	php_info_print_table_header(2, "PSI Support", "enabled");
 	php_info_print_table_row(2, "Extension Version", PHP_PSI_VERSION);
+	php_info_print_table_row(2, "Search Path", PSI_G(search_path));
 	php_info_print_table_end();
+
 	php_info_print_table_start();
 	php_info_print_table_header(3, "Used Library", "Compiled", "Linked");
 	php_info_print_table_row(3, "libffi",

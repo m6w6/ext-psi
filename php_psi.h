@@ -72,6 +72,7 @@ PHP_PSI_API zend_class_entry *psi_object_get_class_entry();
 ZEND_BEGIN_MODULE_GLOBALS(psi)
 	char *engine;
 	char *directory;
+	char *search_path;
 	struct psi_context *context;
 ZEND_END_MODULE_GLOBALS(psi);
 

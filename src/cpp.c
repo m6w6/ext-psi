@@ -32,6 +32,8 @@
 #define PSI_CPP_PREDEF
 #include "php_psi_cpp.h"
 
+#include "php_psi.h"
+
 static void free_cpp_def(zval *p)
 {
 	if (Z_TYPE_P(p) == IS_PTR) {
@@ -449,7 +451,7 @@ bool psi_cpp_include(struct psi_cpp *cpp, const char *file, unsigned flags)
 		}
 
 		if (!(flags & PSI_CPP_INCLUDE_NEXT) || !cpp->search) {
-			cpp->search = &psi_cpp_search[0];
+			cpp->search = PSI_G(search_path);
 		}
 
 		do {
@@ -466,7 +468,10 @@ bool psi_cpp_include(struct psi_cpp *cpp, const char *file, unsigned flags)
 					break;
 				}
 			}
-			cpp->search = sep + 1;
+
+			if (sep) {
+				cpp->search = sep + 1;
+			}
 		} while (sep);
 	}
 
