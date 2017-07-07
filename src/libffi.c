@@ -300,9 +300,12 @@ static size_t psi_ffi_struct_type_pad(ffi_type **els, size_t padding) {
 }
 
 static ffi_type **psi_ffi_struct_type_elements(struct psi_decl_struct *strct) {
-	size_t i = 0, argc = psi_plist_count(strct->args), nels = 0, offset = 0, maxalign = 0, last_arg_pos = -1;
-	ffi_type **tmp, **els = calloc(argc + 1, sizeof(*els));
+	size_t i = 0, argc, nels = 0, offset = 0, maxalign = 0, last_arg_pos = -1;
+	ffi_type **tmp, **els;
 	struct psi_decl_arg *darg;
+
+	argc = psi_plist_count(strct->args);
+	els = calloc(argc + 1, sizeof(*els));
 
 	while (psi_plist_get(strct->args, i++, &darg)) {
 		ffi_type *type;
@@ -349,7 +352,17 @@ static ffi_type **psi_ffi_struct_type_elements(struct psi_decl_struct *strct) {
 
 	assert(offset <= strct->size);
 	if (offset < strct->size) {
-		psi_ffi_struct_type_pad(&els[nels], strct->size - offset);
+		size_t padding = strct->size - offset;
+
+		tmp = realloc(els, (padding + argc + 1) * sizeof(*els));
+		if (tmp) {
+			els = tmp;
+		} else {
+			free(els);
+			return NULL;
+		}
+		psi_ffi_struct_type_pad(&els[nels], padding);
+		els[argc + padding] = NULL;
 	}
 
 	return els;
