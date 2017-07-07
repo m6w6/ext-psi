@@ -332,7 +332,13 @@ zend_function_entry *psi_context_compile(struct psi_context *C)
 			struct psi_decl_enum_item *item;
 
 			while (psi_plist_get(e->items, j++, &item)) {
-				zend_string *name = strpprintf(0, "psi\\%s\\%s", e->name, item->name);
+				zend_string *name;
+
+				if (psi_decl_type_is_anon(e->name, "enum")) {
+					name = strpprintf(0, "psi\\%s", item->name);
+				} else {
+					name = strpprintf(0, "psi\\%s\\%s", e->name, item->name);
+				}
 
 				zc.name = zend_string_dup(name, 1);
 				ZVAL_LONG(&zc.value, psi_long_num_exp(item->num, NULL, NULL));
