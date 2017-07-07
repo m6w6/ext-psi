@@ -83,7 +83,16 @@ void psi_cpp_macro_decl_dump(int fd, struct psi_cpp_macro_decl *macro)
 		struct psi_token *tok;
 
 		while (psi_plist_get(macro->tokens, i++, &tok)) {
-			dprintf(fd, " %s", tok->text);
+			switch (tok->type) {
+			case PSI_T_QUOTED_STRING:
+				dprintf(fd, " \"%s\"", tok->text);
+				break;
+			case PSI_T_QUOTED_CHAR:
+				dprintf(fd, " '%s'", tok->text);
+				break;
+			default:
+				dprintf(fd, " %s", tok->text);
+			}
 		}
 	}
 }
