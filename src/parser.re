@@ -456,7 +456,7 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input 
 		/*!re2c
 
 		EOL		{ NEWLINE(); goto character; }
-		"\\"	{ escaped = !escaped; }
+		"\\"	{ escaped = !escaped;  goto character; }
 		"'"		{
 			if (escaped) {
 				escaped = false;
