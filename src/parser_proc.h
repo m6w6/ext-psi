@@ -234,6 +234,8 @@ union YYSTYPE
   struct psi_decl_arg * PSI_T_decl_functor;
   /* decl_func  */
   struct psi_decl_arg * PSI_T_decl_func;
+  /* decl_anon_arg  */
+  struct psi_decl_arg * PSI_T_decl_anon_arg;
   /* decl_arg  */
   struct psi_decl_arg * PSI_T_decl_arg;
   /* decl_enum  */
@@ -670,7 +672,7 @@ union YYSTYPE
   struct psi_token * PSI_T_assert_stmt_token;
   /* impl_stmt  */
   struct psi_token ** PSI_T_impl_stmt;
-#line 674 "src/parser_proc.h" /* glr.c:197  */
+#line 676 "src/parser_proc.h" /* glr.c:197  */
 };
 
 typedef union YYSTYPE YYSTYPE;

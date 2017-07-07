@@ -145,6 +145,11 @@ bool psi_decl_validate_nodl(struct psi_data *data, struct psi_decl *decl,
 		struct psi_decl_arg *arg;
 
 		while (psi_plist_get(decl->args, i++, &arg)) {
+			if (!arg->var->name) {
+				arg->var->name = malloc(7);
+				snprintf(arg->var->name, 6, "arg%zu", i);
+				arg->var->fqn = strdup(arg->var->name);
+			}
 			if (!psi_decl_arg_validate(data, arg, type_stack)) {
 				return false;
 			}

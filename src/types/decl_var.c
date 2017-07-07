@@ -32,8 +32,10 @@ struct psi_decl_var *psi_decl_var_init(const char *name, unsigned pl,
 		unsigned as)
 {
 	struct psi_decl_var *v = calloc(1, sizeof(*v));
-	v->name = strdup(name);
-	v->fqn = strdup(name);
+	if (name) {
+		v->name = strdup(name);
+		v->fqn = strdup(name);
+	}
 	v->pointer_level = pl;
 	v->array_size = as;
 	return v;
@@ -44,8 +46,11 @@ struct psi_decl_var *psi_decl_var_copy(struct psi_decl_var *src)
 	struct psi_decl_var *dest = calloc(1, sizeof(*dest));
 
 	*dest = *src;
-	dest->name = strdup(dest->name);
-	dest->fqn = strdup(dest->fqn);
+
+	if (dest->name) {
+		dest->name = strdup(dest->name);
+		dest->fqn = strdup(dest->fqn);
+	}
 
 	if (dest->token) {
 		dest->token = psi_token_copy(dest->token);
@@ -62,8 +67,10 @@ void psi_decl_var_free(struct psi_decl_var **var_ptr)
 		if (var->token) {
 			free(var->token);
 		}
-		free(var->name);
-		free(var->fqn);
+		if (var->name) {
+			free(var->name);
+			free(var->fqn);
+		}
 		free(var);
 	}
 }
@@ -72,7 +79,7 @@ void psi_decl_var_dump(int fd, struct psi_decl_var *var)
 {
 	dprintf(fd, "%s%s",
 			psi_t_indirection(var->pointer_level - !!var->array_size),
-			var->name);
+			var->name ? var->name : "<>");
 	if (var->array_size) {
 		dprintf(fd, "[%u]", var->array_size);
 	}

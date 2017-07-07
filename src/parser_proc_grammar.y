@@ -311,8 +311,8 @@ struct psi_parser;
 %destructor	{psi_decl_type_free(&$$);}			decl_type const_decl_type decl_type_complex
 %type		<struct psi_decl *>					decl_stmt decl decl_body decl_func_body decl_functor_body
 %destructor	{psi_decl_free(&$$);}				decl_stmt decl decl_body decl_func_body decl_functor_body
-%type		<struct psi_decl_arg *>				decl_typedef decl_func decl_functor decl_arg typedef
-%destructor	{psi_decl_arg_free(&$$);}			decl_typedef decl_func decl_functor decl_arg typedef
+%type		<struct psi_decl_arg *>				decl_typedef decl_func decl_functor decl_arg decl_anon_arg typedef
+%destructor	{psi_decl_arg_free(&$$);}			decl_typedef decl_func decl_functor decl_arg decl_anon_arg typedef
 %type		<struct psi_decl_var *>				decl_var
 %destructor	{psi_decl_var_free(&$$);}			decl_var
 %type		<struct psi_decl_struct *>			decl_struct
@@ -391,7 +391,7 @@ struct psi_parser;
 
 binary_op_token: PIPE | CARET | AMPERSAND | LSHIFT | RSHIFT | PLUS | MINUS | ASTERISK | SLASH | MODULO | RCHEVR | LCHEVR | CMP_GE | CMP_LE | OR | AND | CMP_EQ | CMP_NE ; 
 unary_op_token: TILDE | NOT | PLUS | MINUS ;
-name_token: NAME | TEMP | FREE | SET | LET | CALLOC | CALLBACK | LIB | BOOL | STRING | ERROR | WARNING | LINE | PRAGMA_ONCE | PRAGMA | let_func_token | set_func_token;
+name_token: NAME | FUNCTION | TEMP | FREE | SET | LET | CALLOC | CALLBACK | LIB | BOOL | STRING | ERROR | WARNING | LINE | PRAGMA_ONCE | PRAGMA | let_func_token | set_func_token;
 any_noeol_token: BOOL | CHAR | SHORT | INT | SIGNED | UNSIGNED | LONG | FLOAT | DOUBLE | STRING | MIXED | ARRAY | OBJECT | CALLABLE | VOID | ZVAL | INT8 | UINT8 | INT16 | UINT16 | INT32 | UINT32 | INT64 | UINT64 | NULL | TRUE | FALSE | NAME | NSNAME | DOLLAR_NAME | NUMBER | QUOTED_STRING | QUOTED_CHAR | EOF | EOS | LPAREN | RPAREN | COMMA | COLON | LBRACE | RBRACE | LBRACKET | RBRACKET | EQUALS | HASH | PIPE | CARET | AMPERSAND | LSHIFT | RSHIFT | PLUS | MINUS | ASTERISK | SLASH | MODULO | LCHEVR | RCHEVR | CMP_GE | CMP_LE | OR | AND | CMP_EQ | CMP_NE | TILDE | NOT | PERIOD | BACKSLASH | ELLIPSIS | ERROR | WARNING | LINE | PRAGMA | PRAGMA_ONCE | IIF | IF | IFDEF | IFNDEF | ELSE | ELIF | ENDIF | DEFINE | DEFINED | UNDEF | INCLUDE | TYPEDEF | STRUCT | UNION | ENUM | CONST | LIB | STATIC | CALLBACK | FUNCTION | LET | SET | TEMP | FREE | RETURN | PRE_ASSERT | POST_ASSERT | BOOLVAL | INTVAL | STRVAL | PATHVAL | STRLEN | FLOATVAL | ARRVAL | OBJVAL | COUNT | CALLOC | TO_BOOL | TO_INT | TO_STRING | TO_FLOAT | TO_ARRAY | TO_OBJECT | COMMENT | CPP_HEADER | CPP_PASTE | CPP_RESTRICT | CPP_EXTENSION | CPP_ASM;
 
 
@@ -731,6 +731,9 @@ impl_def_val_token:
 
 decl_typedef[def]:
 	TYPEDEF typedef[def_] EOS {
+	$def = $def_;
+}
+|	CPP_EXTENSION TYPEDEF typedef[def_] EOS {
 	$def = $def_;
 }
 ;
@@ -1102,11 +1105,42 @@ decl_args[args]:
 |	VOID {
 	$args = NULL;
 }
-|	decl_arg[arg] {
+|	decl_anon_arg[arg] {
 	$args = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_decl_arg_free), &$arg);
 }
-|	decl_args[args_] COMMA decl_arg[arg] {
+|	decl_args[args_] COMMA decl_anon_arg[arg] {
 	$args = psi_plist_add($args_, &$arg);
+}
+;
+
+decl_anon_arg[arg]:
+/* FIXME decl_functor_body_anon */
+	decl_arg {
+	$arg = $decl_arg;
+}
+|	const_decl_type[type] indirection {
+	$arg = psi_decl_arg_init(
+		$type, 
+		psi_decl_var_init(NULL, $indirection, 0)
+	);
+}
+|	CONST VOID pointers {
+	$arg = psi_decl_arg_init(
+		psi_decl_type_init($VOID->type, $VOID->text),
+		psi_decl_var_init(NULL, $pointers, 0)
+	);
+	$arg->type->token = psi_token_copy($VOID);
+	$arg->var->token = psi_token_copy($VOID);
+	$arg->token = psi_token_copy($VOID);
+}
+|	VOID pointers {
+	$arg = psi_decl_arg_init(
+		psi_decl_type_init($VOID->type, $VOID->text),
+		psi_decl_var_init(NULL, $pointers, 0)
+	);
+	$arg->type->token = psi_token_copy($VOID);
+	$arg->var->token = psi_token_copy($VOID);
+	$arg->token = psi_token_copy($VOID);
 }
 ;
 
