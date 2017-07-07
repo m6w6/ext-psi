@@ -29,6 +29,7 @@
 #include "php_globals.h"
 
 #include <dlfcn.h>
+#include <ctype.h>
 
 struct psi_data *psi_data_ctor_with_dtors(struct psi_data *data,
 		psi_error_cb error, unsigned flags)
@@ -241,6 +242,7 @@ bool psi_data_validate(struct psi_data *dst, struct psi_data *src)
 	struct psi_plist *check_structs = src->structs;
 	struct psi_plist *check_unions = src->unions;
 	struct psi_plist *check_enums = src->enums;
+	struct psi_plist *check_decls = src->decls;
 	unsigned flags = dst->flags;
 	unsigned errors = src->errors;
 	struct psi_validate_stack type_stack;
@@ -259,12 +261,14 @@ bool psi_data_validate(struct psi_data *dst, struct psi_data *src)
 		struct psi_plist *recheck_structs;
 		struct psi_plist *recheck_unions;
 		struct psi_plist *recheck_enums;
+		struct psi_plist *recheck_decls;
 		size_t count_types = psi_plist_count(check_types);
 		size_t count_structs = psi_plist_count(check_structs);
 		size_t count_unions = psi_plist_count(check_unions);
 		size_t count_enums = psi_plist_count(check_enums);
+		size_t count_decls = psi_plist_count(check_decls);
 		size_t count_all = count_types + count_structs + count_unions
-				+ count_enums;
+				+ count_enums + count_decls;
 
 		if (check_count == count_all) {
 			/* nothing changed; bail out */
@@ -283,6 +287,7 @@ bool psi_data_validate(struct psi_data *dst, struct psi_data *src)
 			recheck_structs = count_structs ? psi_plist_init(NULL) : NULL;
 			recheck_unions = count_unions ? psi_plist_init(NULL) : NULL;
 			recheck_enums = count_enums ? psi_plist_init(NULL) : NULL;
+			recheck_decls = count_decls ? psi_plist_init(NULL) : NULL;
 
 			check_count = count_all;
 			src->errors = errors + check_count;
@@ -334,7 +339,6 @@ bool psi_data_validate(struct psi_data *dst, struct psi_data *src)
 					PSI_DEBUG_PRINT(dst, "PSI: validate union %s ", unn->name);
 					if (psi_decl_union_validate(PSI_DATA(dst), unn, &type_stack)) {
 						PSI_DEBUG_PRINT(dst, "%s ::(%zu, %zu)\n", "✔", unn->align, unn->size);
-
 					} else {
 						PSI_DEBUG_PRINT(dst, "%s (%s)\n", "✘", dst->last_error);
 						recheck_unions = psi_plist_add(recheck_unions, &unn);
@@ -358,6 +362,22 @@ bool psi_data_validate(struct psi_data *dst, struct psi_data *src)
 					}
 				}
 			}
+			if (count_decls) {
+				size_t i = 0;
+				struct psi_decl *decl;
+
+				while (psi_plist_get(check_decls, i++, &decl)) {
+					*dst->last_error = 0;
+					PSI_DEBUG_PRINT(dst, "PSI: validate decl %s ", decl->func->var->name);
+					if (psi_decl_validate(PSI_DATA(dst), decl, dlopened, &type_stack)) {
+						PSI_DEBUG_PRINT(dst, "%s\n", "✔");
+						dst->decls = psi_plist_add(dst->decls, &decl);
+					} else {
+						PSI_DEBUG_PRINT(dst, "%s (%s)\n", "✘", dst->last_error);
+						recheck_decls = psi_plist_add(recheck_decls, &decl);
+					}
+				}
+			}
 		}
 
 		if (check_types && check_types != src->types) {
@@ -376,10 +396,55 @@ bool psi_data_validate(struct psi_data *dst, struct psi_data *src)
 			psi_plist_free(check_enums);
 		}
 		check_enums = recheck_enums;
+		if (check_decls && check_decls != src->decls) {
+			psi_plist_free(check_decls);
+		}
+		check_decls = recheck_decls;
 	}
 
 	/* reset original flags */
 	dst->flags = flags;
+
+	if (dst->structs) {
+		size_t i = 0;
+		struct psi_decl_struct *str;
+
+		while (psi_plist_get(dst->structs, i++, &str)) {
+			size_t nlen = strlen(str->name);
+			size_t slen = sizeof("psi\\SIZEOF_STRUCT_");
+			size_t alen = sizeof("psi\\ALIGNOF_STRUCT_");
+			char *nptr = str->name, *sname, *aname;
+			struct psi_const *cnst;
+			struct psi_const_type *ctyp;
+			struct psi_impl_def_val *cval;
+
+			sname = malloc(slen + nlen + 1);
+			strcpy(sname, "psi\\SIZEOF_STRUCT_");
+			aname = malloc(alen + nlen + 1);
+			strcpy(aname, "psi\\ALIGNOF_STRUCT_");
+
+			nptr = str->name;
+			while (*nptr) {
+				size_t off = nptr - str->name;
+				sname[slen - 1 + off] = aname[alen - 1 + off] = toupper(*nptr++);
+			}
+			sname[slen - 1 + nlen] = aname[alen - 1 + nlen] = 0;
+
+			ctyp = psi_const_type_init(PSI_T_INT, "int");
+			cval = psi_impl_def_val_init(PSI_T_INT, NULL);
+			cval->ival.zend.lval = str->size;
+			cnst = psi_const_init(ctyp, sname, cval);
+			dst->consts = psi_plist_add(dst->consts, &cnst);
+			free(sname);
+
+			ctyp = psi_const_type_init(PSI_T_INT, "int");
+			cval = psi_impl_def_val_init(PSI_T_INT, NULL);
+			cval->ival.zend.lval = str->align;
+			cnst = psi_const_init(ctyp, aname, cval);
+			dst->consts = psi_plist_add(dst->consts, &cnst);
+			free(aname);
+		}
+	}
 
 	if (src->consts) {
 		size_t i = 0;
@@ -391,23 +456,6 @@ bool psi_data_validate(struct psi_data *dst, struct psi_data *src)
 			if (psi_const_validate(PSI_DATA(dst), cnst)) {
 				PSI_DEBUG_PRINT(dst, "%s\n", "✔");
 				dst->consts = psi_plist_add(dst->consts, &cnst);
-			} else {
-				PSI_DEBUG_PRINT(dst, "%s (%s)\n", "✘", dst->last_error);
-				++src->errors;
-			}
-		}
-	}
-
-	if (src->decls) {
-		size_t i = 0;
-		struct psi_decl *decl;
-
-		while (psi_plist_get(src->decls, i++, &decl)) {
-			*dst->last_error = 0;
-			PSI_DEBUG_PRINT(dst, "PSI: validate decl %s ", decl->func->var->name);
-			if (psi_decl_validate(PSI_DATA(dst), decl, dlopened, &type_stack)) {
-				PSI_DEBUG_PRINT(dst, "%s\n", "✔");
-				dst->decls = psi_plist_add(dst->decls, &decl);
 			} else {
 				PSI_DEBUG_PRINT(dst, "%s (%s)\n", "✘", dst->last_error);
 				++src->errors;
