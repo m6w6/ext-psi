@@ -25,6 +25,7 @@ m4_foreach(incfile, [
 	[posix/stdio.m4],
 	[posix/stdint.m4],
 	[posix/stdlib.m4],
+	[posix/stdarg.m4],
 	[posix/sys_select.m4],
 	[posix/sys_socket.m4],
 	[posix/sys_stat.m4],
@@ -129,6 +130,7 @@ if test "$PHP_PSI" != no; then
 	PSI_CONFIG_POSIX(stdio, stdio.h)
 	PSI_CONFIG_POSIX(stdlib, stdlib.h)
 	PSI_CONFIG_POSIX(unistd, unistd.h)
+	PSI_CONFIG_POSIX(stdarg, stdarg.h)
 	PSI_CONFIG_POSIX(sys/socket, sys/socket.h, [
 		PSI_CONFIG_POSIX(netinet/in, netinet/in.h, [
 			PSI_CONFIG_POSIX(arpa/inet, arpa/inet.h)
