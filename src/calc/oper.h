@@ -46,45 +46,27 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 	case PSI_T_NOT:
 		switch (op2) {
 		case PSI_T_NOT:
-			return 0;
 		case PSI_T_TILDE:
-			return 0;
 		case PSI_T_CAST:
 			return 0;
+
 		case PSI_T_ASTERISK:
-			return -1;
 		case PSI_T_SLASH:
-			return -1;
 		case PSI_T_MODULO:
-			return -1;
 		case PSI_T_PLUS:
-			return -1;
 		case PSI_T_MINUS:
-			return -1;
 		case PSI_T_LSHIFT:
-			return -1;
 		case PSI_T_RSHIFT:
-			return -1;
 		case PSI_T_LCHEVR:
-			return -1;
 		case PSI_T_CMP_LE:
-			return -1;
 		case PSI_T_RCHEVR:
-			return -1;
 		case PSI_T_CMP_GE:
-			return -1;
 		case PSI_T_AMPERSAND:
-			return -1;
 		case PSI_T_CMP_EQ:
-			return -1;
 		case PSI_T_CMP_NE:
-			return -1;
 		case PSI_T_CARET:
-			return -1;
 		case PSI_T_PIPE:
-			return -1;
 		case PSI_T_AND:
-			return -1;
 		case PSI_T_OR:
 			return -1;
 		default:
@@ -96,45 +78,27 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 	case PSI_T_TILDE:
 		switch (op2) {
 		case PSI_T_NOT:
-			return 0;
 		case PSI_T_TILDE:
-			return 0;
 		case PSI_T_CAST:
 			return 0;
+
 		case PSI_T_ASTERISK:
-			return -1;
 		case PSI_T_SLASH:
-			return -1;
 		case PSI_T_MODULO:
-			return -1;
 		case PSI_T_PLUS:
-			return -1;
 		case PSI_T_MINUS:
-			return -1;
 		case PSI_T_LSHIFT:
-			return -1;
 		case PSI_T_RSHIFT:
-			return -1;
 		case PSI_T_LCHEVR:
-			return -1;
 		case PSI_T_CMP_LE:
-			return -1;
 		case PSI_T_RCHEVR:
-			return -1;
 		case PSI_T_CMP_GE:
-			return -1;
 		case PSI_T_AMPERSAND:
-			return -1;
 		case PSI_T_CMP_EQ:
-			return -1;
 		case PSI_T_CMP_NE:
-			return -1;
 		case PSI_T_CARET:
-			return -1;
 		case PSI_T_PIPE:
-			return -1;
 		case PSI_T_AND:
-			return -1;
 		case PSI_T_OR:
 			return -1;
 		default:
@@ -146,45 +110,27 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 	case PSI_T_CAST:
 		switch (op2) {
 		case PSI_T_NOT:
-			return 0;
 		case PSI_T_TILDE:
-			return 0;
 		case PSI_T_CAST:
 			return 0;
+
 		case PSI_T_ASTERISK:
-			return -1;
 		case PSI_T_SLASH:
-			return -1;
 		case PSI_T_MODULO:
-			return -1;
 		case PSI_T_PLUS:
-			return -1;
 		case PSI_T_MINUS:
-			return -1;
 		case PSI_T_LSHIFT:
-			return -1;
 		case PSI_T_RSHIFT:
-			return -1;
 		case PSI_T_LCHEVR:
-			return -1;
 		case PSI_T_CMP_LE:
-			return -1;
 		case PSI_T_RCHEVR:
-			return -1;
 		case PSI_T_CMP_GE:
-			return -1;
 		case PSI_T_AMPERSAND:
-			return -1;
 		case PSI_T_CMP_EQ:
-			return -1;
 		case PSI_T_CMP_NE:
-			return -1;
 		case PSI_T_CARET:
-			return -1;
 		case PSI_T_PIPE:
-			return -1;
 		case PSI_T_AND:
-			return -1;
 		case PSI_T_OR:
 			return -1;
 		default:
@@ -196,45 +142,29 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 	case PSI_T_ASTERISK:
 		switch (op2) {
 		case PSI_T_NOT:
-			return 1;
 		case PSI_T_TILDE:
-			return 1;
 		case PSI_T_CAST:
 			return 1;
+
 		case PSI_T_ASTERISK:
-			return 0;
 		case PSI_T_SLASH:
-			return 0;
 		case PSI_T_MODULO:
 			return 0;
+
 		case PSI_T_PLUS:
-			return -1;
 		case PSI_T_MINUS:
-			return -1;
 		case PSI_T_LSHIFT:
-			return -1;
 		case PSI_T_RSHIFT:
-			return -1;
 		case PSI_T_LCHEVR:
-			return -1;
 		case PSI_T_CMP_LE:
-			return -1;
 		case PSI_T_RCHEVR:
-			return -1;
 		case PSI_T_CMP_GE:
-			return -1;
 		case PSI_T_AMPERSAND:
-			return -1;
 		case PSI_T_CMP_EQ:
-			return -1;
 		case PSI_T_CMP_NE:
-			return -1;
 		case PSI_T_CARET:
-			return -1;
 		case PSI_T_PIPE:
-			return -1;
 		case PSI_T_AND:
-			return -1;
 		case PSI_T_OR:
 			return -1;
 		default:
@@ -246,45 +176,29 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 	case PSI_T_SLASH:
 		switch (op2) {
 		case PSI_T_NOT:
-			return 1;
 		case PSI_T_TILDE:
-			return 1;
 		case PSI_T_CAST:
 			return 1;
+
 		case PSI_T_ASTERISK:
-			return 0;
 		case PSI_T_SLASH:
-			return 0;
 		case PSI_T_MODULO:
 			return 0;
+
 		case PSI_T_PLUS:
-			return -1;
 		case PSI_T_MINUS:
-			return -1;
 		case PSI_T_LSHIFT:
-			return -1;
 		case PSI_T_RSHIFT:
-			return -1;
 		case PSI_T_LCHEVR:
-			return -1;
 		case PSI_T_CMP_LE:
-			return -1;
 		case PSI_T_RCHEVR:
-			return -1;
 		case PSI_T_CMP_GE:
-			return -1;
 		case PSI_T_AMPERSAND:
-			return -1;
 		case PSI_T_CMP_EQ:
-			return -1;
 		case PSI_T_CMP_NE:
-			return -1;
 		case PSI_T_CARET:
-			return -1;
 		case PSI_T_PIPE:
-			return -1;
 		case PSI_T_AND:
-			return -1;
 		case PSI_T_OR:
 			return -1;
 		default:
@@ -296,45 +210,29 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 	case PSI_T_MODULO:
 		switch (op2) {
 		case PSI_T_NOT:
-			return 1;
 		case PSI_T_TILDE:
-			return 1;
 		case PSI_T_CAST:
 			return 1;
+
 		case PSI_T_ASTERISK:
-			return 0;
 		case PSI_T_SLASH:
-			return 0;
 		case PSI_T_MODULO:
 			return 0;
+
 		case PSI_T_PLUS:
-			return -1;
 		case PSI_T_MINUS:
-			return -1;
 		case PSI_T_LSHIFT:
-			return -1;
 		case PSI_T_RSHIFT:
-			return -1;
 		case PSI_T_LCHEVR:
-			return -1;
 		case PSI_T_CMP_LE:
-			return -1;
 		case PSI_T_RCHEVR:
-			return -1;
 		case PSI_T_CMP_GE:
-			return -1;
 		case PSI_T_AMPERSAND:
-			return -1;
 		case PSI_T_CMP_EQ:
-			return -1;
 		case PSI_T_CMP_NE:
-			return -1;
 		case PSI_T_CARET:
-			return -1;
 		case PSI_T_PIPE:
-			return -1;
 		case PSI_T_AND:
-			return -1;
 		case PSI_T_OR:
 			return -1;
 		default:
@@ -346,45 +244,29 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 	case PSI_T_PLUS:
 		switch (op2) {
 		case PSI_T_NOT:
-			return 1;
 		case PSI_T_TILDE:
-			return 1;
 		case PSI_T_CAST:
-			return 1;
 		case PSI_T_ASTERISK:
-			return 1;
 		case PSI_T_SLASH:
-			return 1;
 		case PSI_T_MODULO:
 			return 1;
+
 		case PSI_T_PLUS:
-			return 0;
 		case PSI_T_MINUS:
 			return 0;
+
 		case PSI_T_LSHIFT:
-			return -1;
 		case PSI_T_RSHIFT:
-			return -1;
 		case PSI_T_LCHEVR:
-			return -1;
 		case PSI_T_CMP_LE:
-			return -1;
 		case PSI_T_RCHEVR:
-			return -1;
 		case PSI_T_CMP_GE:
-			return -1;
 		case PSI_T_AMPERSAND:
-			return -1;
 		case PSI_T_CMP_EQ:
-			return -1;
 		case PSI_T_CMP_NE:
-			return -1;
 		case PSI_T_CARET:
-			return -1;
 		case PSI_T_PIPE:
-			return -1;
 		case PSI_T_AND:
-			return -1;
 		case PSI_T_OR:
 			return -1;
 		default:
@@ -396,45 +278,29 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 	case PSI_T_MINUS:
 		switch (op2) {
 		case PSI_T_NOT:
-			return 1;
 		case PSI_T_TILDE:
-			return 1;
 		case PSI_T_CAST:
-			return 1;
 		case PSI_T_ASTERISK:
-			return 1;
 		case PSI_T_SLASH:
-			return 1;
 		case PSI_T_MODULO:
 			return 1;
+
 		case PSI_T_PLUS:
-			return 0;
 		case PSI_T_MINUS:
 			return 0;
+
 		case PSI_T_LSHIFT:
-			return -1;
 		case PSI_T_RSHIFT:
-			return -1;
 		case PSI_T_LCHEVR:
-			return -1;
 		case PSI_T_CMP_LE:
-			return -1;
 		case PSI_T_RCHEVR:
-			return -1;
 		case PSI_T_CMP_GE:
-			return -1;
 		case PSI_T_AMPERSAND:
-			return -1;
 		case PSI_T_CMP_EQ:
-			return -1;
 		case PSI_T_CMP_NE:
-			return -1;
 		case PSI_T_CARET:
-			return -1;
 		case PSI_T_PIPE:
-			return -1;
 		case PSI_T_AND:
-			return -1;
 		case PSI_T_OR:
 			return -1;
 		default:
@@ -446,45 +312,29 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 	case PSI_T_LSHIFT:
 		switch (op2) {
 		case PSI_T_NOT:
-			return 1;
 		case PSI_T_TILDE:
-			return 1;
 		case PSI_T_CAST:
-			return 1;
 		case PSI_T_ASTERISK:
-			return 1;
 		case PSI_T_SLASH:
-			return 1;
 		case PSI_T_MODULO:
-			return 1;
 		case PSI_T_PLUS:
-			return 1;
 		case PSI_T_MINUS:
 			return 1;
+
 		case PSI_T_LSHIFT:
-			return 0;
 		case PSI_T_RSHIFT:
 			return 0;
+
 		case PSI_T_LCHEVR:
-			return -1;
 		case PSI_T_CMP_LE:
-			return -1;
 		case PSI_T_RCHEVR:
-			return -1;
 		case PSI_T_CMP_GE:
-			return -1;
 		case PSI_T_AMPERSAND:
-			return -1;
 		case PSI_T_CMP_EQ:
-			return -1;
 		case PSI_T_CMP_NE:
-			return -1;
 		case PSI_T_CARET:
-			return -1;
 		case PSI_T_PIPE:
-			return -1;
 		case PSI_T_AND:
-			return -1;
 		case PSI_T_OR:
 			return -1;
 		default:
@@ -496,45 +346,29 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 	case PSI_T_RSHIFT:
 		switch (op2) {
 		case PSI_T_NOT:
-			return 1;
 		case PSI_T_TILDE:
-			return 1;
 		case PSI_T_CAST:
-			return 1;
 		case PSI_T_ASTERISK:
-			return 1;
 		case PSI_T_SLASH:
-			return 1;
 		case PSI_T_MODULO:
-			return 1;
 		case PSI_T_PLUS:
-			return 1;
 		case PSI_T_MINUS:
 			return 1;
+
 		case PSI_T_LSHIFT:
-			return 0;
 		case PSI_T_RSHIFT:
 			return 0;
+
 		case PSI_T_LCHEVR:
-			return -1;
 		case PSI_T_CMP_LE:
-			return -1;
 		case PSI_T_RCHEVR:
-			return -1;
 		case PSI_T_CMP_GE:
-			return -1;
 		case PSI_T_AMPERSAND:
-			return -1;
 		case PSI_T_CMP_EQ:
-			return -1;
 		case PSI_T_CMP_NE:
-			return -1;
 		case PSI_T_CARET:
-			return -1;
 		case PSI_T_PIPE:
-			return -1;
 		case PSI_T_AND:
-			return -1;
 		case PSI_T_OR:
 			return -1;
 		default:
@@ -546,45 +380,29 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 	case PSI_T_LCHEVR:
 		switch (op2) {
 		case PSI_T_NOT:
-			return 1;
 		case PSI_T_TILDE:
-			return 1;
 		case PSI_T_CAST:
-			return 1;
 		case PSI_T_ASTERISK:
-			return 1;
 		case PSI_T_SLASH:
-			return 1;
 		case PSI_T_MODULO:
-			return 1;
 		case PSI_T_PLUS:
-			return 1;
 		case PSI_T_MINUS:
-			return 1;
 		case PSI_T_LSHIFT:
-			return 1;
 		case PSI_T_RSHIFT:
 			return 1;
+
 		case PSI_T_LCHEVR:
-			return 0;
 		case PSI_T_CMP_LE:
-			return 0;
 		case PSI_T_RCHEVR:
-			return 0;
 		case PSI_T_CMP_GE:
 			return 0;
+
 		case PSI_T_AMPERSAND:
-			return -1;
 		case PSI_T_CMP_EQ:
-			return -1;
 		case PSI_T_CMP_NE:
-			return -1;
 		case PSI_T_CARET:
-			return -1;
 		case PSI_T_PIPE:
-			return -1;
 		case PSI_T_AND:
-			return -1;
 		case PSI_T_OR:
 			return -1;
 		default:
@@ -596,45 +414,29 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 	case PSI_T_CMP_LE:
 		switch (op2) {
 		case PSI_T_NOT:
-			return 1;
 		case PSI_T_TILDE:
-			return 1;
 		case PSI_T_CAST:
-			return 1;
 		case PSI_T_ASTERISK:
-			return 1;
 		case PSI_T_SLASH:
-			return 1;
 		case PSI_T_MODULO:
-			return 1;
 		case PSI_T_PLUS:
-			return 1;
 		case PSI_T_MINUS:
-			return 1;
 		case PSI_T_LSHIFT:
-			return 1;
 		case PSI_T_RSHIFT:
 			return 1;
+
 		case PSI_T_LCHEVR:
-			return 0;
 		case PSI_T_CMP_LE:
-			return 0;
 		case PSI_T_RCHEVR:
-			return 0;
 		case PSI_T_CMP_GE:
 			return 0;
+
 		case PSI_T_AMPERSAND:
-			return -1;
 		case PSI_T_CMP_EQ:
-			return -1;
 		case PSI_T_CMP_NE:
-			return -1;
 		case PSI_T_CARET:
-			return -1;
 		case PSI_T_PIPE:
-			return -1;
 		case PSI_T_AND:
-			return -1;
 		case PSI_T_OR:
 			return -1;
 		default:
@@ -646,45 +448,29 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 	case PSI_T_RCHEVR:
 		switch (op2) {
 		case PSI_T_NOT:
-			return 1;
 		case PSI_T_TILDE:
-			return 1;
 		case PSI_T_CAST:
-			return 1;
 		case PSI_T_ASTERISK:
-			return 1;
 		case PSI_T_SLASH:
-			return 1;
 		case PSI_T_MODULO:
-			return 1;
 		case PSI_T_PLUS:
-			return 1;
 		case PSI_T_MINUS:
-			return 1;
 		case PSI_T_LSHIFT:
-			return 1;
 		case PSI_T_RSHIFT:
 			return 1;
+
 		case PSI_T_LCHEVR:
-			return 0;
 		case PSI_T_CMP_LE:
-			return 0;
 		case PSI_T_RCHEVR:
-			return 0;
 		case PSI_T_CMP_GE:
 			return 0;
+
 		case PSI_T_AMPERSAND:
-			return -1;
 		case PSI_T_CMP_EQ:
-			return -1;
 		case PSI_T_CMP_NE:
-			return -1;
 		case PSI_T_CARET:
-			return -1;
 		case PSI_T_PIPE:
-			return -1;
 		case PSI_T_AND:
-			return -1;
 		case PSI_T_OR:
 			return -1;
 		default:
@@ -696,45 +482,29 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 	case PSI_T_CMP_GE:
 		switch (op2) {
 		case PSI_T_NOT:
-			return 1;
 		case PSI_T_TILDE:
-			return 1;
 		case PSI_T_CAST:
-			return 1;
 		case PSI_T_ASTERISK:
-			return 1;
 		case PSI_T_SLASH:
-			return 1;
 		case PSI_T_MODULO:
-			return 1;
 		case PSI_T_PLUS:
-			return 1;
 		case PSI_T_MINUS:
-			return 1;
 		case PSI_T_LSHIFT:
-			return 1;
 		case PSI_T_RSHIFT:
 			return 1;
+
 		case PSI_T_LCHEVR:
-			return 0;
 		case PSI_T_CMP_LE:
-			return 0;
 		case PSI_T_RCHEVR:
-			return 0;
 		case PSI_T_CMP_GE:
 			return 0;
+
 		case PSI_T_AMPERSAND:
-			return -1;
 		case PSI_T_CMP_EQ:
-			return -1;
 		case PSI_T_CMP_NE:
-			return -1;
 		case PSI_T_CARET:
-			return -1;
 		case PSI_T_PIPE:
-			return -1;
 		case PSI_T_AND:
-			return -1;
 		case PSI_T_OR:
 			return -1;
 		default:
@@ -746,45 +516,29 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 	case PSI_T_AMPERSAND:
 		switch (op2) {
 		case PSI_T_NOT:
-			return 1;
 		case PSI_T_TILDE:
-			return 1;
 		case PSI_T_CAST:
-			return 1;
 		case PSI_T_ASTERISK:
-			return 1;
 		case PSI_T_SLASH:
-			return 1;
 		case PSI_T_MODULO:
-			return 1;
 		case PSI_T_PLUS:
-			return 1;
 		case PSI_T_MINUS:
-			return 1;
 		case PSI_T_LSHIFT:
-			return 1;
 		case PSI_T_RSHIFT:
-			return 1;
 		case PSI_T_LCHEVR:
-			return 1;
 		case PSI_T_CMP_LE:
-			return 1;
 		case PSI_T_RCHEVR:
-			return 1;
 		case PSI_T_CMP_GE:
 			return 1;
+
 		case PSI_T_AMPERSAND:
 			return 0;
+
 		case PSI_T_CMP_EQ:
-			return -1;
 		case PSI_T_CMP_NE:
-			return -1;
 		case PSI_T_CARET:
-			return -1;
 		case PSI_T_PIPE:
-			return -1;
 		case PSI_T_AND:
-			return -1;
 		case PSI_T_OR:
 			return -1;
 		default:
@@ -796,45 +550,29 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 	case PSI_T_CMP_EQ:
 		switch (op2) {
 		case PSI_T_NOT:
-			return 1;
 		case PSI_T_TILDE:
-			return 1;
 		case PSI_T_CAST:
-			return 1;
 		case PSI_T_ASTERISK:
-			return 1;
 		case PSI_T_SLASH:
-			return 1;
 		case PSI_T_MODULO:
-			return 1;
 		case PSI_T_PLUS:
-			return 1;
 		case PSI_T_MINUS:
-			return 1;
 		case PSI_T_LSHIFT:
-			return 1;
 		case PSI_T_RSHIFT:
-			return 1;
 		case PSI_T_LCHEVR:
-			return 1;
 		case PSI_T_CMP_LE:
-			return 1;
 		case PSI_T_RCHEVR:
-			return 1;
 		case PSI_T_CMP_GE:
-			return 1;
 		case PSI_T_AMPERSAND:
 			return 1;
+
 		case PSI_T_CMP_EQ:
-			return 0;
 		case PSI_T_CMP_NE:
 			return 0;
+
 		case PSI_T_CARET:
-			return -1;
 		case PSI_T_PIPE:
-			return -1;
 		case PSI_T_AND:
-			return -1;
 		case PSI_T_OR:
 			return -1;
 		default:
@@ -846,45 +584,29 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 	case PSI_T_CMP_NE:
 		switch (op2) {
 		case PSI_T_NOT:
-			return 1;
 		case PSI_T_TILDE:
-			return 1;
 		case PSI_T_CAST:
-			return 1;
 		case PSI_T_ASTERISK:
-			return 1;
 		case PSI_T_SLASH:
-			return 1;
 		case PSI_T_MODULO:
-			return 1;
 		case PSI_T_PLUS:
-			return 1;
 		case PSI_T_MINUS:
-			return 1;
 		case PSI_T_LSHIFT:
-			return 1;
 		case PSI_T_RSHIFT:
-			return 1;
 		case PSI_T_LCHEVR:
-			return 1;
 		case PSI_T_CMP_LE:
-			return 1;
 		case PSI_T_RCHEVR:
-			return 1;
 		case PSI_T_CMP_GE:
-			return 1;
 		case PSI_T_AMPERSAND:
 			return 1;
+
 		case PSI_T_CMP_EQ:
-			return 0;
 		case PSI_T_CMP_NE:
 			return 0;
+
 		case PSI_T_CARET:
-			return -1;
 		case PSI_T_PIPE:
-			return -1;
 		case PSI_T_AND:
-			return -1;
 		case PSI_T_OR:
 			return -1;
 		default:
@@ -896,45 +618,29 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 	case PSI_T_CARET:
 		switch (op2) {
 		case PSI_T_NOT:
-			return 1;
 		case PSI_T_TILDE:
-			return 1;
 		case PSI_T_CAST:
-			return 1;
 		case PSI_T_ASTERISK:
-			return 1;
 		case PSI_T_SLASH:
-			return 1;
 		case PSI_T_MODULO:
-			return 1;
 		case PSI_T_PLUS:
-			return 1;
 		case PSI_T_MINUS:
-			return 1;
 		case PSI_T_LSHIFT:
-			return 1;
 		case PSI_T_RSHIFT:
-			return 1;
 		case PSI_T_LCHEVR:
-			return 1;
 		case PSI_T_CMP_LE:
-			return 1;
 		case PSI_T_RCHEVR:
-			return 1;
 		case PSI_T_CMP_GE:
-			return 1;
 		case PSI_T_AMPERSAND:
-			return 1;
 		case PSI_T_CMP_EQ:
-			return 1;
 		case PSI_T_CMP_NE:
 			return 1;
+
 		case PSI_T_CARET:
 			return 0;
+
 		case PSI_T_PIPE:
-			return -1;
 		case PSI_T_AND:
-			return -1;
 		case PSI_T_OR:
 			return -1;
 		default:
@@ -946,45 +652,29 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 	case PSI_T_PIPE:
 		switch (op2) {
 		case PSI_T_NOT:
-			return 1;
 		case PSI_T_TILDE:
-			return 1;
 		case PSI_T_CAST:
-			return 1;
 		case PSI_T_ASTERISK:
-			return 1;
 		case PSI_T_SLASH:
-			return 1;
 		case PSI_T_MODULO:
-			return 1;
 		case PSI_T_PLUS:
-			return 1;
 		case PSI_T_MINUS:
-			return 1;
 		case PSI_T_LSHIFT:
-			return 1;
 		case PSI_T_RSHIFT:
-			return 1;
 		case PSI_T_LCHEVR:
-			return 1;
 		case PSI_T_CMP_LE:
-			return 1;
 		case PSI_T_RCHEVR:
-			return 1;
 		case PSI_T_CMP_GE:
-			return 1;
 		case PSI_T_AMPERSAND:
-			return 1;
 		case PSI_T_CMP_EQ:
-			return 1;
 		case PSI_T_CMP_NE:
-			return 1;
 		case PSI_T_CARET:
 			return 1;
+
 		case PSI_T_PIPE:
 			return 0;
+
 		case PSI_T_AND:
-			return -1;
 		case PSI_T_OR:
 			return -1;
 		default:
@@ -996,45 +686,29 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 	case PSI_T_AND:
 		switch (op2) {
 		case PSI_T_NOT:
-			return 1;
 		case PSI_T_TILDE:
-			return 1;
 		case PSI_T_CAST:
-			return 1;
 		case PSI_T_ASTERISK:
-			return 1;
 		case PSI_T_SLASH:
-			return 1;
 		case PSI_T_MODULO:
-			return 1;
 		case PSI_T_PLUS:
-			return 1;
 		case PSI_T_MINUS:
-			return 1;
 		case PSI_T_LSHIFT:
-			return 1;
 		case PSI_T_RSHIFT:
-			return 1;
 		case PSI_T_LCHEVR:
-			return 1;
 		case PSI_T_CMP_LE:
-			return 1;
 		case PSI_T_RCHEVR:
-			return 1;
 		case PSI_T_CMP_GE:
-			return 1;
 		case PSI_T_AMPERSAND:
-			return 1;
 		case PSI_T_CMP_EQ:
-			return 1;
 		case PSI_T_CMP_NE:
-			return 1;
 		case PSI_T_CARET:
-			return 1;
 		case PSI_T_PIPE:
 			return 1;
+
 		case PSI_T_AND:
 			return 0;
+
 		case PSI_T_OR:
 			return -1;
 		default:
@@ -1046,45 +720,27 @@ static inline int psi_calc_oper(token_t op1, token_t op2)
 	case PSI_T_OR:
 		switch (op2) {
 		case PSI_T_NOT:
-			return 1;
 		case PSI_T_TILDE:
-			return 1;
 		case PSI_T_CAST:
-			return 1;
 		case PSI_T_ASTERISK:
-			return 1;
 		case PSI_T_SLASH:
-			return 1;
 		case PSI_T_MODULO:
-			return 1;
 		case PSI_T_PLUS:
-			return 1;
 		case PSI_T_MINUS:
-			return 1;
 		case PSI_T_LSHIFT:
-			return 1;
 		case PSI_T_RSHIFT:
-			return 1;
 		case PSI_T_LCHEVR:
-			return 1;
 		case PSI_T_CMP_LE:
-			return 1;
 		case PSI_T_RCHEVR:
-			return 1;
 		case PSI_T_CMP_GE:
-			return 1;
 		case PSI_T_AMPERSAND:
-			return 1;
 		case PSI_T_CMP_EQ:
-			return 1;
 		case PSI_T_CMP_NE:
-			return 1;
 		case PSI_T_CARET:
-			return 1;
 		case PSI_T_PIPE:
-			return 1;
 		case PSI_T_AND:
 			return 1;
+
 		case PSI_T_OR:
 			return 0;
 		default:
