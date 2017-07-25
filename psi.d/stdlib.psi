@@ -30,3 +30,8 @@ function psi\strtold(string $str, string &$end = null) : float {
 	return to_float(strtold);
 	set $end = to_string(*endptr);
 }
+
+function psi\free(object $memory) : void {
+	let ptr = objval($memory);
+	return void(free);
+}
