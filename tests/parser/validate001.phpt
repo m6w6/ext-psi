@@ -32,29 +32,6 @@ enum {
 PSI
 );
 
-validate(true,
-<<<PSI
-struct a {
-	int i;
-}
-struct b {
-	long l;
-}
-typedef struct b b;
-union v {
-	struct a a;
-	b b;
-	struct {
-		double d;
-	} s;
-	union {
-		long l;
-		double d;
-	} u;
-}
-PSI
-);
-
 validate(true, "typedef int foo(int bar);");
 validate(true, "typedef int (foo)(int bar);");
 validate(true, "typedef int (*foo)(int bar);");

@@ -62,7 +62,6 @@ static inline void psi_parser_proc_add_typedef(struct psi_parser *P, struct psi_
 		P->types = psi_plist_init((psi_plist_dtor) psi_decl_arg_free);
 	}
 	P->types = psi_plist_add(P->types, &def);
-	psi_parser_proc_add_from_typedef(P, def);
 }
 static inline void psi_parser_proc_add_const(struct psi_parser *P, struct psi_const *cnst) {
 	assert(cnst);
@@ -787,6 +786,7 @@ typedef[def]:
 	$def->var->token = psi_token_copy($name_token);
 	$def->type->token = psi_token_copy($enum->token);
 	$def->type->real.enm = $enum;
+	psi_parser_proc_add_enum(P, $enum);
 }
 |	struct_name[struct] align_and_size[as] struct_args_block[args] decl_var[var] {
 	$def = psi_decl_arg_init(psi_decl_type_init(PSI_T_STRUCT, $struct->text), $var);
@@ -795,6 +795,7 @@ typedef[def]:
 	$def->type->real.strct->token = psi_token_copy($struct);
 	$def->type->real.strct->align = $as.pos;
 	$def->type->real.strct->size = $as.len;
+	psi_parser_proc_add_struct(P, $def->type->real.strct);
 }
 |	union_name[union] align_and_size[as] struct_args_block[args] decl_var[var] {
 	$def = psi_decl_arg_init(psi_decl_type_init(PSI_T_UNION, $union->text), $var);
@@ -803,6 +804,7 @@ typedef[def]:
 	$def->type->real.unn->token = psi_token_copy($union);
 	$def->type->real.unn->align = $as.pos;
 	$def->type->real.unn->size = $as.len;
+	psi_parser_proc_add_union(P, $def->type->real.unn);
 }
 |	const_decl_type[type] decl_stdint_type[stdint] {
 	$stdint->type = PSI_T_NAME;
