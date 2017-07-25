@@ -715,6 +715,37 @@ impl_def_val[val]:
 	%empty {
 	$val = NULL;
 }
+|	num_exp[num] {
+	if (psi_num_exp_validate(PSI_DATA(P), $num, NULL, NULL, NULL, NULL, NULL)) {
+		impl_val res = {0};
+		token_t type = psi_num_exp_exec($num, &res, NULL, &P->preproc->defs);
+
+		if (type == PSI_T_FLOAT || type == PSI_T_DOUBLE) {
+			$val = psi_impl_def_val_init(type, NULL);
+		} else {
+			$val = psi_impl_def_val_init(PSI_T_INT, NULL);
+		}
+
+		switch (type) {
+		case PSI_T_UINT8:	$val->ival.zend.lval = res.u8;	break;
+		case PSI_T_UINT16:	$val->ival.zend.lval = res.u16;	break;
+		case PSI_T_UINT32:	$val->ival.zend.lval = res.u32;	break;
+		case PSI_T_UINT64:	$val->ival.zend.lval = res.u64;	break; /* FIXME */
+		case PSI_T_INT8:	$val->ival.zend.lval = res.i8;	break;
+		case PSI_T_INT16:	$val->ival.zend.lval = res.i16;	break;
+		case PSI_T_INT32:	$val->ival.zend.lval = res.i32;	break;
+		case PSI_T_INT64:	$val->ival.zend.lval = res.i64;	break;
+		case PSI_T_FLOAT:	$val->ival.dval = res.fval;		break;
+		case PSI_T_DOUBLE:	$val->ival.dval = res.dval;		break;
+		default:
+			assert(0);
+
+		}
+	} else {
+		$val = NULL;
+	}
+	psi_num_exp_free(&$num);
+}
 |	impl_def_val_token[token] {
 	$val = psi_impl_def_val_init($token->type, $token->text);
 	$val->token = psi_token_copy($token);
@@ -723,7 +754,6 @@ impl_def_val[val]:
 
 impl_def_val_token:
 	NULL
-|	NUMBER
 |	TRUE
 |	FALSE
 |	QUOTED_STRING
