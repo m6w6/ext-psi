@@ -106,11 +106,25 @@ static inline jit_type_t psi_jit_impl_type(token_t impl_type)
 	return NULL;
 }
 
-static void psi_jit_struct_type_dtor(void *type)
-{
-	jit_type_t strct = type;
+struct psi_jit_struct_type {
+	jit_type_t strct;
+	jit_type_t *fields;
+};
 
+static void psi_jit_struct_type_dtor(void *ptr)
+{
+	struct psi_jit_struct_type *type = ptr;
+	jit_type_t strct = type->strct;
+	unsigned i, n = jit_type_num_fields(strct);
+
+	for (i = 0; i < n; ++i) {
+		jit_type_t field = jit_type_get_field(strct, i);
+
+		jit_type_free(field);
+	}
 	jit_type_free(strct);
+	free(type->fields);
+	free(type);
 }
 
 static size_t psi_jit_struct_type_pad(jit_type_t *els, size_t padding)
@@ -128,7 +142,7 @@ static unsigned psi_jit_struct_type_elements(struct psi_decl_struct *strct,
 		jit_type_t **fields)
 {
 	size_t i = 0, argc = psi_plist_count(strct->args), nels = 0, offset = 0,
-			maxalign, last_arg_pos = -1;
+			maxalign = 0, last_arg_pos = -1;
 	struct psi_decl_arg *darg;
 
 	*fields = calloc(argc + 1, sizeof(*fields));
@@ -184,12 +198,13 @@ static inline jit_type_t psi_jit_decl_type(struct psi_decl_type *type)
 	case PSI_T_STRUCT:
 		if (!real->real.strct->engine.type) {
 			unsigned count;
+			struct psi_jit_struct_type *type = calloc(1, sizeof(*type));
 			jit_type_t strct, *fields = NULL;
 
-			count = psi_jit_struct_type_elements(real->real.strct, &fields);
-			strct = jit_type_create_struct(fields, count, 0);
+			count = psi_jit_struct_type_elements(real->real.strct, &type->fields);
+			type->strct = jit_type_create_struct(type->fields, count, 0);
 
-			real->real.strct->engine.type = strct;
+			real->real.strct->engine.type = type;
 			real->real.strct->engine.dtor = psi_jit_struct_type_dtor;
 		}
 
