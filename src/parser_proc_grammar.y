@@ -719,13 +719,13 @@ impl_def_val[val]:
 	if (psi_num_exp_validate(PSI_DATA(P), $num, NULL, NULL, NULL, NULL, NULL)) {
 		impl_val res = {0};
 		token_t type = psi_num_exp_exec($num, &res, NULL, &P->preproc->defs);
-
+		
 		if (type == PSI_T_FLOAT || type == PSI_T_DOUBLE) {
 			$val = psi_impl_def_val_init(type, NULL);
 		} else {
 			$val = psi_impl_def_val_init(PSI_T_INT, NULL);
 		}
-
+		
 		switch (type) {
 		case PSI_T_UINT8:	$val->ival.zend.lval = res.u8;	break;
 		case PSI_T_UINT16:	$val->ival.zend.lval = res.u16;	break;
@@ -739,7 +739,7 @@ impl_def_val[val]:
 		case PSI_T_DOUBLE:	$val->ival.dval = res.dval;		break;
 		default:
 			assert(0);
-
+		
 		}
 	} else {
 		$val = NULL;
@@ -1632,6 +1632,10 @@ let_exp_byref[exp]:
 }
 |	let_calloc[calloc] {
 	$exp = psi_let_exp_init(PSI_LET_CALLOC, $calloc);
+}
+|	STATIC let_calloc[calloc] {
+	$exp = psi_let_exp_init(PSI_LET_CALLOC, $calloc);
+	$calloc->static_memory = 1;
 }
 |	let_callback[callback] {
 	$exp = psi_let_exp_init(PSI_LET_CALLBACK, $callback);

@@ -250,8 +250,13 @@ void *psi_let_exp_exec(struct psi_let_exp *val, struct psi_decl_arg *darg,
 		{
 			zend_long n = psi_long_num_exp(val->data.alloc->nmemb, frame, NULL);
 			zend_long s = psi_long_num_exp(val->data.alloc->size, frame, NULL);
-			void *tmp = *psi_call_frame_push_auto(frame,
-					safe_emalloc(n, s, sizeof(void *)));
+			void *tmp;
+
+			if (val->data.alloc->static_memory) {
+				tmp = safe_pemalloc(n, s, sizeof(void *), 1);
+			} else {
+				tmp = *psi_call_frame_push_auto(frame, safe_emalloc(n, s, sizeof(void *)));
+			}
 
 			memset(tmp, 0, n * s + sizeof(void *));
 			frame_sym->temp_val.ptr = tmp;

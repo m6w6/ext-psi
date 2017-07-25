@@ -33,6 +33,7 @@ struct psi_let_calloc {
 	struct psi_token *token;
 	struct psi_num_exp *nmemb;
 	struct psi_num_exp *size;
+	unsigned static_memory:1;
 };
 
 struct psi_let_calloc *psi_let_calloc_init(struct psi_num_exp *nmemb, struct psi_num_exp *size);
