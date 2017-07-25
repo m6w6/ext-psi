@@ -434,14 +434,14 @@ bool psi_data_validate(struct psi_data *dst, struct psi_data *src)
 			cval = psi_impl_def_val_init(PSI_T_INT, NULL);
 			cval->ival.zend.lval = str->size;
 			cnst = psi_const_init(ctyp, sname, cval);
-			dst->consts = psi_plist_add(dst->consts, &cnst);
+			src->consts = psi_plist_add(src->consts, &cnst);
 			free(sname);
 
 			ctyp = psi_const_type_init(PSI_T_INT, "int");
 			cval = psi_impl_def_val_init(PSI_T_INT, NULL);
 			cval->ival.zend.lval = str->align;
 			cnst = psi_const_init(ctyp, aname, cval);
-			dst->consts = psi_plist_add(dst->consts, &cnst);
+			src->consts = psi_plist_add(src->consts, &cnst);
 			free(aname);
 		}
 	}
