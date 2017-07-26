@@ -46,8 +46,7 @@ struct psi_context_ops {
 	void (*init)(struct psi_context *C);
 	void (*dtor)(struct psi_context *C);
 	zend_function_entry *(*compile)(struct psi_context *C);
-	void (*call)(struct psi_context *C, struct psi_call_frame *frame, struct psi_decl *psi_decl, void *rval, void **args);
-	void (*call_va)(struct psi_context *C, struct psi_call_frame *frame, struct psi_decl *psi_decl, void *rval, void **args, size_t va_count, void **va_types);
+	void (*call)(struct psi_call_frame *frame);
 	void *(*query)(struct psi_context *C, enum psi_context_query q, void *arg);
 };
 

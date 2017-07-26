@@ -107,113 +107,6 @@ static void psi_ffi_prep_va(ffi_cif *base, ffi_cif *signature, size_t argc, size
 
 static inline ffi_type *psi_ffi_decl_arg_type(struct psi_decl_arg *darg);
 
-struct psi_ffi_context {
-	ffi_cif signature;
-	ffi_type *params[2];
-};
-
-struct psi_ffi_call {
-	struct psi_context *context;
-	union {
-		struct {
-			struct psi_impl *impl;
-			struct psi_call_frame *frame;
-		} fn;
-		struct  {
-			struct psi_let_exp *let_exp;
-			struct psi_ffi_call *impl_call;
-		} cb;
-	} impl;
-	void *code;
-	ffi_closure *closure;
-	ffi_cif signature;
-	ffi_type *params[1]; /* [type1, type2, ... ] */
-};
-
-static void psi_ffi_handler(ffi_cif *sig, void *result, void **args, void *data)
-{
-	struct psi_ffi_call *call = data;
-
-	psi_context_call(call->context, *(zend_execute_data **)args[0], *(zval **)args[1], call->impl.fn.impl);
-}
-
-static void psi_ffi_callback(ffi_cif *sig, void *result, void **args, void *data)
-{
-	struct psi_ffi_call *call = data, *impl_call = call->impl.cb.impl_call;
-
-	if (impl_call->impl.fn.frame) {
-		struct psi_call_frame_callback cbdata;
-
-		cbdata.cb = call->impl.cb.let_exp;
-		cbdata.argc = sig->nargs;
-		cbdata.argv = args;
-		cbdata.rval = result;
-
-		psi_call_frame_do_callback(impl_call->impl.fn.frame, &cbdata);
-	} else {
-		assert(0);
-	}
-}
-
-static inline ffi_abi psi_ffi_abi(const char *convention) {
-	if (FFI_LAST_ABI - 2 != FFI_FIRST_ABI) {
-#ifdef HAVE_FFI_STDCALL
-		if (!strcasecmp(convention, "stdcall")) {
-			return FFI_STDCALL;
-		}
-#endif
-#ifdef HAVE_FFI_FASTCALL
-		if (!strcasecmp(convention, "fastcall")) {
-			return FFI_FASTCALL;
-		}
-#endif
-	}
-	return FFI_DEFAULT_ABI;
-}
-
-static inline struct psi_ffi_call *psi_ffi_call_alloc(struct psi_context *C, struct psi_decl *decl) {
-	int rc;
-	size_t i, c = psi_plist_count(decl->args);
-	struct psi_ffi_call *call = calloc(1, sizeof(*call) + 2 * c * sizeof(void *));
-	struct psi_decl_arg *arg;
-
-	decl->info = call;
-	call->context = C;
-
-	for (i = 0; psi_plist_get(decl->args, i, &arg); ++i) {
-		call->params[i] = psi_ffi_decl_arg_type(arg);
-	}
-	call->params[c] = NULL;
-
-	rc = ffi_prep_cif(&call->signature, psi_ffi_abi(decl->abi->convention),
-			c, psi_ffi_decl_arg_type(decl->func), call->params);
-	assert(FFI_OK == rc);
-
-	return call;
-}
-
-static inline ffi_status psi_ffi_call_init_closure(struct psi_context *C, struct psi_ffi_call *call, struct psi_impl *impl) {
-	struct psi_ffi_context *context = C->context;
-
-	call->impl.fn.impl = impl;
-	return psi_ffi_prep_closure(&call->closure, &call->code, &context->signature, psi_ffi_handler, call);
-}
-
-static inline ffi_status psi_ffi_call_init_callback_closure(struct psi_context *C,
-		struct psi_ffi_call *call, struct psi_ffi_call *impl_call,
-		struct psi_let_exp *cb) {
-	call->impl.cb.let_exp = cb;
-	call->impl.cb.impl_call = impl_call;
-	return psi_ffi_prep_closure(&call->closure, &call->code, &call->signature, psi_ffi_callback, call);
-}
-
-static inline void psi_ffi_call_free(struct psi_ffi_call *call) {
-	if (call->closure) {
-		psi_ffi_closure_free(call->closure);
-	}
-	free(call);
-}
-
 static inline ffi_type *psi_ffi_token_type(token_t t) {
 	switch (t) {
 	default:
@@ -404,6 +297,238 @@ static inline ffi_type *psi_ffi_decl_arg_type(struct psi_decl_arg *darg) {
 	}
 }
 
+static inline ffi_abi psi_ffi_abi(const char *convention) {
+	if (FFI_LAST_ABI - 2 != FFI_FIRST_ABI) {
+#ifdef HAVE_FFI_STDCALL
+		if (!strcasecmp(convention, "stdcall")) {
+			return FFI_STDCALL;
+		}
+#endif
+#ifdef HAVE_FFI_FASTCALL
+		if (!strcasecmp(convention, "fastcall")) {
+			return FFI_FASTCALL;
+		}
+#endif
+	}
+	return FFI_DEFAULT_ABI;
+}
+
+struct psi_ffi_context {
+	ffi_cif signature;
+	ffi_type *params[2];
+};
+
+struct psi_ffi_impl_info {
+	struct psi_context *context;
+	struct psi_call_frame *frame;
+
+	void *code;
+	ffi_closure *closure;
+};
+
+struct psi_ffi_callback_info {
+	struct psi_ffi_impl_info *impl_info;
+	struct psi_let_exp *let_exp;
+
+	void *code;
+	ffi_closure *closure;
+};
+
+struct psi_ffi_decl_info {
+	ffi_cif signature;
+	ffi_type *params[1];
+};
+
+static inline struct psi_ffi_decl_info *psi_ffi_decl_init(struct psi_decl *decl) {
+	if (!decl->info) {
+		int rc;
+		size_t i, c = psi_plist_count(decl->args);
+		struct psi_decl_arg *arg;
+		struct psi_ffi_decl_info *info = calloc(1, sizeof(*info) + 2 * c * sizeof(void *));
+
+		for (i = 0; psi_plist_get(decl->args, i, &arg); ++i) {
+			info->params[i] = psi_ffi_decl_arg_type(arg);
+		}
+		info->params[c] = NULL;
+
+		rc = ffi_prep_cif(&info->signature, psi_ffi_abi(decl->abi->convention),
+				c, psi_ffi_decl_arg_type(decl->func), info->params);
+
+		if (FFI_OK != rc) {
+			free(info);
+		} else {
+			decl->info = info;
+		}
+	}
+
+	return decl->info;
+}
+
+static inline void psi_ffi_decl_dtor(struct psi_decl *decl) {
+	if (decl->info) {
+		free(decl->info);
+		decl->info = NULL;
+	}
+}
+
+static void psi_ffi_handler(ffi_cif *sig, void *result, void **args, void *data)
+{
+	struct psi_impl *impl = data;
+	struct psi_ffi_impl_info *info = impl->info;
+
+	psi_context_call(info->context, *(zend_execute_data **)args[0], *(zval **)args[1], impl);
+}
+
+static void psi_ffi_callback(ffi_cif *sig, void *result, void **args, void *data)
+{
+	struct psi_ffi_callback_info *cb_info = data;
+	struct psi_call_frame_callback cb_data;
+
+	assert(cb_info->impl_info->frame);
+
+	cb_data.cb = cb_info->let_exp;
+	cb_data.argc = sig->nargs;
+	cb_data.argv = args;
+	cb_data.rval = result;
+
+	psi_call_frame_do_callback(cb_info->impl_info->frame, &cb_data);
+}
+
+static inline void psi_ffi_callback_init(struct psi_ffi_impl_info *impl_info,
+		struct psi_let_exp *let_exp) {
+	struct psi_ffi_callback_info *cb_info;
+	struct psi_ffi_decl_info *decl_info;
+	struct psi_let_callback *cb;
+	struct psi_let_func *fn = NULL;
+	ffi_status rc;
+
+	switch (let_exp->kind) {
+	case PSI_LET_CALLBACK:
+		cb = let_exp->data.callback;
+		if (cb->decl->info) {
+			decl_info = cb->decl->info;
+		} else {
+			decl_info = psi_ffi_decl_init(cb->decl);
+		}
+
+		cb_info = calloc(1, sizeof(*cb_info));
+		cb_info->impl_info = impl_info;
+		cb_info->let_exp = let_exp;
+		rc = psi_ffi_prep_closure(&cb_info->closure, &cb_info->code,
+				&decl_info->signature, psi_ffi_callback, cb_info);
+
+		if (FFI_OK != rc) {
+			free(cb_info);
+			break;
+		}
+		cb->info = cb_info;
+
+		assert(!cb->decl->sym);
+		cb->decl->sym = cb_info->code;
+		fn = cb->func;
+		/* no break */
+
+	case PSI_LET_FUNC:
+		if (!fn) {
+			fn = let_exp->data.func;
+		}
+		if (fn->inner) {
+			size_t i = 0;
+			struct psi_let_exp *inner_let;
+
+			while (psi_plist_get(fn->inner, i++, &inner_let)) {
+				psi_ffi_callback_init(impl_info, inner_let);
+			}
+		}
+		break;
+	default:
+		break;
+	}
+}
+
+static inline void psi_ffi_callback_dtor(struct psi_let_exp *let_exp) {
+	struct psi_let_callback *cb;
+	struct psi_let_func *fn = NULL;
+
+	switch (let_exp->kind) {
+	case PSI_LET_CALLBACK:
+		cb = let_exp->data.callback;
+
+		psi_ffi_decl_dtor(cb->decl);
+
+		if (cb->info) {
+			struct psi_ffi_callback_info *info = cb->info;
+
+			if (info->closure) {
+				psi_ffi_closure_free(info->closure);
+			}
+			free(info);
+			cb->info = NULL;
+		}
+		fn = cb->func;
+		/* no break */
+	case PSI_LET_FUNC:
+		if (!fn) {
+			fn = let_exp->data.func;
+		}
+
+		if (fn->inner) {
+			size_t i = 0;
+			struct psi_let_exp *cb;
+
+			while (psi_plist_get(fn->inner, i++, &cb)) {
+				psi_ffi_callback_dtor(cb);
+			}
+		}
+		break;
+	default:
+		break;
+	}
+}
+
+static inline struct psi_ffi_impl_info *psi_ffi_impl_init(struct psi_impl *impl,
+		struct psi_context *C) {
+	struct psi_ffi_context *context = C->context;
+	struct psi_ffi_impl_info *info = calloc(1, sizeof(*info));
+	struct psi_let_stmt *let;
+	ffi_status rc;
+	size_t l = 0;
+
+	info->context = C;
+
+	rc = psi_ffi_prep_closure(&info->closure, &info->code,
+			&context->signature, psi_ffi_handler, impl);
+
+	if (FFI_OK != rc) {
+		free(info);
+		return NULL;
+	}
+
+	while (psi_plist_get(impl->stmts.let, l++, &let)) {
+		psi_ffi_callback_init(info, let->exp);
+	}
+
+	return impl->info = info;
+}
+
+static inline void psi_ffi_impl_dtor(struct psi_impl *impl) {
+	struct psi_ffi_impl_info *info = impl->info;
+	struct psi_let_stmt *let;
+	size_t j = 0;
+
+	while (psi_plist_get(impl->stmts.let, j++, &let)) {
+		psi_ffi_callback_dtor(let->exp);
+	}
+
+	if (info) {
+		if (info->closure) {
+			psi_ffi_closure_free(info->closure);
+		}
+		free(info);
+		impl->info = NULL;
+	}
+}
+
 
 static inline struct psi_ffi_context *psi_ffi_context_init(struct psi_ffi_context *L) {
 	ffi_status rc;
@@ -433,38 +558,6 @@ static void psi_ffi_init(struct psi_context *C)
 	C->context = psi_ffi_context_init(NULL);
 }
 
-static inline void psi_ffi_destroy_callbacks(struct psi_context *C, struct psi_let_exp *let_exp) {
-	struct psi_let_callback *cb;
-	struct psi_let_func *fn = NULL;
-
-	switch (let_exp->kind) {
-	case PSI_LET_CALLBACK:
-		cb = let_exp->data.callback;
-
-		if (cb->decl && cb->decl->info) {
-			psi_ffi_call_free(cb->decl->info);
-		}
-		fn = cb->func;
-		/* no break */
-	case PSI_LET_FUNC:
-		if (!fn) {
-			fn = let_exp->data.func;
-		}
-
-		if (fn->inner) {
-			size_t i = 0;
-			struct psi_let_exp *cb;
-
-			while (psi_plist_get(fn->inner, i++, &cb)) {
-				psi_ffi_destroy_callbacks(C, cb);
-			}
-		}
-		break;
-	default:
-		break;
-	}
-}
-
 static void psi_ffi_dtor(struct psi_context *C)
 {
 	if (C->decls) {
@@ -472,9 +565,7 @@ static void psi_ffi_dtor(struct psi_context *C)
 		struct psi_decl *decl;
 
 		while (psi_plist_get(C->decls, i++, &decl)) {
-			if (decl->info) {
-				psi_ffi_call_free(decl->info);
-			}
+			psi_ffi_decl_dtor(decl);
 		}
 
 	}
@@ -483,53 +574,12 @@ static void psi_ffi_dtor(struct psi_context *C)
 		struct psi_impl *impl;
 
 		while (psi_plist_get(C->impls, i++, &impl)) {
-			size_t j = 0;
-			struct psi_let_stmt *let;
-
-			while (psi_plist_get(impl->stmts.let, j++, &let)) {
-				psi_ffi_destroy_callbacks(C, let->exp);
-			}
+			psi_ffi_impl_dtor(impl);
 		}
 	}
 	psi_ffi_context_free((void *) &C->context);
 }
 
-static inline void psi_ffi_compile_callbacks(struct psi_context *C,
-		struct psi_ffi_call *impl_call, struct psi_let_exp *let_exp) {
-	struct psi_ffi_call *call;
-	struct psi_let_callback *cb;
-	struct psi_let_func *fn = NULL;
-
-	switch (let_exp->kind) {
-	case PSI_LET_CALLBACK:
-		cb = let_exp->data.callback;
-		if ((call = psi_ffi_call_alloc(C, cb->decl))) {
-			if (FFI_OK != psi_ffi_call_init_callback_closure(C, call, impl_call, let_exp)) {
-				psi_ffi_call_free(call);
-				break;
-			}
-
-			cb->decl->sym = call->code;
-		}
-		fn = cb->func;
-		/* no break */
-	case PSI_LET_FUNC:
-		if (!fn) {
-			fn = let_exp->data.func;
-		}
-		if (fn->inner) {
-			size_t i = 0;
-			struct psi_let_exp *inner_let;
-
-			while (psi_plist_get(fn->inner, i++, &inner_let)) {
-				psi_ffi_compile_callbacks(C, impl_call, inner_let);
-			}
-		}
-		break;
-	default:
-		break;
-	}
-}
 
 static zend_function_entry *psi_ffi_compile(struct psi_context *C)
 {
@@ -545,31 +595,23 @@ static zend_function_entry *psi_ffi_compile(struct psi_context *C)
 	zfe = calloc(psi_plist_count(C->impls) + 1, sizeof(*zfe));
 
 	while (psi_plist_get(C->impls, i++, &impl)) {
-		size_t l = 0;
-		struct psi_let_stmt *let;
-		struct psi_ffi_call *call;
 		zend_function_entry *zf = &zfe[nf];
 
 		if (!impl->decl) {
 			continue;
 		}
-		if (!(call = psi_ffi_call_alloc(C, impl->decl))) {
+		if (!psi_ffi_decl_init(impl->decl)) {
 			continue;
 		}
-		if (FFI_OK != psi_ffi_call_init_closure(C, call, impl)) {
-			psi_ffi_call_free(call);
+		if (!psi_ffi_impl_init(impl, C)) {
 			continue;
 		}
 
 		zf->fname = impl->func->name + (impl->func->name[0] == '\\');
-		zf->handler = call->code;
+		zf->handler = ((struct psi_ffi_impl_info *) impl->info)->code;
 		zf->num_args = psi_plist_count(impl->func->args);
 		zf->arg_info = psi_internal_arginfo(impl);
 		++nf;
-
-		while (psi_plist_get(impl->stmts.let, l++, &let)) {
-			psi_ffi_compile_callbacks(C, call, let->exp);
-		}
 	}
 
 	while (psi_plist_get(C->decls, d++, &decl)) {
@@ -577,37 +619,76 @@ static zend_function_entry *psi_ffi_compile(struct psi_context *C)
 			continue;
 		}
 
-		psi_ffi_call_alloc(C, decl);
+		psi_ffi_decl_init(decl);
 	}
 
 	return zfe;
 }
 
-static void psi_ffi_call(struct psi_context *C, struct psi_call_frame *frame, struct psi_decl *decl, void *rval, void **args) {
-	struct psi_ffi_call *info = decl->info;
-	struct psi_call_frame *prev = info->impl.fn.frame;
+static inline void psi_ffi_call_ex(struct psi_call_frame *frame) {
+	struct psi_decl *decl = psi_call_frame_get_decl(frame);
+	struct psi_impl *impl = psi_call_frame_get_impl(frame);
+	struct psi_ffi_decl_info *decl_info = decl->info;
+	struct psi_ffi_impl_info *impl_info;
+	struct psi_call_frame *prev;
 
-	info->impl.fn.frame = frame;
-	ffi_call(&info->signature, FFI_FN(decl->sym), rval, args);
-	info->impl.fn.frame = prev;
+	if (impl) {
+		impl_info = impl->info;
+		prev = impl_info->frame;
+		impl_info->frame = frame;
+	}
+	ffi_call(&decl_info->signature, FFI_FN(decl->sym),
+			psi_call_frame_get_rpointer(frame),
+			psi_call_frame_get_arg_pointers(frame));
+	if (impl) {
+		impl_info->frame = prev;
+	}
 }
 
-static void psi_ffi_call_va(struct psi_context *C, struct psi_call_frame *frame, struct psi_decl *decl, void *rval, void **args,
-	size_t va_count, void **va_types) {
+static inline void psi_ffi_call_va(struct psi_call_frame *frame) {
 	ffi_cif signature;
-	struct psi_ffi_call *info = decl->info;
-	struct psi_call_frame *prev = info->impl.fn.frame;
-	size_t argc = psi_plist_count(decl->args);
-	ffi_type **param_types = ecalloc(argc + va_count + 1, sizeof(ffi_type *));
+	struct psi_call_frame *prev;
+	struct psi_decl *decl = psi_call_frame_get_decl(frame);
+	struct psi_impl *impl = psi_call_frame_get_impl(frame);
+	struct psi_ffi_decl_info *decl_info = decl->info;
+	struct psi_ffi_impl_info *impl_info;
+	size_t i, va_count, argc;
+	ffi_type **param_types;
 
-	memcpy(param_types, info->params, argc * sizeof(ffi_type *));
-	memcpy(param_types + argc, va_types, va_count * sizeof(ffi_type *));
+	argc = psi_plist_count(decl->args);
+	va_count = psi_call_frame_num_var_args(frame);
+	param_types = ecalloc(argc + va_count + 1, sizeof(ffi_type *));
+	memcpy(param_types, decl_info->params, argc * sizeof(ffi_type *));
+	for (i = 0; i < va_count; ++i) {
+		struct psi_call_frame_argument *frame_arg;
 
-	psi_ffi_prep_va(&info->signature, &signature, argc, va_count, param_types);
-	info->impl.fn.frame = frame;
-	ffi_call(&signature, FFI_FN(decl->sym), rval, args);
-	info->impl.fn.frame = prev;
+		frame_arg = psi_call_frame_get_var_argument(frame, i);
+		param_types[argc + i] = psi_ffi_impl_type(frame_arg->va_type);
+	}
+
+	psi_ffi_prep_va(&decl_info->signature, &signature, argc, va_count, param_types);
+
+	if (impl) {
+		impl_info = impl->info;
+		prev = impl_info->frame;
+		impl_info->frame = frame;
+	}
+	ffi_call(&signature, FFI_FN(decl->sym),
+			psi_call_frame_get_rpointer(frame),
+			psi_call_frame_get_arg_pointers(frame));
+	if (impl) {
+		impl_info->frame = prev;
+	}
+
 	efree(param_types);
+}
+
+static void psi_ffi_call(struct psi_call_frame *frame) {
+	if (psi_call_frame_num_var_args(frame)) {
+		psi_ffi_call_va(frame);
+	} else {
+		psi_ffi_call_ex(frame);
+	}
 }
 
 static void *psi_ffi_query(struct psi_context *C, enum psi_context_query q, void *arg) {
@@ -625,7 +706,6 @@ static struct psi_context_ops ops = {
 	psi_ffi_dtor,
 	psi_ffi_compile,
 	psi_ffi_call,
-	psi_ffi_call_va,
 	psi_ffi_query,
 };
 

@@ -237,8 +237,8 @@ void *psi_let_exp_exec(struct psi_let_exp *val, struct psi_decl_arg *darg,
 
 	case PSI_LET_TMP:
 		{
-			struct psi_let_stmt *let_temp = psi_impl_get_let(frame->impl,
-					val->data.var);
+			struct psi_impl *impl = psi_call_frame_get_impl(frame);
+			struct psi_let_stmt *let_temp = psi_impl_get_let(impl, val->data.var);
 			struct psi_call_frame_symbol *temp_arg;
 
 			temp_arg = psi_call_frame_fetch_symbol(frame, let_temp->exp->var);

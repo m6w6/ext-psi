@@ -234,6 +234,22 @@ void **psi_call_frame_get_arg_pointers(struct psi_call_frame *frame) {
 	return frame->pointers;
 }
 
+void *psi_call_frame_get_rpointer(struct psi_call_frame *frame) {
+	return frame->rpointer;
+}
+
+struct psi_decl *psi_call_frame_get_decl(struct psi_call_frame *frame) {
+	return frame->decl;
+}
+
+struct psi_impl *psi_call_frame_get_impl(struct psi_call_frame *frame) {
+	return frame->impl;
+}
+
+struct psi_context *psi_call_frame_get_context(struct psi_call_frame *frame) {
+	return frame->context;
+}
+
 ZEND_RESULT_CODE psi_call_frame_parse_args(struct psi_call_frame *frame,
 		zend_execute_data *execute_data) {
 	size_t i, argc = psi_plist_count(frame->impl->func->args);
@@ -419,36 +435,7 @@ ZEND_RESULT_CODE psi_call_frame_do_assert(struct psi_call_frame *frame, enum psi
 }
 
 void psi_call_frame_do_call(struct psi_call_frame *frame) {
-	size_t va_count = psi_call_frame_num_var_args(frame);
-
-	if (va_count) {
-		void **va_types = ecalloc(va_count, sizeof(void *));
-		size_t i;
-
-		for (i = 0; i < va_count; ++i) {
-			struct psi_call_frame_argument *frame_arg;
-
-			frame_arg = psi_call_frame_get_var_argument(frame, i);
-			va_types[i] = frame->context->ops->query(frame->context,
-					PSI_CONTEXT_QUERY_TYPE, &frame_arg->va_type);
-		}
-
-		frame->context->ops->call_va(frame->context,
-				frame,
-				frame->decl,
-				frame->rpointer,
-				frame->pointers,
-				va_count,
-				va_types);
-
-		efree(va_types);
-	} else {
-		frame->context->ops->call(frame->context,
-				frame,
-				frame->decl,
-				frame->rpointer,
-				frame->pointers);
-	}
+	frame->context->ops->call(frame);
 }
 
 void psi_call_frame_do_callback(struct psi_call_frame *frame, struct psi_call_frame_callback *cbdata)

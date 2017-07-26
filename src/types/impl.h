@@ -37,6 +37,7 @@ struct psi_impl_func;
 struct psi_impl {
 	struct psi_impl_func *func;
 	struct psi_decl *decl;
+	void *info;
 	struct {
 		struct psi_plist *ret;
 		struct psi_plist *let;

@@ -86,7 +86,11 @@ struct psi_call_frame_symbol *psi_call_frame_fetch_symbol(struct psi_call_frame 
 
 void psi_call_frame_enter(struct psi_call_frame *frame);
 
+struct psi_context *psi_call_frame_get_context(struct psi_call_frame *frame);
+struct psi_decl *psi_call_frame_get_decl(struct psi_call_frame *frame);
+struct psi_impl *psi_call_frame_get_impl(struct psi_call_frame *frame);
 void **psi_call_frame_get_arg_pointers(struct psi_call_frame *frame);
+void *psi_call_frame_get_rpointer(struct psi_call_frame *frame);
 
 ZEND_RESULT_CODE psi_call_frame_do_let(struct psi_call_frame *frame);
 ZEND_RESULT_CODE psi_call_frame_do_assert(struct psi_call_frame *frame, enum psi_assert_kind kind);

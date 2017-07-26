@@ -38,6 +38,7 @@ struct psi_let_callback {
 	struct psi_let_func *func;
 	struct psi_plist *args;
 	struct psi_decl *decl;
+	void *info;
 };
 
 struct psi_let_callback *psi_let_callback_init(struct psi_let_func *func, struct psi_plist *args);

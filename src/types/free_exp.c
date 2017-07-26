@@ -124,8 +124,9 @@ void psi_free_exp_exec(struct psi_free_exp *f, struct psi_call_frame *frame)
 	void **args;
 	struct psi_decl_var *dvar;
 	struct psi_call_frame *free_call;
+	struct psi_context *ctx = psi_call_frame_get_context(frame);
 
-	free_call = psi_call_frame_init(frame->context, f->decl, NULL);
+	free_call = psi_call_frame_init(ctx, f->decl, NULL);
 	psi_call_frame_enter(free_call);
 
 	args = psi_call_frame_get_arg_pointers(free_call);

@@ -380,7 +380,7 @@ ZEND_RESULT_CODE psi_context_call(struct psi_context *C, zend_execute_data *exec
 		return FAILURE;
 	}
 
-	psi_call_frame_do_call(frame);
+	C->ops->call(frame);
 
 	if (SUCCESS != psi_call_frame_do_assert(frame, PSI_ASSERT_POST)) {
 		psi_call_frame_do_return(frame, return_value);

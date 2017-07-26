@@ -37,7 +37,9 @@ struct psi_return_stmt *psi_return_stmt_init(struct psi_set_exp *val)
 void psi_return_stmt_exec(struct psi_return_stmt *ret, zval *return_value,
 		struct psi_call_frame *frame)
 {
-	psi_set_exp_exec_ex(ret->set, return_value, frame->rpointer, frame);
+	void *rpointer = psi_call_frame_get_rpointer(frame);
+
+	psi_set_exp_exec_ex(ret->set, return_value, rpointer, frame);
 }
 
 void psi_return_stmt_free(struct psi_return_stmt **ret_ptr)
