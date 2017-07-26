@@ -35,3 +35,23 @@ function psi\free(object $memory) : void {
 	let ptr = objval($memory);
 	return void(free);
 }
+
+function psi\malloc(int $size) : object {
+	let size = intval($size);
+	pre_assert size >= 0;
+	return to_object(malloc);
+}
+
+function psi\calloc(int $nmemb, int $size) : object {
+	let nmemb = intval($nmemb);
+	let size = intval($size);
+	pre_assert size >= 0;
+	return to_object(calloc);
+}
+
+function psi\realloc(object $obj, int $size) : object {
+	let ptr = objval($obj);
+	let size = intval($size);
+	pre_assert size >= 0;
+	return to_object(realloc);
+} 
