@@ -37,24 +37,6 @@ static inline void psi_parser_proc_add_enum(struct psi_parser *P, struct psi_dec
 	}
 	P->enums = psi_plist_add(P->enums, &e);
 }
-static inline void psi_parser_proc_add_from_typedef(struct psi_parser *P, struct psi_decl_arg *def)
-{
-	if (def->type->real.def) {
-		switch (def->type->type) {
-		case PSI_T_STRUCT:
-			psi_parser_proc_add_struct(P, def->type->real.strct);
-			break;
-		case PSI_T_UNION:
-			psi_parser_proc_add_union(P, def->type->real.unn);
-			break;
-		case PSI_T_ENUM:
-			psi_parser_proc_add_enum(P, def->type->real.enm);
-			break;
-		default:
-			break;
-		}
-	}
-}
 static inline void psi_parser_proc_add_typedef(struct psi_parser *P, struct psi_decl_arg *def)
 {
 	assert(def);
@@ -761,6 +743,15 @@ impl_def_val_token:
 decl_typedef[def]:
 	TYPEDEF typedef[def_] EOS {
 	$def = $def_;
+}
+|	TYPEDEF VOID name_token EOS {
+	$def = psi_decl_arg_init(
+		psi_decl_type_init(PSI_T_VOID, $VOID->text),
+		psi_decl_var_init($name_token->text, 0, 0)
+	);
+	$def->token = psi_token_copy($VOID);
+	$def->type->token = psi_token_copy($VOID);
+	$def->var->token = psi_token_copy($name_token);
 }
 |	CPP_EXTENSION TYPEDEF typedef[def_] EOS {
 	$def = $def_;

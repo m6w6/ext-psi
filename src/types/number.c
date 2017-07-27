@@ -224,6 +224,9 @@ void psi_number_dump(int fd, struct psi_number *exp)
 	case PSI_T_QUOTED_CHAR:
 		dprintf(fd, "%s", exp->data.numb);
 		break;
+	case PSI_T_FUNCTION:
+		psi_cpp_macro_call_dump(fd, exp->data.call);
+		break;
 	case PSI_T_CONST:
 		dprintf(fd, "%s", exp->data.cnst->name);
 		break;

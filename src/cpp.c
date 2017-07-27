@@ -97,6 +97,8 @@ static bool psi_cpp_stage1(struct psi_cpp *cpp)
 {
 	bool name = false, define = false, hash = false, eol = true, esc = false, ws = false;
 
+	PSI_DEBUG_PRINT(cpp->parser, "PSI: CPP %s\n", "stage1");
+
 	psi_cpp_tokiter_reset(cpp);
 	while (psi_cpp_tokiter_valid(cpp)) {
 		struct psi_token *token = psi_cpp_tokiter_current(cpp);
@@ -187,133 +189,131 @@ static bool psi_cpp_stage1(struct psi_cpp *cpp)
 static bool psi_cpp_stage2(struct psi_cpp *cpp)
 {
 	struct psi_plist *parser_tokens = psi_plist_init((psi_plist_dtor) psi_token_free);
+	bool is_eol = true, do_cpp = false, do_expansion = true, skip_paren = false, skip_all = false;
 
-	do {
-		bool is_eol = true, do_cpp = false, do_expansion = true, skip_paren = false, skip_all = false;
+	PSI_DEBUG_PRINT(cpp->parser, "PSI: CPP %s\n", "stage2");
 
-		psi_cpp_tokiter_reset(cpp);
+	psi_cpp_tokiter_reset(cpp);
+	while (psi_cpp_tokiter_valid(cpp)) {
+		struct psi_token *current = psi_cpp_tokiter_current(cpp);
 
-		while (psi_cpp_tokiter_valid(cpp)) {
-			struct psi_token *current = psi_cpp_tokiter_current(cpp);
-
-			if (current->type == PSI_T_HASH) {
-				if (is_eol) {
-					do_cpp = true;
-					is_eol = false;
-				}
-			} else if (current->type == PSI_T_EOL) {
-#if PSI_CPP_DEBUG
-				fprintf(stderr, "PSI: CPP do_expansion=true, PSI_T_EOL\n");
-#endif
-				is_eol = true;
-				skip_all = false;
-				do_expansion = true;
-				if (!do_cpp) {
-					psi_cpp_tokiter_del_cur(cpp, true);
-					continue;
-				}
-			} else {
+		if (current->type == PSI_T_HASH) {
+			if (is_eol) {
+				do_cpp = true;
 				is_eol = false;
-
-				if (do_cpp) {
-					switch (current->type) {
-					case PSI_T_DEFINE:
-#if PSI_CPP_DEBUG
-						fprintf(stderr, "PSI: CPP do_expansion=false, PSI_T_DEFINE, skip_all\n");
-#endif
-						do_expansion = false;
-						skip_all = true;
-						break;
-					case PSI_T_DEFINED:
-						skip_paren = true;
-						/* no break */
-					case PSI_T_IFDEF:
-					case PSI_T_IFNDEF:
-					case PSI_T_UNDEF:
-#if PSI_CPP_DEBUG
-						fprintf(stderr, "PSI: CPP do_expansion=false, PSI_T_{IF{,N},UN}DEF\n");
-#endif
-						do_expansion = false;
-						break;
-					case PSI_T_LPAREN:
-
-						if (!skip_all) {
-							if (skip_paren) {
-								skip_paren = false;
-							} else {
-								do_expansion = true;
-#if PSI_CPP_DEBUG
-								fprintf(stderr, "PSI: CPP do_expansion=true, PSI_T_LPAREN, !skip_all, !skip_paren\n");
-#endif
-							}
-						}
-						break;
-					case PSI_T_NAME:
-						break;
-					default:
-						do_expansion = !skip_all;
-#if PSI_CPP_DEBUG
-						fprintf(stderr, "PSI: CPP do_expansion=%s, <- !skip_all\n", do_expansion?"true":"false");
-#endif
-					}
-				}
 			}
-
-			if (cpp->skip) {
-				/* FIXME: del_range */
-				if (!do_cpp) {
+		} else if (current->type == PSI_T_EOL) {
 #if PSI_CPP_DEBUG
-					fprintf(stderr, "PSI: CPP skip ");
-					psi_token_dump(2, current);
+			fprintf(stderr, "PSI: CPP do_expansion=true, PSI_T_EOL\n");
 #endif
-					psi_cpp_tokiter_del_cur(cpp, true);
-					continue;
-				}
-			}
-
-			if (do_expansion && current->type == PSI_T_NAME && psi_cpp_tokiter_defined(cpp)) {
-				bool expanded = false;
-
-				while (psi_cpp_tokiter_expand(cpp)) {
-					expanded = true;
-				}
-				if (expanded) {
-					continue;
-				}
-			}
-
-			if (do_cpp) {
-				parser_tokens = psi_plist_add(parser_tokens, &current);
-
-				if (is_eol) {
-					size_t processed = 0;
-					bool parsed = psi_parser_process(cpp->parser, parser_tokens, &processed);
-
-					/* EOL */
-					psi_plist_pop(parser_tokens, NULL);
-					psi_plist_clean(parser_tokens);
-					do_cpp = false;
-
-					if (!parsed) {
-						psi_plist_free(parser_tokens);
-						return false;
-					}
-				} else {
-					/* leave EOLs in the input stream, else we might end up
-					 * with a hash not preceded with a new line after include */
-					psi_cpp_tokiter_del_cur(cpp, false);
-				}
-
-#if PSI_CPP_DEBUG > 1
-				psi_cpp_tokiter_dump(2, cpp);
-#endif
-
+			is_eol = true;
+			skip_all = false;
+			do_expansion = true;
+			if (!do_cpp) {
+				psi_cpp_tokiter_del_cur(cpp, true);
 				continue;
 			}
+		} else {
+			is_eol = false;
 
-			psi_cpp_tokiter_next(cpp);
+			if (do_cpp) {
+				switch (current->type) {
+				case PSI_T_DEFINE:
+#if PSI_CPP_DEBUG
+					fprintf(stderr, "PSI: CPP do_expansion=false, PSI_T_DEFINE, skip_all\n");
+#endif
+					do_expansion = false;
+					skip_all = true;
+					break;
+				case PSI_T_DEFINED:
+					skip_paren = true;
+					/* no break */
+				case PSI_T_IFDEF:
+				case PSI_T_IFNDEF:
+				case PSI_T_UNDEF:
+#if PSI_CPP_DEBUG
+					fprintf(stderr, "PSI: CPP do_expansion=false, PSI_T_{IF{,N},UN}DEF\n");
+#endif
+					do_expansion = false;
+					break;
+				case PSI_T_LPAREN:
+
+					if (!skip_all) {
+						if (skip_paren) {
+							skip_paren = false;
+						} else {
+							do_expansion = true;
+#if PSI_CPP_DEBUG
+							fprintf(stderr, "PSI: CPP do_expansion=true, PSI_T_LPAREN, !skip_all, !skip_paren\n");
+#endif
+						}
+					}
+					break;
+				case PSI_T_NAME:
+					break;
+				default:
+					do_expansion = !skip_all;
+#if PSI_CPP_DEBUG
+					fprintf(stderr, "PSI: CPP do_expansion=%s, <- !skip_all\n", do_expansion?"true":"false");
+#endif
+				}
+			}
 		}
-	} while (cpp->expanded);
+
+		if (cpp->skip) {
+			/* FIXME: del_range */
+			if (!do_cpp) {
+#if PSI_CPP_DEBUG
+				fprintf(stderr, "PSI: CPP skip ");
+				psi_token_dump(2, current);
+#endif
+				psi_cpp_tokiter_del_cur(cpp, true);
+				continue;
+			}
+		}
+
+		if (do_expansion && current->type == PSI_T_NAME && psi_cpp_tokiter_defined(cpp)) {
+			bool expanded = false;
+
+			while (psi_cpp_tokiter_expand(cpp)) {
+				expanded = true;
+			}
+			if (expanded) {
+				continue;
+			}
+		}
+
+		if (do_cpp) {
+			parser_tokens = psi_plist_add(parser_tokens, &current);
+
+			if (is_eol) {
+				size_t processed = 0;
+				bool parsed = psi_parser_process(cpp->parser, parser_tokens, &processed);
+
+				/* EOL */
+				psi_plist_pop(parser_tokens, NULL);
+				psi_plist_clean(parser_tokens);
+				do_cpp = false;
+
+				if (!parsed) {
+					psi_plist_free(parser_tokens);
+					return false;
+				}
+			} else {
+				/* leave EOLs in the input stream, else we might end up
+				 * with a hash not preceded with a new line after include */
+				psi_cpp_tokiter_del_cur(cpp, false);
+			}
+
+#if PSI_CPP_DEBUG > 1
+			psi_cpp_tokiter_dump(2, cpp);
+#endif
+
+			continue;
+		}
+
+		psi_cpp_tokiter_next(cpp);
+	}
 
 	psi_plist_free(parser_tokens);
 
@@ -351,6 +351,10 @@ bool psi_cpp_defined(struct psi_cpp *cpp, struct psi_token *tok)
 
 #if PSI_CPP_DEBUG
 	fprintf(stderr, "PSI: CPP defined -> %s ", defined ? "true" : "false");
+	if (defined) {
+		struct psi_cpp_macro_decl *macro = zend_hash_str_find_ptr(&cpp->defs, tok->text, tok->size);
+		fprintf(stderr, " @ %s:%u ", macro->token->file, macro->token->line);
+	}
 	psi_token_dump(2, tok);
 #endif
 
@@ -403,9 +407,13 @@ static inline bool try_include(struct psi_cpp *cpp, const char *path, bool *pars
 			*parsed = psi_cpp_process(cpp, &tokens);
 
 			if (*parsed) {
+				size_t num_tokens = psi_plist_count(tokens);
+
 				++cpp->expanded;
 				psi_cpp_tokiter_ins_range(cpp, cpp->index,
-						psi_plist_count(tokens), psi_plist_eles(tokens));
+						num_tokens, psi_plist_eles(tokens));
+				/* skip already processed tokens */
+				cpp->index += num_tokens;
 				free(tokens);
 			} else {
 				psi_plist_free(tokens);

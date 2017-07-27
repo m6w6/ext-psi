@@ -233,8 +233,8 @@ bool psi_cpp_tokiter_defined(struct psi_cpp *cpp)
 	return false;
 }
 
-void psi_cpp_tokiter_expand_tokens(struct psi_cpp *cpp, struct psi_token *target,
-		struct psi_plist *tokens)
+static size_t psi_cpp_tokiter_expand_tokens(struct psi_cpp *cpp,
+		struct psi_token *target, struct psi_plist *tokens)
 {
 	if (tokens && psi_plist_count(tokens)) {
 		size_t i = 0, n = 0;
@@ -260,7 +260,7 @@ void psi_cpp_tokiter_expand_tokens(struct psi_cpp *cpp, struct psi_token *target
 				struct psi_token *old_tok = exp_tokens[n - 1];
 
 				new_tok = psi_token_init(old_tok->type, "", 0,
-						target->col, target->line, target->file);
+						target->col, target->line, target->file?:"");
 
 				new_tok = psi_token_cat(NULL, 2, new_tok, old_tok, tok);
 				free(old_tok);
@@ -268,7 +268,7 @@ void psi_cpp_tokiter_expand_tokens(struct psi_cpp *cpp, struct psi_token *target
 				exp_tokens[n - 1] = new_tok;
 			} else {
 				new_tok = psi_token_init(stringify ? PSI_T_QUOTED_STRING : tok->type,
-						tok->text, tok->size, target->col, target->line, target->file);
+						tok->text, tok->size, target->col, target->line, target->file?:"");
 
 				exp_tokens[n++] = new_tok;
 			}
@@ -283,6 +283,10 @@ void psi_cpp_tokiter_expand_tokens(struct psi_cpp *cpp, struct psi_token *target
 		}
 		psi_cpp_tokiter_ins_range(cpp, psi_cpp_tokiter_index(cpp), n, (void *) exp_tokens);
 		free(exp_tokens);
+
+		return n;
+	} else {
+		return 0;
 	}
 }
 
@@ -445,6 +449,39 @@ static bool psi_cpp_tokiter_expand_call(struct psi_cpp *cpp,
 	return true;
 }
 
+static bool psi_cpp_tokiter_expand_def(struct psi_cpp *cpp,
+		struct psi_token *target, struct psi_cpp_macro_decl *macro)
+{
+	size_t index = psi_cpp_tokiter_index(cpp);
+
+	/* delete current token from stream */
+	psi_cpp_tokiter_del_cur(cpp, false);
+
+	if (index != psi_cpp_tokiter_index(cpp)) {
+		/* might have been last token */
+		psi_cpp_tokiter_next(cpp);
+	}
+	/* replace with tokens from macro */
+	psi_cpp_tokiter_expand_tokens(cpp, target, macro->tokens);
+
+	free(target);
+	++cpp->expanded;
+	return true;
+}
+
+static inline int psi_cpp_tokiter_expand_cmp(struct psi_token *t,
+		struct psi_cpp_macro_decl *m)
+{
+	if (psi_plist_count(m->tokens) == 1) {
+		struct psi_token *r;
+
+		psi_plist_get(m->tokens, 0, &r);
+
+		return strcmp(r->text, t->text);
+	}
+	return -1;
+}
+
 bool psi_cpp_tokiter_expand(struct psi_cpp *cpp)
 {
 	if (psi_cpp_tokiter_valid(cpp)) {
@@ -462,22 +499,8 @@ bool psi_cpp_tokiter_expand(struct psi_cpp *cpp)
 #endif
 				if (macro->sig) {
 					return psi_cpp_tokiter_expand_call(cpp, current, macro);
-				} else {
-					size_t index = psi_cpp_tokiter_index(cpp);
-
-					/* delete current token from stream */
-					psi_cpp_tokiter_del_cur(cpp, false);
-
-					if (index != psi_cpp_tokiter_index(cpp)) {
-						/* might have been last token */
-						psi_cpp_tokiter_next(cpp);
-					}
-					/* replace with tokens from macro */
-					psi_cpp_tokiter_expand_tokens(cpp, current, macro->tokens);
-
-					free(current);
-					++cpp->expanded;
-					return true;
+				} else if (psi_cpp_tokiter_expand_cmp(current, macro)) {
+					return psi_cpp_tokiter_expand_def(cpp, current, macro);
 				}
 			}
 		}

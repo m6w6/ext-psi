@@ -263,6 +263,8 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input 
 	bool escaped;
 	token_t char_width;
 
+	PSI_DEBUG_PRINT(P, "PSI: scanning %s\n", I->file);
+
 	tok = mrk = eol = cur = I->buffer;
 	lim = I->buffer + I->length;
 	I->lines = 1;
