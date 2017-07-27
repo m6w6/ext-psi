@@ -559,7 +559,13 @@ cpp_macro_sig[sig]:
 	%empty {
 	$sig = psi_plist_init(NULL);
 }
+|	ELLIPSIS {
+	$sig = psi_plist_init(NULL); /* FIXME */
+}
 |	cpp_macro_sig_args
+|	cpp_macro_sig_args[args] COMMA ELLIPSIS {
+	$sig = $args;
+}
 ;
 
 cpp_macro_sig_args[args]:
@@ -1458,6 +1464,9 @@ array_size[as]:
 	%empty {
 	$as = 0;
 }
+|	LBRACKET RBRACKET {
+	$as = 0;
+}
 |	LBRACKET NUMBER RBRACKET {
 	$as = atol($NUMBER->text);
 }
@@ -1480,12 +1489,17 @@ pointers[p]:
 ;
 
 asterisks[a]:
-	ASTERISK {
+	asterisk {
 	$a = 1;
 }
-|	asterisks[a_] ASTERISK {
+|	asterisks[a_] asterisk {
 	$a = $a_ + 1;
 }
+;
+
+asterisk:
+	ASTERISK
+|	ASTERISK CONST
 ;
 
 /*

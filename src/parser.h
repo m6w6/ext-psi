@@ -51,17 +51,6 @@ struct psi_parser_input {
 	char buffer[1];
 };
 
-struct psi_parser_data {
-	enum {
-		PSI_PARSER_DATA_SELF,
-		PSI_PARSER_DATA_CPP
-	} type;
-	union {
-		struct psi_parser *parser;
-		struct psi_cpp *cpp;
-	} data;
-};
-
 struct psi_parser *psi_parser_init(struct psi_parser *P, psi_error_cb error, unsigned flags);
 struct psi_parser_input *psi_parser_open_file(struct psi_parser *P, const char *filename, bool report_errors);
 struct psi_parser_input *psi_parser_open_string(struct psi_parser *P, const char *string, size_t length);

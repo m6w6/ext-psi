@@ -302,21 +302,21 @@ void psi_cpp_exp_exec(struct psi_cpp_exp *exp, struct psi_cpp *cpp, struct psi_d
 		break;
 	case PSI_T_INCLUDE:
 		if (!cpp->skip) {
-			if (!psi_cpp_include(cpp, exp->data.tok->text, PSI_CPP_INCLUDE)) {
+			if (!psi_cpp_include(cpp, exp->data.tok, PSI_CPP_INCLUDE)) {
 				D->error(D, exp->token, PSI_WARNING, "Failed to include %s", exp->data.tok->text);
 			}
 		}
 		break;
 	case PSI_T_INCLUDE_NEXT:
 		if (!cpp->skip) {
-			if (!psi_cpp_include(cpp, exp->data.tok->text, PSI_CPP_INCLUDE_NEXT)) {
+			if (!psi_cpp_include(cpp, exp->data.tok, PSI_CPP_INCLUDE_NEXT)) {
 				D->error(D, exp->token, PSI_WARNING, "Failed to include %s", exp->data.tok->text);
 			}
 		}
 		break;
 	case PSI_T_IMPORT:
 		if (!cpp->skip) {
-			if (!psi_cpp_include(cpp, exp->data.tok->text, PSI_CPP_INCLUDE_ONCE)) {
+			if (!psi_cpp_include(cpp, exp->data.tok, PSI_CPP_INCLUDE_ONCE)) {
 				D->error(D, exp->token, PSI_WARNING, "Failed to include %s", exp->data.tok->text);
 			}
 		}

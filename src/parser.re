@@ -370,6 +370,29 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input 
 		"__extension__"	{ NEWTOKEN(PSI_T_CPP_EXTENSION); goto start; }
 		"__asm__"		{ NEWTOKEN(PSI_T_CPP_ASM); goto start; }
 		"line"			{ NEWTOKEN(PSI_T_LINE); goto start; }
+		"typedef"		{ NEWTOKEN(PSI_T_TYPEDEF); goto start; }
+		"struct"		{ NEWTOKEN(PSI_T_STRUCT); goto start; }
+		"union"			{ NEWTOKEN(PSI_T_UNION); goto start; }
+		"enum"			{ NEWTOKEN(PSI_T_ENUM); goto start; }
+		"const"			{ NEWTOKEN(PSI_T_CONST); goto start; }
+		"void"			{ NEWTOKEN(PSI_T_VOID); goto start; }
+		"bool"			{ NEWTOKEN(PSI_T_BOOL); goto start; }
+		"char"			{ NEWTOKEN(PSI_T_CHAR); goto start; }
+		"short"			{ NEWTOKEN(PSI_T_SHORT); goto start; }
+		"int"			{ NEWTOKEN(PSI_T_INT); goto start; }
+		"long"			{ NEWTOKEN(PSI_T_LONG); goto start; }
+		"float"			{ NEWTOKEN(PSI_T_FLOAT); goto start; }
+		"double"		{ NEWTOKEN(PSI_T_DOUBLE); goto start; }
+		"int8_t"		{ NEWTOKEN(PSI_T_INT8); goto start; }
+		"uint8_t"		{ NEWTOKEN(PSI_T_UINT8); goto start; }
+		"int16_t"		{ NEWTOKEN(PSI_T_INT16); goto start; }
+		"uint16_t"		{ NEWTOKEN(PSI_T_UINT16); goto start; }
+		"int32_t"		{ NEWTOKEN(PSI_T_INT32); goto start; }
+		"uint32_t"		{ NEWTOKEN(PSI_T_UINT32); goto start; }
+		"int64_t"		{ NEWTOKEN(PSI_T_INT64); goto start; }
+		"uint64_t"		{ NEWTOKEN(PSI_T_UINT64); goto start; }
+		"unsigned"		{ NEWTOKEN(PSI_T_UNSIGNED); goto start; }
+		"signed"		{ NEWTOKEN(PSI_T_SIGNED); goto start; }
 		'IF'			{ NEWTOKEN(PSI_T_IF); goto start; }
 		'IFDEF'			{ NEWTOKEN(PSI_T_IFDEF); goto start; }
 		'IFNDEF'		{ NEWTOKEN(PSI_T_IFNDEF); goto start; }
@@ -388,35 +411,12 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input 
 		'NULL'			{ NEWTOKEN(PSI_T_NULL); goto start; }
 		'MIXED'			{ NEWTOKEN(PSI_T_MIXED); goto start; }
 		'CALLABLE'		{ NEWTOKEN(PSI_T_CALLABLE); goto start; }
-		'VOID'			{ NEWTOKEN(PSI_T_VOID); goto start; }
-		'BOOL'			{ NEWTOKEN(PSI_T_BOOL); goto start; }
-		'CHAR'			{ NEWTOKEN(PSI_T_CHAR); goto start; }
-		'SHORT'			{ NEWTOKEN(PSI_T_SHORT); goto start; }
-		'INT'			{ NEWTOKEN(PSI_T_INT); goto start; }
-		'LONG'			{ NEWTOKEN(PSI_T_LONG); goto start; }
-		'FLOAT'			{ NEWTOKEN(PSI_T_FLOAT); goto start; }
-		'DOUBLE'		{ NEWTOKEN(PSI_T_DOUBLE); goto start; }
-		'INT8_T'		{ NEWTOKEN(PSI_T_INT8); goto start; }
-		'UINT8_T'		{ NEWTOKEN(PSI_T_UINT8); goto start; }
-		'INT16_T'		{ NEWTOKEN(PSI_T_INT16); goto start; }
-		'UINT16_T'		{ NEWTOKEN(PSI_T_UINT16); goto start; }
-		'INT32_T'		{ NEWTOKEN(PSI_T_INT32); goto start; }
-		'UINT32_T'		{ NEWTOKEN(PSI_T_UINT32); goto start; }
-		'INT64_T'		{ NEWTOKEN(PSI_T_INT64); goto start; }
-		'UINT64_T'		{ NEWTOKEN(PSI_T_UINT64); goto start; }
-		'UNSIGNED'		{ NEWTOKEN(PSI_T_UNSIGNED); goto start; }
-		'SIGNED'		{ NEWTOKEN(PSI_T_SIGNED); goto start; }
 		'STRING'		{ NEWTOKEN(PSI_T_STRING); goto start; }
 		'ARRAY'			{ NEWTOKEN(PSI_T_ARRAY); goto start; }
 		'OBJECT'		{ NEWTOKEN(PSI_T_OBJECT); goto start; }
 		'CALLBACK'		{ NEWTOKEN(PSI_T_CALLBACK); goto start; }
 		'STATIC'		{ NEWTOKEN(PSI_T_STATIC); goto start; }
 		'FUNCTION'		{ NEWTOKEN(PSI_T_FUNCTION); goto start; }
-		'TYPEDEF'		{ NEWTOKEN(PSI_T_TYPEDEF); goto start; }
-		'STRUCT'		{ NEWTOKEN(PSI_T_STRUCT); goto start; }
-		'UNION'			{ NEWTOKEN(PSI_T_UNION); goto start; }
-		'ENUM'			{ NEWTOKEN(PSI_T_ENUM); goto start; }
-		'CONST'			{ NEWTOKEN(PSI_T_CONST); goto start; }
 		'LIB'			{ NEWTOKEN(PSI_T_LIB); goto start; }
 		'LET'			{ NEWTOKEN(PSI_T_LET); goto start; }
 		'SET'			{ NEWTOKEN(PSI_T_SET); goto start; }

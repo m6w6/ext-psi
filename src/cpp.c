@@ -25,6 +25,8 @@
 
 #include "php_psi_stdinc.h"
 
+#include <libgen.h>
+
 #include "cpp.h"
 #include "parser.h"
 
@@ -427,24 +429,49 @@ static inline bool try_include(struct psi_cpp *cpp, const char *path, bool *pars
 	return false;
 }
 
-bool psi_cpp_include(struct psi_cpp *cpp, const char *file, unsigned flags)
+static inline void include_path(const struct psi_token *file, char **path)
+{
+	if (*file->text == '/') {
+		*path = file->text;
+	} else {
+		char *dir;
+		size_t len;
+
+		strncpy(*path, file->file, PATH_MAX);
+
+		dir = dirname(*path);
+		len = strlen(dir);
+
+		assert(len + file->size + 1 < PATH_MAX);
+
+		memmove(*path, dir, len);
+		(*path)[len] = '/';
+		memcpy(&(*path)[len + 1], file->text, file->size + 1);
+	}
+}
+
+bool psi_cpp_include(struct psi_cpp *cpp, const struct psi_token *file, unsigned flags)
 {
 	bool parsed = false;
-	int f_len = strlen(file);
+	int f_len = strlen(file->text);
 
-	if (!(flags & PSI_CPP_INCLUDE_NEXT) || *file == '/') {
+	if (!(flags & PSI_CPP_INCLUDE_NEXT) || *file->text == '/') {
 		/* first try as is, full or relative path */
-		if ((flags & PSI_CPP_INCLUDE_ONCE) && zend_hash_str_exists(&cpp->once, file, f_len)) {
+		char temp[PATH_MAX], *path = temp;
+
+		include_path(file, &path);
+
+		if ((flags & PSI_CPP_INCLUDE_ONCE) && zend_hash_str_exists(&cpp->once, path, f_len)) {
 			return true;
 		}
-		if (try_include(cpp, file, &parsed)) {
+		if (try_include(cpp, path, &parsed)) {
 			/* found */
 			return parsed;
 		}
 	}
 
 	/* look through search paths */
-	if (*file != '/') {
+	if (*file->text != '/') {
 		char path[PATH_MAX];
 		const char *sep;
 		int p_len;
@@ -468,7 +495,7 @@ bool psi_cpp_include(struct psi_cpp *cpp, const char *file, unsigned flags)
 			sep = strchr(cpp->search, ':');
 			d_len = sep ? sep - cpp->search : strlen(cpp->search);
 
-			if (PATH_MAX > (p_len = snprintf(path, PATH_MAX, "%.*s/%.*s", d_len, cpp->search, f_len, file))) {
+			if (PATH_MAX > (p_len = snprintf(path, PATH_MAX, "%.*s/%.*s", d_len, cpp->search, f_len, file->text))) {
 				if ((flags & PSI_CPP_INCLUDE_ONCE) && zend_hash_str_exists(&cpp->once, path, p_len)) {
 					return true;
 				}

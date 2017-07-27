@@ -59,7 +59,7 @@ bool psi_cpp_undef(struct psi_cpp *cpp, struct psi_token *tok);
 #define PSI_CPP_INCLUDE_NEXT 0x1
 #define PSI_CPP_INCLUDE_ONCE 0x2
 
-bool psi_cpp_include(struct psi_cpp *cpp, const char *file, unsigned flags);
+bool psi_cpp_include(struct psi_cpp *cpp, const struct psi_token *file, unsigned flags);
 
 void psi_cpp_tokiter_reset(struct psi_cpp *cpp);
 bool psi_cpp_tokiter_seek(struct psi_cpp *cpp, size_t index);
