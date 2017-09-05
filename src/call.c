@@ -250,6 +250,11 @@ struct psi_context *psi_call_frame_get_context(struct psi_call_frame *frame) {
 	return frame->context;
 }
 
+#if PHP_VERSION_ID < 70200
+#	define PARAM_PROLOGUE(separate) Z_PARAM_PROPLOGUE(separate)
+#else
+#	define PARAM_PROLOGUE(separate) Z_PARAM_PROLOGUE(1, separate)
+#endif
 ZEND_RESULT_CODE psi_call_frame_parse_args(struct psi_call_frame *frame,
 		zend_execute_data *execute_data) {
 	size_t i, argc = psi_plist_count(frame->impl->func->args);
@@ -300,9 +305,9 @@ ZEND_RESULT_CODE psi_call_frame_parse_args(struct psi_call_frame *frame,
 			Z_PARAM_ARRAY_EX(tmp, _optional || iarg->var->reference,
 					iarg->var->reference);
 		} else if (PSI_T_OBJECT == iarg->type->type) {
-			Z_PARAM_PROLOGUE(iarg->var->reference);
+			PARAM_PROLOGUE(iarg->var->reference);
 		} else if (PSI_T_MIXED == iarg->type->type) {
-			Z_PARAM_PROLOGUE(iarg->var->reference);
+			PARAM_PROLOGUE(iarg->var->reference);
 		} else if (PSI_T_CALLABLE == iarg->type->type) {
 			zend_fcall_info fci;
 			zend_fcall_info_cache fcc;
