@@ -300,11 +300,15 @@ void psi_decl_type_dump_args_with_layout(int fd, struct psi_plist *args,
 		while (psi_plist_get(args, i++, &sarg)) {
 			dprintf(fd, "%s", psi_t_indent(level));
 			psi_decl_arg_dump(fd, sarg, level);
-			if (sarg->layout->bfw) {
-				dprintf(fd, ":%zu", sarg->layout->bfw->len);
+			if (sarg->layout) {
+				if (sarg->layout->bfw) {
+					dprintf(fd, ":%zu", sarg->layout->bfw->len);
+				}
+				dprintf(fd, "::(%zu, %zu);\n", sarg->layout->pos,
+						sarg->layout->len);
+			} else {
+				dprintf(fd, ";\n");
 			}
-			dprintf(fd, "::(%zu, %zu);\n", sarg->layout->pos,
-					sarg->layout->len);
 		}
 		--level;
 	}
