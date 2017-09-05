@@ -79,7 +79,7 @@ void psi_decl_var_dump(int fd, struct psi_decl_var *var)
 {
 	dprintf(fd, "%s%s",
 			psi_t_indirection(var->pointer_level - !!var->array_size),
-			var->name ? var->name : "<>");
+			var->name ? var->name : "/**/");
 	if (var->array_size) {
 		dprintf(fd, "[%u]", var->array_size);
 	}
