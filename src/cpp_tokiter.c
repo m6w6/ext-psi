@@ -257,13 +257,14 @@ static size_t psi_cpp_tokiter_expand_tokens(struct psi_cpp *cpp,
 			}
 
 			if (paste && n > 0 && exp_tokens[n - 1]) {
-				struct psi_token *old_tok = exp_tokens[n - 1];
+				struct psi_token *tmp_tok, *old_tok = exp_tokens[n - 1];
 
-				new_tok = psi_token_init(old_tok->type, "", 0,
+				tmp_tok = psi_token_init(old_tok->type, "", 0,
 						target->col, target->line, target->file?:"");
 
-				new_tok = psi_token_cat(NULL, 2, new_tok, old_tok, tok);
+				new_tok = psi_token_cat(NULL, 3, tmp_tok, old_tok, tok);
 				free(old_tok);
+				free(tmp_tok);
 
 				exp_tokens[n - 1] = new_tok;
 			} else {
@@ -318,10 +319,6 @@ static struct psi_plist **psi_cpp_tokiter_read_call_tokens(
 	struct psi_token *tok;
 
 	arg_tokens[0] = psi_plist_init(NULL);
-
-	/* free macro name token on success */
-	tok = psi_cpp_tokiter_current(cpp);
-	free_tokens = psi_plist_add(free_tokens, &tok);
 
 	/* next token must be a LPAREN for a macro call */
 	psi_cpp_tokiter_next(cpp);
@@ -445,6 +442,8 @@ static bool psi_cpp_tokiter_expand_call(struct psi_cpp *cpp,
 
 	/* back to where we took off */
 	psi_cpp_tokiter_seek(cpp, start);
+
+	free(target);
 	++cpp->expanded;
 	return true;
 }
