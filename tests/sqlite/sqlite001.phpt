@@ -77,8 +77,8 @@ string(%d) "3.%d.%s"
 2: id = 3
 2: data = three
 
-SQL logic error or missing database: 'no tables specified'
-library routine called out of sequence: ''
+SQL logic error%s
+%s: ''
 ===DONE===
 --CLEAN--
 <?php
