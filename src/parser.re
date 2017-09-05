@@ -366,9 +366,12 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input 
 		"?"				{ NEWTOKEN(PSI_T_IIF); goto start; }
 		"pragma"		{ NEWTOKEN(PSI_T_PRAGMA); goto start; }
 		"pragma" W+ "once"	{ NEWTOKEN(PSI_T_PRAGMA_ONCE); goto start; }
+		"__inline"		{ NEWTOKEN(PSI_T_CPP_INLINE); goto start; }
 		"__restrict"	{ NEWTOKEN(PSI_T_CPP_RESTRICT); goto start; }
 		"__extension__"	{ NEWTOKEN(PSI_T_CPP_EXTENSION); goto start; }
 		"__asm__"		{ NEWTOKEN(PSI_T_CPP_ASM); goto start; }
+		"volatile"		{ NEWTOKEN(PSI_T_VOLATILE); goto start; }
+		"sizeof"		{ NEWTOKEN(PSI_T_SIZEOF); goto start; }
 		"line"			{ NEWTOKEN(PSI_T_LINE); goto start; }
 		"typedef"		{ NEWTOKEN(PSI_T_TYPEDEF); goto start; }
 		"struct"		{ NEWTOKEN(PSI_T_STRUCT); goto start; }

@@ -86,6 +86,9 @@ struct psi_number *psi_number_init(token_t t, void *num, unsigned flags)
 	case PSI_T_FUNCTION:
 		exp->data.call = num;
 		break;
+	case PSI_T_SIZEOF:
+		exp->data.dtyp = num;
+		break;
 	default:
 		assert(0);
 	}
@@ -130,6 +133,9 @@ struct psi_number *psi_number_copy(struct psi_number *exp)
 	case PSI_T_FUNCTION:
 		num->data.call = psi_cpp_macro_call_copy(num->data.call);
 		break;
+	case PSI_T_SIZEOF:
+		num->data.dtyp = psi_decl_type_copy(num->data.dtyp);
+		break;
 	default:
 		assert(0);
 	}
@@ -172,6 +178,9 @@ void psi_number_free(struct psi_number **exp_ptr)
 			break;
 		case PSI_T_NAME:
 			psi_decl_var_free(&exp->data.dvar);
+			break;
+		case PSI_T_SIZEOF:
+			psi_decl_type_free(&exp->data.dtyp);
 			break;
 		default:
 			assert(0);
@@ -235,6 +244,9 @@ void psi_number_dump(int fd, struct psi_number *exp)
 		break;
 	case PSI_T_NAME:
 		psi_decl_var_dump(fd, exp->data.dvar);
+		break;
+	case PSI_T_SIZEOF:
+		psi_decl_type_dump(fd, exp->data.dtyp, 0);
 		break;
 	default:
 		assert(0);
@@ -481,6 +493,16 @@ bool psi_number_validate(struct psi_data *data, struct psi_number *exp,
 				exp->data.dvar->name);
 		return false;
 
+	case PSI_T_SIZEOF:
+		if (psi_decl_type_validate(data, exp->data.dtyp, 0, NULL)) {
+			struct psi_decl_type *dtyp = exp->data.dtyp;
+
+			exp->type = PSI_T_UINT64;
+			exp->data.ival.u64 = psi_decl_type_get_size(dtyp, NULL);
+			return true;
+		}
+		break;
+
 	case PSI_T_NSNAME:
 		while (psi_plist_get(data->consts, i++, &cnst)) {
 			if (!strcmp(cnst->name, exp->data.numb)) {
@@ -611,6 +633,10 @@ token_t psi_number_eval(struct psi_number *exp, impl_val *res, struct psi_call_f
 	case PSI_T_ENUM:
 		res->i64 = exp->data.enm->val;
 		if (frame) PSI_DEBUG_PRINT(frame->context, " %" PRIi64, res->i64);
+		return PSI_T_INT64;
+
+	case PSI_T_NUMBER:
+		res->i64 = atol(exp->data.numb);
 		return PSI_T_INT64;
 
 	case PSI_T_CONST:

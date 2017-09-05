@@ -66,6 +66,7 @@ struct psi_number {
 		impl_val ival;
 		struct psi_const *cnst;
 		struct psi_decl_var *dvar;
+		struct psi_decl_type *dtyp;
 		struct psi_decl_enum_item *enm;
 		struct psi_cpp_macro_call *call;
 	} data;
