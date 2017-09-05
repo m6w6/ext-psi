@@ -84,6 +84,9 @@ bool psi_decl_struct_validate(struct psi_data *data, struct psi_decl_struct *s,
 	size_t i, pos, len, size, align;
 	struct psi_decl_arg *darg, *prev_arg;
 
+	if (!s) {
+		return false;
+	}
 	if (psi_validate_stack_has_struct(type_stack, s->name)) {
 		return true;
 	}
@@ -198,6 +201,9 @@ bool psi_decl_struct_validate(struct psi_data *data, struct psi_decl_struct *s,
 
 size_t psi_decl_struct_get_align(struct psi_decl_struct *s)
 {
+	if (!s) {
+		return 0;
+	}
 	if (!s->align) {
 		s->align = psi_decl_type_get_args_align(s->args);
 	}
