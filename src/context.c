@@ -340,6 +340,11 @@ zend_function_entry *psi_context_compile(struct psi_context *C)
 					name = strpprintf(0, "psi\\%s\\%s", e->name, item->name);
 				}
 
+				if (zend_get_constant(name)) {
+					zend_string_release(name);
+					continue;
+				}
+
 				zc.name = zend_string_dup(name, 1);
 				ZVAL_LONG(&zc.value, psi_long_num_exp(item->num, NULL, NULL));
 				zend_register_constant(&zc);
