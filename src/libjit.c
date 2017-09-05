@@ -151,7 +151,7 @@ static unsigned psi_jit_struct_type_elements(struct psi_decl_struct *strct,
 			maxalign = alignment;
 		}
 
-		assert(jit_type_get_size(type) == darg->layout->len);
+		assert(jit_type_get_size(type) <= darg->layout->len);
 		if ((padding = psi_offset_padding(darg->layout->pos - offset, alignment))) {
 			if (nels + padding > argc) {
 				argc += padding;

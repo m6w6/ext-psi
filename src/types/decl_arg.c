@@ -165,7 +165,7 @@ size_t psi_decl_arg_get_align(struct psi_decl_arg *darg)
 	size_t align;
 
 	if (darg->var->pointer_level
-			&& (!darg->var->array_size || darg->var->pointer_level > 2)) {
+			&& (!darg->var->array_size || darg->var->pointer_level > 1)) {
 		align = psi_t_alignment(PSI_T_POINTER);
 	} else {
 		align = psi_decl_type_get_align(darg->type);
@@ -180,7 +180,7 @@ size_t psi_decl_arg_get_size(struct psi_decl_arg *darg)
 	struct psi_decl_type *real = psi_decl_type_get_real(darg->type);
 
 	if (darg->var->array_size) {
-		if (darg->var->pointer_level > 2) {
+		if (darg->var->pointer_level > 1) {
 			size = psi_t_size(PSI_T_POINTER) * darg->var->array_size;
 		} else {
 			size = psi_t_size(real->type) * darg->var->array_size;

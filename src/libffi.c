@@ -217,7 +217,7 @@ static ffi_type **psi_ffi_struct_type_elements(struct psi_decl_struct *strct) {
 			maxalign = type->alignment;
 		}
 
-		assert(type->size == darg->layout->len);
+		assert(type->size <= darg->layout->len);
 		if ((padding = psi_offset_padding(darg->layout->pos - offset, type->alignment))) {
 			if (nels + padding + 1 > argc) {
 				argc += padding;
