@@ -9,6 +9,7 @@ addons:
   packages:
    - php5-cli
    - php-pear
+   - valgrind
    - re2c
    - libidn11-dev
    - libsqlite3-dev
@@ -24,7 +25,6 @@ $env = $gen([
 	#"enable_maintainer_zts",
 	"enable_psi" => ["yes"],
 	"enable_psi_posix" => ["all"],
-	"LEMON" => ["'\$(PHP_PSI_BUILDDIR)/lemon'"]
 ]);
 foreach ($env as $e) {
 	printf("  - %s\n", $e);
@@ -41,4 +41,5 @@ script:
 
 after_failure:
  - cat config.log | curl -F 'sprunge=<-' http://sprunge.us
+ - cat tests/parser/dump001.psi
  - ldd .libs/psi.so

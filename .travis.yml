@@ -8,14 +8,15 @@ addons:
   packages:
    - php5-cli
    - php-pear
+   - valgrind
    - re2c
    - libidn11-dev
    - libsqlite3-dev
 
 env:
  matrix:
-  - PHP=master enable_debug=no enable_psi=yes enable_psi_posix=all LEMON='$(PHP_PSI_BUILDDIR)/lemon'
-  - PHP=master enable_debug=yes enable_psi=yes enable_psi_posix=all LEMON='$(PHP_PSI_BUILDDIR)/lemon'
+  - PHP=master enable_debug=no enable_psi=yes enable_psi_posix=all
+  - PHP=master enable_debug=yes enable_psi=yes enable_psi_posix=all
 
 before_script:
  - make -f travis/pecl/Makefile php
@@ -26,4 +27,5 @@ script:
 
 after_failure:
  - cat config.log | curl -F 'sprunge=<-' http://sprunge.us
+ - cat tests/parser/dump001.psi
  - ldd .libs/psi.so
