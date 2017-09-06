@@ -244,6 +244,7 @@ void psi_set_to_int(zval *return_value, struct psi_set_exp *set, impl_val *ret_v
 	case PSI_T_UINT8:		RETVAL_LONG(v->u8);					break;
 	case PSI_T_INT16:		RETVAL_LONG(v->i16);				break;
 	case PSI_T_UINT16:		RETVAL_LONG(v->u16);				break;
+	case PSI_T_ENUM:
 	case PSI_T_INT32:		RETVAL_LONG(v->i32);				break;
 	case PSI_T_UINT32:		RETVAL_LONG(v->u32);				break;
 	case PSI_T_INT64:		RETVAL_LONG(v->i64);				break;
@@ -276,8 +277,8 @@ static inline impl_val *psi_val_intval(impl_val *tmp, token_t real_type, zend_lo
 	case PSI_T_UINT32:		tmp->u32 = intval;		break;
 	case PSI_T_INT64:		tmp->i64 = intval;		break;
 	case PSI_T_UINT64:		tmp->u64 = intval;		break;
-	case PSI_T_INT:			tmp->ival = intval;		break;
 	case PSI_T_ENUM:
+	case PSI_T_INT:			tmp->ival = intval;		break;
 	case PSI_T_LONG:		tmp->lval = intval;		break;
 	case PSI_T_FLOAT:		tmp->fval = intval;		break;
 	case PSI_T_DOUBLE:		tmp->dval = intval;		break;
