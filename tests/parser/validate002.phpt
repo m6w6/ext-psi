@@ -15,3 +15,4 @@ psi_validate_string("typedef void foo;");
 
 Warning: PSI syntax error, unexpected ;, expecting %s at col 17 in %s on line 1
 ===DONE===
+--XFAIL--

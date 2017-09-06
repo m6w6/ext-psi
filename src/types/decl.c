@@ -86,12 +86,7 @@ static inline bool psi_decl_validate_func(struct psi_data *data,
 	struct psi_func_redir *redir;
 
 	if (!func->var->name) {
-		data->error(data, func->token, PSI_WARNING, "Anonymous decl!");
-		return false;
-	}
-	if (!strcmp(func->var->name, "dlsym")) {
-		data->error(data, func->token, PSI_WARNING,
-				"Cannot dlsym dlsym (sic!)");
+		data->error(data, func->token, PSI_WARNING, "Cannot load anonymous decl");
 		return false;
 	}
 

@@ -26,6 +26,8 @@
 #ifndef PHP_PSI_H
 #define PHP_PSI_H
 
+#include "php.h"
+
 extern zend_module_entry psi_module_entry;
 #define phpext_psi_ptr &psi_module_entry
 
@@ -74,6 +76,9 @@ ZEND_BEGIN_MODULE_GLOBALS(psi)
 	char *directory;
 	char *search_path;
 	struct psi_context *context;
+	struct {
+		struct psi_plist *decls;
+	} blacklist;
 ZEND_END_MODULE_GLOBALS(psi);
 
 ZEND_EXTERN_MODULE_GLOBALS(psi);

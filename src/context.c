@@ -85,7 +85,7 @@ struct psi_context *psi_context_init(struct psi_context *C, struct psi_context_o
 	assert(ops->call != NULL);
 	assert(ops->compile != NULL);
 
-	/* build up predefs in a temporary PSI_Data for validation */
+	/* build up predefs in a temporary psi_data for validation */
 	memset(&T, 0, sizeof(T));
 	psi_data_ctor_with_dtors(&T, error, flags);
 

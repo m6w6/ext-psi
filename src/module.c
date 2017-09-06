@@ -300,6 +300,31 @@ static PHP_MINFO_FUNCTION(psi)
 	DISPLAY_INI_ENTRIES();
 }
 
+static void ptr_free(void *ptr)
+{
+	free(*(void **) ptr);
+}
+
+static PHP_GINIT_FUNCTION(psi)
+{
+	char *tmp;
+	struct psi_plist **bl_decls = &psi_globals->blacklist.decls;
+
+	*bl_decls = psi_plist_init(ptr_free);
+
+#define BL_DECL_ADD(d) \
+	tmp = strdup(d); \
+	*bl_decls = psi_plist_add(*bl_decls, &tmp)
+
+	BL_DECL_ADD("dlsym");
+	BL_DECL_ADD("_IO_cookie_init");
+}
+
+static PHP_GSHUTDOWN_FUNCTION(psi)
+{
+	psi_plist_free(psi_globals->blacklist.decls);
+}
+
 static const zend_function_entry psi_functions[] = {
 	PHP_FE(psi_dump, ai_psi_dump)
 	PHP_FE(psi_validate, ai_psi_validate)
@@ -321,7 +346,11 @@ zend_module_entry psi_module_entry = {
 	NULL,
 	PHP_MINFO(psi),
 	PHP_PSI_VERSION,
-	STANDARD_MODULE_PROPERTIES
+	ZEND_MODULE_GLOBALS(psi),
+	PHP_GINIT(psi),
+	PHP_GSHUTDOWN(psi),
+	NULL, /* post-deactivate */
+	STANDARD_MODULE_PROPERTIES_EX
 };
 
 #ifdef COMPILE_DL_PSI

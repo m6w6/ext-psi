@@ -5,10 +5,13 @@
 %code {
 #include <assert.h>
 #include <stdarg.h>
+#include <fnmatch.h>
+
+#include "php_psi.h"
 
 #include "plist.h"
 #include "parser.h"
-#define YYDEBUG 1
+
 #define PSI_PARSER_PROC_DEBUG 1
 
 static int psi_parser_proc_lex(YYSTYPE *u, struct psi_parser *P, struct psi_plist *tokens, size_t *index);
@@ -55,7 +58,18 @@ static inline void psi_parser_proc_add_const(struct psi_parser *P, struct psi_co
 
 }
 static inline void psi_parser_proc_add_decl(struct psi_parser *P, struct psi_decl *decl) {
+	char *blacklisted;
+	size_t i = 0;
+
 	assert(decl);
+
+	while (psi_plist_get(PSI_G(blacklist).decls, i++, &blacklisted)) {
+		if (!fnmatch(blacklisted, decl->func->var->name, 0)) {
+			psi_decl_free(&decl);
+			return;
+		}
+	}
+
 	if (!P->decls) {
 		P->decls = psi_plist_init((psi_plist_dtor) psi_decl_free);
 	}
@@ -298,8 +312,8 @@ struct psi_parser;
 %destructor	{psi_decl_free(&$$);}				decl_stmt decl decl_body decl_func_body decl_functor_body
 %type		<struct psi_decl_arg *>				decl_typedef decl_func decl_functor decl_arg decl_anon_arg typedef typedef_decl typedef_anon typedef_anon_decl
 %destructor	{psi_decl_arg_free(&$$);}			decl_typedef decl_func decl_functor decl_arg decl_anon_arg typedef typedef_decl typedef_anon typedef_anon_decl	
-%type		<struct psi_decl_var *>				decl_var anon_var
-%destructor	{psi_decl_var_free(&$$);}			decl_var anon_var
+%type		<struct psi_decl_var *>				decl_var
+%destructor	{psi_decl_var_free(&$$);}			decl_var
 %type		<struct psi_decl_struct *>			decl_struct
 %destructor	{psi_decl_struct_free(&$$);}		decl_struct
 %type		<struct psi_decl_union *>			decl_union
@@ -1315,15 +1329,6 @@ decl_var[var]:
 	$name_token->type = PSI_T_NAME;
 	$var = psi_decl_var_init($name_token->text, !! $array_size, $array_size);
 	$var->token = psi_token_copy($name_token);
-}
-;
-
-anon_var[var]:
-	%empty {
-	$var = psi_decl_var_init(NULL, 0, 0);
-}
-|	decl_var {
-	$var = $decl_var;
 }
 ;
 
