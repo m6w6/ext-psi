@@ -20,6 +20,7 @@ env:
 
 $gen = include __DIR__."/../travis/pecl/gen-matrix.php";
 $env = $gen([
+	"LD_PRELOAD" => ["/lib/x86_64-linux-gnu/libSegFault.so"],
 	"PHP" => ["master"],
 	"enable_debug",
 	#"enable_maintainer_zts",
@@ -34,7 +35,7 @@ foreach ($env as $e) {
 
 before_script:
  # make sure we do not try to regenerate files with broken bison
- - touch src/parser*.[ch]
+ - touch src/parser*.[ch]	
  - make -f travis/pecl/Makefile php
  - make -f travis/pecl/Makefile ext PECL=psi
 
@@ -43,8 +44,6 @@ script:
 
 after_failure:
  - cat config.log | curl -F 'sprunge=<-' http://sprunge.us
- - cat tests/parser/dump001.psi
- - ldd .libs/psi.so
 
 notifications:
   webhooks:
