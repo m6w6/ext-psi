@@ -11,6 +11,7 @@ addons:
    - php-pear
    - valgrind
    - gdb
+   - apport
    - re2c
    - libidn11-dev
    - libsqlite3-dev
@@ -35,9 +36,10 @@ foreach ($env as $e) {
 
 before_script:
  # make sure we do not try to regenerate files with broken bison
- - touch src/parser*.[ch]	
+ - touch src/parser*.[ch]
  - make -f travis/pecl/Makefile php
  - make -f travis/pecl/Makefile ext PECL=psi
+ - ulimit -c unlimited -S
 
 script:
  - make -f travis/pecl/Makefile test
@@ -53,4 +55,4 @@ notifications:
       - https://webhooks.gitter.im/e/30aebb6c0b03f1117817
     on_success: change
     on_failure: always
-    on_start: never
+	   on_start: never
