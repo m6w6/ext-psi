@@ -250,8 +250,8 @@ struct psi_context *psi_call_frame_get_context(struct psi_call_frame *frame) {
 	return frame->context;
 }
 
-#if PHP_VERSION_ID < 70200
-#	define PARAM_PROLOGUE(separate) Z_PARAM_PROPLOGUE(separate)
+#if PHP_VERSION_ID < 70300
+#	define PARAM_PROLOGUE(separate) Z_PARAM_PROLOGUE(separate)
 #else
 #	define PARAM_PROLOGUE(separate) Z_PARAM_PROLOGUE(1, separate)
 #endif
