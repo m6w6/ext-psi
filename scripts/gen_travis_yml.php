@@ -10,6 +10,7 @@ addons:
    - php5-cli
    - php-pear
    - valgrind
+   - gdb
    - re2c
    - libidn11-dev
    - libsqlite3-dev
@@ -20,7 +21,6 @@ env:
 
 $gen = include __DIR__."/../travis/pecl/gen-matrix.php";
 $env = $gen([
-	"LD_PRELOAD" => ["/lib/x86_64-linux-gnu/libSegFault.so"],
 	"PHP" => ["master"],
 	"enable_debug",
 	#"enable_maintainer_zts",
@@ -44,6 +44,7 @@ script:
 
 after_failure:
  - cat config.log | curl -F 'sprunge=<-' http://sprunge.us
+ - test -f core && gdb -q -ex bt --batch $HOME/job-$TRAVIS_JOB_NUMBER/bin/php core
 
 notifications:
   webhooks:

@@ -9,14 +9,15 @@ addons:
    - php5-cli
    - php-pear
    - valgrind
+   - gdb
    - re2c
    - libidn11-dev
    - libsqlite3-dev
 
 env:
  matrix:
-  - LD_PRELOAD=/lib/x86_64-linux-gnu/libSegFault.so PHP=master enable_debug=no enable_psi=yes enable_psi_posix=all
-  - LD_PRELOAD=/lib/x86_64-linux-gnu/libSegFault.so PHP=master enable_debug=yes enable_psi=yes enable_psi_posix=all
+  - PHP=master enable_debug=no enable_psi=yes enable_psi_posix=all
+  - PHP=master enable_debug=yes enable_psi=yes enable_psi_posix=all
 
 before_script:
  # make sure we do not try to regenerate files with broken bison
@@ -29,6 +30,7 @@ script:
 
 after_failure:
  - cat config.log | curl -F 'sprunge=<-' http://sprunge.us
+ - test -f core && gdb -q -ex bt --batch $HOME/job-$TRAVIS_JOB_NUMBER/bin/php core
 
 notifications:
   webhooks:
