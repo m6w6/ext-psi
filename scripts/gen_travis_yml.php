@@ -44,7 +44,8 @@ script:
 
 after_failure:
  - cat config.log | curl -F 'sprunge=<-' http://sprunge.us
- - test -f core.* && gdb -q -ex bt --batch $HOME/job-$TRAVIS_JOB_NUMBER/bin/php core.*
+ - ls -Altr
+ - test -f core* && gdb -q -ex bt --batch $HOME/job-$TRAVIS_JOB_NUMBER/bin/php core*
 
 notifications:
   webhooks:
