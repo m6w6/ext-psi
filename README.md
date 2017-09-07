@@ -1,5 +1,7 @@
 # ext-psi
 
+[![Join the chat at https://gitter.im/ext-psi/Lobby](https://badges.gitter.im/ext-psi/Lobby.svg)](https://gitter.im/ext-psi/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 [![Build Status](https://travis-ci.org/m6w6/ext-psi.svg?branch=master)](https://travis-ci.org/m6w6/ext-psi)
 
 PSI is a PHP extension, which provides a foreign function interface through
