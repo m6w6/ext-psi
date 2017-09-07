@@ -12,6 +12,7 @@
 #include "plist.h"
 #include "parser.h"
 
+#define YYDEBUG 1
 #define PSI_PARSER_PROC_DEBUG 1
 
 static int psi_parser_proc_lex(YYSTYPE *u, struct psi_parser *P, struct psi_plist *tokens, size_t *index);

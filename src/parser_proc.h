@@ -40,7 +40,7 @@
 extern int psi_parser_proc_debug;
 #endif
 /* "%code requires" blocks.  */
-#line 89 "src/parser_proc_grammar.y" /* glr.c:197  */
+#line 90 "src/parser_proc_grammar.y" /* glr.c:197  */
 
 #include "plist.h"
 #include "types/layout.h"
