@@ -12,11 +12,11 @@ function_exists("idn\\strerror") or die("skip - need libidn");
 <?php
 
 $result = "buecher.de";
-$rc = idn\utf8_to_ascii("bücher.de", $result, IDNA_USE_STD3_ASCII_RULES);
+$rc = idn\utf8_to_ascii("bücher.de", $result, psi\IDNA_USE_STD3_ASCII_RULES);
 printf("%s\n", $result);
 printf("%s\n", idn\strerror($rc));
 
-$rc = idn\utf8_to_ascii("bücher2.de", $result, IDNA_USE_STD3_ASCII_RULES);
+$rc = idn\utf8_to_ascii("bücher2.de", $result, psi\IDNA_USE_STD3_ASCII_RULES);
 printf("%s\n", $result);
 printf("%s\n", idn\strerror($rc));
 
