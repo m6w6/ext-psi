@@ -36,8 +36,7 @@ foreach ($env as $e) {
 
 before_script:
  # make sure we do not try to regenerate files with broken bison
- - touch src/parser_proc.[ch]
- - touch src/parser.[ch]
+ - stat src/parser*
  - ulimit -c unlimited -S
  - make -f travis/pecl/Makefile php
  - make -f travis/pecl/Makefile ext PECL=psi
