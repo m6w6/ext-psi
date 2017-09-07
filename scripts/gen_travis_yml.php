@@ -36,7 +36,8 @@ foreach ($env as $e) {
 
 before_script:
  # make sure we do not try to regenerate files with broken bison
- - touch src/parser*.c
+ - touch src/parser_proc.[ch]
+ - touch src/parser.[ch]
  - ulimit -c unlimited -S
  - make -f travis/pecl/Makefile php
  - make -f travis/pecl/Makefile ext PECL=psi
@@ -46,7 +47,6 @@ script:
 
 after_failure:
  - cat config.log | curl -F 'sprunge=<-' http://sprunge.us
- - ls -Altr
  - test -f core* && gdb -q -ex bt --batch $HOME/job-$TRAVIS_JOB_NUMBER/bin/php core*
 
 notifications:
