@@ -1,7 +1,6 @@
 # ext-psi
 
 [![Join the chat at https://gitter.im/m6w6/ext-psi](https://badges.gitter.im/m6w6/ext-psi.svg)](https://gitter.im/m6w6/ext-psi?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
 [![Build Status](https://travis-ci.org/m6w6/ext-psi.svg?branch=master)](https://travis-ci.org/m6w6/ext-psi)
 
 PSI is a PHP extension, which provides a foreign function interface through
@@ -134,7 +133,6 @@ A colon separated list of directories to scan for `*.psi` files. Defaults to "ps
 
 * C style multi line comments
 * C++ style single line comments
-* CPP directives are ignored, so the hash sign basically works as single line comment
 
 ```c
 // this is a one line comment
@@ -142,7 +140,6 @@ A colon separated list of directories to scan for `*.psi` files. Defaults to "ps
    by a multi
    line comment
 */
-# this looks like a pre-processor directive and is ignored
 ```
 
 ### Typedefs
@@ -254,10 +251,10 @@ Each implementation refers to exactly one declared foreign function referenced i
 ## Complete example
 
 ```c
-# all declarations in this file should be looked up in libidn
+// all declarations in this file should be looked up in libidn
 lib "idn";
 
-# IDNA errors
+// IDNA errors
 const int \IDNA_SUCCESS = 0;
 const int \IDNA_STRINGPREP_ERROR = 1;
 const int \IDNA_PUNYCODE_ERROR = 2;
@@ -271,45 +268,45 @@ const int \IDNA_CONTAINS_ACE_PREFIX = 8;
 const int \IDNA_ICONV_ERROR = 9;
 const int \IDNA_MALLOC_ERROR = 201;
 const int \IDNA_DLOPEN_ERROR = 202;
-# IDNA flags
+// IDNA flags
 const int \IDNA_ALLOW_UNASSIGNED = 1;
 const int \IDNA_USE_STD3_ASCII_RULES = 2;
 
-# nothing special about the declaration here
+// nothing special about the declaration here
 default int idna_to_ascii_8z(char *host, char **buffer, int flags);
 
 function idn\utf8_to_ascii(string $host, string &$result, int $flags = 0) : int {
-    # there must be a `let` statement for each
-    # declared argument of the called function
+    // there must be a `let` statement for each
+    // declared argument of the called function
 
-    # setup a pointer to NULL
+    // setup a pointer to NULL
 	let buffer = &NULL;
 
-	# setup a string pointer to $host
+	// setup a string pointer to $host
 	let host = strval($host);
 
-	# assing the integer value of $flags
+	// assing the integer value of $flags
 	let flags = intval($flags);
 
-	# the function to call is referenced in
-	# the return statement, along with the
-	# neccessary cast how to interpred the
-	# returned native value
+	// the function to call is referenced in
+	// the return statement, along with the
+	// neccessary cast how to interpred the
+	// returned native value
 	return to_int(idna_to_ascii_8z);
 
-	# by-ref vars might receive output values
-	# through `set` statments, which also
-	# require a cast how to marshal the
-	# native data as PHP value
+	// by-ref vars might receive output values
+	// through `set` statments, which also
+	// require a cast how to marshal the
+	// native data as PHP value
 	set $result = to_string(*buffer);
 
-	# after the buffer has been marshaled
-	# for the PHP engine, we have to free
-	# the buffer to avoid a memory leak
+	// after the buffer has been marshaled
+	// for the PHP engine, we have to free
+	// the buffer to avoid a memory leak
 	free free(*buffer);
-	# note that in this example we omit the
-	# declaration of the free() function called
-	# in our `free` statement for brevity
+	// note that in this example we omit the
+	// declaration of the free() function called
+	// in our `free` statement for brevity
 }
 
 default char *idna_strerror(int rc);
