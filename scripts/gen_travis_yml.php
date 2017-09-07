@@ -43,3 +43,11 @@ after_failure:
  - cat config.log | curl -F 'sprunge=<-' http://sprunge.us
  - cat tests/parser/dump001.psi
  - ldd .libs/psi.so
+
+notifications:
+  webhooks:
+    urls:
+      - https://webhooks.gitter.im/e/30aebb6c0b03f1117817
+    on_success: change
+    on_failure: always
+    on_start: never
