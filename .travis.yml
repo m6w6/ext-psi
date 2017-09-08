@@ -20,24 +20,29 @@ env:
   - PHP=master enable_debug=no enable_psi=yes enable_psi_posix=all
   - PHP=master enable_debug=yes enable_psi=yes enable_psi_posix=all
 
-before_script:
- # make sure we do not try to regenerate files with broken bison
+before_install:
+ # make sure we do not try to regenerate files with broken bison or old re2c
  - touch src/parser_proc_grammar.y
  - touch src/parser_proc.c
  - touch src/parser_proc.h
  - touch src/parser.re
  - touch src/parser.c
  - touch src/parser.h
- - stat src/parser*
- - ulimit -c unlimited -S
+
+install:
  - make -f travis/pecl/Makefile php
- - make -f travis/pecl/Makefile ext PECL=psi
+
+before_script:
+ - ulimit -c unlimited -S
+ - export TEST_PHP_ARGS="--no-clean"
 
 script:
+ - make -f travis/pecl/Makefile ext PECL=psi
  - make -f travis/pecl/Makefile test
 
 after_failure:
  - cat config.log | curl -F 'sprunge=<-' http://sprunge.us
+ - cat tests/parser/dump001.psi | curl -F 'sprunge=<-' http://sprunge.us
  - test -f core* && gdb -q -ex bt --batch $HOME/job-$TRAVIS_JOB_NUMBER/bin/php core*
 
 notifications:
