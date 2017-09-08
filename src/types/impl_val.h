@@ -35,16 +35,12 @@ typedef struct zend_fcall {
 } zend_fcall;
 
 typedef union impl_val {
-	char cval;
 	int8_t i8;
 	uint8_t u8;
-	short sval;
 	int16_t i16;
 	uint16_t u16;
-	int ival;
 	int32_t i32;
 	uint32_t u32;
-	long lval;
 	int64_t i64;
 	uint64_t u64;
 	float fval;

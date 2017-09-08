@@ -60,11 +60,8 @@ static inline jit_type_t psi_jit_token_type(token_t t)
 		return jit_type_ulong;
 	case PSI_T_BOOL:
 		return jit_type_sys_bool;
-	case PSI_T_INT:
 	case PSI_T_ENUM:
 		return jit_type_sys_int;
-	case PSI_T_LONG:
-		return jit_type_sys_long;
 	case PSI_T_FLOAT:
 		return jit_type_sys_float;
 	case PSI_T_DOUBLE:

@@ -51,4 +51,6 @@ static inline struct psi_decl_arg *psi_decl_get_arg(struct psi_decl *decl, struc
 	return psi_decl_arg_get_by_var(var, decl->args, decl->func);
 }
 
+bool psi_decl_is_blacklisted(const char *name);
+
 #endif

@@ -273,13 +273,11 @@ static inline impl_val *psi_val_intval(impl_val *tmp, token_t real_type, zend_lo
 	case PSI_T_UINT8:		tmp->u8 = intval;		break;
 	case PSI_T_INT16:		tmp->i16 = intval;		break;
 	case PSI_T_UINT16:		tmp->u16 = intval;		break;
+	case PSI_T_ENUM:
 	case PSI_T_INT32:		tmp->i32 = intval;		break;
 	case PSI_T_UINT32:		tmp->u32 = intval;		break;
 	case PSI_T_INT64:		tmp->i64 = intval;		break;
 	case PSI_T_UINT64:		tmp->u64 = intval;		break;
-	case PSI_T_ENUM:
-	case PSI_T_INT:			tmp->ival = intval;		break;
-	case PSI_T_LONG:		tmp->lval = intval;		break;
 	case PSI_T_FLOAT:		tmp->fval = intval;		break;
 	case PSI_T_DOUBLE:		tmp->dval = intval;		break;
 #ifdef HAVE_LONG_DOUBLE
@@ -455,16 +453,19 @@ impl_val *psi_let_strlen(impl_val *tmp, struct psi_decl_arg *spec, token_t impl_
 {
 	if (ival && impl_type == PSI_T_STRING) {
 		if (ival->zend.str) {
-			tmp->lval = ival->zend.str->len;
+			tmp->u64 = ival->zend.str->len;
 		} else {
-			tmp->lval = 0;
+			tmp->u64 = 0;
 		}
 	} else {
 		zend_string *zs = zval_get_string(zvalue);
-		tmp->lval = zs->len;
+		tmp->u64 = zs->len;
 		zend_string_release(zs);
 	}
 
+	if (spec) {
+		psi_calc_cast(PSI_T_UINT64, tmp, psi_decl_type_get_real(spec->type)->type, tmp);
+	}
 	return tmp;
 }
 

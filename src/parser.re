@@ -386,14 +386,6 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input 
 		"long"			{ NEWTOKEN(PSI_T_LONG); goto start; }
 		"float"			{ NEWTOKEN(PSI_T_FLOAT); goto start; }
 		"double"		{ NEWTOKEN(PSI_T_DOUBLE); goto start; }
-		"int8_t"		{ NEWTOKEN(PSI_T_INT8); goto start; }
-		"uint8_t"		{ NEWTOKEN(PSI_T_UINT8); goto start; }
-		"int16_t"		{ NEWTOKEN(PSI_T_INT16); goto start; }
-		"uint16_t"		{ NEWTOKEN(PSI_T_UINT16); goto start; }
-		"int32_t"		{ NEWTOKEN(PSI_T_INT32); goto start; }
-		"uint32_t"		{ NEWTOKEN(PSI_T_UINT32); goto start; }
-		"int64_t"		{ NEWTOKEN(PSI_T_INT64); goto start; }
-		"uint64_t"		{ NEWTOKEN(PSI_T_UINT64); goto start; }
 		"unsigned"		{ NEWTOKEN(PSI_T_UNSIGNED); goto start; }
 		"signed"		{ NEWTOKEN(PSI_T_SIGNED); goto start; }
 		'IF'			{ NEWTOKEN(PSI_T_IF); goto start; }

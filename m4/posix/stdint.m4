@@ -1,6 +1,14 @@
 PSI_CHECK_STDINT() {
 	AC_CHECK_HEADERS(stdint.h)
 
+	PSI_TYPE(int8_t, sint)
+	PSI_TYPE(uint8_t, uint)
+	PSI_TYPE(int16_t, sint)
+	PSI_TYPE(uint16_t, uint)
+	PSI_TYPE(int32_t, sint)
+	PSI_TYPE(uint32_t, uint)
+	PSI_TYPE(int64_t, sint)
+	PSI_TYPE(uint64_t, uint)
 	PSI_TYPE(int_least8_t, sint)
 	PSI_TYPE(int_least16_t, sint)
 	PSI_TYPE(int_least32_t, sint)

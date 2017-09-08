@@ -25,7 +25,11 @@
 
 #include "php_psi_stdinc.h"
 
+#include "php_psi.h"
+
 #include <dlfcn.h>
+#include <fnmatch.h>
+
 #include "data.h"
 
 #define PSI_FUNC_REDIRS
@@ -157,3 +161,17 @@ bool psi_decl_validate_nodl(struct psi_data *data, struct psi_decl *decl,
 
 	return true;
 }
+
+bool psi_decl_is_blacklisted(const char *name)
+{
+	char *blacklisted;
+	size_t i = 0;
+
+	while (psi_plist_get(PSI_G(blacklist).decls, i++, &blacklisted)) {
+		if (!fnmatch(blacklisted, name, 0)) {
+			return true;
+		}
+	}
+	return false;
+}
+

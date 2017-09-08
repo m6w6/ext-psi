@@ -89,6 +89,11 @@ struct psi_context *psi_context_init(struct psi_context *C, struct psi_context_o
 	memset(&T, 0, sizeof(T));
 	psi_data_ctor_with_dtors(&T, error, flags);
 
+#if PHP_DEBUG
+	if (psi_check_env("PSI_SKIP"))
+		goto skip_predefs;
+#endif
+
 	for (predef_type = &psi_predef_types[0]; predef_type->type_tag; ++predef_type) {
 		struct psi_decl_type *type = psi_decl_type_init(predef_type->type_tag, predef_type->type_name);
 		struct psi_decl_var *var = psi_decl_var_init(predef_type->alias, 0, 0); /* FIXME: indirection */
@@ -104,7 +109,7 @@ struct psi_context *psi_context_init(struct psi_context *C, struct psi_context_o
 		switch (type->type) {
 		case PSI_T_INT:
 			val = psi_impl_def_val_init(PSI_T_INT, NULL);
-			val->ival.zend.lval = predef_const->value.lval;
+			val->ival.zend.lval = predef_const->value.zend.lval;
 			break;
 		case PSI_T_STRING:
 			val = psi_impl_def_val_init(PSI_T_STRING, NULL);
@@ -206,6 +211,10 @@ struct psi_context *psi_context_init(struct psi_context *C, struct psi_context_o
 
 		predef_decl = farg;
 	}
+
+#if PHP_DEBUG
+	skip_predefs:
+#endif
 
 	psi_context_add_data(C, &T);
 

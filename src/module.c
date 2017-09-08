@@ -317,6 +317,8 @@ static PHP_GINIT_FUNCTION(psi)
 	*bl_decls = psi_plist_add(*bl_decls, &tmp)
 
 	BL_DECL_ADD("dlsym");
+	BL_DECL_ADD("alloca");
+	BL_DECL_ADD("atexit");
 	BL_DECL_ADD("_IO_cookie_init");
 }
 
