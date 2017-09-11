@@ -150,36 +150,37 @@ struct psi_parser;
     PSI_T_TEMP = 349,
     PSI_T_FREE = 350,
     PSI_T_RETURN = 351,
-    PSI_T_PRE_ASSERT = 352,
-    PSI_T_POST_ASSERT = 353,
-    PSI_T_BOOLVAL = 354,
-    PSI_T_INTVAL = 355,
-    PSI_T_STRVAL = 356,
-    PSI_T_PATHVAL = 357,
-    PSI_T_STRLEN = 358,
-    PSI_T_FLOATVAL = 359,
-    PSI_T_ARRVAL = 360,
-    PSI_T_OBJVAL = 361,
-    PSI_T_COUNT = 362,
-    PSI_T_CALLOC = 363,
-    PSI_T_TO_BOOL = 364,
-    PSI_T_TO_INT = 365,
-    PSI_T_TO_STRING = 366,
-    PSI_T_TO_FLOAT = 367,
-    PSI_T_TO_ARRAY = 368,
-    PSI_T_TO_OBJECT = 369,
-    PSI_T_COMMENT = 370,
-    PSI_T_WHITESPACE = 371,
-    PSI_T_NO_WHITESPACE = 372,
-    PSI_T_CPP_HEADER = 373,
-    PSI_T_CPP_ATTRIBUTE = 374,
-    PSI_T_CPP_EXTENSION = 375,
-    PSI_T_CPP_PASTE = 376,
-    PSI_T_CPP_INLINE = 377,
-    PSI_T_CPP_RESTRICT = 378,
-    PSI_T_CPP_ASM = 379,
-    PSI_T_BINARY = 380,
-    PSI_T_UNARY = 381
+    PSI_T_AS = 352,
+    PSI_T_PRE_ASSERT = 353,
+    PSI_T_POST_ASSERT = 354,
+    PSI_T_BOOLVAL = 355,
+    PSI_T_INTVAL = 356,
+    PSI_T_STRVAL = 357,
+    PSI_T_PATHVAL = 358,
+    PSI_T_STRLEN = 359,
+    PSI_T_FLOATVAL = 360,
+    PSI_T_ARRVAL = 361,
+    PSI_T_OBJVAL = 362,
+    PSI_T_COUNT = 363,
+    PSI_T_CALLOC = 364,
+    PSI_T_TO_BOOL = 365,
+    PSI_T_TO_INT = 366,
+    PSI_T_TO_STRING = 367,
+    PSI_T_TO_FLOAT = 368,
+    PSI_T_TO_ARRAY = 369,
+    PSI_T_TO_OBJECT = 370,
+    PSI_T_COMMENT = 371,
+    PSI_T_WHITESPACE = 372,
+    PSI_T_NO_WHITESPACE = 373,
+    PSI_T_CPP_HEADER = 374,
+    PSI_T_CPP_ATTRIBUTE = 375,
+    PSI_T_CPP_EXTENSION = 376,
+    PSI_T_CPP_PASTE = 377,
+    PSI_T_CPP_INLINE = 378,
+    PSI_T_CPP_RESTRICT = 379,
+    PSI_T_CPP_ASM = 380,
+    PSI_T_BINARY = 381,
+    PSI_T_UNARY = 382
   };
 #endif
 
@@ -341,12 +342,16 @@ union YYSTYPE
   struct psi_plist * PSI_T_callback_arg_list;
   /* callback_args  */
   struct psi_plist * PSI_T_callback_args;
+  /* call_decl_vars  */
+  struct psi_plist * PSI_T_call_decl_vars;
   /* set_func_exps  */
   struct psi_plist * PSI_T_set_func_exps;
   /* set_exps  */
   struct psi_plist * PSI_T_set_exps;
   /* free_exps  */
   struct psi_plist * PSI_T_free_exps;
+  /* return_exp  */
+  struct psi_return_exp * PSI_T_return_exp;
   /* return_stmt  */
   struct psi_return_stmt * PSI_T_return_stmt;
   /* set_exp  */
@@ -545,6 +550,8 @@ union YYSTYPE
   struct psi_token * PSI_T_FREE;
   /* RETURN  */
   struct psi_token * PSI_T_RETURN;
+  /* AS  */
+  struct psi_token * PSI_T_AS;
   /* PRE_ASSERT  */
   struct psi_token * PSI_T_PRE_ASSERT;
   /* POST_ASSERT  */
@@ -667,7 +674,7 @@ union YYSTYPE
   struct psi_token * PSI_T_assert_stmt_token;
   /* impl_stmt  */
   struct psi_token ** PSI_T_impl_stmt;
-#line 671 "src/parser_proc.h" /* glr.c:197  */
+#line 678 "src/parser_proc.h" /* glr.c:197  */
 };
 
 typedef union YYSTYPE YYSTYPE;

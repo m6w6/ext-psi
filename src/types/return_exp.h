@@ -1,5 +1,5 @@
 /*******************************************************************************
- Copyright (c) 2016, Michael Wallner <mike@php.net>.
+ Copyright (c) 2017, Michael Wallner <mike@php.net>.
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -23,47 +23,24 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef PSI_TYPES_DECL_VAR_H
-#define PSI_TYPES_DECL_VAR_H
+#ifndef PSI_TYPES_RETURN_EXP_H
+#define PSI_TYPES_RETURN_EXP_H
 
-struct psi_data;
-struct psi_token;
-struct psi_decl_arg;
-struct psi_let_exp;
-struct psi_set_exp;
-
-struct psi_decl_var {
+struct psi_return_exp {
 	struct psi_token *token;
-	char *name, *fqn;
-	unsigned pointer_level;
-	unsigned array_size;
-	struct psi_decl_arg *arg;
+	struct psi_decl_var *func;
+	struct psi_plist *args;
+	struct psi_set_exp *set;
 };
 
-struct psi_decl_var *psi_decl_var_init(const char *name, unsigned pl, unsigned as);
-struct psi_decl_var *psi_decl_var_copy(struct psi_decl_var *src);
-void psi_decl_var_free(struct psi_decl_var **var_ptr);
-void psi_decl_var_dump(int fd, struct psi_decl_var *var);
+struct psi_return_exp *psi_return_exp_init(struct psi_decl_var *func,
+		struct psi_plist *args, struct psi_set_exp *set);
+void psi_return_exp_free(struct psi_return_exp **exp_ptr);
+void psi_return_exp_dump(int fd, struct psi_return_exp *exp);
+void psi_return_exp_exec(struct psi_return_exp *exp, zval *return_value,
+		struct psi_call_frame *frame);
+bool psi_return_exp_validate(struct psi_data *data, struct psi_return_exp *exp,
+		struct psi_impl *impl);
+const char *psi_return_exp_get_decl_name(struct psi_return_exp *exp);
 
-#include <string.h>
-
-static inline char *psi_decl_var_name_prepend(char *current, const char *prepend) {
-	size_t c_len = strlen(current);
-	size_t p_len = strlen(prepend);
-
-	current = realloc(current, p_len + 1 + c_len + 1);
-	if (current) {
-		memmove(current + p_len + 1, current, c_len + 1);
-		current[p_len] = '.';
-		memcpy(current, prepend, p_len);
-	}
-	return current;
-}
-
-bool psi_decl_var_validate(struct psi_data *data, struct psi_decl_var *dvar,
-		struct psi_impl *impl, struct psi_decl *decl,
-		struct psi_let_exp *current_let_exp, struct psi_set_exp *current_set_exp);
-
-size_t psi_decl_var_get_size(struct psi_decl_var *var);
-
-#endif
+#endif /* RETURN_EXP_H */

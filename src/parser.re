@@ -418,6 +418,7 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input 
 		'PRE_ASSERT'	{ NEWTOKEN(PSI_T_PRE_ASSERT); goto start; }
 		'POST_ASSERT'	{ NEWTOKEN(PSI_T_POST_ASSERT); goto start; }
 		'RETURN'		{ NEWTOKEN(PSI_T_RETURN); goto start; }
+		'AS'			{ NEWTOKEN(PSI_T_AS); goto start; }
 		'FREE'			{ NEWTOKEN(PSI_T_FREE); goto start; }
 		'TEMP'			{ NEWTOKEN(PSI_T_TEMP); goto start; }
 		'STRLEN'		{ NEWTOKEN(PSI_T_STRLEN); goto start; }

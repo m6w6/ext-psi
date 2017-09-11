@@ -1,14 +1,14 @@
 // extern time_t time(time_t *t);
 function psi\time() : int {
 	let t = NULL;
-	return to_int(time);
+	return time(t) as to_int(time);
 }
 
 // extern int gettimeofday(struct timeval *tp, struct timezone *tz);
 function psi\gettimeofday(array &$tv = NULL, array &$tz = NULL) : int {
 	let tp = calloc(1, psi\SIZEOF_STRUCT_TIMEVAL);
 	let tz = calloc(1, psi\SIZEOF_STRUCT_TIMEZONE);
-	return to_int(gettimeofday);
+	return gettimeofday(tp, tz) as to_int(gettimeofday);
 	set $tv = to_array(*tp,
 		to_int(tv_sec),
 		to_int(tv_usec));
@@ -30,7 +30,7 @@ function psi\asctime(array $tm) : string {
 		intval($tm_yday),
 		intval($tm_isdst)
 	);
-	return to_string(asctime);
+	return asctime(tm) as to_string(asctime);
 }
 
 // extern char *asctime_r(struct tm *tm, char *buf);
@@ -47,13 +47,13 @@ function psi\asctime_r(array $tm) : string {
 		intval($tm_isdst)
 	);
 	let buf = calloc(32, psi\SIZEOF_CHAR);
-	return to_string(asctime_r);
+	return asctime_r(tm, buf) as to_string(asctime_r);
 }
 
 // extern struct tm *gmtime(time_t *t);
 function psi\gmtime(int $ts) : array {
 	let t = &intval($ts);
-	return to_array(*gmtime,
+	return gmtime(t) as to_array(*gmtime,
 		to_int(tm_sec),
 		to_int(tm_min),
 		to_int(tm_hour),
@@ -70,7 +70,7 @@ function psi\gmtime(int $ts) : array {
 function psi\gmtime_r(int $ts) : array {
 	let t = &intval($ts);
 	let buf = calloc(1, psi\SIZEOF_STRUCT_TM);
-	return to_array(*gmtime_r,
+	return gmtime_r(t, buf) as to_array(*gmtime_r,
 		to_int(tm_sec),
 		to_int(tm_min),
 		to_int(tm_hour),
@@ -90,7 +90,7 @@ function psi\nanosleep(array $rq = NULL, array &$rm = NULL) : int {
 		intval($tv_nsec)
 	);
 	let rmts = calloc(1, psi\SIZEOF_STRUCT_TIMESPEC);
-	return to_int(nanosleep);
+	return nanosleep(rqts, rmts) as to_int(nanosleep);
 	set $rm = to_array(*rmts,
 		to_int(tv_sec),
 		to_int(tv_nsec)
@@ -100,7 +100,7 @@ function psi\nanosleep(array $rq = NULL, array &$rm = NULL) : int {
 // extern clock_t times(struct tms *buf);
 function psi\times(array &$tms = NULL) : int {
 	let buf = calloc(1, psi\SIZEOF_STRUCT_TMS);
-	return to_int(times);
+	return times(buf) as to_int(times);
 	set $tms = to_array(*buf,
 		to_int(tms_utime),
 		to_int(tms_stime),

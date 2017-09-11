@@ -8,3 +8,4 @@
 * fix right recursion of let_exp and set_exp
 * numeral suffixes
 * improve arargs support, currently it's impossible to map e.g. curl_easy_setopt
+* cpp: asm aliasing/redirects

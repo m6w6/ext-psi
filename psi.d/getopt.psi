@@ -1,33 +1,37 @@
+#include <getopt.h>
+
 function psi\opterr(int $value) : void {
 	let opterr = intval($value);
-	return void(opterr_set);
+	return opterr_set(opterr) as void(opterr_set);
 }
 function psi\optind\get() : int {
-	return to_int(optind_get);
+	return optind_get() as to_int(optind_get);
 }
 function psi\optind\set(int $v) : void {
 	let optind = intval($v);
-	return void(optind_set);
+	return optind_set(optind) as void(optind_set);
 }
 function psi\optopt() : int {
-	return to_int(optopt);
+	return optopt() as to_int(optopt);
 }
 function psi\optarg() : string {
-	return to_string(optarg);
+	return optarg() as to_string(optarg);
 }
-/* OSX
+
+#ifdef _OPTRESET
 function psi\optreset() : void {
 	let _v = 1;
-	return void(optreset_set);
+	return optreset_set(_v) as void(optreset_set);
 }
-*/
+#endif
+
 static function psi\getopt(array &$argv, string $options) : int {
 	let argc = count($argv);
 	let argv = &arrval($argv,
 		*argv = strval($argv)
 	);
 	let optstring = strval($options);
-	return to_int(getopt);
+	return getopt(argc, argv, optstring) as to_int(getopt);
 	set $argv = to_array(
 		*argv,
 		argc,

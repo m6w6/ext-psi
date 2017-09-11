@@ -1,35 +1,35 @@
 function psi\endhostent() : void {
-	return void(endhostent);
+	return endhostent() as void(endhostent);
 }
-function psi\endnetend() : void {
-	return void(endnetent);
+function psi\endnetent() : void {
+	return endnetent() as void(endnetent);
 }
 function psi\endprotoent() : void {
-	return void(endprotoent);
+	return endprotoent() as void(endprotoent);
 }
 function psi\endservent() : void {
-	return void(endservent);
+	return endservent() as void(endservent);
 }
 
 function psi\sethostent(bool $stayopen) : void {
 	let stayopen = intval($stayopen);
-	return void(sethostent);
+	return sethostent(stayopen) as void(sethostent);
 }
-function psi\setnetset(bool $stayopen) : void {
+function psi\setnetent(bool $stayopen) : void {
 	let stayopen = intval($stayopen);
-	return void(setnetent);
+	return setnetent(stayopen) as void(setnetent);
 }
 function psi\setprotoent(bool $stayopen) : void {
 	let stayopen = intval($stayopen);
-	return void(setprotoent);
+	return setprotoent(stayopen) as void(setprotoent);
 }
 function psi\setservent(bool $stayopen) : void {
 	let stayopen = intval($stayopen);
-	return void(setservent);
+	return setservent(stayopen) as void(setservent);
 }
 
 function psi\gethostent() : array {
-	return to_array(*gethostent,
+	return gethostent() as to_array(*gethostent,
 		to_string(h_name),
 		to_array(h_aliases, to_string(h_aliases)),
 		to_int(h_addrtype),
@@ -40,7 +40,7 @@ function psi\gethostent() : array {
 
 function psi\gai_strerror(int $errcode) : string {
 	let errcode = intval($errcode);
-	return to_string(gai_strerror);
+	return gai_strerror(errcode) as to_string(gai_strerror);
 }
 
 // extern int getaddrinfo(const char *node, const char *service, const struct addrinfo *hints, struct addrinfo **res)
@@ -54,7 +54,7 @@ function psi\getaddrinfo(string $node, string $service, array $hints = NULL, obj
 		intval($ai_protocol)
 	);
 	let res = &NULL;
-	return to_int(getaddrinfo);
+	return getaddrinfo(node, service, hints, res) as to_int(getaddrinfo);
 	set $res = to_array(**res,
 		to_int(ai_flags),
 		to_int(ai_family),
@@ -77,7 +77,7 @@ function psi\getnameinfo(string $addr, string &$host = NULL, string &$service = 
 	let servlen = psi\NI_MAXSERV;
 	let serv = calloc(servlen, psi\SIZEOF_CHAR);
 	let flags = intval($flags);
-	return to_int(getnameinfo);
+	return getnameinfo(sa, salen, hostlen, host, servlen, serv, flags) as to_int(getnameinfo);
 	set $host = to_string(host);
 	set $service = to_string(serv);
 }

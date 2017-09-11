@@ -162,22 +162,23 @@ bool psi_let_exp_validate(struct psi_data *data, struct psi_let_exp *val,
 
 	switch (val->kind) {
 	case PSI_LET_TMP:
-		if (!psi_decl_var_validate(data, val->data.var, impl->decl, val, NULL)) {
+		if (!psi_decl_var_validate(data, val->data.var, impl, impl->decl, val, NULL)) {
 			data->error(data, dvar->token ? : **(struct psi_token ***) &val->data,
-					PSI_WARNING, "Unknown variable '%s'", dvar->name);
+					PSI_WARNING, "Unknown variable '%s' in temp let statment of implementation '%s'",
+					dvar->name, impl->func->name);
 			return false;
 		}
 		break;
 
 	default:
-		if (!psi_decl_var_validate(data, dvar, impl->decl, val, NULL)) {
+		if (!psi_decl_var_validate(data, dvar, impl, impl->decl, val, NULL)) {
 			data->error(data, dvar->token ? : **(struct psi_token ***) &val->data,
-					PSI_WARNING, "Unknown variable '%s'", dvar->name);
+					PSI_WARNING, "Unknown variable '%s' in let statement of implementation '%s'",
+					dvar->name, impl->func->name);
 			return false;
 		}
 		break;
 	}
-
 	switch (val->kind) {
 	case PSI_LET_NULL:
 		break;

@@ -1,32 +1,32 @@
 function psi\htonl(int $l) : int {
 	let l = intval($l);
-	return to_int(htonl);
+	return htonl(l) as to_int(htonl);
 }
 function psi\htons(int $s) : int {
 	let s = intval($s);
-	return to_int(htons);
+	return htons(s) as to_int(htons);
 }
 
 function psi\ntohl(int $l) : int {
 	let l = intval($l);
-	return to_int(ntohl);
+	return ntohl(l) as to_int(ntohl);
 }
 function psi\ntohs(int $s) : int {
 	let s = intval($s);
-	return to_int(ntohs);
+	return ntohs(s) as to_int(ntohs);
 }
 
 
 function psi\inet_addr(string $cp) : int {
 	let cp = strval($cp);
-	return to_int(inet_addr);
+	return inet_addr(cp) as to_int(inet_addr);
 }
 
 function psi\inet_ntoa(array $in) : string {
 	let in = arrval($in,
 		intval($s_addr)
 	);
-	return to_string(inet_ntoa);
+	return inet_ntoa(in) as to_string(inet_ntoa);
 }
 
 function psi\inet_ntop(int $af, string $src) : string {
@@ -34,13 +34,13 @@ function psi\inet_ntop(int $af, string $src) : string {
 	let src = strval($src);
 	let size = psi\SIZEOF_STRUCT_SOCKADDR_STORAGE;
 	let dst = calloc(1, size);
-	return to_string(inet_ntop);
+	return inet_ntop(af, src, dst, size) as to_string(inet_ntop);
 }
 
 function psi\inet_pton(int $af, string $src, string &$dst) : int {
 	let af = intval($af);
 	let src = strval($src);
 	let dst = calloc(1, psi\SIZEOF_STRUCT_SOCKADDR_STORAGE);
-	return to_int(inet_pton);
+	return inet_pton(af, src, dst) as to_int(inet_pton);
 	set $dst = to_string(dst, psi\SIZEOF_STRUCT_SOCKADDR_STORAGE);
 }

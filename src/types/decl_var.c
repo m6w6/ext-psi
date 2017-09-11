@@ -86,12 +86,16 @@ void psi_decl_var_dump(int fd, struct psi_decl_var *var)
 }
 
 bool psi_decl_var_validate(struct psi_data *data, struct psi_decl_var *dvar,
-		struct psi_decl *decl, struct psi_let_exp *let_exp,
-		struct psi_set_exp *set_exp)
+		struct psi_impl *impl, struct psi_decl *decl,
+		struct psi_let_exp *let_exp, struct psi_set_exp *set_exp)
 {
 	bool okay = false;
 	struct psi_let_exp *current_let_exp = let_exp;
 	struct psi_set_exp *current_set_exp = set_exp;
+
+	if (dvar->arg) {
+		return true;
+	}
 
 	if (current_let_exp) {
 		/* walk up the let expression tree until found */
@@ -137,7 +141,10 @@ bool psi_decl_var_validate(struct psi_data *data, struct psi_decl_var *dvar,
 		}
 	}
 
-	if (decl && !okay && psi_decl_get_arg(decl, dvar)) {
+	if (!okay && impl && psi_impl_get_decl_arg(impl, dvar)) {
+		okay = true;
+	}
+	if (!okay && decl && psi_decl_get_arg(decl, dvar)) {
 		okay = true;
 	}
 

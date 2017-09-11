@@ -1,5 +1,6 @@
-extern char *strerror(int errno);
+#include <string.h>
+
 function psi\strerror(int $errno) : string {
-	let errno = intval($errno);
-	return to_string(strerror);
+	let err = intval($errno);
+	return strerror(err) as to_string(strerror);
 }

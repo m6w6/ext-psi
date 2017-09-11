@@ -501,7 +501,12 @@ static inline void psi_impl_val_dump(token_t t, impl_val *res,
 	case PSI_T_DOUBLE:
 		if (frame) PSI_DEBUG_PRINT(frame->context, " %" PRIdval, res->dval);
 		break;
-	default:
+#if HAVE_LONG_DOUBLE
+	case PSI_T_LONG_DOUBLE:
+		if (frame) PSI_DEBUG_PRINT(frame->context, " %" PRIldval, res->ldval);
+		break;
+#endif
+		default:
 		assert(0);
 	}
 }

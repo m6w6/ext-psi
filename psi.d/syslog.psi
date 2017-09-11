@@ -2,7 +2,7 @@ function psi\openlog(string $ident, int $option, int $facility) : void {
 	let ident = strval($ident);
 	let option = intval($option);
 	let facility = intval($facility);
-	return void(openlog);
+	return openlog(ident, option, facility) as void(openlog);
 }
 
 function psi\closelog() : void {
@@ -11,18 +11,18 @@ function psi\closelog() : void {
 
 function psi\setlogmask(int $mask) : int {
 	let mask = intval($mask);
-	return to_int(setlogmask);
+	return setlogmask(mask) as to_int(setlogmask);
 }
 
 function psi\syslog(int $priority, string $format, mixed ...$args) : void {
 	let priority = intval($priority);
 	let format = strval($format);
-	return void(syslog);
+	return syslog(priority, format) as void(syslog);
 }
 
 // redirected macro
 extern int LOG_MASK(int pri);
 function psi\LOG_MASK(int $pri) : int {
 	let pri = intval($pri);
-	return to_int(LOG_MASK);
+	return LOG_MASK(pri) as to_int(LOG_MASK);
 }

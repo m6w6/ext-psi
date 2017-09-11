@@ -69,15 +69,19 @@ struct psi_plist *psi_plist_init_ex(size_t size, void (*dtor)(void *)) {
 void psi_plist_clean(struct psi_plist *list) {
 	size_t i;
 
-	if (list->dtor) for (i = 0; i < list->count; ++i) {
-		list->dtor(PLIST_ELE(list, i));
+	if (list) {
+		if (list->dtor) for (i = 0; i < list->count; ++i) {
+			list->dtor(PLIST_ELE(list, i));
+		}
+		list->count = 0;
 	}
-	list->count = 0;
 }
 
 void psi_plist_free(struct psi_plist *list) {
-	psi_plist_clean(list);
-	free(list);
+	if (list) {
+		psi_plist_clean(list);
+		free(list);
+	}
 }
 
 struct psi_plist *psi_plist_copy(struct psi_plist *list, void (*ctor)(void *))

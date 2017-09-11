@@ -319,7 +319,18 @@ static PHP_GINIT_FUNCTION(psi)
 	BL_DECL_ADD("dlsym");
 	BL_DECL_ADD("alloca");
 	BL_DECL_ADD("atexit");
+	BL_DECL_ADD("at_quick_exit");
 	BL_DECL_ADD("_IO_cookie_init");
+
+	/* va_list as arg */
+	BL_DECL_ADD("*v*printf");
+	BL_DECL_ADD("*v*scanf");
+
+	/* LFS/LFO for 32bit */
+	BL_DECL_ADD("*stat64");
+	BL_DECL_ADD("*statat64");
+	/* Hurd only */
+	BL_DECL_ADD("getumask");
 }
 
 static PHP_GSHUTDOWN_FUNCTION(psi)

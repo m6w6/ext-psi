@@ -62,4 +62,7 @@ struct psi_impl_arg *psi_impl_get_arg(struct psi_impl *impl, struct psi_impl_var
 struct psi_decl_arg *psi_impl_get_temp_let_arg(struct psi_impl *impl,
 		struct psi_decl_var *var);
 
+struct psi_decl_arg *psi_impl_get_decl_arg(struct psi_impl *impl,
+		struct psi_decl_var *var);
+
 #endif

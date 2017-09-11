@@ -55,6 +55,7 @@
 #include "types/set_exp.h"
 #include "types/set_stmt.h"
 #include "types/return_stmt.h"
+#include "types/return_exp.h"
 #include "types/free_stmt.h"
 #include "types/impl.h"
 #include "types/decl_file.h"

@@ -27,19 +27,17 @@
 #include "data.h"
 #include "call.h"
 
-struct psi_return_stmt *psi_return_stmt_init(struct psi_set_exp *val)
+struct psi_return_stmt *psi_return_stmt_init(struct psi_return_exp *exp)
 {
 	struct psi_return_stmt *ret = calloc(1, sizeof(*ret));
-	ret->set = val;
+	ret->exp = exp;
 	return ret;
 }
 
 void psi_return_stmt_exec(struct psi_return_stmt *ret, zval *return_value,
 		struct psi_call_frame *frame)
 {
-	void *rpointer = psi_call_frame_get_rpointer(frame);
-
-	psi_set_exp_exec_ex(ret->set, return_value, rpointer, frame);
+	psi_return_exp_exec(ret->exp, return_value, frame);
 }
 
 void psi_return_stmt_free(struct psi_return_stmt **ret_ptr)
@@ -51,7 +49,7 @@ void psi_return_stmt_free(struct psi_return_stmt **ret_ptr)
 		if (ret->token) {
 			free(ret->token);
 		}
-		psi_set_exp_free(&ret->set);
+		psi_return_exp_free(&ret->exp);
 		free(ret);
 	}
 }
@@ -59,14 +57,12 @@ void psi_return_stmt_free(struct psi_return_stmt **ret_ptr)
 void psi_return_stmt_dump(int fd, struct psi_return_stmt *ret)
 {
 	dprintf(fd, "\treturn ");
-	psi_set_exp_dump(fd, ret->set, 1, 1);
+	psi_return_exp_dump(fd, ret->exp);
 	dprintf(fd, ";\n");
 }
 
 bool psi_return_stmt_validate(struct psi_data *data, struct psi_impl *impl)
 {
-	size_t i = 0;
-	struct psi_decl *decl;
 	struct psi_return_stmt *ret;
 	size_t count = psi_plist_count(impl->stmts.ret);
 
@@ -92,21 +88,7 @@ bool psi_return_stmt_validate(struct psi_data *data, struct psi_impl *impl)
 		break;
 	}
 
-	while (psi_plist_get(data->decls, i++, &decl)) {
-		if (!strcmp(decl->func->var->name, ret->set->data.func->var->name)) {
-			impl->decl = decl;
-			break;
-		}
-	}
-
-	if (!impl->decl) {
-		data->error(data, ret->token, PSI_WARNING,
-				"Missing declaration '%s' for `return` statement of implementation %s",
-				ret->set->data.func->var->name, impl->func->name);
-		return false;
-	}
-
-	if (!psi_set_exp_validate(data, ret->set, impl, NULL)) {
+	if (!psi_return_exp_validate(data, ret->exp, impl)) {
 		return false;
 	}
 

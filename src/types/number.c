@@ -74,6 +74,8 @@ struct psi_number *psi_number_init(token_t t, void *num, unsigned flags)
 		exp->data.ival.ldval = *(long double *) num;
 		break;
 #endif
+	case PSI_T_NULL:
+		break;
 	case PSI_T_QUOTED_CHAR:
 	case PSI_T_NUMBER:
 	case PSI_T_NSNAME:
@@ -120,6 +122,7 @@ struct psi_number *psi_number_copy(struct psi_number *exp)
 #endif
 	case PSI_T_ENUM:
 	case PSI_T_CONST:
+	case PSI_T_NULL:
 		break;
 	case PSI_T_NUMBER:
 	case PSI_T_NSNAME:
@@ -166,6 +169,7 @@ void psi_number_free(struct psi_number **exp_ptr)
 #endif
 		case PSI_T_ENUM:
 		case PSI_T_CONST:
+		case PSI_T_NULL:
 			break;
 		case PSI_T_FUNCTION:
 			psi_cpp_macro_call_free(&exp->data.call);
@@ -227,6 +231,9 @@ void psi_number_dump(int fd, struct psi_number *exp)
 		dprintf(fd, "%" PRIldval, exp->data.ival.ldval);
 		break;
 #endif
+	case PSI_T_NULL:
+		dprintf(fd, "NULL");
+		break;
 	case PSI_T_NUMBER:
 	case PSI_T_NSNAME:
 	case PSI_T_DEFINE:
@@ -451,6 +458,9 @@ bool psi_number_validate(struct psi_data *data, struct psi_number *exp,
 	struct psi_decl_enum *enm;
 
 	switch (exp->type) {
+	case PSI_T_NULL:
+		exp->type = PSI_T_UINT8;
+		/* no break */
 	case PSI_T_CONST:
 	case PSI_T_INT8:
 	case PSI_T_UINT8:
@@ -481,11 +491,12 @@ bool psi_number_validate(struct psi_data *data, struct psi_number *exp,
 		if (exp->data.dvar->arg) {
 			return true;
 		}
-		if (psi_decl_var_validate(data, exp->data.dvar, impl ? impl->decl : NULL,
-				current_let, current_set)) {
+		if (psi_decl_var_validate(data, exp->data.dvar, impl,
+				impl ? impl->decl : NULL, current_let, current_set)) {
 			return true;
 		}
-		if (cb_decl && psi_decl_var_validate(data, exp->data.dvar, cb_decl, NULL, NULL)) {
+		if (cb_decl && psi_decl_var_validate(data, exp->data.dvar,
+				NULL, cb_decl, NULL, NULL)) {
 			return true;
 		}
 		data->error(data, exp->token, PSI_WARNING,
@@ -559,15 +570,27 @@ static inline token_t psi_number_eval_decl_var(struct psi_number *exp,
 	impl_val *ref;
 	struct psi_call_frame_symbol *sym;
 	struct psi_decl_type *real;
+	struct psi_decl_var *var;
 	size_t size;
 
-	real = psi_decl_type_get_real(exp->data.dvar->arg->type);
-	size = psi_decl_arg_get_size(exp->data.dvar->arg);
-	sym = psi_call_frame_fetch_symbol(frame, exp->data.dvar);
-	ref = deref_impl_val(sym->ptr, exp->data.dvar);
+	var = exp->data.dvar;
+	real = psi_decl_type_get_real(var->arg->type);
+	size = psi_decl_arg_get_size(var->arg);
+	sym = psi_call_frame_fetch_symbol(frame, var);
+	ref = deref_impl_val(sym->ptr, var);
 
 	memcpy(res, ref, size);
 
+	if (var->arg->var->pointer_level > var->pointer_level) {
+		switch (SIZEOF_VOID_P) {
+		case 4:
+			return PSI_T_INT32;
+		case 8:
+			return PSI_T_INT64;
+		default:
+			assert(0);
+		}
+	}
 	return real->type;
 }
 

@@ -1,57 +1,63 @@
+#include <stdlib.h>
+
 function psi\abs(int $i) : int {
 	let n = intval($i);
-	return to_int(abs);
+	return abs(n) as to_int(abs);
 }
 
 function psi\div(int $numerator, int $denominator) : array {
 	let numerator = intval($numerator);
 	let denominator = intval($denominator);
 	pre_assert denominator != 0;
-	return to_array(div, to_int(quot), to_int(rem));
+	return div(numerator, denominator)
+		as to_array(div, to_int(quot), to_int(rem));
 }
 
 function psi\ldiv(int $numerator, int $denominator) : array {
 	let numerator = intval($numerator);
 	let denominator = intval($denominator);
 	pre_assert denominator != 0;
-	return to_array(ldiv, to_int(quot), to_int(rem));
+	return ldiv(numerator, denominator) 
+		as to_array(ldiv, to_int(quot), to_int(rem));
 }
 
 function psi\lldiv(int $numerator, int $denominator) : array {
 	let numerator = intval($numerator);
 	let denominator = intval($denominator);
 	pre_assert denominator != 0;
-	return to_array(lldiv, to_int(quot), to_int(rem));
+	return lldiv(numerator, denominator) 
+		as to_array(lldiv, to_int(quot), to_int(rem));
 }
 
 function psi\strtold(string $str, string &$end = null) : float {
 	let nptr = strval($str);
 	let endptr = &NULL;
-	return to_float(strtold);
+	return strtold(nptr, endptr) 
+		as to_float(strtold);
 	set $end = to_string(*endptr);
 }
 
 function psi\free(object $memory) : void {
 	let ptr = objval($memory);
-	return void(free);
+	return free(ptr) as void(free);
 }
 
 function psi\malloc(int $size) : object {
 	let size = intval($size);
 	pre_assert size >= 0;
-	return to_object(malloc);
+	return malloc(size) as to_object(malloc);
 }
 
 function psi\calloc(int $nmemb, int $size) : object {
 	let nmemb = intval($nmemb);
 	let size = intval($size);
 	pre_assert size >= 0;
-	return to_object(calloc);
+	return calloc(nmemb, size) as to_object(calloc);
 }
 
 function psi\realloc(object $obj, int $size) : object {
 	let ptr = objval($obj);
 	let size = intval($size);
 	pre_assert size >= 0;
-	return to_object(realloc);
+	return realloc(ptr, size) as to_object(realloc);
 } 

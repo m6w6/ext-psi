@@ -14,7 +14,7 @@ function psi\glob(string $pattern, int $flags, array &$glob = NULL, callable $er
 			strval($gl_pathv)
 		)
 	);
-	return to_int(glob);
+	return glob(path, flags, err, buf) as to_int(glob);
 	set $glob = to_array(*buf,
 		to_int(gl_matchc),
 		to_int(gl_pathc),

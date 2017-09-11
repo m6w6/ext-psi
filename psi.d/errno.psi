@@ -1,5 +1,14 @@
-// redirected macro
-extern int errno();
+#include <errno.h>
+
+#ifdef __GNUC__
+# ifdef linux
 function psi\errno() : int {
-	return to_int(errno);
+	return __errno_location() as to_int(*__errno_location);
 }
+# endif /* linux */
+# ifdef __FreeBSD__
+function psi\errno() : int {
+	return __error() as to_int(*__error);
+}
+# endif /* __FreeBSD__ */
+#endif /* __GNUC__ */

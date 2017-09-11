@@ -2,7 +2,7 @@
 function psi\stat(string $path, array &$buf = NULL) : int {
 	let path = strval($path);
 	let buf = calloc(1, psi\SIZEOF_STRUCT_STAT);
-	return to_int(stat);
+	return stat(path, buf) as to_int(stat);
 	set $buf = to_array(*buf,
 		to_int(st_dev),
 		to_int(st_ino),
@@ -20,7 +20,6 @@ function psi\stat(string $path, array &$buf = NULL) : int {
 			to_int(tv_sec),
 			to_int(tv_nsec)
 		),
-		to_int(st_atime),
 		to_array(st_mtim,
 			to_int(tv_sec),
 			to_int(tv_nsec)
@@ -29,7 +28,6 @@ function psi\stat(string $path, array &$buf = NULL) : int {
 			to_int(tv_sec),
 			to_int(tv_nsec)
 		),
-		to_int(st_mtime),
 		to_array(st_ctim,
 			to_int(tv_sec),
 			to_int(tv_nsec)
@@ -38,12 +36,14 @@ function psi\stat(string $path, array &$buf = NULL) : int {
 			to_int(tv_sec),
 			to_int(tv_nsec)
 		),
-		to_int(st_ctime),
+		to_array(st_birthtim,
+			to_int(tv_sec),
+			to_int(tv_nsec)
+		),
 		to_array(st_birthtimespec,
 			to_int(tv_sec),
 			to_int(tv_nsec)
 		),
-		to_int(st_birthtime),
 		to_int(st_blksize),
 		to_int(st_blocks),
 		to_int(st_flags),

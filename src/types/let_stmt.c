@@ -81,7 +81,7 @@ bool psi_let_stmts_validate(struct psi_data *data, struct psi_impl *impl)
 			return false;
 		}
 
-		if (!psi_decl_get_arg(impl->decl, let_var)) {
+		if (!psi_impl_get_decl_arg(impl, let_var)) {
 			data->error(data, let_var->token, PSI_WARNING,
 					"Unknown variable '%s' in `let` statement  of implementation '%s'",
 					let_var->name, impl->func->name);

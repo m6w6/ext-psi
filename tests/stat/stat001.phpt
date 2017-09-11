@@ -16,7 +16,7 @@ var_dump(psi\stat(__FILE__, $stat), $stat);
 --EXPECTF--
 ===TEST===
 int(0)
-array(16) {
+array(13) {
   ["st_dev"]=>
   int(%d)
   ["st_ino"]=>
@@ -40,8 +40,6 @@ array(16) {
     ["tv_nsec"]=>
     int(%d)
   }
-  ["st_atime"]=>
-  int(%d)
   ["st_mtim"]=>
   array(2) {
     ["tv_sec"]=>
@@ -49,8 +47,6 @@ array(16) {
     ["tv_nsec"]=>
     int(%d)
   }
-  ["st_mtime"]=>
-  int(%d)
   ["st_ctim"]=>
   array(2) {
     ["tv_sec"]=>
@@ -58,8 +54,6 @@ array(16) {
     ["tv_nsec"]=>
     int(%d)
   }
-  ["st_ctime"]=>
-  int(%d)
   ["st_blksize"]=>
   int(%d)
   ["st_blocks"]=>

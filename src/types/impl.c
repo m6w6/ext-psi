@@ -176,6 +176,27 @@ void psi_impl_stmt_free(struct psi_token ***abstract_stmt)
 	}
 }
 
+struct psi_decl_arg *psi_impl_get_decl_arg(struct psi_impl *impl,
+		struct psi_decl_var *var)
+{
+	struct psi_return_stmt *ret;
+
+	if (psi_plist_get(impl->stmts.ret, 0, &ret)) {
+		if (ret->exp->args) {
+			size_t i = 0;
+			struct psi_decl_var *arg;
+
+			while (psi_plist_get(ret->exp->args, i++, &arg)) {
+				if (!strcmp(var->name, arg->name)) {
+					return var->arg = arg->arg;
+				}
+			}
+		}
+	}
+
+	return psi_decl_get_arg(impl->decl, var);
+}
+
 struct psi_let_stmt *psi_impl_get_let(struct psi_impl *impl,
 		struct psi_decl_var* var)
 {

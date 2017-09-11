@@ -36,10 +36,10 @@ struct psi_set_exp;
 
 struct psi_return_stmt {
 	struct psi_token *token;
-	struct psi_set_exp *set;
+	struct psi_return_exp *exp;
 };
 
-struct psi_return_stmt *psi_return_stmt_init(struct psi_set_exp *val);
+struct psi_return_stmt *psi_return_stmt_init(struct psi_return_exp *exp);
 void psi_return_stmt_free(struct psi_return_stmt **ret_ptr);
 void psi_return_stmt_dump(int fd, struct psi_return_stmt *ret);
 void psi_return_stmt_exec(struct psi_return_stmt *ret, zval *return_value, struct psi_call_frame *frame);
