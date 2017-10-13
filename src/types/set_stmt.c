@@ -86,11 +86,11 @@ bool psi_set_stmts_validate(struct psi_data *data, struct psi_impl *impl)
 		case PSI_SET_NUMEXP:
 			break;
 		case PSI_SET_FUNC:
-			if (!psi_decl_get_arg(impl->decl, set->exp->data.func->var)) {
+			if (!psi_impl_get_decl_arg(impl, set->exp->data.func->var)) {
 				if (!psi_impl_get_temp_let_arg(impl, set->exp->data.func->var)) {
 					data->error(data, set->token, PSI_WARNING,
 							"Unknown variable '%s' of `set` statement of implementation '%s'",
-							set->exp->data.func->var, impl->func->name);
+							set->exp->data.func->var->name, impl->func->name);
 					return false;
 				}
 			}

@@ -204,7 +204,7 @@ static inline bool psi_set_func_validate_to_recursive(struct psi_data *data,
 bool psi_set_func_validate(struct psi_data *data, struct psi_set_func *func,
 		struct psi_set_exp *set, struct psi_impl *impl, struct psi_decl *cb_decl)
 {
-	if (!psi_decl_var_validate(data, func->var, NULL, impl->decl, NULL, set)
+	if (!psi_decl_var_validate(data, func->var, impl, impl->decl, NULL, set)
 			&& !psi_decl_var_validate(data, func->var, NULL, cb_decl, NULL, NULL)
 			&& !psi_impl_get_temp_let_arg(impl, func->var)) {
 		data->error(data, func->var->token, PSI_WARNING,
