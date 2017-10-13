@@ -77,7 +77,7 @@ function psi\getnameinfo(string $addr, string &$host = NULL, string &$service = 
 	let servlen = psi\NI_MAXSERV;
 	let serv = calloc(servlen, psi\SIZEOF_CHAR);
 	let flags = intval($flags);
-	return getnameinfo(sa, salen, hostlen, host, servlen, serv, flags) as to_int(getnameinfo);
+	return getnameinfo(sa, salen, host, hostlen, serv, servlen, flags) as to_int(getnameinfo);
 	set $host = to_string(host);
 	set $service = to_string(serv);
 }
