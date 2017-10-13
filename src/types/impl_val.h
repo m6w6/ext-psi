@@ -43,6 +43,10 @@ typedef union impl_val {
 	uint32_t u32;
 	int64_t i64;
 	uint64_t u64;
+#if HAVE_INT128
+	int128_t i128;
+	uint128_t u128;
+#endif
 	float fval;
 	double dval;
 #ifdef HAVE_LONG_DOUBLE

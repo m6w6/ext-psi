@@ -43,6 +43,8 @@ enum psi_context_query {
 };
 
 struct psi_context_ops {
+	ZEND_RESULT_CODE (*load)(void);
+	void (*free)(void);
 	void (*init)(struct psi_context *C);
 	void (*dtor)(struct psi_context *C);
 	zend_function_entry *(*compile)(struct psi_context *C);

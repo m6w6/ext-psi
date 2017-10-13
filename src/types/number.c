@@ -558,7 +558,7 @@ static inline token_t psi_number_eval_constant(struct psi_number *exp,
 		if (frame) PSI_DEBUG_PRINT(frame->context, " %" PRIdval, res->dval);
 		return PSI_T_DOUBLE;
 	default:
-		if (frame) PSI_DEBUG_PRINT(frame->context, " ?(t=%d)", exp->data.cnst->type->type);
+		if (frame) PSI_DEBUG_PRINT(frame->context, " ?(t=%ld)", exp->data.cnst->type->type);
 		return 0;
 	}
 }

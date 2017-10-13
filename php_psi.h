@@ -75,6 +75,7 @@ ZEND_BEGIN_MODULE_GLOBALS(psi)
 	char *engine;
 	char *directory;
 	char *search_path;
+	struct psi_context_ops *ops;
 	struct psi_context *context;
 	struct {
 		struct psi_plist *decls;

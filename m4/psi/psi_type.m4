@@ -68,7 +68,7 @@ AC_DEFUN(PSI_STDTYPE, [
 	ifdef(AS_TR_CPP(AC_TYPE_$1), AS_TR_CPP(AC_TYPE_$1))
 	PSI_CHECK_SIZEOF($1)
 	if PSI_SH_TEST_SIZEOF($1); then
-		m4_case([$1],
+		m4_case(ifelse(,[$2],[$1],[$2]),
 		[bool],[psi_add_stdtype "{PSI_T_BOOL, \"bool\", NULL}"],
 		[float],[psi_add_stdtype "{PSI_T_FLOAT, \"float\", NULL}"],
 		[double],[psi_add_stdtype "{PSI_T_DOUBLE, \"double\", NULL}"],
@@ -255,4 +255,14 @@ AC_DEFUN(PSI_CHECK_STD_TYPES, [
 	PSI_STDTYPE(long long unsigned int, uint)
 	dnl this must come after the check for "unsigned long long int"; autoconf, wth?
 	PSI_STDTYPE(long long int, int)
+	
+	AC_CHECK_TYPE(__int128, [
+		AC_DEFINE([HAVE_INT128], [1], [ ])
+		AC_CHECK_ALIGNOF(__int128)
+		PSI_STDTYPE(__int128, int)
+		PSI_STDTYPE(signed __int128, int)
+		PSI_STDTYPE(unsigned __int128, uint)
+	])
+	
+	PSI_STDTYPE(_Float128)
 ])

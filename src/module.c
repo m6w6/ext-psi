@@ -198,9 +198,32 @@ static PHP_FUNCTION(psi_validate_string)
 	free(I);
 }
 
-static PHP_MINIT_FUNCTION(psi)
+static ZEND_RESULT_CODE psi_ops_load()
 {
 	struct psi_context_ops *ops = NULL;
+#ifdef HAVE_LIBJIT
+	if (!strcasecmp(PSI_G(engine), "jit")) {
+		ops = psi_libjit_ops();
+	} else
+#endif
+#ifdef HAVE_LIBFFI
+		ops = psi_libffi_ops();
+#endif
+
+	if (!ops) {
+		php_error(E_WARNING, "No PSI engine found");
+		return FAILURE;
+	}
+
+	PSI_G(ops) = ops;
+	if (ops->load) {
+		return ops->load();
+	}
+	return SUCCESS;
+}
+
+static PHP_MINIT_FUNCTION(psi)
+{
 	zend_class_entry ce = {0};
 	unsigned flags = 0;
 
@@ -218,17 +241,7 @@ static PHP_MINIT_FUNCTION(psi)
 	psi_object_handlers.free_obj = psi_object_free;
 	psi_object_handlers.clone_obj = NULL;
 
-#ifdef HAVE_LIBJIT
-	if (!strcasecmp(PSI_G(engine), "jit")) {
-		ops = psi_libjit_ops();
-	} else
-#endif
-#ifdef HAVE_LIBFFI
-		ops = psi_libffi_ops();
-#endif
-
-	if (!ops) {
-		php_error(E_WARNING, "No PSI engine found");
+	if (SUCCESS != psi_ops_load()) {
 		return FAILURE;
 	}
 
@@ -242,7 +255,7 @@ static PHP_MINIT_FUNCTION(psi)
 	PSI_G(search_path) = pemalloc(strlen(PSI_G(directory)) + strlen(psi_cpp_search) + 1 + 1, 1);
 	sprintf(PSI_G(search_path), "%s:%s", PSI_G(directory), psi_cpp_search);
 
-	PSI_G(context) = psi_context_init(NULL, ops, psi_error_wrapper, flags);
+	PSI_G(context) = psi_context_init(NULL, PSI_G(ops), psi_error_wrapper, flags);
 	psi_context_build(PSI_G(context), PSI_G(directory));
 
 	return SUCCESS;
@@ -255,6 +268,10 @@ static PHP_MSHUTDOWN_FUNCTION(psi)
 	}
 
 	psi_context_free(&PSI_G(context));
+
+	if (PSI_G(ops)->free) {
+		PSI_G(ops)->free();
+	}
 
 	UNREGISTER_INI_ENTRIES();
 

@@ -105,6 +105,11 @@ static void psi_ffi_prep_va(ffi_cif *base, ffi_cif *signature, size_t argc, size
 	assert(FFI_OK == rc);
 }
 
+#if HAVE_INT128
+static ffi_type *ffi_type_sint128;
+static ffi_type *ffi_type_uint128;
+#endif
+
 static inline ffi_type *psi_ffi_decl_arg_type(struct psi_decl_arg *darg);
 
 static inline ffi_type *psi_ffi_token_type(token_t t) {
@@ -130,6 +135,12 @@ static inline ffi_type *psi_ffi_token_type(token_t t) {
 		return &ffi_type_sint64;
 	case PSI_T_UINT64:
 		return &ffi_type_uint64;
+#if HAVE_INT128
+	case PSI_T_INT128:
+		return ffi_type_sint128;
+	case PSI_T_UINT128:
+		return ffi_type_uint128;
+#endif
 	case PSI_T_BOOL:
 		return &ffi_type_uchar;
 	case PSI_T_ENUM:
@@ -698,7 +709,43 @@ static void *psi_ffi_query(struct psi_context *C, enum psi_context_query q, void
 	return NULL;
 }
 
+static ZEND_RESULT_CODE psi_ffi_load()
+{
+#if HAVE_INT128
+	ffi_type *i128, *u128;
+
+	i128 = calloc(1, 3*sizeof(ffi_type));
+	i128->type = FFI_TYPE_STRUCT;
+	i128->size = 0;
+	i128->elements = (ffi_type **) (i128 + 1);
+	i128->elements[0] = &ffi_type_sint64;
+	i128->elements[1] = &ffi_type_sint64;
+
+	ffi_type_sint128 = i128;
+
+	u128 = calloc(1, 3*sizeof(ffi_type));
+	u128->type = FFI_TYPE_STRUCT;
+	u128->size = 0;
+	u128->elements = (ffi_type **) (u128 + 1);
+	u128->elements[0] = &ffi_type_uint64;
+	u128->elements[1] = &ffi_type_uint64;
+
+	ffi_type_uint128 = u128;
+#endif
+	return SUCCESS;
+}
+
+static void psi_ffi_free()
+{
+#if HAVE_INT128
+	free(ffi_type_sint128);
+	free(ffi_type_uint128);
+#endif
+}
+
 static struct psi_context_ops ops = {
+	psi_ffi_load,
+	psi_ffi_free,
 	psi_ffi_init,
 	psi_ffi_dtor,
 	psi_ffi_compile,

@@ -32,6 +32,11 @@
 
 #include <jit/jit.h>
 
+#if HAVE_INT128
+static jit_type_t jit_type_llong;
+static jit_type_t jit_type_ullong;
+#endif
+
 static inline jit_type_t psi_jit_decl_arg_type(struct psi_decl_arg *darg);
 
 static inline jit_type_t psi_jit_token_type(token_t t)
@@ -58,6 +63,12 @@ static inline jit_type_t psi_jit_token_type(token_t t)
 		return jit_type_long;
 	case PSI_T_UINT64:
 		return jit_type_ulong;
+#if HAVE_INT128
+	case PSI_T_INT128:
+		return jit_type_llong;
+	case PSI_T_UINT128:
+		return jit_type_ullong;
+#endif
 	case PSI_T_BOOL:
 		return jit_type_sys_bool;
 	case PSI_T_ENUM:
@@ -643,7 +654,31 @@ static void *psi_jit_query(struct psi_context *C, enum psi_context_query q,
 	return NULL;
 }
 
+static ZEND_RESULT_CODE psi_jit_load(void)
+{
+#if HAVE_INT128
+	jit_type_t ll_fields[2], ull_fields[2];
+
+	ll_fields[0] = ll_fields[1] = jit_type_long;
+	jit_type_llong = jit_type_create_struct(ll_fields, 2, 1);
+
+	ull_fields[0] = ull_fields[1] = jit_type_ulong;
+	jit_type_ullong = jit_type_create_struct(ull_fields, 2, 1);
+#endif
+	return SUCCESS;
+}
+
+static void psi_jit_free(void)
+{
+#if HAVE_INT128
+	jit_type_free(jit_type_llong);
+	jit_type_free(jit_type_ullong);
+#endif
+}
+
 static struct psi_context_ops ops = {
+	psi_jit_load,
+	psi_jit_free,
 	psi_jit_init,
 	psi_jit_dtor,
 	psi_jit_compile,

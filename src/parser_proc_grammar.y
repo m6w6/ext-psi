@@ -837,8 +837,8 @@ typedef_decl[def]:
 ;
 
 typedef_anon_decl[def]:
-	typedef_decl
-|	qualified_decl_type[type] {
+	typedef_decl %dprec 2
+|	qualified_decl_type[type] %dprec 1 {
 	$def = psi_decl_arg_init($type, psi_decl_var_init(NULL, 0, 0));
 	$def->var->token = psi_token_copy($type->token);
 }
@@ -974,6 +974,9 @@ decl_int_type[type]:
 int_signed_types[type]:
 	%empty {
 	$type = NULL;
+}
+|	NAME {
+	$type = psi_token_copy($NAME);
 }
 |	CHAR {
 	$type = psi_token_copy($CHAR);
@@ -1222,10 +1225,10 @@ decl_args[args]:
 
 decl_anon_arg[arg]:
 /* FIXME decl_functor_body_anon */
-	decl_arg {
+	decl_arg %dprec 2 {
 	$arg = $decl_arg;
 }
-|	qualified_decl_type[type] indirection {
+|	qualified_decl_type[type] indirection %dprec 1 {
 	$arg = psi_decl_arg_init(
 		$type, 
 		psi_decl_var_init(NULL, $indirection, 0)

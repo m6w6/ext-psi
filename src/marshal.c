@@ -195,6 +195,10 @@ static inline impl_val *psi_val_boolval(impl_val *tmp, token_t real_type, zend_b
 	case PSI_T_UINT32:		tmp->u32 = boolval;		break;
 	case PSI_T_INT64:		tmp->i64 = boolval;		break;
 	case PSI_T_UINT64:		tmp->u64 = boolval;		break;
+#ifdef HAVE_INT128
+	case PSI_T_INT128:		tmp->i128 = boolval;	break;
+	case PSI_T_UINT128:		tmp->u128 = boolval;	break;
+#endif
 	case PSI_T_FLOAT:		tmp->fval = boolval;	break;
 	case PSI_T_DOUBLE:		tmp->dval = boolval;	break;
 #ifdef HAVE_LONG_DOUBLE
@@ -222,14 +226,52 @@ impl_val *psi_let_boolval(impl_val *tmp, struct psi_decl_arg *spec, token_t impl
 	return psi_val_boolval(tmp, real_type, boolval);
 }
 
-# define RETVAL_LONG_U64(V) \
-		if (V > ZEND_LONG_MAX) { \
-			char d[24] = {0}; \
-			RETVAL_STRING(zend_print_ulong_to_buf(&d[22], V)); \
-		} else { \
-			RETVAL_LONG(V); \
-		}
+static inline char *psi_u128_to_buf(char *buf, unsigned __int128 u128)
+{
+	for (*buf = 0; u128 > 0; u128 /= 10) {
+		*--buf = ((u128 % 10) + '0') & 0xff;
+	}
+	return buf;
+}
 
+static inline char *psi_i128_to_buf(char *buf, __int128 i128)
+{
+	if (i128 < 0) {
+		char *res = psi_u128_to_buf(buf, ~((unsigned __int128) i128) + 1);
+
+		*--res = '-';
+		return res;
+	}
+	return psi_u128_to_buf(buf, i128);
+}
+
+#if HAVE_INT128
+# define RETVAL_LONG_STR(V, s) do {\
+		char buf[0x30] = {0}; \
+		if (s && V >= ZEND_LONG_MIN && V <= ZEND_LONG_MAX) { \
+			RETVAL_LONG(V); \
+		} else if (!s && V <= ZEND_LONG_MAX) { \
+			RETVAL_LONG(V); \
+		} else if (!s && V <= ZEND_ULONG_MAX) { \
+			RETVAL_STRING(zend_print_ulong_to_buf(&buf[sizeof(buf) - 1], V)); \
+		} else if (s && V >= INT128_MIN && V <= INT128_MAX) { \
+			RETVAL_STRING(psi_i128_to_buf(&buf[sizeof(buf) - 1], V)); \
+		} else { \
+			RETVAL_STRING(psi_u128_to_buf(&buf[sizeof(buf) - 1], V)); \
+		} \
+	} while (0)
+#else
+# define RETVAL_LONG_STR(V, s) do {\
+		char buf[0x20] = {0}; \
+		if (s && V >= ZEND_LONG_MIN && V <= ZEND_LONG_MAX) { \
+			RETVAL_LONG(V); \
+		} else if (!s && V <= ZEND_LONG_MAX) { \
+			RETVAL_LONG(V); \
+		} else { \
+			RETVAL_STRING(zend_print_ulong_to_buf(&buf[sizeof(buf) - 1], V)); \
+		} \
+	} while (0)
+#endif
 /*
  * set $ivar = to_int(*dvar)
  */
@@ -248,7 +290,11 @@ void psi_set_to_int(zval *return_value, struct psi_set_exp *set, impl_val *ret_v
 	case PSI_T_INT32:		RETVAL_LONG(v->i32);				break;
 	case PSI_T_UINT32:		RETVAL_LONG(v->u32);				break;
 	case PSI_T_INT64:		RETVAL_LONG(v->i64);				break;
-	case PSI_T_UINT64:		RETVAL_LONG_U64(v->u64);			break;
+	case PSI_T_UINT64:		RETVAL_LONG_STR(v->u64, 0);			break;
+#ifdef HAVE_INT128
+	case PSI_T_INT128:		RETVAL_LONG_STR(v->i128, 1);		break;
+	case PSI_T_UINT128:		RETVAL_LONG_STR(v->u128, 0);		break;
+#endif
 	case PSI_T_FLOAT:
 		RETVAL_DOUBLE((double) v->fval);
 		convert_to_long(return_value);
@@ -278,6 +324,10 @@ static inline impl_val *psi_val_intval(impl_val *tmp, token_t real_type, zend_lo
 	case PSI_T_UINT32:		tmp->u32 = intval;		break;
 	case PSI_T_INT64:		tmp->i64 = intval;		break;
 	case PSI_T_UINT64:		tmp->u64 = intval;		break;
+#if HAVE_INT128
+	case PSI_T_INT128:		tmp->i128 = intval;		break;
+	case PSI_T_UINT128:		tmp->u128 = intval;		break;
+#endif
 	case PSI_T_FLOAT:		tmp->fval = intval;		break;
 	case PSI_T_DOUBLE:		tmp->dval = intval;		break;
 #ifdef HAVE_LONG_DOUBLE
@@ -289,6 +339,85 @@ static inline impl_val *psi_val_intval(impl_val *tmp, token_t real_type, zend_lo
 	return tmp;
 }
 
+#if HAVE_INT128
+void psi_strto_i128(char *ptr, char *end, token_t real_type, impl_val *val) {
+	unsigned __int128 i = 0;
+	bool oct = false, hex = false, sign = false;
+
+	if (*ptr == '+') {
+		++ptr;
+	} else if (*ptr == '-') {
+		sign = true;
+		++ptr;
+	} else if (*ptr == '\\') {
+		switch (*++ptr) {
+		case 'x':
+			hex = true;
+			++ptr;
+			break;
+		case '0':case '1':case '2':case '3':case '4':case '5':case '6':case '7':
+			oct = true;
+			break;
+		default:
+			goto fail;
+		}
+	}
+	while (ptr < end) {
+		switch (*ptr) {
+		case '8':case '9':
+			if (oct) {
+				goto fail;
+			}
+			/* no break */
+		case '0':case '1':case '2':case '3':case '4':case '5':case '6':case '7':
+			if (oct) {
+				i <<= 3;
+			} else if (hex) {
+				i <<= 4;
+			} else {
+				i *= 10;
+			}
+			i += *ptr - '0';
+			break;
+		case 'a':case 'b':case 'c':case 'd':case 'e':case 'f':
+			if (!hex) {
+				goto fail;
+			}
+			i <<= 4;
+			i += 10 + (*ptr - 'a');
+			break;
+		case 'A':case 'B':case 'C':case 'D':case 'E':case 'F':
+			if (!hex) {
+				goto fail;
+			}
+			i <<= 4;
+			i += 10 + (*ptr - 'A');
+			break;
+		default:
+		fail:
+			zend_error(E_WARNING, "A non well formed numeric value encountered");
+			goto stop;
+		}
+		++ptr;
+	}
+
+stop:
+	if (real_type == PSI_T_UINT128) {
+		if (sign) {
+			val->u128 = -i;
+		} else {
+			val->u128 = i;
+		}
+	} else {
+		if (sign) {
+			val->i128 = -i;
+		} else {
+			val->i128 = i;
+		}
+	}
+}
+#endif
+
 /*
  * let dvar = intval($ivar)
  */
@@ -297,8 +426,17 @@ impl_val *psi_let_intval(impl_val *tmp, struct psi_decl_arg *spec, token_t impl_
 	zend_long intval;
 	token_t real_type = spec ? psi_decl_type_get_real(spec->type)->type : PSI_T_LONG;
 
+
 	if (ival && impl_type == PSI_T_INT) {
 		intval = ival->zend.lval;
+#if HAVE_INT128
+	} else if ((real_type == PSI_T_UINT128 || real_type == PSI_T_INT128) &&
+			!((Z_TYPE_P(zvalue) == IS_TRUE || Z_TYPE_P(zvalue) == IS_FALSE || Z_TYPE_P(zvalue) == IS_LONG || Z_TYPE_P(zvalue) == IS_DOUBLE || Z_TYPE_P(zvalue) == IS_NULL))) {
+		zend_string *str = zval_get_string(zvalue);
+		psi_strto_i128(str->val, str->val + str->len, real_type, tmp);
+		zend_string_release(str);
+		return tmp;
+#endif
 	} else {
 		intval = zval_get_long(zvalue);
 	}
@@ -329,6 +467,10 @@ void psi_set_to_float(zval *return_value, struct psi_set_exp *set, impl_val *ret
 	case PSI_T_UINT32:		RETVAL_DOUBLE((double) v->u32);		break;
 	case PSI_T_INT64:		RETVAL_DOUBLE((double) v->i64);		break;
 	case PSI_T_UINT64:		RETVAL_DOUBLE((double) v->u64);		break;
+#if HAVE_INT128
+	case PSI_T_INT128:		RETVAL_DOUBLE((double) v->i128);	break;
+	case PSI_T_UINT128:		RETVAL_DOUBLE((double) v->u128);	break;
+#endif
 	EMPTY_SWITCH_DEFAULT_CASE();
 	}
 }
@@ -343,6 +485,10 @@ static inline impl_val *psi_val_floatval(impl_val *tmp, token_t real_type, doubl
 	case PSI_T_UINT32:		tmp->u32 = floatval;	break;
 	case PSI_T_INT64:		tmp->i64 = floatval;	break;
 	case PSI_T_UINT64:		tmp->u64 = floatval;	break;
+#if HAVE_INT128
+	case PSI_T_INT128:		tmp->i128 = floatval;	break;
+	case PSI_T_UINT128:		tmp->u128 = floatval;	break;
+#endif
 	case PSI_T_FLOAT:		tmp->fval = floatval;	break;
 	case PSI_T_DOUBLE:		tmp->dval = floatval;	break;
 #ifdef HAVE_LONG_DOUBLE

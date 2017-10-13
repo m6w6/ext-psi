@@ -89,15 +89,29 @@ static inline size_t psi_offset_padding(size_t diff, size_t alignment) {
 # define ALIGNOF_INT64_T ALIGNOF_LONG
 # define ALIGNOF_UINT64_T ALIGNOF_LONG
 # elif HAVE_LONG_LONG_INT && SIZEOF_LONG_LONG_INT == SIZEOF_INT64_T
-# define PSI_T_INT64 (PSI_T_LONG << 16)
-# define PSI_T_UINT64 -(PSI_T_LONG << 16)
+# define PSI_T_INT64 (PSI_T_LONG << 0xa)
+# define PSI_T_UINT64 -(PSI_T_LONG << 0xa)
 # define ALIGNOF_INT64_T ALIGNOF_LONG_LONG
 # define ALIGNOF_UINT64_T ALIGNOF_LONG_LONG
 #else
 # error SIZEOF_LONG != 64 and SIZEOF_LONG_LONG != 64
 #endif
 
-typedef int token_t;
+#if HAVE_INT128
+# define PSI_T_INT128 (PSI_T_LONG << 0xb)
+# define PSI_T_UINT128 -(PSI_T_LONG << 0xb)
+# define SIZEOF_INT128_T SIZEOF___INT128
+# define SIZEOF_UINT128_T SIZEOF_UNSIGNED___INT128
+# define ALIGNOF_INT128_T ALIGNOF___INT128
+# define ALIGNOF_UINT128_T ALIGNOF___INT128
+# define INT128_MAX ((__int128) (UINT128_MAX >> 1))
+# define INT128_MIN (-INT128_MAX-1)
+# define UINT128_MAX ((unsigned __int128) ~ 0)
+typedef __int128 int128_t;
+typedef unsigned __int128 uint128_t;
+#endif
+
+typedef int64_t token_t;
 
 static inline size_t psi_t_alignment(token_t t)
 {
@@ -111,6 +125,10 @@ static inline size_t psi_t_alignment(token_t t)
 	PSI_ALIGNOF(UINT32);
 	PSI_ALIGNOF(INT64);
 	PSI_ALIGNOF(UINT64);
+#if HAVE_INT128
+	PSI_ALIGNOF(INT128);
+	PSI_ALIGNOF(UINT128);
+#endif
 	case PSI_T_FLOAT:
 		return ALIGNOF_FLOAT;
 	case PSI_T_DOUBLE:
@@ -142,6 +160,10 @@ static inline size_t psi_t_size(token_t t)
 	PSI_SIZEOF(UINT32);
 	PSI_SIZEOF(INT64);
 	PSI_SIZEOF(UINT64);
+#if HAVE_INT128
+	PSI_SIZEOF(INT128);
+	PSI_SIZEOF(UINT128);
+#endif
 	case PSI_T_FLOAT:
 		return SIZEOF_FLOAT;
 	case PSI_T_DOUBLE:
