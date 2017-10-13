@@ -93,10 +93,6 @@ bool psi_decl_var_validate(struct psi_data *data, struct psi_decl_var *dvar,
 	struct psi_let_exp *current_let_exp = let_exp;
 	struct psi_set_exp *current_set_exp = set_exp;
 
-	if (dvar->arg) {
-		return true;
-	}
-
 	if (current_let_exp) {
 		/* walk up the let expression tree until found */
 		while ((current_let_exp = current_let_exp->outer)) {
