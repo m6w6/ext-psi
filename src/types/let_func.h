@@ -53,7 +53,7 @@ bool psi_let_func_validate(struct psi_data *data, struct psi_let_exp *exp, struc
 #include "marshal.h"
 
 static inline psi_marshal_let locate_let_func_fn(token_t type) {
-	psi_marshal_let let_fn = NULL;
+	psi_marshal_let let_fn;
 
 	switch (type) {
 		case PSI_T_BOOLVAL:		let_fn = psi_let_boolval;	break;
@@ -66,6 +66,7 @@ static inline psi_marshal_let locate_let_func_fn(token_t type) {
 		case PSI_T_ZVAL:		let_fn = psi_let_zval;		break;
 		case PSI_T_VOID:		let_fn = psi_let_void;		break;
 		case PSI_T_COUNT:		let_fn = psi_let_count;		break;
+		default:				let_fn = NULL;				break;
 	}
 	return let_fn;
 }

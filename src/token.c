@@ -199,7 +199,7 @@ void psi_token_dump(int fd, struct psi_token *t)
 {
 	size_t i;
 
-	dprintf(fd, "TOKEN %p (%ld) ", t, t->type);
+	dprintf(fd, "TOKEN %p (%u) ", t, t->type);
 	if (t->type == PSI_T_EOF) {
 		dprintf(fd, "EOF");
 	} else {

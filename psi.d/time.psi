@@ -1,3 +1,5 @@
+#include <time.h>
+
 // extern time_t time(time_t *t);
 function psi\time() : int {
 	let t = NULL;

@@ -511,6 +511,10 @@ bool psi_number_validate(struct psi_data *data, struct psi_number *exp,
 			exp->type = PSI_T_UINT64;
 			exp->data.ival.u64 = psi_decl_type_get_size(dtyp, NULL);
 			return true;
+		} else {
+			data->error(data, exp->token, PSI_WARNING,
+					"Cannot compute sizeof(%s) (%u)",
+					exp->data.dtyp->name, exp->data.dtyp->type);
 		}
 		break;
 
@@ -558,7 +562,7 @@ static inline token_t psi_number_eval_constant(struct psi_number *exp,
 		if (frame) PSI_DEBUG_PRINT(frame->context, " %" PRIdval, res->dval);
 		return PSI_T_DOUBLE;
 	default:
-		if (frame) PSI_DEBUG_PRINT(frame->context, " ?(t=%ld)", exp->data.cnst->type->type);
+		if (frame) PSI_DEBUG_PRINT(frame->context, " ?(t=%u)", exp->data.cnst->type->type);
 		return 0;
 	}
 }

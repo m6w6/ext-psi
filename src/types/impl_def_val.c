@@ -54,6 +54,8 @@ void psi_impl_def_val_free(struct psi_impl_def_val **def_ptr)
 				zend_string_release(def->ival.zend.str);
 			}
 			break;
+		default:
+			break;
 		}
 		if (def->text) {
 			free(def->text);

@@ -1,3 +1,4 @@
+#include <sys/stat.h>
 // extern int stat(char *path, struct stat *buf);
 function psi\stat(string $path, array &$buf = NULL) : int {
 	let path = strval($path);

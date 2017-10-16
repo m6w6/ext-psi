@@ -275,6 +275,8 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input 
 		ctxmrk = NULL;
 		tok = cur;
 
+		(void) ctxmrk;
+
 		/*!re2c
 
 		re2c:indent:top = 2;

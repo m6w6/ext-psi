@@ -47,50 +47,31 @@ static inline size_t psi_offset_padding(size_t diff, size_t alignment) {
 #include "parser_proc.h"
 #undef YYDEBUG
 
-#define PSI_T_CAST			PSI_T_EQUALS
-#define PSI_T_POINTER		PSI_T_ASTERISK
-
-#define PSI_T_WHITESPACE	-PSI_T_NO_WHITESPACE
-#define PSI_T_BSLASH		-PSI_T_SLASH
-#define PSI_T_LONG_DOUBLE	-PSI_T_DOUBLE
-
 #if SIZEOF_CHAR == SIZEOF_INT8_T
-# define PSI_T_INT8 PSI_T_CHAR
-# define PSI_T_UINT8 -PSI_T_CHAR
 # define ALIGNOF_INT8_T ALIGNOF_CHAR
 # define ALIGNOF_UINT8_T ALIGNOF_CHAR
 #else
 # error SIZEOF_CHAR != 8
 #endif
 #if SIZEOF_SHORT == SIZEOF_INT16_T
-# define PSI_T_INT16 PSI_T_SHORT
-# define PSI_T_UINT16 -PSI_T_SHORT
 # define ALIGNOF_INT16_T ALIGNOF_SHORT
 # define ALIGNOF_UINT16_T ALIGNOF_SHORT
 #else
 # error SIZEOF_SHORT != 16
 #endif
 #if SIZEOF_INT == SIZEOF_INT32_T
-# define PSI_T_INT32 PSI_T_INT
-# define PSI_T_UINT32 -PSI_T_INT
 # define ALIGNOF_INT32_T ALIGNOF_INT
 # define ALIGNOF_UINT32_T ALIGNOF_INT
 #elif SIZEOF_LONG == SIZEOF_INT32_T
-# define PSI_T_INT32 PSI_T_LONG
-# define PSI_T_UINT32 -PSI_T_LONG
 # define ALIGNOF_INT32_T ALIGNOF_LONG
 # define ALIGNOF_UINT32_T ALIGNOF_LONG
 #else
 # error SIZEOF_INT != 32 and SIZEOF_LONG != 32
 #endif
 #if SIZEOF_LONG == SIZEOF_INT64_T
-# define PSI_T_INT64 PSI_T_LONG
-# define PSI_T_UINT64 -PSI_T_LONG
 # define ALIGNOF_INT64_T ALIGNOF_LONG
 # define ALIGNOF_UINT64_T ALIGNOF_LONG
 # elif HAVE_LONG_LONG_INT && SIZEOF_LONG_LONG_INT == SIZEOF_INT64_T
-# define PSI_T_INT64 (PSI_T_LONG << 0xa)
-# define PSI_T_UINT64 -(PSI_T_LONG << 0xa)
 # define ALIGNOF_INT64_T ALIGNOF_LONG_LONG
 # define ALIGNOF_UINT64_T ALIGNOF_LONG_LONG
 #else
@@ -98,8 +79,6 @@ static inline size_t psi_offset_padding(size_t diff, size_t alignment) {
 #endif
 
 #if HAVE_INT128
-# define PSI_T_INT128 (PSI_T_LONG << 0xb)
-# define PSI_T_UINT128 -(PSI_T_LONG << 0xb)
 # define SIZEOF_INT128_T SIZEOF___INT128
 # define SIZEOF_UINT128_T SIZEOF_UNSIGNED___INT128
 # define ALIGNOF_INT128_T ALIGNOF___INT128
@@ -111,7 +90,7 @@ typedef __int128 int128_t;
 typedef unsigned __int128 uint128_t;
 #endif
 
-typedef int64_t token_t;
+typedef enum psi_token_type token_t;
 
 static inline size_t psi_t_alignment(token_t t)
 {

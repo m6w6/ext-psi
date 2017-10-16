@@ -45,10 +45,15 @@ extern int psi_parser_proc_debug;
 #include "plist.h"
 #include "types/layout.h"
 
+#define yytokentype psi_token_type
+
+#define PSI_T_CAST			PSI_T_EQUALS
+#define PSI_T_POINTER		PSI_T_ASTERISK
+
 struct psi_parser;
 
 
-#line 52 "src/parser_proc.h" /* glr.c:197  */
+#line 57 "src/parser_proc.h" /* glr.c:197  */
 
 /* Token type.  */
 #ifndef YYTOKENTYPE
@@ -179,8 +184,20 @@ struct psi_parser;
     PSI_T_CPP_INLINE = 378,
     PSI_T_CPP_RESTRICT = 379,
     PSI_T_CPP_ASM = 380,
-    PSI_T_BINARY = 381,
-    PSI_T_UNARY = 382
+    PSI_T_BSLASH = 381,
+    PSI_T_LONG_DOUBLE = 382,
+    PSI_T_INT8 = 383,
+    PSI_T_UINT8 = 384,
+    PSI_T_INT16 = 385,
+    PSI_T_UINT16 = 386,
+    PSI_T_INT32 = 387,
+    PSI_T_UINT32 = 388,
+    PSI_T_INT64 = 389,
+    PSI_T_UINT64 = 390,
+    PSI_T_INT128 = 391,
+    PSI_T_UINT128 = 392,
+    PSI_T_BINARY = 393,
+    PSI_T_UNARY = 394
   };
 #endif
 
@@ -608,6 +625,30 @@ union YYSTYPE
   struct psi_token * PSI_T_CPP_RESTRICT;
   /* CPP_ASM  */
   struct psi_token * PSI_T_CPP_ASM;
+  /* BSLASH  */
+  struct psi_token * PSI_T_BSLASH;
+  /* LONG_DOUBLE  */
+  struct psi_token * PSI_T_LONG_DOUBLE;
+  /* INT8  */
+  struct psi_token * PSI_T_INT8;
+  /* UINT8  */
+  struct psi_token * PSI_T_UINT8;
+  /* INT16  */
+  struct psi_token * PSI_T_INT16;
+  /* UINT16  */
+  struct psi_token * PSI_T_UINT16;
+  /* INT32  */
+  struct psi_token * PSI_T_INT32;
+  /* UINT32  */
+  struct psi_token * PSI_T_UINT32;
+  /* INT64  */
+  struct psi_token * PSI_T_INT64;
+  /* UINT64  */
+  struct psi_token * PSI_T_UINT64;
+  /* INT128  */
+  struct psi_token * PSI_T_INT128;
+  /* UINT128  */
+  struct psi_token * PSI_T_UINT128;
   /* binary_op_token  */
   struct psi_token * PSI_T_binary_op_token;
   /* unary_op_token  */
@@ -674,7 +715,7 @@ union YYSTYPE
   struct psi_token * PSI_T_assert_stmt_token;
   /* impl_stmt  */
   struct psi_token ** PSI_T_impl_stmt;
-#line 678 "src/parser_proc.h" /* glr.c:197  */
+#line 719 "src/parser_proc.h" /* glr.c:197  */
 };
 
 typedef union YYSTYPE YYSTYPE;

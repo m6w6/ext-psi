@@ -120,8 +120,7 @@ bool psi_decl_type_get_alias(struct psi_decl_type *type, struct psi_plist *defs)
 	}
 	if (defs) {
 		while (psi_plist_get(defs, i++, &def)) {
-			if (def->type->type != type->type
-					&& !strcmp(def->var->name, type->name)) {
+			if (!strcmp(def->var->name, type->name)) {
 				type->real.def = def;
 				return true;
 			}
@@ -359,7 +358,11 @@ void psi_decl_type_dump(int fd, struct psi_decl_type *t, unsigned level)
 			return;
 		}
 		break;
+
+	default:
+		break;
 	}
+
 	dprintf(fd, "%s", t->name);
 }
 
@@ -402,6 +405,7 @@ size_t psi_decl_type_get_align(struct psi_decl_type *t)
 	case PSI_T_ENUM:
 	default:
 		align = psi_t_alignment(real->type);
+		break;
 	}
 
 	return align;

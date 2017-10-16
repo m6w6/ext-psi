@@ -1,3 +1,5 @@
+#include <arpa/inet.h>
+
 function psi\htonl(int $l) : int {
 	let l = intval($l);
 	return htonl(l) as to_int(htonl);

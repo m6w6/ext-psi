@@ -1,3 +1,5 @@
+#include <syslog.h>
+
 function psi\openlog(string $ident, int $option, int $facility) : void {
 	let ident = strval($ident);
 	let option = intval($option);
@@ -21,8 +23,8 @@ function psi\syslog(int $priority, string $format, mixed ...$args) : void {
 }
 
 // redirected macro
-extern int LOG_MASK(int pri);
-function psi\LOG_MASK(int $pri) : int {
-	let pri = intval($pri);
-	return LOG_MASK(pri) as to_int(LOG_MASK);
-}
+// extern int LOG_MASK(int pri);
+//function psi\LOG_MASK(int $pri) : int {
+//	let pri = intval($pri);
+//	return LOG_MASK(pri) as to_int(LOG_MASK);
+//}

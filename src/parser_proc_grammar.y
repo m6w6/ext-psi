@@ -83,6 +83,11 @@ static inline void psi_parser_proc_add_impl(struct psi_parser *P, struct psi_imp
 #include "plist.h"
 #include "types/layout.h"
 
+#define yytokentype psi_token_type
+
+#define PSI_T_CAST			PSI_T_EQUALS
+#define PSI_T_POINTER		PSI_T_ASTERISK
+
 struct psi_parser;
 
 }
@@ -236,6 +241,21 @@ struct psi_parser;
 %token <struct psi_token *> CPP_INLINE
 %token <struct psi_token *> CPP_RESTRICT
 %token <struct psi_token *> CPP_ASM
+
+/* virtual tokens */
+%token <struct psi_token *> BSLASH
+%token <struct psi_token *> LONG_DOUBLE
+%token <struct psi_token *> INT8
+%token <struct psi_token *> UINT8
+%token <struct psi_token *> INT16
+%token <struct psi_token *> UINT16
+%token <struct psi_token *> INT32
+%token <struct psi_token *> UINT32
+%token <struct psi_token *> INT64
+%token <struct psi_token *> UINT64
+%token <struct psi_token *> INT128
+%token <struct psi_token *> UINT128
+
 
 %precedence IIF COLON
 %precedence OR
