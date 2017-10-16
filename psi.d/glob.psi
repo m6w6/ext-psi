@@ -3,7 +3,10 @@
 function psi\glob(string $pattern, int $flags, array &$glob = NULL, callable $errfn = NULL) : int {
 	let path = strval($pattern);
 	let flags = intval($flags);
-	let err = callback intval($errfn(
+	let err = callback(
+		epath, 
+		eerrno
+	) as intval($errfn(
 		to_string(epath),
 		to_int(eerrno)
 	));

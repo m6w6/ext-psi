@@ -335,6 +335,8 @@ union YYSTYPE
   struct psi_plist * PSI_T_decl_vars;
   /* decl_args  */
   struct psi_plist * PSI_T_decl_args;
+  /* decl_arg_list  */
+  struct psi_plist * PSI_T_decl_arg_list;
   /* decl_struct_args  */
   struct psi_plist * PSI_T_decl_struct_args;
   /* struct_args_block  */
@@ -715,7 +717,7 @@ union YYSTYPE
   struct psi_token * PSI_T_assert_stmt_token;
   /* impl_stmt  */
   struct psi_token ** PSI_T_impl_stmt;
-#line 719 "src/parser_proc.h" /* glr.c:197  */
+#line 721 "src/parser_proc.h" /* glr.c:197  */
 };
 
 typedef union YYSTYPE YYSTYPE;

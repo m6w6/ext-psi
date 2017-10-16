@@ -325,8 +325,8 @@ struct psi_parser;
 %destructor	{psi_decl_enum_free(&$$);}			decl_enum
 %type		<struct psi_decl_enum_item *>		decl_enum_item
 %destructor	{psi_decl_enum_item_free(&$$);}		decl_enum_item
-%type		<struct psi_plist *>				decl_args decl_struct_args struct_args_block struct_args struct_arg_var_list decl_enum_items decl_vars decl_vars_with_layout call_decl_vars
-%destructor	{psi_plist_free($$);}				decl_args decl_struct_args struct_args_block struct_args struct_arg_var_list decl_enum_items decl_vars decl_vars_with_layout call_decl_vars
+%type		<struct psi_plist *>				decl_args decl_arg_list decl_struct_args struct_args_block struct_args struct_arg_var_list decl_enum_items decl_vars decl_vars_with_layout call_decl_vars
+%destructor	{psi_plist_free($$);}				decl_args decl_arg_list decl_struct_args struct_args_block struct_args struct_arg_var_list decl_enum_items decl_vars decl_vars_with_layout call_decl_vars
 
 %type		<struct psi_layout>					align_and_size
 %destructor	{}									align_and_size
@@ -1235,10 +1235,16 @@ decl_args[args]:
 |	VOID {
 	$args = NULL;
 }
-|	decl_anon_arg[arg] {
+|	decl_arg_list[args_] {
+	$args = $args_;
+}
+;
+
+decl_arg_list[args]:
+	decl_anon_arg[arg] {
 	$args = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_decl_arg_free), &$arg);
 }
-|	decl_args[args_] COMMA decl_anon_arg[arg] {
+|	decl_arg_list[args_] COMMA decl_anon_arg[arg] {
 	$args = psi_plist_add($args_, &$arg);
 }
 ;
@@ -1834,8 +1840,8 @@ let_calloc[calloc]:
 ;
 
 let_callback[callback]:
-	CALLBACK callback_rval[func] LPAREN impl_var[var] LPAREN callback_arg_list[args] RPAREN RPAREN {
-	$callback = psi_let_callback_init(psi_let_func_init($func->type, $func->text, $var), $args);
+	CALLBACK LPAREN call_decl_vars[cb_args] RPAREN AS callback_rval[func] LPAREN impl_var[var] LPAREN callback_arg_list[args] RPAREN RPAREN {
+	$callback = psi_let_callback_init(psi_let_func_init($func->type, $func->text, $var), $args, $cb_args);
 	$callback->func->token = psi_token_copy($func);
 	$callback->token = psi_token_copy($CALLBACK);
 }

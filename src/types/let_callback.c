@@ -27,11 +27,12 @@
 #include "data.h"
 
 struct psi_let_callback *psi_let_callback_init(struct psi_let_func *func,
-		struct psi_plist *args)
+		struct psi_plist *args, struct psi_plist *cb_args)
 {
 	struct psi_let_callback *cb = calloc(1, sizeof(*cb));
 	cb->func = func;
 	cb->args = args;
+	cb->cb_args = cb_args;
 	return cb;
 }
 
@@ -43,6 +44,7 @@ void psi_let_callback_free(struct psi_let_callback **cb_ptr)
 		*cb_ptr = NULL;
 		psi_let_func_free(&cb->func);
 		psi_plist_free(cb->args);
+		psi_plist_free(cb->cb_args);
 		if (cb->token) {
 			free(cb->token);
 		}
@@ -50,11 +52,34 @@ void psi_let_callback_free(struct psi_let_callback **cb_ptr)
 	}
 }
 
+
+static inline bool psi_let_callback_validate_decl_args(struct psi_data *data,
+		struct psi_let_callback *cb, struct psi_decl *cb_decl,
+		struct psi_impl *impl)
+{
+	size_t i;
+	struct psi_decl_var *call_arg;
+
+	if (cb->cb_args) {
+		if (psi_plist_count(cb->cb_args) != psi_plist_count(cb_decl->args)) {
+			data->error(data, cb->token, PSI_WARNING,
+					"Argument count of callback statement of implementation '%s'"
+					"does not match argument count of callback declaration '%s'",
+					impl->func->name, cb_decl->func->var->name);
+			return false;
+		}
+
+		for (i = 0; psi_plist_get(cb->cb_args, i, &call_arg); ++i) {
+			psi_plist_get(cb_decl->args, i, &call_arg->arg);
+		}
+	}
+	return true;
+}
+
 bool psi_let_callback_validate(struct psi_data *data, struct psi_let_exp *exp,
 		struct psi_let_callback *cb, struct psi_impl *impl)
 {
 	size_t i = 0;
-	struct psi_decl *cb_func;
 	struct psi_decl_type *cb_type;
 	struct psi_decl_var *cb_var = exp->var;
 	struct psi_set_exp *set_exp;
@@ -66,19 +91,25 @@ bool psi_let_callback_validate(struct psi_data *data, struct psi_let_exp *exp,
 				cb_var->name);
 		return false;
 	}
-	cb_func = cb_type->real.func;
+	cb->decl = cb_type->real.func;
 
+	if (!psi_decl_validate_nodl(data, cb->decl,  NULL /* FIXME type_stack */)) {
+		return false;
+	}
+	if (!psi_let_callback_validate_decl_args(data, cb, cb->decl, impl)) {
+		return false;
+	}
 	while (psi_plist_get(cb->args, i++, &set_exp)) {
-		if (!psi_set_exp_validate(data, set_exp, impl, cb_func)) {
+		struct psi_decl_var *cb_var, *dvar = psi_set_exp_get_decl_var(set_exp);
+
+		if (psi_plist_get(cb->cb_args, i - 1, &cb_var)) {
+			dvar->arg = cb_var->arg;
+		}
+
+		if (!psi_set_exp_validate(data, set_exp, impl, cb->decl)) {
 			return false;
 		}
 	}
-
-	if (!psi_decl_validate_nodl(data, cb_func,  NULL /* FIXME type_stack */)) {
-		return false;
-	}
-
-	cb->decl = cb_func;
 
 	return true;
 }
@@ -86,7 +117,19 @@ bool psi_let_callback_validate(struct psi_data *data, struct psi_let_exp *exp,
 void psi_let_callback_dump(int fd, struct psi_let_callback *callback,
 		unsigned level)
 {
-	dprintf(fd, "callback %s(%s(",
+	dprintf(fd, "callback(");
+	if (callback->cb_args) {
+		size_t i = 0;
+		struct psi_decl_var *cb_arg;
+
+		while (psi_plist_get(callback->cb_args, i++, &cb_arg)) {
+			if (i > 1) {
+				dprintf(fd, ", ");
+			}
+			psi_decl_var_dump(fd, cb_arg);
+		}
+	}
+	dprintf(fd, ") as %s(%s(",
 			callback->func->name,
 			callback->func->var->name);
 

@@ -37,11 +37,12 @@ struct psi_let_callback {
 	struct psi_token *token;
 	struct psi_let_func *func;
 	struct psi_plist *args;
+	struct psi_plist *cb_args;
 	struct psi_decl *decl;
 	void *info;
 };
 
-struct psi_let_callback *psi_let_callback_init(struct psi_let_func *func, struct psi_plist *args);
+struct psi_let_callback *psi_let_callback_init(struct psi_let_func *func, struct psi_plist *args, struct psi_plist *cb_args);
 void psi_let_callback_free(struct psi_let_callback **cb_ptr);
 void psi_let_callback_dump(int fd, struct psi_let_callback *cb, unsigned level);
 bool psi_let_callback_validate(struct psi_data *data, struct psi_let_exp *exp, struct psi_let_callback *cb, struct psi_impl *impl);

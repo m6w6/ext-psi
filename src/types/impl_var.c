@@ -69,12 +69,9 @@ void psi_impl_var_free(struct psi_impl_var **var_ptr)
 
 
 bool psi_impl_var_validate(struct psi_data *data, struct psi_impl_var *ivar,
-		struct psi_impl *impl, struct psi_let_exp *let_exp,
-		struct psi_set_exp *set_exp)
+		struct psi_impl *impl, struct psi_let_exp *current_let_exp,
+		struct psi_set_exp *current_set_exp)
 {
-	struct psi_let_exp *current_let_exp = let_exp;
-	struct psi_set_exp *current_set_exp = set_exp;
-
 	if (current_let_exp) {
 		while ((current_let_exp = current_let_exp->outer)) {
 			struct psi_impl_var *svar = psi_let_exp_get_impl_var(current_let_exp);
