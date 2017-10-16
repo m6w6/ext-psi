@@ -1412,7 +1412,7 @@ decl_vars_with_layout[vars]:
 ;
 
 decl_enum[enum]:
-	enum_name LBRACE decl_enum_items[list] RBRACE {
+	enum_name LBRACE decl_enum_items[list] optional_comma RBRACE {
 	$enum = psi_decl_enum_init($enum_name->text, $list);
 	$enum->token = $enum_name;
 }
@@ -1581,6 +1581,11 @@ optional_name[name]:
 }
 ;
 
+optional_comma:
+	%empty
+|	COMMA
+;
+
 decl_layout[l]:
 	%empty {
 	$l = NULL;
@@ -1612,6 +1617,9 @@ array_size[as]:
 	$as = 0;
 }
 |	LBRACKET RBRACKET {
+	$as = 0;
+}
+|	LBRACKET CPP_RESTRICT RBRACKET {
 	$as = 0;
 }
 |	LBRACKET num_exp RBRACKET {

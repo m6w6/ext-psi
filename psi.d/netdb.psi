@@ -1,3 +1,5 @@
+#include <netdb.h>
+
 function psi\endhostent() : void {
 	return endhostent() as void(endhostent);
 }

@@ -92,4 +92,17 @@ PSI_CHECK_NETDB() {
 	PSI_DECL(void setnetent, [(int stayopen)])
 	PSI_DECL(void setprotoent, [(int stayopen)])
 	PSI_DECL(void setservent, [(int stayopen)])
+	
+	PSI_STRUCT(struct gaicb, [
+		const char *ar_name,
+		const char *ar_service,
+		const struct addrinfo *ar_request,
+		struct addrinfo *ar_result]
+	)
+	
+	PSI_DECL(int getaddrinfo_a, [(int mode, struct gaicb *list@<:@@:>@, int nitems, struct sigevent *sevp)], [], [-lanl])
+	PSI_DECL(int gai_suspend, [(const struct gaicb *list@<:@@:>@, int nitems, const struct timespec *timeout)], [], [-lanl])
+	PSI_DECL(int gai_error, [(struct gaicb *req)], [], [-lanl])
+	PSI_DECL(int gai_cancel, [(struct gaicb *req)], [], [-lanl])
+	
 }

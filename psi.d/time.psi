@@ -1,4 +1,6 @@
+#include <sys/time.h>
 #include <time.h>
+#include <sys/times.h>
 
 // extern time_t time(time_t *t);
 function psi\time() : int {
@@ -8,8 +10,8 @@ function psi\time() : int {
 
 // extern int gettimeofday(struct timeval *tp, struct timezone *tz);
 function psi\gettimeofday(array &$tv = NULL, array &$tz = NULL) : int {
-	let tp = calloc(1, psi\SIZEOF_STRUCT_TIMEVAL);
-	let tz = calloc(1, psi\SIZEOF_STRUCT_TIMEZONE);
+	let tp = calloc(1, sizeof(struct timeval));
+	let tz = calloc(1, sizeof(struct timezone));
 	return gettimeofday(tp, tz) as to_int(gettimeofday);
 	set $tv = to_array(*tp,
 		to_int(tv_sec),
@@ -48,7 +50,7 @@ function psi\asctime_r(array $tm) : string {
 		intval($tm_yday),
 		intval($tm_isdst)
 	);
-	let buf = calloc(32, psi\SIZEOF_CHAR);
+	let buf = calloc(32, sizeof(char));
 	return asctime_r(tm, buf) as to_string(asctime_r);
 }
 
@@ -71,7 +73,7 @@ function psi\gmtime(int $ts) : array {
 // extern struct tm *gmtime_r(time_t *t, struct tm *buf);
 function psi\gmtime_r(int $ts) : array {
 	let t = &intval($ts);
-	let buf = calloc(1, psi\SIZEOF_STRUCT_TM);
+	let buf = calloc(1, sizeof(struct tm));
 	return gmtime_r(t, buf) as to_array(*gmtime_r,
 		to_int(tm_sec),
 		to_int(tm_min),
@@ -91,7 +93,7 @@ function psi\nanosleep(array $rq = NULL, array &$rm = NULL) : int {
 		intval($tv_sec),
 		intval($tv_nsec)
 	);
-	let rmts = calloc(1, psi\SIZEOF_STRUCT_TIMESPEC);
+	let rmts = calloc(1, sizeof(struct timespec));
 	return nanosleep(rqts, rmts) as to_int(nanosleep);
 	set $rm = to_array(*rmts,
 		to_int(tv_sec),
@@ -99,9 +101,10 @@ function psi\nanosleep(array $rq = NULL, array &$rm = NULL) : int {
 	);
 }
 
+
 // extern clock_t times(struct tms *buf);
 function psi\times(array &$tms = NULL) : int {
-	let buf = calloc(1, psi\SIZEOF_STRUCT_TMS);
+	let buf = calloc(1, sizeof(struct tms));
 	return times(buf) as to_int(times);
 	set $tms = to_array(*buf,
 		to_int(tms_utime),

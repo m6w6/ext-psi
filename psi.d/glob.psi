@@ -1,3 +1,5 @@
+#include <glob.h>
+
 function psi\glob(string $pattern, int $flags, array &$glob = NULL, callable $errfn = NULL) : int {
 	let path = strval($pattern);
 	let flags = intval($flags);
