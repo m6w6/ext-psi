@@ -181,7 +181,7 @@ size_t psi_decl_arg_get_size(struct psi_decl_arg *darg)
 
 	if (darg->var->array_size && darg->var->pointer_level > 1) {
 		size = psi_t_size(PSI_T_POINTER) * darg->var->array_size;
-	} else if (darg->var->pointer_level) {
+	} else if (!darg->var->array_size && darg->var->pointer_level) {
 		size = psi_t_size(PSI_T_POINTER);
 	} else {
 		switch (real->type) {
