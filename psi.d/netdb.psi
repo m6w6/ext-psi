@@ -74,10 +74,10 @@ function psi\getaddrinfo(string $node, string $service, array $hints = NULL, obj
 function psi\getnameinfo(string $addr, string &$host = NULL, string &$service = NULL, int $flags = 0) : int {
 	let sa = strval($addr);
 	let salen = strlen($addr);
-	let hostlen = psi\NI_MAXHOST;
-	let host = calloc(hostlen, psi\SIZEOF_CHAR);
-	let servlen = psi\NI_MAXSERV;
-	let serv = calloc(servlen, psi\SIZEOF_CHAR);
+	let hostlen = NI_MAXHOST;
+	let host = calloc(hostlen, sizeof(char));
+	let servlen = NI_MAXSERV;
+	let serv = calloc(servlen, sizeof(char));
 	let flags = intval($flags);
 	return getnameinfo(sa, salen, host, hostlen, serv, servlen, flags) as to_int(getnameinfo);
 	set $host = to_string(host);

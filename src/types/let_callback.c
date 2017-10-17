@@ -44,7 +44,9 @@ void psi_let_callback_free(struct psi_let_callback **cb_ptr)
 		*cb_ptr = NULL;
 		psi_let_func_free(&cb->func);
 		psi_plist_free(cb->args);
-		psi_plist_free(cb->cb_args);
+		if (cb->cb_args) {
+			psi_plist_free(cb->cb_args);
+		}
 		if (cb->token) {
 			free(cb->token);
 		}
@@ -100,12 +102,14 @@ bool psi_let_callback_validate(struct psi_data *data, struct psi_let_exp *exp,
 		return false;
 	}
 	while (psi_plist_get(cb->args, i++, &set_exp)) {
-		struct psi_decl_var *cb_var, *dvar = psi_set_exp_get_decl_var(set_exp);
+		if (cb->cb_args) {
+			struct psi_decl_var *cb_var;
 
-		if (psi_plist_get(cb->cb_args, i - 1, &cb_var)) {
-			dvar->arg = cb_var->arg;
+			if (psi_plist_get(cb->cb_args, i - 1, &cb_var)) {
+				struct psi_decl_var *dvar = psi_set_exp_get_decl_var(set_exp);
+				dvar->arg = cb_var->arg;
+			}
 		}
-
 		if (!psi_set_exp_validate(data, set_exp, impl, cb->decl)) {
 			return false;
 		}

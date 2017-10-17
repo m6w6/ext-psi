@@ -1867,7 +1867,12 @@ let_calloc[calloc]:
 ;
 
 let_callback[callback]:
-	CALLBACK LPAREN call_decl_vars[cb_args] RPAREN AS callback_rval[func] LPAREN impl_var[var] LPAREN callback_arg_list[args] RPAREN RPAREN {
+	CALLBACK callback_rval[func] LPAREN impl_var[var] LPAREN callback_arg_list[args] RPAREN RPAREN {
+	$callback = psi_let_callback_init(psi_let_func_init($func->type, $func->text, $var), $args, NULL);
+	$callback->func->token = psi_token_copy($func);
+	$callback->token = psi_token_copy($CALLBACK);
+}
+|	CALLBACK LPAREN call_decl_vars[cb_args] RPAREN AS callback_rval[func] LPAREN impl_var[var] LPAREN callback_arg_list[args] RPAREN RPAREN {
 	$callback = psi_let_callback_init(psi_let_func_init($func->type, $func->text, $var), $args, $cb_args);
 	$callback->func->token = psi_token_copy($func);
 	$callback->token = psi_token_copy($CALLBACK);
