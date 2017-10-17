@@ -102,8 +102,7 @@ bool psi_free_exp_validate(struct psi_data *data, struct psi_free_exp *exp,
 	/* now check for known vars */
 	exp->let = calloc(psi_plist_count(exp->vars), sizeof(*exp->let));
 	for (i = 0; psi_plist_get(exp->vars, i, &free_var); ++i) {
-		if (!psi_decl_arg_get_by_var(free_var, impl->decl->args,
-				impl->decl->func)) {
+		if (!psi_impl_get_decl_arg(impl, free_var)) {
 			data->error(data, free_var->token, PSI_WARNING,
 					"Unknown variable '%s' of `free` statement"
 					" of implementation '%s'",
