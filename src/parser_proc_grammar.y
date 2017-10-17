@@ -39,12 +39,37 @@ static inline void psi_parser_proc_add_enum(struct psi_parser *P, struct psi_dec
 	}
 	P->enums = psi_plist_add(P->enums, &e);
 }
+static inline void psi_parser_proc_deanon_typedef(struct psi_decl_arg *def)
+{
+	switch (def->type->type) {
+	case PSI_T_STRUCT:
+		if (!psi_decl_type_is_anon(def->type->name, "struct")) {
+			return;
+		}
+		break;
+	case PSI_T_UNION:
+		if (!psi_decl_type_is_anon(def->type->name, "union")) {
+			return;
+		}
+		break;
+	case PSI_T_ENUM:
+		if (!psi_decl_type_is_anon(def->type->name, "enum")) {
+			return;
+		}
+		break;
+	default:
+		return;
+	}
+	free(def->type->name);
+	def->type->name = strdup(def->var->name);
+}
 static inline void psi_parser_proc_add_typedef(struct psi_parser *P, struct psi_decl_arg *def)
 {
 	assert(def);
 	if (!P->types) {
 		P->types = psi_plist_init((psi_plist_dtor) psi_decl_arg_free);
 	}
+	psi_parser_proc_deanon_typedef(def);
 	P->types = psi_plist_add(P->types, &def);
 }
 static inline void psi_parser_proc_add_const(struct psi_parser *P, struct psi_const *cnst) {
@@ -1518,6 +1543,7 @@ sizeof_body[sizeof]:
 	if ($indirection) {
 		int8_t sizeof_void_p = sizeof(void *);
 		$sizeof = psi_number_init(PSI_T_INT8, &sizeof_void_p, 0);
+		psi_decl_type_free(&$decl_type);
 	} else {
 		$sizeof = psi_number_init(PSI_T_SIZEOF, $decl_type, 0);
 	}
@@ -1634,6 +1660,7 @@ array_size[as]:
 	} else {
 		$as = 0;
 	}
+	psi_num_exp_free(&$num_exp);
 }
 ;
 

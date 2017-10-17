@@ -83,7 +83,6 @@ bool psi_decl_union_validate(struct psi_data *data, struct psi_decl_union *u,
 	if (psi_validate_stack_has_union(type_stack, u->name)) {
 		return true;
 	}
-	psi_validate_stack_add_union(type_stack, u->name, u);
 
 	if (!u->size && !psi_plist_count(u->args)) {
 		data->error(data, u->token, PSI_WARNING,
@@ -91,10 +90,13 @@ bool psi_decl_union_validate(struct psi_data *data, struct psi_decl_union *u,
 		return false;
 	}
 
+	psi_validate_stack_add_union(type_stack, u->name, u);
+
 	for (i = 0; psi_plist_get(u->args, i, &darg); ++i) {
 		darg->var->arg = darg;
 
 		if (!psi_decl_arg_validate(data, darg, type_stack)) {
+			psi_validate_stack_del_union(type_stack, u->name);
 			return false;
 		}
 
@@ -146,6 +148,8 @@ bool psi_decl_union_validate(struct psi_data *data, struct psi_decl_union *u,
 	if (u->size < size) {
 		u->size = psi_align(size, u->align);
 	}
+
+	assert(u->size);
 
 	return true;
 }

@@ -130,12 +130,37 @@ static inline void psi_parser_proc_add_enum(struct psi_parser *P, struct psi_dec
 	}
 	P->enums = psi_plist_add(P->enums, &e);
 }
+static inline void psi_parser_proc_deanon_typedef(struct psi_decl_arg *def)
+{
+	switch (def->type->type) {
+	case PSI_T_STRUCT:
+		if (!psi_decl_type_is_anon(def->type->name, "struct")) {
+			return;
+		}
+		break;
+	case PSI_T_UNION:
+		if (!psi_decl_type_is_anon(def->type->name, "union")) {
+			return;
+		}
+		break;
+	case PSI_T_ENUM:
+		if (!psi_decl_type_is_anon(def->type->name, "enum")) {
+			return;
+		}
+		break;
+	default:
+		return;
+	}
+	free(def->type->name);
+	def->type->name = strdup(def->var->name);
+}
 static inline void psi_parser_proc_add_typedef(struct psi_parser *P, struct psi_decl_arg *def)
 {
 	assert(def);
 	if (!P->types) {
 		P->types = psi_plist_init((psi_plist_dtor) psi_decl_arg_free);
 	}
+	psi_parser_proc_deanon_typedef(def);
 	P->types = psi_plist_add(P->types, &def);
 }
 static inline void psi_parser_proc_add_const(struct psi_parser *P, struct psi_const *cnst) {
@@ -169,7 +194,7 @@ static inline void psi_parser_proc_add_impl(struct psi_parser *P, struct psi_imp
 
 /* end code */
 
-#line 173 "src/parser_proc.c" /* glr.c:264  */
+#line 198 "src/parser_proc.c" /* glr.c:264  */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -348,69 +373,69 @@ static const unsigned char yytranslate[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const unsigned short int yyrline[] =
 {
-       0,   399,   399,   399,   399,   399,   399,   399,   399,   399,
-     399,   399,   399,   399,   399,   399,   399,   399,   399,   399,
-     400,   400,   400,   400,   401,   401,   401,   401,   401,   401,
-     401,   401,   401,   401,   401,   401,   401,   401,   401,   401,
-     401,   401,   401,   402,   402,   402,   402,   402,   402,   402,
-     402,   402,   402,   402,   402,   402,   402,   402,   402,   402,
-     402,   402,   402,   402,   402,   402,   402,   402,   402,   402,
-     402,   402,   402,   402,   402,   402,   402,   402,   402,   402,
-     402,   402,   402,   402,   402,   402,   402,   402,   402,   402,
-     402,   402,   402,   402,   402,   402,   402,   402,   402,   402,
-     402,   402,   402,   402,   402,   402,   402,   402,   402,   402,
-     402,   402,   402,   402,   402,   402,   402,   402,   402,   402,
-     402,   402,   402,   402,   402,   402,   402,   402,   402,   402,
-     402,   402,   402,   402,   402,   402,   402,   402,   402,   402,
-     402,   402,   402,   402,   402,   402,   402,   402,   402,   402,
-     402,   402,   402,   402,   402,   402,   402,   402,   402,   402,
-     402,   403,   403,   403,   403,   403,   403,   403,   403,   403,
-     403,   403,   403,   403,   403,   403,   403,   403,   403,   403,
-     403,   403,   403,   403,   403,   403,   403,   403,   403,   403,
-     403,   403,   403,   403,   403,   403,   403,   403,   403,   403,
-     403,   403,   403,   403,   403,   403,   403,   403,   403,   403,
-     403,   403,   403,   403,   403,   403,   403,   403,   403,   403,
-     403,   403,   403,   403,   403,   403,   403,   403,   403,   403,
-     403,   403,   403,   403,   403,   403,   403,   403,   403,   403,
-     403,   403,   403,   403,   403,   403,   403,   403,   403,   403,
-     403,   403,   403,   403,   403,   403,   403,   403,   403,   403,
-     403,   403,   403,   403,   403,   403,   403,   403,   403,   403,
-     403,   403,   403,   403,   403,   403,   403,   407,   408,   411,
-     412,   415,   416,   417,   418,   424,   432,   435,   438,   439,
-     440,   443,   446,   449,   452,   458,   464,   467,   473,   496,
-     500,   504,   509,   513,   517,   521,   528,   529,   533,   534,
-     538,   539,   540,   544,   545,   549,   550,   554,   555,   556,
-     560,   561,   565,   566,   567,   568,   569,   570,   571,   575,
-     580,   588,   591,   594,   595,   601,   606,   614,   617,   621,
-     625,   632,   636,   640,   644,   649,   659,   669,   674,   679,
-     683,   689,   698,   701,   705,   709,   715,   722,   728,   729,
-     730,   731,   735,   738,   769,   776,   777,   778,   779,   783,
-     786,   795,   801,   804,   810,   813,   819,   820,   828,   839,
-     848,   860,   861,   865,   875,   884,   896,   899,   902,   906,
-     910,   914,   919,   924,   932,   933,   934,   940,   943,   946,
-     952,   953,   957,   960,   963,   969,   972,   975,   983,   995,
-     998,  1001,  1004,  1011,  1014,  1024,  1027,  1030,  1033,  1034,
-    1035,  1039,  1042,  1045,  1056,  1059,  1065,  1066,  1070,  1071,
-    1075,  1079,  1085,  1086,  1092,  1095,  1101,  1104,  1107,  1113,
-    1117,  1118,  1122,  1123,  1127,  1128,  1135,  1136,  1140,  1147,
-    1158,  1165,  1176,  1183,  1194,  1205,  1219,  1220,  1232,  1235,
-    1238,  1244,  1247,  1254,  1257,  1263,  1272,  1284,  1292,  1295,
-    1305,  1318,  1323,  1331,  1341,  1351,  1354,  1358,  1364,  1378,
-    1395,  1398,  1404,  1411,  1421,  1428,  1431,  1437,  1442,  1450,
-    1454,  1458,  1462,  1466,  1470,  1477,  1481,  1485,  1489,  1493,
-    1497,  1503,  1507,  1514,  1517,  1528,  1532,  1536,  1542,  1555,
-    1568,  1581,  1584,  1591,  1592,  1596,  1599,  1602,  1605,  1611,
-    1615,  1622,  1625,  1628,  1631,  1641,  1644,  1650,  1651,  1657,
-    1660,  1666,  1667,  1677,  1680,  1687,  1692,  1697,  1707,  1710,
-    1716,  1719,  1725,  1732,  1739,  1740,  1741,  1742,  1743,  1744,
-    1745,  1746,  1747,  1751,  1754,  1760,  1763,  1766,  1769,  1772,
-    1778,  1782,  1790,  1791,  1795,  1802,  1805,  1808,  1811,  1815,
-    1818,  1824,  1828,  1836,  1843,  1851,  1859,  1860,  1861,  1862,
-    1863,  1864,  1865,  1866,  1867,  1868,  1872,  1875,  1881,  1884,
-    1890,  1891,  1895,  1898,  1904,  1907,  1913,  1920,  1924,  1931,
-    1934,  1937,  1943,  1950,  1953,  1956,  1963,  1968,  1976,  1977,
-    1978,  1979,  1980,  1981,  1982,  1983,  1987,  1990,  1996,  1999,
-    2005,  2012,  2013,  2017,  2024,  2027,  2033,  2041,  2044,  2050
+       0,   424,   424,   424,   424,   424,   424,   424,   424,   424,
+     424,   424,   424,   424,   424,   424,   424,   424,   424,   424,
+     425,   425,   425,   425,   426,   426,   426,   426,   426,   426,
+     426,   426,   426,   426,   426,   426,   426,   426,   426,   426,
+     426,   426,   426,   427,   427,   427,   427,   427,   427,   427,
+     427,   427,   427,   427,   427,   427,   427,   427,   427,   427,
+     427,   427,   427,   427,   427,   427,   427,   427,   427,   427,
+     427,   427,   427,   427,   427,   427,   427,   427,   427,   427,
+     427,   427,   427,   427,   427,   427,   427,   427,   427,   427,
+     427,   427,   427,   427,   427,   427,   427,   427,   427,   427,
+     427,   427,   427,   427,   427,   427,   427,   427,   427,   427,
+     427,   427,   427,   427,   427,   427,   427,   427,   427,   427,
+     427,   427,   427,   427,   427,   427,   427,   427,   427,   427,
+     427,   427,   427,   427,   427,   427,   427,   427,   427,   427,
+     427,   427,   427,   427,   427,   427,   427,   427,   427,   427,
+     427,   427,   427,   427,   427,   427,   427,   427,   427,   427,
+     427,   428,   428,   428,   428,   428,   428,   428,   428,   428,
+     428,   428,   428,   428,   428,   428,   428,   428,   428,   428,
+     428,   428,   428,   428,   428,   428,   428,   428,   428,   428,
+     428,   428,   428,   428,   428,   428,   428,   428,   428,   428,
+     428,   428,   428,   428,   428,   428,   428,   428,   428,   428,
+     428,   428,   428,   428,   428,   428,   428,   428,   428,   428,
+     428,   428,   428,   428,   428,   428,   428,   428,   428,   428,
+     428,   428,   428,   428,   428,   428,   428,   428,   428,   428,
+     428,   428,   428,   428,   428,   428,   428,   428,   428,   428,
+     428,   428,   428,   428,   428,   428,   428,   428,   428,   428,
+     428,   428,   428,   428,   428,   428,   428,   428,   428,   428,
+     428,   428,   428,   428,   428,   428,   428,   432,   433,   436,
+     437,   440,   441,   442,   443,   449,   457,   460,   463,   464,
+     465,   468,   471,   474,   477,   483,   489,   492,   498,   521,
+     525,   529,   534,   538,   542,   546,   553,   554,   558,   559,
+     563,   564,   565,   569,   570,   574,   575,   579,   580,   581,
+     585,   586,   590,   591,   592,   593,   594,   595,   596,   600,
+     605,   613,   616,   619,   620,   626,   631,   639,   642,   646,
+     650,   657,   661,   665,   669,   674,   684,   694,   699,   704,
+     708,   714,   723,   726,   730,   734,   740,   747,   753,   754,
+     755,   756,   760,   763,   794,   801,   802,   803,   804,   808,
+     811,   820,   826,   829,   835,   838,   844,   845,   853,   864,
+     873,   885,   886,   890,   900,   909,   921,   924,   927,   931,
+     935,   939,   944,   949,   957,   958,   959,   965,   968,   971,
+     977,   978,   982,   985,   988,   994,   997,  1000,  1008,  1020,
+    1023,  1026,  1029,  1036,  1039,  1049,  1052,  1055,  1058,  1059,
+    1060,  1064,  1067,  1070,  1081,  1084,  1090,  1091,  1095,  1096,
+    1100,  1104,  1110,  1111,  1117,  1120,  1126,  1129,  1132,  1138,
+    1142,  1143,  1147,  1148,  1152,  1153,  1160,  1161,  1165,  1172,
+    1183,  1190,  1201,  1208,  1219,  1230,  1244,  1245,  1257,  1260,
+    1263,  1269,  1272,  1279,  1282,  1288,  1297,  1309,  1317,  1320,
+    1330,  1343,  1348,  1356,  1366,  1376,  1379,  1383,  1389,  1403,
+    1420,  1423,  1429,  1436,  1446,  1453,  1456,  1462,  1467,  1475,
+    1479,  1483,  1487,  1491,  1495,  1502,  1506,  1510,  1514,  1518,
+    1522,  1528,  1532,  1539,  1542,  1554,  1558,  1562,  1568,  1581,
+    1594,  1607,  1610,  1617,  1618,  1622,  1625,  1628,  1631,  1637,
+    1641,  1648,  1651,  1654,  1657,  1668,  1671,  1677,  1678,  1684,
+    1687,  1693,  1694,  1704,  1707,  1714,  1719,  1724,  1734,  1737,
+    1743,  1746,  1752,  1759,  1766,  1767,  1768,  1769,  1770,  1771,
+    1772,  1773,  1774,  1778,  1781,  1787,  1790,  1793,  1796,  1799,
+    1805,  1809,  1817,  1818,  1822,  1829,  1832,  1835,  1838,  1842,
+    1845,  1851,  1855,  1863,  1870,  1878,  1886,  1887,  1888,  1889,
+    1890,  1891,  1892,  1893,  1894,  1895,  1899,  1902,  1908,  1911,
+    1917,  1918,  1922,  1925,  1931,  1934,  1940,  1947,  1951,  1958,
+    1961,  1964,  1970,  1977,  1980,  1983,  1990,  1995,  2003,  2004,
+    2005,  2006,  2007,  2008,  2009,  2010,  2014,  2017,  2023,  2026,
+    2032,  2039,  2040,  2044,  2051,  2054,  2060,  2068,  2071,  2077
 };
 #endif
 
@@ -2731,18 +2756,18 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
   switch (yyn)
     {
         case 284:
-#line 418 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 443 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	if ((*(struct psi_cpp_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))) {
 		psi_cpp_exp_exec((*(struct psi_cpp_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)), P->preproc, PSI_DATA(P));
 		psi_cpp_exp_free(&(*(struct psi_cpp_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	}
 }
-#line 2742 "src/parser_proc.c" /* glr.c:816  */
+#line 2767 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 285:
-#line 424 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 449 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	if (P->file.ln) {
 		P->error(PSI_DATA(P), (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)), PSI_WARNING,
@@ -2751,91 +2776,91 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 		P->file.ln = strndup((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->size);
 	}
 }
-#line 2755 "src/parser_proc.c" /* glr.c:816  */
+#line 2780 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 286:
-#line 432 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 457 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	psi_parser_proc_add_const(P, (*(struct psi_const **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 2763 "src/parser_proc.c" /* glr.c:816  */
+#line 2788 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 287:
-#line 435 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 460 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	psi_parser_proc_add_decl(P, (*(struct psi_decl **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 2771 "src/parser_proc.c" /* glr.c:816  */
+#line 2796 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 290:
-#line 440 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 465 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	psi_parser_proc_add_typedef(P, (*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 2779 "src/parser_proc.c" /* glr.c:816  */
+#line 2804 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 291:
-#line 443 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 468 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	psi_parser_proc_add_struct(P, (*(struct psi_decl_struct **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 2787 "src/parser_proc.c" /* glr.c:816  */
+#line 2812 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 292:
-#line 446 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 471 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	psi_parser_proc_add_union(P, (*(struct psi_decl_union **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 2795 "src/parser_proc.c" /* glr.c:816  */
+#line 2820 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 293:
-#line 449 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 474 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	psi_parser_proc_add_enum(P, (*(struct psi_decl_enum **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 2803 "src/parser_proc.c" /* glr.c:816  */
+#line 2828 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 294:
-#line 452 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 477 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	psi_parser_proc_add_impl(P, (*(struct psi_impl **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 2811 "src/parser_proc.c" /* glr.c:816  */
+#line 2836 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 295:
-#line 458 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 483 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval));
 }
-#line 2819 "src/parser_proc.c" /* glr.c:816  */
+#line 2844 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 296:
-#line 464 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 489 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_cpp_exp **)(&(*yyvalp))) = NULL;
 }
-#line 2827 "src/parser_proc.c" /* glr.c:816  */
+#line 2852 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 297:
-#line 467 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 492 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_cpp_exp **)(&(*yyvalp))) = (*(struct psi_cpp_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval));
 }
-#line 2835 "src/parser_proc.c" /* glr.c:816  */
+#line 2860 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 298:
-#line 473 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 498 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	if ((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))) {
 		struct psi_token *msg = NULL;
@@ -2859,201 +2884,201 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 	}
 	(*(struct psi_cpp_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 }
-#line 2863 "src/parser_proc.c" /* glr.c:816  */
+#line 2888 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 299:
-#line 496 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 521 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_cpp_exp **)(&(*yyvalp))) = psi_cpp_exp_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type, psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))));
 	(*(struct psi_cpp_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 }
-#line 2872 "src/parser_proc.c" /* glr.c:816  */
+#line 2897 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 300:
-#line 500 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 525 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_cpp_exp **)(&(*yyvalp))) = psi_cpp_exp_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type, NULL);
 	(*(struct psi_cpp_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 2881 "src/parser_proc.c" /* glr.c:816  */
+#line 2906 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 301:
-#line 504 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 529 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_cpp_exp **)(&(*yyvalp))) = psi_cpp_exp_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type, psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))));
 	(*(struct psi_cpp_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 }
-#line 2891 "src/parser_proc.c" /* glr.c:816  */
+#line 2916 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 302:
-#line 509 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 534 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_cpp_exp **)(&(*yyvalp))) = psi_cpp_exp_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type, (*(struct psi_cpp_macro_decl **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_cpp_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 }
-#line 2900 "src/parser_proc.c" /* glr.c:816  */
+#line 2925 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 303:
-#line 513 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 538 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_cpp_exp **)(&(*yyvalp))) = psi_cpp_exp_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type, (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_cpp_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 }
-#line 2909 "src/parser_proc.c" /* glr.c:816  */
+#line 2934 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 304:
-#line 517 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 542 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_cpp_exp **)(&(*yyvalp))) = psi_cpp_exp_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type, NULL);
 	(*(struct psi_cpp_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 2918 "src/parser_proc.c" /* glr.c:816  */
+#line 2943 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 305:
-#line 521 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 546 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	psi_plist_free((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_cpp_exp **)(&(*yyvalp))) = NULL;
 }
-#line 2927 "src/parser_proc.c" /* glr.c:816  */
+#line 2952 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 329:
-#line 575 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 600 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-5)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_cpp_macro_decl **)(&(*yyvalp))) = psi_cpp_macro_decl_init((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)), NULL);
 	(*(struct psi_cpp_macro_decl **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-5)].yystate.yysemantics.yysval)));
 }
-#line 2937 "src/parser_proc.c" /* glr.c:816  */
+#line 2962 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 330:
-#line 580 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 605 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_cpp_macro_decl **)(&(*yyvalp))) = psi_cpp_macro_decl_init(NULL, (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)), NULL);
 	(*(struct psi_cpp_macro_decl **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 }
-#line 2947 "src/parser_proc.c" /* glr.c:816  */
+#line 2972 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 331:
-#line 588 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 613 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_init(NULL);
 }
-#line 2955 "src/parser_proc.c" /* glr.c:816  */
+#line 2980 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 332:
-#line 591 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 616 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_init(NULL); /* FIXME */
 }
-#line 2963 "src/parser_proc.c" /* glr.c:816  */
+#line 2988 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 334:
-#line 595 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 620 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval));
 }
-#line 2971 "src/parser_proc.c" /* glr.c:816  */
+#line 2996 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 335:
-#line 601 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 626 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_token_free), &(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 2981 "src/parser_proc.c" /* glr.c:816  */
+#line 3006 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 336:
-#line 606 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 631 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), &(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 2991 "src/parser_proc.c" /* glr.c:816  */
+#line 3016 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 337:
-#line 614 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 639 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = NULL;
 }
-#line 2999 "src/parser_proc.c" /* glr.c:816  */
+#line 3024 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 339:
-#line 621 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 646 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_token_free), &(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3008 "src/parser_proc.c" /* glr.c:816  */
+#line 3033 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 340:
-#line 625 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 650 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)), &(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3017 "src/parser_proc.c" /* glr.c:816  */
+#line 3042 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 341:
-#line 632 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 657 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_num_exp **)(&(*yyvalp))) = psi_num_exp_init_unary((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval))->type, (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	(*(struct psi_num_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)));
 }
-#line 3026 "src/parser_proc.c" /* glr.c:816  */
+#line 3051 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 342:
-#line 636 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 661 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_num_exp **)(&(*yyvalp))) = psi_num_exp_init_unary((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type, (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_num_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 }
-#line 3035 "src/parser_proc.c" /* glr.c:816  */
+#line 3060 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 343:
-#line 640 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 665 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_num_exp **)(&(*yyvalp))) = psi_num_exp_init_binary((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type, (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_num_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 }
-#line 3044 "src/parser_proc.c" /* glr.c:816  */
+#line 3069 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 344:
-#line 644 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 669 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_num_exp **)(&(*yyvalp))) = psi_num_exp_init_ternary((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->type, (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval)), (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_num_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)));
 }
-#line 3053 "src/parser_proc.c" /* glr.c:816  */
+#line 3078 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 345:
-#line 649 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 674 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	{
 		uint8_t exists;
@@ -3064,11 +3089,11 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 		(*(struct psi_num_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	}
 }
-#line 3068 "src/parser_proc.c" /* glr.c:816  */
+#line 3093 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 346:
-#line 659 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 684 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	{
 		uint8_t exists;
@@ -3079,112 +3104,112 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 		(*(struct psi_num_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	}
 }
-#line 3083 "src/parser_proc.c" /* glr.c:816  */
+#line 3108 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 347:
-#line 669 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 694 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_num_exp **)(&(*yyvalp))) = psi_num_exp_init_num(psi_number_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->flags));
 	(*(struct psi_num_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_num_exp **)(&(*yyvalp)))->data.n->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3093 "src/parser_proc.c" /* glr.c:816  */
+#line 3118 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 348:
-#line 674 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 699 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_num_exp **)(&(*yyvalp))) = psi_num_exp_init_num(psi_number_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text, 0));
 	(*(struct psi_num_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_num_exp **)(&(*yyvalp)))->data.n->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3103 "src/parser_proc.c" /* glr.c:816  */
+#line 3128 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 349:
-#line 679 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 704 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_num_exp **)(&(*yyvalp))) = psi_num_exp_init_num((*(struct psi_number **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_num_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_number **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->token);
 }
-#line 3112 "src/parser_proc.c" /* glr.c:816  */
+#line 3137 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 350:
-#line 683 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 708 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_num_exp **)(&(*yyvalp))) = psi_num_exp_init_num(psi_number_init(PSI_T_DEFINE, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text, 0));
 	(*(struct psi_num_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_num_exp **)(&(*yyvalp)))->data.n->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3123 "src/parser_proc.c" /* glr.c:816  */
+#line 3148 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 351:
-#line 689 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 714 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_num_exp **)(&(*yyvalp))) = psi_num_exp_init_num(psi_number_init(PSI_T_FUNCTION,
 		psi_cpp_macro_call_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->text, (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))), 0));
 	(*(struct psi_num_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)));
 }
-#line 3134 "src/parser_proc.c" /* glr.c:816  */
+#line 3159 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 352:
-#line 698 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 723 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = NULL;
 }
-#line 3142 "src/parser_proc.c" /* glr.c:816  */
+#line 3167 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 354:
-#line 705 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 730 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_num_exp_free), 
 		&(*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3151 "src/parser_proc.c" /* glr.c:816  */
-    break;
-
-  case 355:
-#line 709 "src/parser_proc_grammar.y" /* glr.c:816  */
-    {
-	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), &(*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
-}
-#line 3159 "src/parser_proc.c" /* glr.c:816  */
-    break;
-
-  case 356:
-#line 715 "src/parser_proc_grammar.y" /* glr.c:816  */
-    {
-	(*(struct psi_const **)(&(*yyvalp))) = psi_const_init((*(struct psi_const_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval)), (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->text, (*(struct psi_impl_def_val **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
-	(*(struct psi_const **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)));
-}
-#line 3168 "src/parser_proc.c" /* glr.c:816  */
-    break;
-
-  case 357:
-#line 722 "src/parser_proc_grammar.y" /* glr.c:816  */
-    {
-	(*(struct psi_const_type **)(&(*yyvalp))) = psi_const_type_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text);
-}
 #line 3176 "src/parser_proc.c" /* glr.c:816  */
     break;
 
-  case 362:
-#line 735 "src/parser_proc_grammar.y" /* glr.c:816  */
+  case 355:
+#line 734 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
-	(*(struct psi_impl_def_val **)(&(*yyvalp))) = NULL;
+	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), &(*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
 #line 3184 "src/parser_proc.c" /* glr.c:816  */
     break;
 
+  case 356:
+#line 740 "src/parser_proc_grammar.y" /* glr.c:816  */
+    {
+	(*(struct psi_const **)(&(*yyvalp))) = psi_const_init((*(struct psi_const_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval)), (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->text, (*(struct psi_impl_def_val **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
+	(*(struct psi_const **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)));
+}
+#line 3193 "src/parser_proc.c" /* glr.c:816  */
+    break;
+
+  case 357:
+#line 747 "src/parser_proc_grammar.y" /* glr.c:816  */
+    {
+	(*(struct psi_const_type **)(&(*yyvalp))) = psi_const_type_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text);
+}
+#line 3201 "src/parser_proc.c" /* glr.c:816  */
+    break;
+
+  case 362:
+#line 760 "src/parser_proc_grammar.y" /* glr.c:816  */
+    {
+	(*(struct psi_impl_def_val **)(&(*yyvalp))) = NULL;
+}
+#line 3209 "src/parser_proc.c" /* glr.c:816  */
+    break;
+
   case 363:
-#line 738 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 763 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	if (psi_num_exp_validate(PSI_DATA(P), (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)), NULL, NULL, NULL, NULL, NULL)) {
 		impl_val res = {0};
@@ -3216,28 +3241,28 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 	}
 	psi_num_exp_free(&(*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3220 "src/parser_proc.c" /* glr.c:816  */
+#line 3245 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 364:
-#line 769 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 794 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_impl_def_val **)(&(*yyvalp))) = psi_impl_def_val_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text);
 	(*(struct psi_impl_def_val **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3229 "src/parser_proc.c" /* glr.c:816  */
+#line 3254 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 369:
-#line 783 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 808 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = (*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval));
 }
-#line 3237 "src/parser_proc.c" /* glr.c:816  */
+#line 3262 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 370:
-#line 786 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 811 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = psi_decl_arg_init(
 		psi_decl_type_init(PSI_T_VOID, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval))->text),
@@ -3247,51 +3272,51 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->type->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)));
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->var->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 }
-#line 3251 "src/parser_proc.c" /* glr.c:816  */
+#line 3276 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 371:
-#line 795 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 820 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = (*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval));
 }
-#line 3259 "src/parser_proc.c" /* glr.c:816  */
+#line 3284 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 372:
-#line 801 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 826 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = (*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
-#line 3267 "src/parser_proc.c" /* glr.c:816  */
+#line 3292 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 373:
-#line 804 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 829 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = (*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
-#line 3275 "src/parser_proc.c" /* glr.c:816  */
+#line 3300 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 374:
-#line 810 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 835 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = (*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
-#line 3283 "src/parser_proc.c" /* glr.c:816  */
+#line 3308 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 375:
-#line 813 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 838 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = (*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
-#line 3291 "src/parser_proc.c" /* glr.c:816  */
+#line 3316 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 377:
-#line 820 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 845 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = psi_decl_arg_init(
 		psi_decl_type_init(PSI_T_FUNCTION, (*(struct psi_decl **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->func->var->name),
@@ -3300,11 +3325,11 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->type->token = psi_token_copy((*(struct psi_decl **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->func->token);
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->type->real.func = (*(struct psi_decl **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
-#line 3304 "src/parser_proc.c" /* glr.c:816  */
+#line 3329 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 378:
-#line 828 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 853 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = psi_decl_arg_init(
@@ -3316,11 +3341,11 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->type->real.enm = (*(struct psi_decl_enum **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval));
 	psi_parser_proc_add_enum(P, (*(struct psi_decl_enum **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 }
-#line 3320 "src/parser_proc.c" /* glr.c:816  */
+#line 3345 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 379:
-#line 839 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 864 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = psi_decl_arg_init(psi_decl_type_init(PSI_T_STRUCT, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->text), (*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->type->token = (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval));
@@ -3330,11 +3355,11 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->type->real.strct->size = (*(struct psi_layout*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)).len;
 	psi_parser_proc_add_struct(P, (*(struct psi_decl_arg **)(&(*yyvalp)))->type->real.strct);
 }
-#line 3334 "src/parser_proc.c" /* glr.c:816  */
+#line 3359 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 380:
-#line 848 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 873 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = psi_decl_arg_init(psi_decl_type_init(PSI_T_UNION, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->text), (*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->type->token = (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval));
@@ -3344,20 +3369,20 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->type->real.unn->size = (*(struct psi_layout*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)).len;
 	psi_parser_proc_add_union(P, (*(struct psi_decl_arg **)(&(*yyvalp)))->type->real.unn);
 }
-#line 3348 "src/parser_proc.c" /* glr.c:816  */
+#line 3373 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 382:
-#line 861 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 886 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = psi_decl_arg_init((*(struct psi_decl_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)), psi_decl_var_init(NULL, 0, 0));
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->var->token = psi_token_copy((*(struct psi_decl_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->token);
 }
-#line 3357 "src/parser_proc.c" /* glr.c:816  */
+#line 3382 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 383:
-#line 865 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 890 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = psi_decl_arg_init(
 		psi_decl_type_init(PSI_T_ENUM, (*(struct psi_decl_enum **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->name),
@@ -3368,11 +3393,11 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->type->real.enm = (*(struct psi_decl_enum **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 	psi_parser_proc_add_enum(P, (*(struct psi_decl_enum **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3372 "src/parser_proc.c" /* glr.c:816  */
+#line 3397 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 384:
-#line 875 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 900 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = psi_decl_arg_init(psi_decl_type_init(PSI_T_STRUCT, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval))->text), psi_decl_var_init(NULL, 0, 0));
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->type->token = (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval));
@@ -3382,11 +3407,11 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->type->real.strct->size = (*(struct psi_layout*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)).len;
 	psi_parser_proc_add_struct(P, (*(struct psi_decl_arg **)(&(*yyvalp)))->type->real.strct);
 }
-#line 3386 "src/parser_proc.c" /* glr.c:816  */
+#line 3411 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 385:
-#line 884 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 909 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = psi_decl_arg_init(psi_decl_type_init(PSI_T_UNION, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval))->text), psi_decl_var_init(NULL, 0, 0));
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->type->token = (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval));
@@ -3396,138 +3421,138 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->type->real.unn->size = (*(struct psi_layout*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)).len;
 	psi_parser_proc_add_union(P, (*(struct psi_decl_arg **)(&(*yyvalp)))->type->real.unn);
 }
-#line 3400 "src/parser_proc.c" /* glr.c:816  */
+#line 3425 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 386:
-#line 896 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 921 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_decl_type **)(&(*yyvalp))) = (*(struct psi_decl_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
-#line 3408 "src/parser_proc.c" /* glr.c:816  */
+#line 3433 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 387:
-#line 899 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 924 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_decl_type **)(&(*yyvalp))) = (*(struct psi_decl_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
-#line 3416 "src/parser_proc.c" /* glr.c:816  */
+#line 3441 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 389:
-#line 906 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 931 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_decl_type **)(&(*yyvalp))) = psi_decl_type_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text);
 	(*(struct psi_decl_type **)(&(*yyvalp)))->token = (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
-#line 3425 "src/parser_proc.c" /* glr.c:816  */
+#line 3450 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 391:
-#line 914 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 939 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_decl_type **)(&(*yyvalp))) = psi_decl_type_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text);
 	(*(struct psi_decl_type **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3435 "src/parser_proc.c" /* glr.c:816  */
+#line 3460 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 392:
-#line 919 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 944 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_decl_type **)(&(*yyvalp))) = psi_decl_type_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text);
 	(*(struct psi_decl_type **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3445 "src/parser_proc.c" /* glr.c:816  */
+#line 3470 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 393:
-#line 924 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 949 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_decl_type **)(&(*yyvalp))) = psi_decl_type_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text);
 	(*(struct psi_decl_type **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3455 "src/parser_proc.c" /* glr.c:816  */
+#line 3480 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 396:
-#line 934 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 959 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3463 "src/parser_proc.c" /* glr.c:816  */
+#line 3488 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 397:
-#line 940 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 965 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3471 "src/parser_proc.c" /* glr.c:816  */
+#line 3496 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 398:
-#line 943 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 968 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3479 "src/parser_proc.c" /* glr.c:816  */
+#line 3504 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 399:
-#line 946 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 971 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = psi_token_cat(" ", 2, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)), (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3487 "src/parser_proc.c" /* glr.c:816  */
+#line 3512 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 402:
-#line 957 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 982 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3495 "src/parser_proc.c" /* glr.c:816  */
+#line 3520 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 403:
-#line 960 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 985 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3503 "src/parser_proc.c" /* glr.c:816  */
+#line 3528 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 404:
-#line 963 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 988 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = psi_token_cat(" ", 2, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)), (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3511 "src/parser_proc.c" /* glr.c:816  */
+#line 3536 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 405:
-#line 969 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 994 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3519 "src/parser_proc.c" /* glr.c:816  */
+#line 3544 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 406:
-#line 972 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 997 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3527 "src/parser_proc.c" /* glr.c:816  */
+#line 3552 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 407:
-#line 975 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1000 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	if ((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))) {
 		(*(struct psi_token **)(&(*yyvalp))) = psi_token_cat(" ", 2, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)), (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -3536,11 +3561,11 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 		(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	}
 }
-#line 3540 "src/parser_proc.c" /* glr.c:816  */
+#line 3565 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 408:
-#line 983 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1008 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	if ((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))) {
 		(*(struct psi_token **)(&(*yyvalp))) = psi_token_cat(" ", 2, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)), (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -3550,35 +3575,35 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 		(*(struct psi_token **)(&(*yyvalp))) = (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval));
 	}
 }
-#line 3554 "src/parser_proc.c" /* glr.c:816  */
+#line 3579 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 409:
-#line 995 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1020 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = NULL;
 }
-#line 3562 "src/parser_proc.c" /* glr.c:816  */
+#line 3587 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 410:
-#line 998 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1023 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3570 "src/parser_proc.c" /* glr.c:816  */
+#line 3595 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 411:
-#line 1001 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1026 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3578 "src/parser_proc.c" /* glr.c:816  */
+#line 3603 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 412:
-#line 1004 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1029 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	if ((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))) {
 		(*(struct psi_token **)(&(*yyvalp))) = psi_token_cat(" ", 2, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)), (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -3586,19 +3611,19 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 		(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	}
 }
-#line 3590 "src/parser_proc.c" /* glr.c:816  */
+#line 3615 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 413:
-#line 1011 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1036 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3598 "src/parser_proc.c" /* glr.c:816  */
+#line 3623 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 414:
-#line 1014 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1039 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	if ((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))) {
 		(*(struct psi_token **)(&(*yyvalp))) = psi_token_cat(" ", 2, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)), (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -3606,43 +3631,43 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 		(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	}
 }
-#line 3610 "src/parser_proc.c" /* glr.c:816  */
+#line 3635 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 415:
-#line 1024 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1049 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = NULL;
 }
-#line 3618 "src/parser_proc.c" /* glr.c:816  */
+#line 3643 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 417:
-#line 1030 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1055 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = NULL;
 }
-#line 3626 "src/parser_proc.c" /* glr.c:816  */
+#line 3651 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 421:
-#line 1039 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1064 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = NULL;
 }
-#line 3634 "src/parser_proc.c" /* glr.c:816  */
+#line 3659 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 422:
-#line 1042 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1067 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3642 "src/parser_proc.c" /* glr.c:816  */
+#line 3667 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 423:
-#line 1045 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1070 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	if ((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))) {
 		(*(struct psi_token **)(&(*yyvalp))) = psi_token_cat(" ", 2, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)), (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -3651,117 +3676,92 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 		(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	}
 }
-#line 3655 "src/parser_proc.c" /* glr.c:816  */
+#line 3680 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 424:
-#line 1056 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1081 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_decl **)(&(*yyvalp))) = (*(struct psi_decl **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval));
 }
-#line 3663 "src/parser_proc.c" /* glr.c:816  */
+#line 3688 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 425:
-#line 1059 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1084 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_decl **)(&(*yyvalp))) = (*(struct psi_decl **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval));
 }
-#line 3671 "src/parser_proc.c" /* glr.c:816  */
+#line 3696 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 431:
-#line 1079 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1104 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	psi_decl_arg_free(&(*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 }
-#line 3679 "src/parser_proc.c" /* glr.c:816  */
+#line 3704 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 433:
-#line 1086 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1111 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	psi_plist_free((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3687 "src/parser_proc.c" /* glr.c:816  */
+#line 3712 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 434:
-#line 1092 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1117 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_decl_var_free), &(*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3695 "src/parser_proc.c" /* glr.c:816  */
+#line 3720 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 435:
-#line 1095 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1120 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), &(*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3703 "src/parser_proc.c" /* glr.c:816  */
+#line 3728 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 436:
-#line 1101 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1126 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	psi_decl_free(&(*(struct psi_decl **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
-}
-#line 3711 "src/parser_proc.c" /* glr.c:816  */
-    break;
-
-  case 437:
-#line 1104 "src/parser_proc_grammar.y" /* glr.c:816  */
-    {
-	psi_decl_free(&(*(struct psi_decl **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
-}
-#line 3719 "src/parser_proc.c" /* glr.c:816  */
-    break;
-
-  case 438:
-#line 1107 "src/parser_proc_grammar.y" /* glr.c:816  */
-    {
-	psi_decl_free(&(*(struct psi_decl **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
-}
-#line 3727 "src/parser_proc.c" /* glr.c:816  */
-    break;
-
-  case 445:
-#line 1128 "src/parser_proc_grammar.y" /* glr.c:816  */
-    {
-	(*(struct psi_decl **)(&(*yyvalp))) = (*(struct psi_decl **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
-	(*(struct psi_decl **)(&(*yyvalp)))->abi = psi_decl_abi_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->text);
 }
 #line 3736 "src/parser_proc.c" /* glr.c:816  */
     break;
 
-  case 448:
-#line 1140 "src/parser_proc_grammar.y" /* glr.c:816  */
+  case 437:
+#line 1129 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
-	(*(struct psi_decl **)(&(*yyvalp))) = psi_decl_init((*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval)), (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)));
-	if ((*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))) {
-		(*(struct psi_decl **)(&(*yyvalp)))->func->var->pointer_level += 1;
-		(*(struct psi_decl **)(&(*yyvalp)))->func->var->array_size = (*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
-	}
+	psi_decl_free(&(*(struct psi_decl **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 }
-#line 3748 "src/parser_proc.c" /* glr.c:816  */
+#line 3744 "src/parser_proc.c" /* glr.c:816  */
     break;
 
-  case 449:
-#line 1147 "src/parser_proc_grammar.y" /* glr.c:816  */
+  case 438:
+#line 1132 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
-	(*(struct psi_decl **)(&(*yyvalp))) = psi_decl_init((*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-6)].yystate.yysemantics.yysval)), (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval)));
-	(*(struct psi_decl **)(&(*yyvalp)))->varargs = 1;
-	if ((*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))) {
-		(*(struct psi_decl **)(&(*yyvalp)))->func->var->pointer_level += 1;
-		(*(struct psi_decl **)(&(*yyvalp)))->func->var->array_size = (*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
-	}
+	psi_decl_free(&(*(struct psi_decl **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
+}
+#line 3752 "src/parser_proc.c" /* glr.c:816  */
+    break;
+
+  case 445:
+#line 1153 "src/parser_proc_grammar.y" /* glr.c:816  */
+    {
+	(*(struct psi_decl **)(&(*yyvalp))) = (*(struct psi_decl **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
+	(*(struct psi_decl **)(&(*yyvalp)))->abi = psi_decl_abi_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->text);
 }
 #line 3761 "src/parser_proc.c" /* glr.c:816  */
     break;
 
-  case 450:
-#line 1158 "src/parser_proc_grammar.y" /* glr.c:816  */
+  case 448:
+#line 1165 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_decl **)(&(*yyvalp))) = psi_decl_init((*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval)), (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)));
 	if ((*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))) {
@@ -3772,8 +3772,8 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 #line 3773 "src/parser_proc.c" /* glr.c:816  */
     break;
 
-  case 451:
-#line 1165 "src/parser_proc_grammar.y" /* glr.c:816  */
+  case 449:
+#line 1172 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_decl **)(&(*yyvalp))) = psi_decl_init((*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-6)].yystate.yysemantics.yysval)), (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval)));
 	(*(struct psi_decl **)(&(*yyvalp)))->varargs = 1;
@@ -3785,8 +3785,33 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 #line 3786 "src/parser_proc.c" /* glr.c:816  */
     break;
 
+  case 450:
+#line 1183 "src/parser_proc_grammar.y" /* glr.c:816  */
+    {
+	(*(struct psi_decl **)(&(*yyvalp))) = psi_decl_init((*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval)), (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)));
+	if ((*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))) {
+		(*(struct psi_decl **)(&(*yyvalp)))->func->var->pointer_level += 1;
+		(*(struct psi_decl **)(&(*yyvalp)))->func->var->array_size = (*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
+	}
+}
+#line 3798 "src/parser_proc.c" /* glr.c:816  */
+    break;
+
+  case 451:
+#line 1190 "src/parser_proc_grammar.y" /* glr.c:816  */
+    {
+	(*(struct psi_decl **)(&(*yyvalp))) = psi_decl_init((*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-6)].yystate.yysemantics.yysval)), (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval)));
+	(*(struct psi_decl **)(&(*yyvalp)))->varargs = 1;
+	if ((*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))) {
+		(*(struct psi_decl **)(&(*yyvalp)))->func->var->pointer_level += 1;
+		(*(struct psi_decl **)(&(*yyvalp)))->func->var->array_size = (*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
+	}
+}
+#line 3811 "src/parser_proc.c" /* glr.c:816  */
+    break;
+
   case 452:
-#line 1176 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1201 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(void) (*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval));
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
@@ -3794,11 +3819,11 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->var->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 }
-#line 3798 "src/parser_proc.c" /* glr.c:816  */
+#line 3823 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 453:
-#line 1183 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1208 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(void) (*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval));
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
@@ -3810,11 +3835,11 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->var->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 }
-#line 3814 "src/parser_proc.c" /* glr.c:816  */
+#line 3839 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 454:
-#line 1194 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1219 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(void) (*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval));
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
@@ -3826,11 +3851,11 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->var->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 }
-#line 3830 "src/parser_proc.c" /* glr.c:816  */
+#line 3855 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 455:
-#line 1205 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1230 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(void) (*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval));
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
@@ -3842,11 +3867,11 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->var->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 }
-#line 3846 "src/parser_proc.c" /* glr.c:816  */
+#line 3871 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 457:
-#line 1220 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1245 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = psi_decl_arg_init(
 		psi_decl_type_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->text),
@@ -3856,70 +3881,70 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->var->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3860 "src/parser_proc.c" /* glr.c:816  */
+#line 3885 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 458:
-#line 1232 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1257 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = NULL;
 }
-#line 3868 "src/parser_proc.c" /* glr.c:816  */
+#line 3893 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 459:
-#line 1235 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1260 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = NULL;
 }
-#line 3876 "src/parser_proc.c" /* glr.c:816  */
+#line 3901 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 460:
-#line 1238 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1263 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
-#line 3884 "src/parser_proc.c" /* glr.c:816  */
+#line 3909 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 461:
-#line 1244 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1269 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_decl_arg_free), &(*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3892 "src/parser_proc.c" /* glr.c:816  */
+#line 3917 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 462:
-#line 1247 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1272 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), &(*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3900 "src/parser_proc.c" /* glr.c:816  */
+#line 3925 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 463:
-#line 1254 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1279 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = (*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
-#line 3908 "src/parser_proc.c" /* glr.c:816  */
+#line 3933 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 464:
-#line 1257 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1282 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = psi_decl_arg_init(
 		(*(struct psi_decl_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)), 
 		psi_decl_var_init(NULL, (*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)), 0)
 	);
 }
-#line 3919 "src/parser_proc.c" /* glr.c:816  */
+#line 3944 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 465:
-#line 1263 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1288 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = psi_decl_arg_init(
 		psi_decl_type_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->text),
@@ -3929,11 +3954,11 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->var->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 }
-#line 3933 "src/parser_proc.c" /* glr.c:816  */
+#line 3958 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 466:
-#line 1272 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1297 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = psi_decl_arg_init(
 		psi_decl_type_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->text),
@@ -3943,11 +3968,11 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->var->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 }
-#line 3947 "src/parser_proc.c" /* glr.c:816  */
+#line 3972 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 467:
-#line 1284 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1309 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = psi_decl_arg_init(
 		psi_decl_type_init(PSI_T_FUNCTION, (*(struct psi_decl **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->func->var->name),
@@ -3956,19 +3981,19 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->type->token = psi_token_copy((*(struct psi_decl **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->func->token);
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->type->real.func = (*(struct psi_decl **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
-#line 3960 "src/parser_proc.c" /* glr.c:816  */
+#line 3985 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 468:
-#line 1292 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1317 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = psi_decl_arg_init((*(struct psi_decl_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)), (*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3968 "src/parser_proc.c" /* glr.c:816  */
+#line 3993 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 469:
-#line 1295 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1320 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = psi_decl_arg_init(
@@ -3979,11 +4004,11 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->var->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3983 "src/parser_proc.c" /* glr.c:816  */
+#line 4008 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 470:
-#line 1305 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1330 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = psi_decl_arg_init(
@@ -3994,31 +4019,31 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->var->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 3998 "src/parser_proc.c" /* glr.c:816  */
+#line 4023 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 471:
-#line 1318 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1343 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_decl_var **)(&(*yyvalp))) = psi_decl_var_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->text, (*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)) + !! (*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)), (*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_decl_var **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 }
-#line 4008 "src/parser_proc.c" /* glr.c:816  */
+#line 4033 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 472:
-#line 1323 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1348 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_decl_var **)(&(*yyvalp))) = psi_decl_var_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->text, !! (*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)), (*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_decl_var **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 }
-#line 4018 "src/parser_proc.c" /* glr.c:816  */
+#line 4043 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 473:
-#line 1331 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1356 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_decl_union **)(&(*yyvalp))) = psi_decl_union_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval))->text, (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -4026,11 +4051,11 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 	(*(struct psi_decl_union **)(&(*yyvalp)))->size = (*(struct psi_layout*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)).len;
 	(*(struct psi_decl_union **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)));
 }
-#line 4030 "src/parser_proc.c" /* glr.c:816  */
+#line 4055 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 474:
-#line 1341 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1366 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_decl_struct **)(&(*yyvalp))) = psi_decl_struct_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval))->text, (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -4038,27 +4063,27 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 	(*(struct psi_decl_struct **)(&(*yyvalp)))->size = (*(struct psi_layout*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)).len;
 	(*(struct psi_decl_struct **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)));
 }
-#line 4042 "src/parser_proc.c" /* glr.c:816  */
+#line 4067 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 475:
-#line 1351 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1376 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = NULL;
 }
-#line 4050 "src/parser_proc.c" /* glr.c:816  */
+#line 4075 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 477:
-#line 1358 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1383 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval));
 }
-#line 4058 "src/parser_proc.c" /* glr.c:816  */
+#line 4083 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 478:
-#line 1364 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1389 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->layout = (*(struct psi_layout **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval));
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_decl_arg_free), &(*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)));
@@ -4073,11 +4098,11 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 		free((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	}
 }
-#line 4077 "src/parser_proc.c" /* glr.c:816  */
+#line 4102 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 479:
-#line 1378 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1403 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->layout = (*(struct psi_layout **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval));
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval)), &(*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)));
@@ -4092,27 +4117,27 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 		free((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	}
 }
-#line 4096 "src/parser_proc.c" /* glr.c:816  */
+#line 4121 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 480:
-#line 1395 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1420 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = NULL;
 }
-#line 4104 "src/parser_proc.c" /* glr.c:816  */
+#line 4129 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 481:
-#line 1398 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1423 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
-#line 4112 "src/parser_proc.c" /* glr.c:816  */
+#line 4137 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 482:
-#line 1404 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1429 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	{
 		struct psi_decl_arg *arg = psi_decl_arg_init(NULL, (*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
@@ -4120,11 +4145,11 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 		(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_decl_arg_free), &arg);
 	}
 }
-#line 4124 "src/parser_proc.c" /* glr.c:816  */
+#line 4149 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 483:
-#line 1411 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1436 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	{
 		struct psi_decl_arg *arg = psi_decl_arg_init(NULL, (*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
@@ -4132,257 +4157,228 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 		(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)), &arg);
 	}
 }
-#line 4136 "src/parser_proc.c" /* glr.c:816  */
+#line 4161 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 484:
-#line 1421 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1446 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_decl_enum **)(&(*yyvalp))) = psi_decl_enum_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval))->text, (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)));
 	(*(struct psi_decl_enum **)(&(*yyvalp)))->token = (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval));
 }
-#line 4145 "src/parser_proc.c" /* glr.c:816  */
+#line 4170 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 485:
-#line 1428 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1453 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_decl_enum_item_free), &(*(struct psi_decl_enum_item **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 4153 "src/parser_proc.c" /* glr.c:816  */
+#line 4178 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 486:
-#line 1431 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1456 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), &(*(struct psi_decl_enum_item **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 4161 "src/parser_proc.c" /* glr.c:816  */
+#line 4186 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 487:
-#line 1437 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1462 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_decl_enum_item **)(&(*yyvalp))) = psi_decl_enum_item_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text, NULL);
 	(*(struct psi_decl_enum_item **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 4171 "src/parser_proc.c" /* glr.c:816  */
+#line 4196 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 488:
-#line 1442 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1467 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_decl_enum_item **)(&(*yyvalp))) = psi_decl_enum_item_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval))->text, (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_decl_enum_item **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)));
 }
-#line 4181 "src/parser_proc.c" /* glr.c:816  */
+#line 4206 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 489:
-#line 1450 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1475 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_num_exp **)(&(*yyvalp))) = psi_num_exp_init_num((*(struct psi_number **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_num_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_number **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->token);
 }
-#line 4190 "src/parser_proc.c" /* glr.c:816  */
+#line 4215 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 490:
-#line 1454 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1479 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_num_exp **)(&(*yyvalp))) = psi_num_exp_init_cast((*(struct psi_decl_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_num_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_decl_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval))->token);
 }
-#line 4199 "src/parser_proc.c" /* glr.c:816  */
+#line 4224 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 491:
-#line 1458 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1483 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_num_exp **)(&(*yyvalp))) = psi_num_exp_init_unary(PSI_T_LPAREN, (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	(*(struct psi_num_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)));
 }
-#line 4208 "src/parser_proc.c" /* glr.c:816  */
+#line 4233 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 492:
-#line 1462 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1487 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_num_exp **)(&(*yyvalp))) = psi_num_exp_init_binary((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type, (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_num_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 }
-#line 4217 "src/parser_proc.c" /* glr.c:816  */
+#line 4242 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 493:
-#line 1466 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1491 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_num_exp **)(&(*yyvalp))) = psi_num_exp_init_unary((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type, (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_num_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 }
-#line 4226 "src/parser_proc.c" /* glr.c:816  */
+#line 4251 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 494:
-#line 1470 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1495 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_num_exp **)(&(*yyvalp))) = psi_num_exp_init_ternary((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->type, (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval)), (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_num_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)));
 }
-#line 4235 "src/parser_proc.c" /* glr.c:816  */
+#line 4260 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 495:
-#line 1477 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1502 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_number **)(&(*yyvalp))) = psi_number_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->flags);
 	(*(struct psi_number **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 4244 "src/parser_proc.c" /* glr.c:816  */
+#line 4269 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 496:
-#line 1481 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1506 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_number **)(&(*yyvalp))) = psi_number_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text, 0);
 	(*(struct psi_number **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 4253 "src/parser_proc.c" /* glr.c:816  */
+#line 4278 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 497:
-#line 1485 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1510 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_number **)(&(*yyvalp))) = psi_number_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text, 0);
 	(*(struct psi_number **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 4262 "src/parser_proc.c" /* glr.c:816  */
+#line 4287 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 498:
-#line 1489 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1514 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_number **)(&(*yyvalp))) = psi_number_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text, 0);
 	(*(struct psi_number **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 4271 "src/parser_proc.c" /* glr.c:816  */
+#line 4296 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 499:
-#line 1493 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1518 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_number **)(&(*yyvalp))) = psi_number_init(PSI_T_NAME, (*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)), 0);
 	(*(struct psi_number **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->token);
 }
-#line 4280 "src/parser_proc.c" /* glr.c:816  */
+#line 4305 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 500:
-#line 1497 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1522 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_number **)(&(*yyvalp))) = (*(struct psi_number **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
-#line 4288 "src/parser_proc.c" /* glr.c:816  */
+#line 4313 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 501:
-#line 1503 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1528 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_number **)(&(*yyvalp))) = (*(struct psi_number **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval));
 	(*(struct psi_number **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)));
 }
-#line 4297 "src/parser_proc.c" /* glr.c:816  */
+#line 4322 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 502:
-#line 1507 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1532 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_number **)(&(*yyvalp))) = (*(struct psi_number **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 	(*(struct psi_number **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 }
-#line 4306 "src/parser_proc.c" /* glr.c:816  */
+#line 4331 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 503:
-#line 1514 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1539 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_number **)(&(*yyvalp))) = (*(struct psi_number **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
-#line 4314 "src/parser_proc.c" /* glr.c:816  */
+#line 4339 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 504:
-#line 1517 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1542 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	if ((*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))) {
 		int8_t sizeof_void_p = sizeof(void *);
 		(*(struct psi_number **)(&(*yyvalp))) = psi_number_init(PSI_T_INT8, &sizeof_void_p, 0);
+		psi_decl_type_free(&(*(struct psi_decl_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	} else {
 		(*(struct psi_number **)(&(*yyvalp))) = psi_number_init(PSI_T_SIZEOF, (*(struct psi_decl_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)), 0);
 	}
 }
-#line 4327 "src/parser_proc.c" /* glr.c:816  */
+#line 4353 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 505:
-#line 1528 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1554 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	int8_t sizeof_void_p = sizeof(void *);
 	(*(struct psi_number **)(&(*yyvalp))) = psi_number_init(PSI_T_INT8, &sizeof_void_p, 0);
 }
-#line 4336 "src/parser_proc.c" /* glr.c:816  */
+#line 4362 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 506:
-#line 1532 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1558 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	int8_t sizeof_a = sizeof('a');
 	(*(struct psi_number **)(&(*yyvalp))) = psi_number_init(PSI_T_INT8, &sizeof_a, 0);
 }
-#line 4345 "src/parser_proc.c" /* glr.c:816  */
+#line 4371 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 507:
-#line 1536 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1562 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_number **)(&(*yyvalp))) = psi_number_init(PSI_T_INT64, &(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->size, 0);
 }
-#line 4353 "src/parser_proc.c" /* glr.c:816  */
+#line 4379 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 508:
-#line 1542 "src/parser_proc_grammar.y" /* glr.c:816  */
-    {
-	if ((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))) {
-		(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
-	} else {
-		char digest[17];
-
-		psi_token_hash((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)), digest);
-		(*(struct psi_token **)(&(*yyvalp))) = psi_token_append("@", psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))), 1, digest);
-	}
-}
-#line 4368 "src/parser_proc.c" /* glr.c:816  */
-    break;
-
-  case 509:
-#line 1555 "src/parser_proc_grammar.y" /* glr.c:816  */
-    {
-	if ((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))) {
-		(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
-	} else {
-		char digest[17];
-
-		psi_token_hash((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)), digest);
-		(*(struct psi_token **)(&(*yyvalp))) = psi_token_append("@", psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))), 1, digest);
-	}
-}
-#line 4383 "src/parser_proc.c" /* glr.c:816  */
-    break;
-
-  case 510:
 #line 1568 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	if ((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))) {
@@ -4394,191 +4390,222 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 		(*(struct psi_token **)(&(*yyvalp))) = psi_token_append("@", psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))), 1, digest);
 	}
 }
-#line 4398 "src/parser_proc.c" /* glr.c:816  */
+#line 4394 "src/parser_proc.c" /* glr.c:816  */
+    break;
+
+  case 509:
+#line 1581 "src/parser_proc_grammar.y" /* glr.c:816  */
+    {
+	if ((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))) {
+		(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
+	} else {
+		char digest[17];
+
+		psi_token_hash((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)), digest);
+		(*(struct psi_token **)(&(*yyvalp))) = psi_token_append("@", psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))), 1, digest);
+	}
+}
+#line 4409 "src/parser_proc.c" /* glr.c:816  */
+    break;
+
+  case 510:
+#line 1594 "src/parser_proc_grammar.y" /* glr.c:816  */
+    {
+	if ((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))) {
+		(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
+	} else {
+		char digest[17];
+
+		psi_token_hash((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)), digest);
+		(*(struct psi_token **)(&(*yyvalp))) = psi_token_append("@", psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))), 1, digest);
+	}
+}
+#line 4424 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 511:
-#line 1581 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1607 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = NULL;
 }
-#line 4406 "src/parser_proc.c" /* glr.c:816  */
+#line 4432 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 512:
-#line 1584 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1610 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 	(*(struct psi_token **)(&(*yyvalp)))->type = PSI_T_NAME;
 }
-#line 4415 "src/parser_proc.c" /* glr.c:816  */
+#line 4441 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 515:
-#line 1596 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1622 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_layout **)(&(*yyvalp))) = NULL;
 }
-#line 4423 "src/parser_proc.c" /* glr.c:816  */
+#line 4449 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 516:
-#line 1599 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1625 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_layout **)(&(*yyvalp))) = psi_layout_init(0, 0, psi_layout_init(0, atol((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text), NULL));
 }
-#line 4431 "src/parser_proc.c" /* glr.c:816  */
+#line 4457 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 517:
-#line 1602 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1628 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_layout **)(&(*yyvalp))) = psi_layout_init(atol((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->text), atol((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->text), NULL);
-}
-#line 4439 "src/parser_proc.c" /* glr.c:816  */
-    break;
-
-  case 518:
-#line 1605 "src/parser_proc_grammar.y" /* glr.c:816  */
-    {
-	(*(struct psi_layout **)(&(*yyvalp))) = psi_layout_init(atol((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->text), atol((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->text), psi_layout_init(0, atol((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-7)].yystate.yysemantics.yysval))->text), NULL));
-}
-#line 4447 "src/parser_proc.c" /* glr.c:816  */
-    break;
-
-  case 519:
-#line 1611 "src/parser_proc_grammar.y" /* glr.c:816  */
-    {
-	(*(struct psi_layout*)(&(*yyvalp))).pos = 0;
-	(*(struct psi_layout*)(&(*yyvalp))).len = 0;
-}
-#line 4456 "src/parser_proc.c" /* glr.c:816  */
-    break;
-
-  case 520:
-#line 1615 "src/parser_proc_grammar.y" /* glr.c:816  */
-    {
-	(*(struct psi_layout*)(&(*yyvalp))).pos = atol((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->text);
-	(*(struct psi_layout*)(&(*yyvalp))).len = atol((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->text);
 }
 #line 4465 "src/parser_proc.c" /* glr.c:816  */
     break;
 
-  case 521:
-#line 1622 "src/parser_proc_grammar.y" /* glr.c:816  */
+  case 518:
+#line 1631 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
-	(*(size_t*)(&(*yyvalp))) = 0;
+	(*(struct psi_layout **)(&(*yyvalp))) = psi_layout_init(atol((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->text), atol((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->text), psi_layout_init(0, atol((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-7)].yystate.yysemantics.yysval))->text), NULL));
 }
 #line 4473 "src/parser_proc.c" /* glr.c:816  */
     break;
 
-  case 522:
-#line 1625 "src/parser_proc_grammar.y" /* glr.c:816  */
+  case 519:
+#line 1637 "src/parser_proc_grammar.y" /* glr.c:816  */
+    {
+	(*(struct psi_layout*)(&(*yyvalp))).pos = 0;
+	(*(struct psi_layout*)(&(*yyvalp))).len = 0;
+}
+#line 4482 "src/parser_proc.c" /* glr.c:816  */
+    break;
+
+  case 520:
+#line 1641 "src/parser_proc_grammar.y" /* glr.c:816  */
+    {
+	(*(struct psi_layout*)(&(*yyvalp))).pos = atol((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->text);
+	(*(struct psi_layout*)(&(*yyvalp))).len = atol((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->text);
+}
+#line 4491 "src/parser_proc.c" /* glr.c:816  */
+    break;
+
+  case 521:
+#line 1648 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(size_t*)(&(*yyvalp))) = 0;
 }
-#line 4481 "src/parser_proc.c" /* glr.c:816  */
+#line 4499 "src/parser_proc.c" /* glr.c:816  */
+    break;
+
+  case 522:
+#line 1651 "src/parser_proc_grammar.y" /* glr.c:816  */
+    {
+	(*(size_t*)(&(*yyvalp))) = 0;
+}
+#line 4507 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 523:
-#line 1628 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1654 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(size_t*)(&(*yyvalp))) = 0;
 }
-#line 4489 "src/parser_proc.c" /* glr.c:816  */
+#line 4515 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 524:
-#line 1631 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1657 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	if (psi_num_exp_validate(PSI_DATA(P), (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)), NULL, NULL, NULL, NULL, NULL)) {
 		(*(size_t*)(&(*yyvalp))) = psi_long_num_exp((*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)), NULL, &P->preproc->defs);
 	} else {
 		(*(size_t*)(&(*yyvalp))) = 0;
 	}
+	psi_num_exp_free(&(*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 }
-#line 4501 "src/parser_proc.c" /* glr.c:816  */
+#line 4528 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 525:
-#line 1641 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1668 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(size_t*)(&(*yyvalp))) = 0;
 }
-#line 4509 "src/parser_proc.c" /* glr.c:816  */
+#line 4536 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 526:
-#line 1644 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1671 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(size_t*)(&(*yyvalp))) = (*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
-#line 4517 "src/parser_proc.c" /* glr.c:816  */
+#line 4544 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 528:
-#line 1651 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1678 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(size_t*)(&(*yyvalp))) = (*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval));
 }
-#line 4525 "src/parser_proc.c" /* glr.c:816  */
+#line 4552 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 529:
-#line 1657 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1684 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(size_t*)(&(*yyvalp))) = 1;
 }
-#line 4533 "src/parser_proc.c" /* glr.c:816  */
+#line 4560 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 530:
-#line 1660 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1687 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(size_t*)(&(*yyvalp))) = (*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)) + 1;
 }
-#line 4541 "src/parser_proc.c" /* glr.c:816  */
+#line 4568 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 533:
-#line 1677 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1704 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_impl **)(&(*yyvalp))) = psi_impl_init((*(struct psi_impl_func **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)), (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 }
-#line 4549 "src/parser_proc.c" /* glr.c:816  */
+#line 4576 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 534:
-#line 1680 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1707 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_impl **)(&(*yyvalp))) = psi_impl_init((*(struct psi_impl_func **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)), (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	(*(struct psi_impl_func **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->static_memory = 1;
 }
-#line 4558 "src/parser_proc.c" /* glr.c:816  */
+#line 4585 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 535:
-#line 1687 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1714 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_impl_func **)(&(*yyvalp))) = psi_impl_func_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval))->text, NULL, (*(struct psi_impl_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_impl_func **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval)));
 	(*(struct psi_impl_func **)(&(*yyvalp)))->return_reference = (*(bool*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-5)].yystate.yysemantics.yysval));
 }
-#line 4568 "src/parser_proc.c" /* glr.c:816  */
+#line 4595 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 536:
-#line 1692 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1719 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_impl_func **)(&(*yyvalp))) = psi_impl_func_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-5)].yystate.yysemantics.yysval))->text, (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)), (*(struct psi_impl_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_impl_func **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-5)].yystate.yysemantics.yysval)));
 	(*(struct psi_impl_func **)(&(*yyvalp)))->return_reference = (*(bool*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-6)].yystate.yysemantics.yysval));
 }
-#line 4578 "src/parser_proc.c" /* glr.c:816  */
+#line 4605 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 537:
-#line 1697 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1724 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_impl_func **)(&(*yyvalp))) = psi_impl_func_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-10)].yystate.yysemantics.yysval))->text, (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-8)].yystate.yysemantics.yysval)), (*(struct psi_impl_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_impl_func **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-10)].yystate.yysemantics.yysval)));
@@ -4586,512 +4613,512 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 	(*(struct psi_impl_func **)(&(*yyvalp)))->vararg = psi_impl_arg_init((*(struct psi_impl_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-6)].yystate.yysemantics.yysval)), psi_impl_var_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->text, (*(bool*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-5)].yystate.yysemantics.yysval))), NULL);
 	(*(struct psi_impl_func **)(&(*yyvalp)))->vararg->var->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)));
 }
-#line 4590 "src/parser_proc.c" /* glr.c:816  */
+#line 4617 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 538:
-#line 1707 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1734 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_impl_arg_free), &(*(struct psi_impl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 4598 "src/parser_proc.c" /* glr.c:816  */
+#line 4625 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 539:
-#line 1710 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1737 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), &(*(struct psi_impl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 4606 "src/parser_proc.c" /* glr.c:816  */
+#line 4633 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 540:
-#line 1716 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1743 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_impl_arg **)(&(*yyvalp))) = psi_impl_arg_init((*(struct psi_impl_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)), (*(struct psi_impl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)), NULL);
 }
-#line 4614 "src/parser_proc.c" /* glr.c:816  */
+#line 4641 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 541:
-#line 1719 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1746 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_impl_arg **)(&(*yyvalp))) = psi_impl_arg_init((*(struct psi_impl_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)), (*(struct psi_impl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), (*(struct psi_impl_def_val **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 4622 "src/parser_proc.c" /* glr.c:816  */
+#line 4649 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 542:
-#line 1725 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1752 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_impl_var **)(&(*yyvalp))) = psi_impl_var_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text, (*(bool*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	(*(struct psi_impl_var **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 4631 "src/parser_proc.c" /* glr.c:816  */
+#line 4658 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 543:
-#line 1732 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1759 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_impl_type **)(&(*yyvalp))) = psi_impl_type_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text);
 	(*(struct psi_impl_type **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 4640 "src/parser_proc.c" /* glr.c:816  */
+#line 4667 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 553:
-#line 1751 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1778 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_impl_stmt_free), &(*(struct psi_token ***)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 4648 "src/parser_proc.c" /* glr.c:816  */
+#line 4675 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 554:
-#line 1754 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1781 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)), &(*(struct psi_token ***)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 4656 "src/parser_proc.c" /* glr.c:816  */
+#line 4683 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 555:
-#line 1760 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1787 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token ***)(&(*yyvalp))) = (struct psi_token **) (*(struct psi_return_stmt **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
-#line 4664 "src/parser_proc.c" /* glr.c:816  */
+#line 4691 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 556:
-#line 1763 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1790 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token ***)(&(*yyvalp))) = (struct psi_token **) (*(struct psi_let_stmt **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
-#line 4672 "src/parser_proc.c" /* glr.c:816  */
+#line 4699 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 557:
-#line 1766 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1793 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token ***)(&(*yyvalp))) = (struct psi_token **) (*(struct psi_set_stmt **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
-#line 4680 "src/parser_proc.c" /* glr.c:816  */
+#line 4707 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 558:
-#line 1769 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1796 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token ***)(&(*yyvalp))) = (struct psi_token **) (*(struct psi_assert_stmt **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
-#line 4688 "src/parser_proc.c" /* glr.c:816  */
+#line 4715 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 559:
-#line 1772 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1799 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token ***)(&(*yyvalp))) = (struct psi_token **) (*(struct psi_free_stmt **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
-#line 4696 "src/parser_proc.c" /* glr.c:816  */
+#line 4723 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 560:
-#line 1778 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1805 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_let_stmt **)(&(*yyvalp))) = psi_let_stmt_init((*(struct psi_let_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	(*(struct psi_let_stmt **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)));
 }
-#line 4705 "src/parser_proc.c" /* glr.c:816  */
+#line 4732 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 561:
-#line 1782 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1809 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_let_stmt **)(&(*yyvalp))) = psi_let_stmt_init(psi_let_exp_init_ex((*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval)), PSI_LET_TMP, (*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))));
 	(*(struct psi_let_stmt **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-5)].yystate.yysemantics.yysval)));
 	(*(struct psi_let_stmt **)(&(*yyvalp)))->exp->is_reference = (*(bool*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval));
 }
-#line 4715 "src/parser_proc.c" /* glr.c:816  */
+#line 4742 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 563:
-#line 1791 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1818 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_let_exp **)(&(*yyvalp))) = (*(struct psi_let_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 	(*(struct psi_let_exp **)(&(*yyvalp)))->is_reference = true;
 }
-#line 4724 "src/parser_proc.c" /* glr.c:816  */
+#line 4751 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 564:
-#line 1795 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1822 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_let_exp **)(&(*yyvalp))) = (*(struct psi_let_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 	(*(struct psi_let_exp **)(&(*yyvalp)))->is_reference = false;
 }
-#line 4733 "src/parser_proc.c" /* glr.c:816  */
+#line 4760 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 565:
-#line 1802 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1829 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_let_exp **)(&(*yyvalp))) = psi_let_exp_init(PSI_LET_NULL, NULL);
 }
-#line 4741 "src/parser_proc.c" /* glr.c:816  */
+#line 4768 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 566:
-#line 1805 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1832 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_let_exp **)(&(*yyvalp))) = psi_let_exp_init_ex(NULL, PSI_LET_NUMEXP, (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 4749 "src/parser_proc.c" /* glr.c:816  */
+#line 4776 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 567:
-#line 1808 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1835 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_let_exp **)(&(*yyvalp))) = psi_let_exp_init(PSI_LET_CALLOC, (*(struct psi_let_calloc **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 4757 "src/parser_proc.c" /* glr.c:816  */
+#line 4784 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 568:
-#line 1811 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1838 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_let_exp **)(&(*yyvalp))) = psi_let_exp_init(PSI_LET_CALLOC, (*(struct psi_let_calloc **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_let_calloc **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->static_memory = 1;
 }
-#line 4766 "src/parser_proc.c" /* glr.c:816  */
+#line 4793 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 569:
-#line 1815 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1842 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_let_exp **)(&(*yyvalp))) = psi_let_exp_init(PSI_LET_CALLBACK, (*(struct psi_let_callback **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 4774 "src/parser_proc.c" /* glr.c:816  */
+#line 4801 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 570:
-#line 1818 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1845 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_let_exp **)(&(*yyvalp))) = psi_let_exp_init_ex(NULL, PSI_LET_FUNC, (*(struct psi_let_func **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 4782 "src/parser_proc.c" /* glr.c:816  */
+#line 4809 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 571:
-#line 1824 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1851 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_let_exp **)(&(*yyvalp))) = (*(struct psi_let_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 	(*(struct psi_let_exp **)(&(*yyvalp)))->var = (*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval));
 }
-#line 4791 "src/parser_proc.c" /* glr.c:816  */
+#line 4818 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 572:
-#line 1828 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1855 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_let_exp **)(&(*yyvalp))) = (*(struct psi_let_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 	(*(struct psi_let_exp **)(&(*yyvalp)))->is_reference = 1;
 	(*(struct psi_let_exp **)(&(*yyvalp)))->var = (*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval));
 }
-#line 4801 "src/parser_proc.c" /* glr.c:816  */
+#line 4828 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 573:
-#line 1836 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1863 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_let_calloc **)(&(*yyvalp))) = psi_let_calloc_init((*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)), (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	(*(struct psi_let_calloc **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-5)].yystate.yysemantics.yysval)));
 }
-#line 4810 "src/parser_proc.c" /* glr.c:816  */
+#line 4837 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 574:
-#line 1843 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1870 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_let_callback **)(&(*yyvalp))) = psi_let_callback_init(psi_let_func_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-6)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-6)].yystate.yysemantics.yysval))->text, (*(struct psi_impl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval))), (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-9)].yystate.yysemantics.yysval)));
 	(*(struct psi_let_callback **)(&(*yyvalp)))->func->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-6)].yystate.yysemantics.yysval)));
 	(*(struct psi_let_callback **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-11)].yystate.yysemantics.yysval)));
 }
-#line 4820 "src/parser_proc.c" /* glr.c:816  */
+#line 4847 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 575:
-#line 1851 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1878 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_let_func **)(&(*yyvalp))) = psi_let_func_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval))->text, (*(struct psi_impl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)));
 	(*(struct psi_let_func **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval)));
 	(*(struct psi_let_func **)(&(*yyvalp)))->inner = (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval));
 }
-#line 4830 "src/parser_proc.c" /* glr.c:816  */
+#line 4857 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 586:
-#line 1872 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1899 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = NULL;
 }
-#line 4838 "src/parser_proc.c" /* glr.c:816  */
+#line 4865 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 587:
-#line 1875 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1902 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
-#line 4846 "src/parser_proc.c" /* glr.c:816  */
+#line 4873 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 588:
-#line 1881 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1908 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_let_exp_free), &(*(struct psi_let_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 4854 "src/parser_proc.c" /* glr.c:816  */
+#line 4881 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 589:
-#line 1884 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1911 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), &(*(struct psi_let_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 4862 "src/parser_proc.c" /* glr.c:816  */
+#line 4889 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 592:
-#line 1895 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1922 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = NULL;
 }
-#line 4870 "src/parser_proc.c" /* glr.c:816  */
+#line 4897 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 593:
-#line 1898 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1925 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
-#line 4878 "src/parser_proc.c" /* glr.c:816  */
+#line 4905 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 594:
-#line 1904 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1931 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_set_exp_free), &(*(struct psi_set_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 4886 "src/parser_proc.c" /* glr.c:816  */
+#line 4913 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 595:
-#line 1907 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1934 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), &(*(struct psi_set_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
-}
-#line 4894 "src/parser_proc.c" /* glr.c:816  */
-    break;
-
-  case 596:
-#line 1913 "src/parser_proc_grammar.y" /* glr.c:816  */
-    {
-	(*(struct psi_return_stmt **)(&(*yyvalp))) = psi_return_stmt_init((*(struct psi_return_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
-	(*(struct psi_return_stmt **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)));
-}
-#line 4903 "src/parser_proc.c" /* glr.c:816  */
-    break;
-
-  case 597:
-#line 1920 "src/parser_proc_grammar.y" /* glr.c:816  */
-    {
-	(*(struct psi_return_exp **)(&(*yyvalp))) = psi_return_exp_init((*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-5)].yystate.yysemantics.yysval)), (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)), psi_set_exp_init(PSI_SET_FUNC, (*(struct psi_set_func **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))));
-	(*(struct psi_return_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-5)].yystate.yysemantics.yysval))->token);
-}
-#line 4912 "src/parser_proc.c" /* glr.c:816  */
-    break;
-
-  case 598:
-#line 1924 "src/parser_proc_grammar.y" /* glr.c:816  */
-    {
-	(*(struct psi_return_exp **)(&(*yyvalp))) = psi_return_exp_init(NULL, NULL, psi_set_exp_init(PSI_SET_FUNC, (*(struct psi_set_func **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))));
-	(*(struct psi_return_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_set_func **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->token);
 }
 #line 4921 "src/parser_proc.c" /* glr.c:816  */
     break;
 
+  case 596:
+#line 1940 "src/parser_proc_grammar.y" /* glr.c:816  */
+    {
+	(*(struct psi_return_stmt **)(&(*yyvalp))) = psi_return_stmt_init((*(struct psi_return_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
+	(*(struct psi_return_stmt **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)));
+}
+#line 4930 "src/parser_proc.c" /* glr.c:816  */
+    break;
+
+  case 597:
+#line 1947 "src/parser_proc_grammar.y" /* glr.c:816  */
+    {
+	(*(struct psi_return_exp **)(&(*yyvalp))) = psi_return_exp_init((*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-5)].yystate.yysemantics.yysval)), (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)), psi_set_exp_init(PSI_SET_FUNC, (*(struct psi_set_func **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))));
+	(*(struct psi_return_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-5)].yystate.yysemantics.yysval))->token);
+}
+#line 4939 "src/parser_proc.c" /* glr.c:816  */
+    break;
+
+  case 598:
+#line 1951 "src/parser_proc_grammar.y" /* glr.c:816  */
+    {
+	(*(struct psi_return_exp **)(&(*yyvalp))) = psi_return_exp_init(NULL, NULL, psi_set_exp_init(PSI_SET_FUNC, (*(struct psi_set_func **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))));
+	(*(struct psi_return_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_set_func **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->token);
+}
+#line 4948 "src/parser_proc.c" /* glr.c:816  */
+    break;
+
   case 599:
-#line 1931 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1958 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = NULL;
 }
-#line 4929 "src/parser_proc.c" /* glr.c:816  */
+#line 4956 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 600:
-#line 1934 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1961 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = NULL;
 }
-#line 4937 "src/parser_proc.c" /* glr.c:816  */
+#line 4964 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 601:
-#line 1937 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1964 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
-#line 4945 "src/parser_proc.c" /* glr.c:816  */
+#line 4972 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 602:
-#line 1943 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1970 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_set_stmt **)(&(*yyvalp))) = psi_set_stmt_init((*(struct psi_set_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	(*(struct psi_set_stmt **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)));
 }
-#line 4954 "src/parser_proc.c" /* glr.c:816  */
+#line 4981 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 603:
-#line 1950 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1977 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_set_exp **)(&(*yyvalp))) = psi_set_exp_init(PSI_SET_FUNC, (*(struct psi_set_func **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 4962 "src/parser_proc.c" /* glr.c:816  */
+#line 4989 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 604:
-#line 1953 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1980 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_set_exp **)(&(*yyvalp))) = psi_set_exp_init(PSI_SET_NUMEXP, (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 4970 "src/parser_proc.c" /* glr.c:816  */
+#line 4997 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 605:
-#line 1956 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1983 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_set_exp **)(&(*yyvalp))) = (*(struct psi_set_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 	(*(struct psi_set_exp **)(&(*yyvalp)))->var = (*(struct psi_impl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval));
 }
-#line 4979 "src/parser_proc.c" /* glr.c:816  */
+#line 5006 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 606:
-#line 1963 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1990 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_set_func **)(&(*yyvalp))) = psi_set_func_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval))->text, (*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)));
 	(*(struct psi_set_func **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval)));
 	(*(struct psi_set_func **)(&(*yyvalp)))->inner = (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval));
 }
-#line 4989 "src/parser_proc.c" /* glr.c:816  */
+#line 5016 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 607:
-#line 1968 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 1995 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_set_func **)(&(*yyvalp))) = psi_set_func_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-5)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-5)].yystate.yysemantics.yysval))->text, (*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)));
 	(*(struct psi_set_func **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-5)].yystate.yysemantics.yysval)));
 	(*(struct psi_set_func **)(&(*yyvalp)))->recursive = 1;
 }
-#line 4999 "src/parser_proc.c" /* glr.c:816  */
+#line 5026 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 616:
-#line 1987 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 2014 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = NULL;
 }
-#line 5007 "src/parser_proc.c" /* glr.c:816  */
+#line 5034 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 617:
-#line 1990 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 2017 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
-#line 5015 "src/parser_proc.c" /* glr.c:816  */
+#line 5042 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 618:
-#line 1996 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 2023 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_set_exp_free), &(*(struct psi_set_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 5023 "src/parser_proc.c" /* glr.c:816  */
+#line 5050 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 619:
-#line 1999 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 2026 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), &(*(struct psi_set_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 5031 "src/parser_proc.c" /* glr.c:816  */
+#line 5058 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 620:
-#line 2005 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 2032 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_assert_stmt **)(&(*yyvalp))) = psi_assert_stmt_init((enum psi_assert_kind) (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval))->type, (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	(*(struct psi_assert_stmt **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)));
 }
-#line 5040 "src/parser_proc.c" /* glr.c:816  */
+#line 5067 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 623:
-#line 2017 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 2044 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_free_stmt **)(&(*yyvalp))) = psi_free_stmt_init((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	(*(struct psi_free_stmt **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)));
 }
-#line 5049 "src/parser_proc.c" /* glr.c:816  */
+#line 5076 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 624:
-#line 2024 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 2051 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_free_exp_free), &(*(struct psi_free_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 5057 "src/parser_proc.c" /* glr.c:816  */
+#line 5084 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 625:
-#line 2027 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 2054 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), &(*(struct psi_free_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
-#line 5065 "src/parser_proc.c" /* glr.c:816  */
+#line 5092 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 626:
-#line 2033 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 2060 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_free_exp **)(&(*yyvalp))) = psi_free_exp_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->text, (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	(*(struct psi_free_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)));
 }
-#line 5075 "src/parser_proc.c" /* glr.c:816  */
+#line 5102 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 627:
-#line 2041 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 2068 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(bool*)(&(*yyvalp))) = false;
 }
-#line 5083 "src/parser_proc.c" /* glr.c:816  */
+#line 5110 "src/parser_proc.c" /* glr.c:816  */
     break;
 
   case 628:
-#line 2044 "src/parser_proc_grammar.y" /* glr.c:816  */
+#line 2071 "src/parser_proc_grammar.y" /* glr.c:816  */
     {
 	(*(bool*)(&(*yyvalp))) = true;
 }
-#line 5091 "src/parser_proc.c" /* glr.c:816  */
+#line 5118 "src/parser_proc.c" /* glr.c:816  */
     break;
 
 
-#line 5095 "src/parser_proc.c" /* glr.c:816  */
+#line 5122 "src/parser_proc.c" /* glr.c:816  */
       default: break;
     }
 
@@ -5140,717 +5167,717 @@ yydestruct (const char *yymsg, int yytype, YYSTYPE *yyvaluep, struct psi_parser 
   switch (yytype)
     {
           case 141: /* binary_op_token  */
-#line 282 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 307 "src/parser_proc_grammar.y" /* glr.c:846  */
       {}
-#line 5146 "src/parser_proc.c" /* glr.c:846  */
+#line 5173 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 142: /* unary_op_token  */
-#line 282 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 307 "src/parser_proc_grammar.y" /* glr.c:846  */
       {}
-#line 5152 "src/parser_proc.c" /* glr.c:846  */
+#line 5179 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 143: /* name_token  */
-#line 282 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 307 "src/parser_proc_grammar.y" /* glr.c:846  */
       {}
-#line 5158 "src/parser_proc.c" /* glr.c:846  */
+#line 5185 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 144: /* any_noeol_token  */
-#line 282 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 307 "src/parser_proc_grammar.y" /* glr.c:846  */
       {}
-#line 5164 "src/parser_proc.c" /* glr.c:846  */
+#line 5191 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 149: /* lib  */
-#line 276 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 301 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_token_free(&(*(struct psi_token **)(&(*yyvaluep))));}
-#line 5170 "src/parser_proc.c" /* glr.c:846  */
+#line 5197 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 150: /* cpp  */
-#line 291 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 316 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_cpp_exp_free(&(*(struct psi_cpp_exp **)(&(*yyvaluep))));}
-#line 5176 "src/parser_proc.c" /* glr.c:846  */
+#line 5203 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 151: /* cpp_exp  */
-#line 291 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 316 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_cpp_exp_free(&(*(struct psi_cpp_exp **)(&(*yyvaluep))));}
-#line 5182 "src/parser_proc.c" /* glr.c:846  */
+#line 5209 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 153: /* cpp_message_token  */
-#line 279 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 304 "src/parser_proc_grammar.y" /* glr.c:846  */
       {}
-#line 5188 "src/parser_proc.c" /* glr.c:846  */
+#line 5215 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 154: /* cpp_include_token  */
-#line 279 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 304 "src/parser_proc_grammar.y" /* glr.c:846  */
       {}
-#line 5194 "src/parser_proc.c" /* glr.c:846  */
+#line 5221 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 155: /* cpp_header_token  */
-#line 279 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 304 "src/parser_proc_grammar.y" /* glr.c:846  */
       {}
-#line 5200 "src/parser_proc.c" /* glr.c:846  */
+#line 5227 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 156: /* cpp_no_arg_token  */
-#line 279 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 304 "src/parser_proc_grammar.y" /* glr.c:846  */
       {}
-#line 5206 "src/parser_proc.c" /* glr.c:846  */
+#line 5233 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 157: /* cpp_name_arg_token  */
-#line 279 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 304 "src/parser_proc_grammar.y" /* glr.c:846  */
       {}
-#line 5212 "src/parser_proc.c" /* glr.c:846  */
+#line 5239 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 158: /* cpp_exp_arg_token  */
-#line 279 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 304 "src/parser_proc_grammar.y" /* glr.c:846  */
       {}
-#line 5218 "src/parser_proc.c" /* glr.c:846  */
+#line 5245 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 159: /* cpp_special_name_token  */
-#line 279 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 304 "src/parser_proc_grammar.y" /* glr.c:846  */
       {}
-#line 5224 "src/parser_proc.c" /* glr.c:846  */
+#line 5251 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 160: /* cpp_macro_decl  */
-#line 293 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 318 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_cpp_macro_decl_free(&(*(struct psi_cpp_macro_decl **)(&(*yyvaluep))));}
-#line 5230 "src/parser_proc.c" /* glr.c:846  */
+#line 5257 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 161: /* cpp_macro_sig  */
-#line 295 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 320 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_plist_free((*(struct psi_plist **)(&(*yyvaluep))));}
-#line 5236 "src/parser_proc.c" /* glr.c:846  */
+#line 5263 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 162: /* cpp_macro_sig_args  */
-#line 295 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 320 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_plist_free((*(struct psi_plist **)(&(*yyvaluep))));}
-#line 5242 "src/parser_proc.c" /* glr.c:846  */
+#line 5269 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 163: /* cpp_macro_decl_tokens  */
-#line 295 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 320 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_plist_free((*(struct psi_plist **)(&(*yyvaluep))));}
-#line 5248 "src/parser_proc.c" /* glr.c:846  */
+#line 5275 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 164: /* cpp_macro_decl_token_list  */
-#line 295 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 320 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_plist_free((*(struct psi_plist **)(&(*yyvaluep))));}
-#line 5254 "src/parser_proc.c" /* glr.c:846  */
+#line 5281 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 165: /* cpp_macro_exp  */
-#line 297 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 322 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_num_exp_free(&(*(struct psi_num_exp **)(&(*yyvaluep))));}
-#line 5260 "src/parser_proc.c" /* glr.c:846  */
+#line 5287 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 166: /* cpp_macro_call_args  */
-#line 295 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 320 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_plist_free((*(struct psi_plist **)(&(*yyvaluep))));}
-#line 5266 "src/parser_proc.c" /* glr.c:846  */
+#line 5293 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 167: /* cpp_macro_call_arg_list  */
-#line 295 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 320 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_plist_free((*(struct psi_plist **)(&(*yyvaluep))));}
-#line 5272 "src/parser_proc.c" /* glr.c:846  */
+#line 5299 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 168: /* constant  */
-#line 303 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 328 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_const_free(&(*(struct psi_const **)(&(*yyvaluep))));}
-#line 5278 "src/parser_proc.c" /* glr.c:846  */
+#line 5305 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 169: /* constant_type  */
-#line 305 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 330 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_const_type_free(&(*(struct psi_const_type **)(&(*yyvaluep))));}
-#line 5284 "src/parser_proc.c" /* glr.c:846  */
+#line 5311 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 170: /* constant_type_token  */
-#line 300 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 325 "src/parser_proc_grammar.y" /* glr.c:846  */
       {}
-#line 5290 "src/parser_proc.c" /* glr.c:846  */
+#line 5317 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 171: /* impl_def_val  */
-#line 307 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 332 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_impl_def_val_free(&(*(struct psi_impl_def_val **)(&(*yyvaluep))));}
-#line 5296 "src/parser_proc.c" /* glr.c:846  */
+#line 5323 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 172: /* impl_def_val_token  */
-#line 300 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 325 "src/parser_proc_grammar.y" /* glr.c:846  */
       {}
-#line 5302 "src/parser_proc.c" /* glr.c:846  */
+#line 5329 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 173: /* decl_typedef  */
-#line 317 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 342 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_decl_arg_free(&(*(struct psi_decl_arg **)(&(*yyvaluep))));}
-#line 5308 "src/parser_proc.c" /* glr.c:846  */
+#line 5335 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 174: /* typedef  */
-#line 317 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 342 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_decl_arg_free(&(*(struct psi_decl_arg **)(&(*yyvaluep))));}
-#line 5314 "src/parser_proc.c" /* glr.c:846  */
+#line 5341 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 175: /* typedef_anon  */
-#line 317 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 342 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_decl_arg_free(&(*(struct psi_decl_arg **)(&(*yyvaluep))));}
-#line 5320 "src/parser_proc.c" /* glr.c:846  */
+#line 5347 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 176: /* typedef_decl  */
-#line 317 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 342 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_decl_arg_free(&(*(struct psi_decl_arg **)(&(*yyvaluep))));}
-#line 5326 "src/parser_proc.c" /* glr.c:846  */
+#line 5353 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 177: /* typedef_anon_decl  */
-#line 317 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 342 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_decl_arg_free(&(*(struct psi_decl_arg **)(&(*yyvaluep))));}
-#line 5332 "src/parser_proc.c" /* glr.c:846  */
+#line 5359 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 178: /* qualified_decl_type  */
-#line 313 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 338 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_decl_type_free(&(*(struct psi_decl_type **)(&(*yyvaluep))));}
-#line 5338 "src/parser_proc.c" /* glr.c:846  */
+#line 5365 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 179: /* decl_type  */
-#line 313 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 338 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_decl_type_free(&(*(struct psi_decl_type **)(&(*yyvaluep))));}
-#line 5344 "src/parser_proc.c" /* glr.c:846  */
+#line 5371 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 180: /* decl_type_complex  */
-#line 313 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 338 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_decl_type_free(&(*(struct psi_decl_type **)(&(*yyvaluep))));}
-#line 5350 "src/parser_proc.c" /* glr.c:846  */
+#line 5377 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 181: /* decl_type_simple  */
-#line 310 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 335 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_token_free(&(*(struct psi_token **)(&(*yyvaluep))));}
-#line 5356 "src/parser_proc.c" /* glr.c:846  */
+#line 5383 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 182: /* decl_real_type  */
-#line 310 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 335 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_token_free(&(*(struct psi_token **)(&(*yyvaluep))));}
-#line 5362 "src/parser_proc.c" /* glr.c:846  */
+#line 5389 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 183: /* int_signed  */
-#line 288 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 313 "src/parser_proc_grammar.y" /* glr.c:846  */
       {}
-#line 5368 "src/parser_proc.c" /* glr.c:846  */
+#line 5395 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 184: /* int_width  */
-#line 285 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 310 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_token_free(&(*(struct psi_token **)(&(*yyvaluep))));}
-#line 5374 "src/parser_proc.c" /* glr.c:846  */
+#line 5401 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 185: /* decl_int_type  */
-#line 310 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 335 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_token_free(&(*(struct psi_token **)(&(*yyvaluep))));}
-#line 5380 "src/parser_proc.c" /* glr.c:846  */
+#line 5407 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 186: /* int_signed_types  */
-#line 285 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 310 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_token_free(&(*(struct psi_token **)(&(*yyvaluep))));}
-#line 5386 "src/parser_proc.c" /* glr.c:846  */
+#line 5413 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 187: /* signed_short_types  */
-#line 288 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 313 "src/parser_proc_grammar.y" /* glr.c:846  */
       {}
-#line 5392 "src/parser_proc.c" /* glr.c:846  */
+#line 5419 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 188: /* signed_long_types  */
-#line 288 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 313 "src/parser_proc_grammar.y" /* glr.c:846  */
       {}
-#line 5398 "src/parser_proc.c" /* glr.c:846  */
+#line 5425 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 189: /* int_width_types  */
-#line 285 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 310 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_token_free(&(*(struct psi_token **)(&(*yyvaluep))));}
-#line 5404 "src/parser_proc.c" /* glr.c:846  */
+#line 5431 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 190: /* decl_stmt  */
-#line 315 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 340 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_decl_free(&(*(struct psi_decl **)(&(*yyvaluep))));}
-#line 5410 "src/parser_proc.c" /* glr.c:846  */
+#line 5437 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 196: /* decl_vars  */
-#line 329 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 354 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_plist_free((*(struct psi_plist **)(&(*yyvaluep))));}
-#line 5416 "src/parser_proc.c" /* glr.c:846  */
+#line 5443 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 201: /* decl  */
-#line 315 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 340 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_decl_free(&(*(struct psi_decl **)(&(*yyvaluep))));}
-#line 5422 "src/parser_proc.c" /* glr.c:846  */
+#line 5449 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 202: /* decl_body  */
-#line 315 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 340 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_decl_free(&(*(struct psi_decl **)(&(*yyvaluep))));}
-#line 5428 "src/parser_proc.c" /* glr.c:846  */
+#line 5455 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 203: /* decl_func_body  */
-#line 315 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 340 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_decl_free(&(*(struct psi_decl **)(&(*yyvaluep))));}
-#line 5434 "src/parser_proc.c" /* glr.c:846  */
+#line 5461 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 204: /* decl_functor_body  */
-#line 315 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 340 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_decl_free(&(*(struct psi_decl **)(&(*yyvaluep))));}
-#line 5440 "src/parser_proc.c" /* glr.c:846  */
+#line 5467 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 205: /* decl_functor  */
-#line 317 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 342 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_decl_arg_free(&(*(struct psi_decl_arg **)(&(*yyvaluep))));}
-#line 5446 "src/parser_proc.c" /* glr.c:846  */
+#line 5473 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 206: /* decl_func  */
-#line 317 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 342 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_decl_arg_free(&(*(struct psi_decl_arg **)(&(*yyvaluep))));}
-#line 5452 "src/parser_proc.c" /* glr.c:846  */
+#line 5479 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 207: /* decl_args  */
-#line 329 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 354 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_plist_free((*(struct psi_plist **)(&(*yyvaluep))));}
-#line 5458 "src/parser_proc.c" /* glr.c:846  */
+#line 5485 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 208: /* decl_arg_list  */
-#line 329 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 354 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_plist_free((*(struct psi_plist **)(&(*yyvaluep))));}
-#line 5464 "src/parser_proc.c" /* glr.c:846  */
+#line 5491 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 209: /* decl_anon_arg  */
-#line 317 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 342 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_decl_arg_free(&(*(struct psi_decl_arg **)(&(*yyvaluep))));}
-#line 5470 "src/parser_proc.c" /* glr.c:846  */
+#line 5497 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 210: /* decl_arg  */
-#line 317 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 342 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_decl_arg_free(&(*(struct psi_decl_arg **)(&(*yyvaluep))));}
-#line 5476 "src/parser_proc.c" /* glr.c:846  */
+#line 5503 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 211: /* decl_var  */
-#line 319 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 344 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_decl_var_free(&(*(struct psi_decl_var **)(&(*yyvaluep))));}
-#line 5482 "src/parser_proc.c" /* glr.c:846  */
+#line 5509 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 212: /* decl_union  */
-#line 323 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 348 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_decl_union_free(&(*(struct psi_decl_union **)(&(*yyvaluep))));}
-#line 5488 "src/parser_proc.c" /* glr.c:846  */
+#line 5515 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 213: /* decl_struct  */
-#line 321 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 346 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_decl_struct_free(&(*(struct psi_decl_struct **)(&(*yyvaluep))));}
-#line 5494 "src/parser_proc.c" /* glr.c:846  */
+#line 5521 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 214: /* decl_struct_args  */
-#line 329 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 354 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_plist_free((*(struct psi_plist **)(&(*yyvaluep))));}
-#line 5500 "src/parser_proc.c" /* glr.c:846  */
+#line 5527 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 215: /* struct_args_block  */
-#line 329 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 354 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_plist_free((*(struct psi_plist **)(&(*yyvaluep))));}
-#line 5506 "src/parser_proc.c" /* glr.c:846  */
+#line 5533 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 216: /* struct_args  */
-#line 329 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 354 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_plist_free((*(struct psi_plist **)(&(*yyvaluep))));}
-#line 5512 "src/parser_proc.c" /* glr.c:846  */
+#line 5539 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 217: /* struct_arg_var_list  */
-#line 329 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 354 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_plist_free((*(struct psi_plist **)(&(*yyvaluep))));}
-#line 5518 "src/parser_proc.c" /* glr.c:846  */
+#line 5545 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 218: /* decl_vars_with_layout  */
-#line 329 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 354 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_plist_free((*(struct psi_plist **)(&(*yyvaluep))));}
-#line 5524 "src/parser_proc.c" /* glr.c:846  */
+#line 5551 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 219: /* decl_enum  */
-#line 325 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 350 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_decl_enum_free(&(*(struct psi_decl_enum **)(&(*yyvaluep))));}
-#line 5530 "src/parser_proc.c" /* glr.c:846  */
+#line 5557 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 220: /* decl_enum_items  */
-#line 329 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 354 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_plist_free((*(struct psi_plist **)(&(*yyvaluep))));}
-#line 5536 "src/parser_proc.c" /* glr.c:846  */
+#line 5563 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 221: /* decl_enum_item  */
-#line 327 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 352 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_decl_enum_item_free(&(*(struct psi_decl_enum_item **)(&(*yyvaluep))));}
-#line 5542 "src/parser_proc.c" /* glr.c:846  */
+#line 5569 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 222: /* num_exp  */
-#line 385 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 410 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_num_exp_free(&(*(struct psi_num_exp **)(&(*yyvaluep))));}
-#line 5548 "src/parser_proc.c" /* glr.c:846  */
+#line 5575 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 223: /* number  */
-#line 387 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 412 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_number_free(&(*(struct psi_number **)(&(*yyvaluep))));}
-#line 5554 "src/parser_proc.c" /* glr.c:846  */
+#line 5581 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 224: /* sizeof  */
-#line 337 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 362 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_number_free(&(*(struct psi_number **)(&(*yyvaluep))));}
-#line 5560 "src/parser_proc.c" /* glr.c:846  */
+#line 5587 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 225: /* sizeof_body  */
-#line 337 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 362 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_number_free(&(*(struct psi_number **)(&(*yyvaluep))));}
-#line 5566 "src/parser_proc.c" /* glr.c:846  */
+#line 5593 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 226: /* sizeof_body_notypes  */
-#line 337 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 362 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_number_free(&(*(struct psi_number **)(&(*yyvaluep))));}
-#line 5572 "src/parser_proc.c" /* glr.c:846  */
+#line 5599 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 227: /* enum_name  */
-#line 276 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 301 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_token_free(&(*(struct psi_token **)(&(*yyvaluep))));}
-#line 5578 "src/parser_proc.c" /* glr.c:846  */
+#line 5605 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 228: /* union_name  */
-#line 276 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 301 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_token_free(&(*(struct psi_token **)(&(*yyvaluep))));}
-#line 5584 "src/parser_proc.c" /* glr.c:846  */
+#line 5611 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 229: /* struct_name  */
-#line 276 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 301 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_token_free(&(*(struct psi_token **)(&(*yyvaluep))));}
-#line 5590 "src/parser_proc.c" /* glr.c:846  */
+#line 5617 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 230: /* optional_name  */
-#line 276 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 301 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_token_free(&(*(struct psi_token **)(&(*yyvaluep))));}
-#line 5596 "src/parser_proc.c" /* glr.c:846  */
+#line 5623 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 232: /* decl_layout  */
-#line 334 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 359 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_layout_free(&(*(struct psi_layout **)(&(*yyvaluep))));}
-#line 5602 "src/parser_proc.c" /* glr.c:846  */
+#line 5629 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 233: /* align_and_size  */
-#line 332 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 357 "src/parser_proc_grammar.y" /* glr.c:846  */
       {}
-#line 5608 "src/parser_proc.c" /* glr.c:846  */
+#line 5635 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 234: /* array_size  */
-#line 390 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 415 "src/parser_proc_grammar.y" /* glr.c:846  */
       {}
-#line 5614 "src/parser_proc.c" /* glr.c:846  */
+#line 5641 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 235: /* indirection  */
-#line 390 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 415 "src/parser_proc_grammar.y" /* glr.c:846  */
       {}
-#line 5620 "src/parser_proc.c" /* glr.c:846  */
+#line 5647 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 236: /* pointers  */
-#line 390 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 415 "src/parser_proc_grammar.y" /* glr.c:846  */
       {}
-#line 5626 "src/parser_proc.c" /* glr.c:846  */
+#line 5653 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 237: /* asterisks  */
-#line 390 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 415 "src/parser_proc_grammar.y" /* glr.c:846  */
       {}
-#line 5632 "src/parser_proc.c" /* glr.c:846  */
+#line 5659 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 239: /* impl  */
-#line 340 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 365 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_impl_free(&(*(struct psi_impl **)(&(*yyvaluep))));}
-#line 5638 "src/parser_proc.c" /* glr.c:846  */
+#line 5665 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 240: /* impl_func  */
-#line 342 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 367 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_impl_func_free(&(*(struct psi_impl_func **)(&(*yyvaluep))));}
-#line 5644 "src/parser_proc.c" /* glr.c:846  */
+#line 5671 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 241: /* impl_args  */
-#line 382 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 407 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_plist_free((*(struct psi_plist **)(&(*yyvaluep))));}
-#line 5650 "src/parser_proc.c" /* glr.c:846  */
+#line 5677 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 242: /* impl_arg  */
-#line 344 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 369 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_impl_arg_free(&(*(struct psi_impl_arg **)(&(*yyvaluep))));}
-#line 5656 "src/parser_proc.c" /* glr.c:846  */
+#line 5683 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 243: /* impl_var  */
-#line 348 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 373 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_impl_var_free(&(*(struct psi_impl_var **)(&(*yyvaluep))));}
-#line 5662 "src/parser_proc.c" /* glr.c:846  */
+#line 5689 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 244: /* impl_type  */
-#line 346 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 371 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_impl_type_free(&(*(struct psi_impl_type **)(&(*yyvaluep))));}
-#line 5668 "src/parser_proc.c" /* glr.c:846  */
+#line 5695 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 245: /* impl_type_token  */
-#line 380 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 405 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_token_free(&(*(struct psi_token **)(&(*yyvaluep))));}
-#line 5674 "src/parser_proc.c" /* glr.c:846  */
+#line 5701 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 246: /* impl_stmts  */
-#line 382 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 407 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_plist_free((*(struct psi_plist **)(&(*yyvaluep))));}
-#line 5680 "src/parser_proc.c" /* glr.c:846  */
+#line 5707 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 247: /* impl_stmt  */
-#line 378 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 403 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_impl_stmt_free(&(*(struct psi_token ***)(&(*yyvaluep))));}
-#line 5686 "src/parser_proc.c" /* glr.c:846  */
+#line 5713 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 248: /* let_stmt  */
-#line 351 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 376 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_let_stmt_free(&(*(struct psi_let_stmt **)(&(*yyvaluep))));}
-#line 5692 "src/parser_proc.c" /* glr.c:846  */
+#line 5719 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 249: /* let_exp  */
-#line 353 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 378 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_let_exp_free(&(*(struct psi_let_exp **)(&(*yyvaluep))));}
-#line 5698 "src/parser_proc.c" /* glr.c:846  */
+#line 5725 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 250: /* let_exp_byref  */
-#line 353 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 378 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_let_exp_free(&(*(struct psi_let_exp **)(&(*yyvaluep))));}
-#line 5704 "src/parser_proc.c" /* glr.c:846  */
+#line 5731 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 251: /* let_exp_assign  */
-#line 353 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 378 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_let_exp_free(&(*(struct psi_let_exp **)(&(*yyvaluep))));}
-#line 5710 "src/parser_proc.c" /* glr.c:846  */
+#line 5737 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 252: /* let_calloc  */
-#line 355 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 380 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_let_calloc_free(&(*(struct psi_let_calloc **)(&(*yyvaluep))));}
-#line 5716 "src/parser_proc.c" /* glr.c:846  */
+#line 5743 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 253: /* let_callback  */
-#line 357 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 382 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_let_callback_free(&(*(struct psi_let_callback **)(&(*yyvaluep))));}
-#line 5722 "src/parser_proc.c" /* glr.c:846  */
+#line 5749 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 254: /* let_func  */
-#line 359 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 384 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_let_func_free(&(*(struct psi_let_func **)(&(*yyvaluep))));}
-#line 5728 "src/parser_proc.c" /* glr.c:846  */
+#line 5755 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 255: /* let_func_token  */
-#line 380 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 405 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_token_free(&(*(struct psi_token **)(&(*yyvaluep))));}
-#line 5734 "src/parser_proc.c" /* glr.c:846  */
+#line 5761 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 256: /* let_func_exps  */
-#line 382 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 407 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_plist_free((*(struct psi_plist **)(&(*yyvaluep))));}
-#line 5740 "src/parser_proc.c" /* glr.c:846  */
+#line 5767 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 257: /* let_exps  */
-#line 382 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 407 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_plist_free((*(struct psi_plist **)(&(*yyvaluep))));}
-#line 5746 "src/parser_proc.c" /* glr.c:846  */
+#line 5773 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 258: /* callback_rval  */
-#line 380 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 405 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_token_free(&(*(struct psi_token **)(&(*yyvaluep))));}
-#line 5752 "src/parser_proc.c" /* glr.c:846  */
+#line 5779 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 259: /* callback_arg_list  */
-#line 382 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 407 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_plist_free((*(struct psi_plist **)(&(*yyvaluep))));}
-#line 5758 "src/parser_proc.c" /* glr.c:846  */
+#line 5785 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 260: /* callback_args  */
-#line 382 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 407 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_plist_free((*(struct psi_plist **)(&(*yyvaluep))));}
-#line 5764 "src/parser_proc.c" /* glr.c:846  */
+#line 5791 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 261: /* return_stmt  */
-#line 369 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 394 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_return_stmt_free(&(*(struct psi_return_stmt **)(&(*yyvaluep))));}
-#line 5770 "src/parser_proc.c" /* glr.c:846  */
+#line 5797 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 262: /* return_exp  */
-#line 371 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 396 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_return_exp_free(&(*(struct psi_return_exp **)(&(*yyvaluep))));}
-#line 5776 "src/parser_proc.c" /* glr.c:846  */
+#line 5803 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 263: /* call_decl_vars  */
-#line 329 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 354 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_plist_free((*(struct psi_plist **)(&(*yyvaluep))));}
-#line 5782 "src/parser_proc.c" /* glr.c:846  */
+#line 5809 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 264: /* set_stmt  */
-#line 361 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 386 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_set_stmt_free(&(*(struct psi_set_stmt **)(&(*yyvaluep))));}
-#line 5788 "src/parser_proc.c" /* glr.c:846  */
+#line 5815 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 265: /* set_exp  */
-#line 363 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 388 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_set_exp_free(&(*(struct psi_set_exp **)(&(*yyvaluep))));}
-#line 5794 "src/parser_proc.c" /* glr.c:846  */
+#line 5821 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 266: /* set_func  */
-#line 365 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 390 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_set_func_free(&(*(struct psi_set_func **)(&(*yyvaluep))));}
-#line 5800 "src/parser_proc.c" /* glr.c:846  */
+#line 5827 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 267: /* set_func_token  */
-#line 380 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 405 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_token_free(&(*(struct psi_token **)(&(*yyvaluep))));}
-#line 5806 "src/parser_proc.c" /* glr.c:846  */
+#line 5833 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 268: /* set_func_exps  */
-#line 382 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 407 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_plist_free((*(struct psi_plist **)(&(*yyvaluep))));}
-#line 5812 "src/parser_proc.c" /* glr.c:846  */
+#line 5839 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 269: /* set_exps  */
-#line 382 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 407 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_plist_free((*(struct psi_plist **)(&(*yyvaluep))));}
-#line 5818 "src/parser_proc.c" /* glr.c:846  */
+#line 5845 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 270: /* assert_stmt  */
-#line 367 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 392 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_assert_stmt_free(&(*(struct psi_assert_stmt **)(&(*yyvaluep))));}
-#line 5824 "src/parser_proc.c" /* glr.c:846  */
+#line 5851 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 271: /* assert_stmt_token  */
-#line 380 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 405 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_token_free(&(*(struct psi_token **)(&(*yyvaluep))));}
-#line 5830 "src/parser_proc.c" /* glr.c:846  */
+#line 5857 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 272: /* free_stmt  */
-#line 373 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 398 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_free_stmt_free(&(*(struct psi_free_stmt **)(&(*yyvaluep))));}
-#line 5836 "src/parser_proc.c" /* glr.c:846  */
+#line 5863 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 273: /* free_exps  */
-#line 382 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 407 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_plist_free((*(struct psi_plist **)(&(*yyvaluep))));}
-#line 5842 "src/parser_proc.c" /* glr.c:846  */
+#line 5869 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 274: /* free_exp  */
-#line 375 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 400 "src/parser_proc_grammar.y" /* glr.c:846  */
       {psi_free_exp_free(&(*(struct psi_free_exp **)(&(*yyvaluep))));}
-#line 5848 "src/parser_proc.c" /* glr.c:846  */
+#line 5875 "src/parser_proc.c" /* glr.c:846  */
         break;
 
     case 275: /* reference  */
-#line 392 "src/parser_proc_grammar.y" /* glr.c:846  */
+#line 417 "src/parser_proc_grammar.y" /* glr.c:846  */
       {}
-#line 5854 "src/parser_proc.c" /* glr.c:846  */
+#line 5881 "src/parser_proc.c" /* glr.c:846  */
         break;
 
 
@@ -7199,11 +7226,11 @@ yyparse (struct psi_parser *P, struct psi_plist *tokens, size_t *index)
   yylval = yyval_default;
 
   /* User initialization code.  */
-  #line 111 "src/parser_proc_grammar.y" /* glr.c:2270  */
+  #line 136 "src/parser_proc_grammar.y" /* glr.c:2270  */
 {
 }
 
-#line 7207 "src/parser_proc.c" /* glr.c:2270  */
+#line 7234 "src/parser_proc.c" /* glr.c:2270  */
 
   if (! yyinitGLRStack (yystackp, YYINITDEPTH))
     goto yyexhaustedlab;
@@ -7509,7 +7536,7 @@ yypdumpstack (yyGLRStack* yystackp)
 #define yydebug psi_parser_proc_debug
 #define yynerrs psi_parser_proc_nerrs
 
-#line 2053 "src/parser_proc_grammar.y" /* glr.c:2584  */
+#line 2080 "src/parser_proc_grammar.y" /* glr.c:2584  */
 
 
 /* epilogue */

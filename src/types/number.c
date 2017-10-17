@@ -510,6 +510,7 @@ bool psi_number_validate(struct psi_data *data, struct psi_number *exp,
 
 			exp->type = PSI_T_UINT64;
 			exp->data.ival.u64 = psi_decl_type_get_size(dtyp, NULL);
+			psi_decl_type_free(&dtyp);
 			return true;
 		} else {
 			data->error(data, exp->token, PSI_WARNING,
