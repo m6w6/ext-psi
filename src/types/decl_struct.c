@@ -92,8 +92,6 @@ bool psi_decl_struct_validate(struct psi_data *data, struct psi_decl_struct *s,
 	}
 
 	if (!s->size && !psi_plist_count(s->args)) {
-		data->error(data, s->token, PSI_WARNING,
-				"Cannot compute size of empty struct '%s'", s->name);
 		return false;
 	}
 
