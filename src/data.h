@@ -52,6 +52,7 @@
 	struct psi_plist *unions; \
 	struct psi_plist *enums; \
 	struct psi_plist *decls; \
+	struct psi_plist *vars; \
 	struct psi_plist *impls; \
 	struct psi_plist *libs; \
 	psi_error_cb error; \

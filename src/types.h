@@ -33,6 +33,7 @@
 #include "types/decl_arg.h"
 #include "types/decl_abi.h"
 #include "types/decl.h"
+#include "types/decl_extvar.h"
 #include "types/decl_struct.h"
 #include "types/decl_union.h"
 #include "types/impl_type.h"

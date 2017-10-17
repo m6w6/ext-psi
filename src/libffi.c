@@ -537,6 +537,73 @@ static inline void psi_ffi_impl_dtor(struct psi_impl *impl) {
 	}
 }
 
+static void psi_ffi_extvar_get(ffi_cif *sig, void *result, void **args, void *data) {
+	struct psi_decl_extvar *evar = data;
+
+	psi_decl_extvar_get(evar, result);
+}
+
+static void psi_ffi_extvar_set(ffi_cif *sig, void *result, void **args, void *data) {
+	struct psi_decl_extvar *evar = data;
+
+	psi_decl_extvar_set(evar, args[0]);
+}
+
+struct psi_ffi_extvar_info {
+	struct {
+		ffi_cif signature;
+		void *code;
+		ffi_closure *closure;
+	} get;
+	struct {
+		ffi_cif signature;
+		ffi_type *params[1];
+		void *code;
+		ffi_closure *closure;
+	} set;
+};
+
+static inline ffi_status psi_ffi_extvar_init(struct psi_decl_extvar *evar,
+		ffi_type *type) {
+	struct psi_ffi_extvar_info *info = calloc(1, sizeof(*info));
+	ffi_status rc;
+
+	rc = ffi_prep_cif(&info->get.signature, FFI_DEFAULT_ABI, 0,
+			type, NULL);
+	if (FFI_OK != rc) {
+		return rc;
+	}
+	rc = psi_ffi_prep_closure(&info->get.closure, &info->get.code,
+			&info->get.signature, psi_ffi_extvar_get, evar);
+	if (FFI_OK != rc) {
+		return rc;
+	}
+
+	info->set.params[0] = type;
+	rc = ffi_prep_cif(&info->set.signature, FFI_DEFAULT_ABI, 1,
+			&ffi_type_void, info->set.params);
+	if (FFI_OK != rc) {
+		return rc;
+	}
+	rc = psi_ffi_prep_closure(&info->set.closure, &info->set.code,
+			&info->set.signature, psi_ffi_extvar_set, evar);
+	if (FFI_OK != rc) {
+		return rc;
+	}
+
+	evar->info = info;
+	evar->getter->sym = info->get.code;
+	evar->setter->sym = info->set.code;
+
+	return FFI_OK;
+}
+
+static inline void psi_ffi_extvar_dtor(struct psi_decl_extvar *evar) {
+	if (evar->info) {
+		free(evar->info);
+		evar->info = NULL;
+	}
+}
 
 static inline struct psi_ffi_context *psi_ffi_context_init(struct psi_ffi_context *L) {
 	ffi_status rc;
@@ -577,6 +644,14 @@ static void psi_ffi_dtor(struct psi_context *C)
 		}
 
 	}
+	if (C->vars) {
+		size_t i = 0;
+		struct psi_decl_extvar *evar;
+
+		while (psi_plist_get(C->vars, i++, &evar)) {
+			psi_ffi_extvar_dtor(evar);
+		}
+	}
 	if (C->impls) {
 		size_t i = 0;
 		struct psi_impl *impl;
@@ -591,35 +666,42 @@ static void psi_ffi_dtor(struct psi_context *C)
 
 static zend_function_entry *psi_ffi_compile(struct psi_context *C)
 {
-	size_t i = 0, d = 0, nf = 0;
+	size_t i = 0, d = 0, v = 0, nf = 0;
 	struct psi_impl *impl;
 	struct psi_decl *decl;
-	zend_function_entry *zfe;
+	struct psi_decl_extvar *evar;
+	zend_function_entry *zfe = NULL;
 
-	if (!C->impls) {
-		return NULL;
+	while (psi_plist_get(C->vars, v++, &evar)) {
+		ffi_type *type = psi_ffi_decl_arg_type(evar->arg);
+
+		if (FFI_OK == psi_ffi_extvar_init(evar, type)) {
+			/* */
+		}
 	}
 
-	zfe = calloc(psi_plist_count(C->impls) + 1, sizeof(*zfe));
+	if (C->impls) {
+		zfe = calloc(psi_plist_count(C->impls) + 1, sizeof(*zfe));
 
-	while (psi_plist_get(C->impls, i++, &impl)) {
-		zend_function_entry *zf = &zfe[nf];
+		while (psi_plist_get(C->impls, i++, &impl)) {
+			zend_function_entry *zf = &zfe[nf];
 
-		if (!impl->decl) {
-			continue;
-		}
-		if (!psi_ffi_decl_init(impl->decl)) {
-			continue;
-		}
-		if (!psi_ffi_impl_init(impl, C)) {
-			continue;
-		}
+			if (!impl->decl) {
+				continue;
+			}
+			if (!psi_ffi_decl_init(impl->decl)) {
+				continue;
+			}
+			if (!psi_ffi_impl_init(impl, C)) {
+				continue;
+			}
 
-		zf->fname = impl->func->name + (impl->func->name[0] == '\\');
-		zf->handler = ((struct psi_ffi_impl_info *) impl->info)->code;
-		zf->num_args = psi_plist_count(impl->func->args);
-		zf->arg_info = psi_internal_arginfo(impl);
-		++nf;
+			zf->fname = impl->func->name + (impl->func->name[0] == '\\');
+			zf->handler = ((struct psi_ffi_impl_info *) impl->info)->code;
+			zf->num_args = psi_plist_count(impl->func->args);
+			zf->arg_info = psi_internal_arginfo(impl);
+			++nf;
+		}
 	}
 
 	while (psi_plist_get(C->decls, d++, &decl)) {

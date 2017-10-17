@@ -12,10 +12,10 @@ function psi\optind\set(int $v) : void {
 	return optind_set(optind) as void(optind_set);
 }
 function psi\optopt() : int {
-	return optopt() as to_int(optopt);
+	return optopt_get() as to_int(optopt_get);
 }
 function psi\optarg() : string {
-	return optarg() as to_string(optarg);
+	return optarg_get() as to_string(optarg_get);
 }
 
 #ifdef _OPTRESET

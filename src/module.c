@@ -326,12 +326,16 @@ static PHP_GINIT_FUNCTION(psi)
 {
 	char *tmp;
 	struct psi_plist **bl_decls = &psi_globals->blacklist.decls;
+	struct psi_plist **bl_vars = &psi_globals->blacklist.vars;
 
 	*bl_decls = psi_plist_init(ptr_free);
+	*bl_vars = psi_plist_init(ptr_free);
 
-#define BL_DECL_ADD(d) \
+#define BL_ADD(D, d) \
 	tmp = strdup(d); \
-	*bl_decls = psi_plist_add(*bl_decls, &tmp)
+	*D = psi_plist_add(*D, &tmp)
+#define BL_DECL_ADD(d) BL_ADD(bl_decls, d)
+#define BL_VAR_ADD(d) BL_ADD(bl_vars, d)
 
 	BL_DECL_ADD("dlsym");
 	BL_DECL_ADD("alloca");
@@ -352,6 +356,9 @@ static PHP_GINIT_FUNCTION(psi)
 	BL_DECL_ADD("*glob*64");
 	/* Hurd only */
 	BL_DECL_ADD("getumask");
+
+	/* using hidden structs */
+	BL_VAR_ADD("_IO_2_*");
 }
 
 static PHP_GSHUTDOWN_FUNCTION(psi)

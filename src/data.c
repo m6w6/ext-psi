@@ -59,6 +59,9 @@ struct psi_data *psi_data_ctor_with_dtors(struct psi_data *data,
 	if (!data->decls) {
 		data->decls = psi_plist_init((psi_plist_dtor) psi_decl_free);
 	}
+	if (!data->vars) {
+		data->vars = psi_plist_init((psi_plist_dtor) psi_decl_extvar_free);
+	}
 	if (!data->impls) {
 		data->impls = psi_plist_init((psi_plist_dtor) psi_impl_free);
 	}
@@ -95,6 +98,9 @@ struct psi_data *psi_data_ctor(struct psi_data *data, psi_error_cb error,
 	}
 	if (!data->decls) {
 		data->decls = psi_plist_init(NULL);
+	}
+	if (!data->vars) {
+		data->vars = psi_plist_init(NULL);
 	}
 	if (!data->impls) {
 		data->impls = psi_plist_init(NULL);
@@ -134,6 +140,9 @@ void psi_data_dtor(struct psi_data *data)
 	}
 	if (data->decls) {
 		psi_plist_free(data->decls);
+	}
+	if (data->vars) {
+		psi_plist_free(data->vars);
 	}
 	if (data->impls) {
 		psi_plist_free(data->impls);
@@ -222,6 +231,15 @@ void psi_data_dump(int fd, struct psi_data *D)
 		}
 		dprintf(fd, "\n");
 	}
+	if (psi_plist_count(D->vars)) {
+		size_t i = 0;
+		struct psi_decl_extvar *evar;
+
+		while (psi_plist_get(D->vars, i++, &evar)) {
+			psi_decl_extvar_dump(fd, evar);
+		}
+		dprintf(fd, "\n");
+	}
 	if (psi_plist_count(D->impls)) {
 		size_t i = 0;
 		struct psi_impl *impl;
@@ -242,6 +260,7 @@ bool psi_data_validate(struct psi_data *dst, struct psi_data *src)
 	struct psi_plist *check_structs = src->structs;
 	struct psi_plist *check_unions = src->unions;
 	struct psi_plist *check_enums = src->enums;
+	struct psi_plist *check_vars = src->vars;
 	struct psi_plist *check_decls = src->decls;
 	unsigned flags = dst->flags;
 	unsigned errors = src->errors;
@@ -254,6 +273,10 @@ bool psi_data_validate(struct psi_data *dst, struct psi_data *src)
 
 	psi_validate_stack_ctor(&type_stack);
 
+	if (dst->vars) {
+
+	}
+
 	dst->flags |= PSI_SILENT;
 
 	while (check_count) {
@@ -261,14 +284,16 @@ bool psi_data_validate(struct psi_data *dst, struct psi_data *src)
 		struct psi_plist *recheck_structs;
 		struct psi_plist *recheck_unions;
 		struct psi_plist *recheck_enums;
+		struct psi_plist *recheck_vars;
 		struct psi_plist *recheck_decls;
 		size_t count_types = psi_plist_count(check_types);
 		size_t count_structs = psi_plist_count(check_structs);
 		size_t count_unions = psi_plist_count(check_unions);
 		size_t count_enums = psi_plist_count(check_enums);
+		size_t count_vars = psi_plist_count(check_vars);
 		size_t count_decls = psi_plist_count(check_decls);
 		size_t count_all = count_types + count_structs + count_unions
-				+ count_enums + count_decls;
+				+ count_enums + count_vars + count_decls;
 
 		if (check_count == count_all) {
 			/* nothing changed; bail out */
@@ -287,6 +312,7 @@ bool psi_data_validate(struct psi_data *dst, struct psi_data *src)
 			recheck_structs = count_structs ? psi_plist_init(NULL) : NULL;
 			recheck_unions = count_unions ? psi_plist_init(NULL) : NULL;
 			recheck_enums = count_enums ? psi_plist_init(NULL) : NULL;
+			recheck_vars = count_vars ? psi_plist_init(NULL) : NULL;
 			recheck_decls = count_decls ? psi_plist_init(NULL) : NULL;
 
 			check_count = count_all;
@@ -362,6 +388,24 @@ bool psi_data_validate(struct psi_data *dst, struct psi_data *src)
 					}
 				}
 			}
+			if (count_vars) {
+				size_t i = 0;
+				struct psi_decl_extvar *evar;
+
+				while (psi_plist_get(check_vars, i++, &evar)) {
+					*dst->last_error = 0;
+					PSI_DEBUG_PRINT(dst, "PSI: validate extvar %s ", evar->arg->var->name);
+					if (psi_decl_extvar_validate(PSI_DATA(dst), evar, dlopened, &type_stack)) {
+						PSI_DEBUG_PRINT(dst, "%s\n", "✔");
+						dst->vars = psi_plist_add(dst->vars, &evar);
+						dst->decls = psi_plist_add(dst->decls, &evar->getter);
+						dst->decls = psi_plist_add(dst->decls, &evar->setter);
+					} else {
+						PSI_DEBUG_PRINT(dst, "%s (%s)\n", "✘", dst->last_error);
+						recheck_vars = psi_plist_add(recheck_vars, &evar);
+					}
+				}
+			}
 			if (count_decls) {
 				size_t i = 0;
 				struct psi_decl *decl;
@@ -396,6 +440,10 @@ bool psi_data_validate(struct psi_data *dst, struct psi_data *src)
 			psi_plist_free(check_enums);
 		}
 		check_enums = recheck_enums;
+		if (check_vars && check_vars != src->vars) {
+			psi_plist_free(check_vars);
+		}
+		check_vars = recheck_vars;
 		if (check_decls && check_decls != src->decls) {
 			psi_plist_free(check_decls);
 		}

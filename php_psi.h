@@ -79,6 +79,7 @@ ZEND_BEGIN_MODULE_GLOBALS(psi)
 	struct psi_context *context;
 	struct {
 		struct psi_plist *decls;
+		struct psi_plist *vars;
 	} blacklist;
 ZEND_END_MODULE_GLOBALS(psi);
 

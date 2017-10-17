@@ -40,7 +40,7 @@
 extern int psi_parser_proc_debug;
 #endif
 /* "%code requires" blocks.  */
-#line 107 "src/parser_proc_grammar.y" /* glr.c:197  */
+#line 115 "src/parser_proc_grammar.y" /* glr.c:197  */
 
 #include "plist.h"
 #include "types/layout.h"
@@ -331,6 +331,10 @@ union YYSTYPE
   struct psi_plist * PSI_T_cpp_macro_call_args;
   /* cpp_macro_call_arg_list  */
   struct psi_plist * PSI_T_cpp_macro_call_arg_list;
+  /* decl_extvar_stmt  */
+  struct psi_plist * PSI_T_decl_extvar_stmt;
+  /* decl_extvar_list  */
+  struct psi_plist * PSI_T_decl_extvar_list;
   /* decl_vars  */
   struct psi_plist * PSI_T_decl_vars;
   /* decl_args  */
@@ -717,7 +721,7 @@ union YYSTYPE
   struct psi_token * PSI_T_assert_stmt_token;
   /* impl_stmt  */
   struct psi_token ** PSI_T_impl_stmt;
-#line 721 "src/parser_proc.h" /* glr.c:197  */
+#line 725 "src/parser_proc.h" /* glr.c:197  */
 };
 
 typedef union YYSTYPE YYSTYPE;

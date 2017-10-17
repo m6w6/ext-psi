@@ -93,6 +93,14 @@ static inline void psi_parser_proc_add_decl(struct psi_parser *P, struct psi_dec
 	}
 	P->decls = psi_plist_add(P->decls, &decl);
 }
+static inline void psi_parser_proc_add_decl_extvars(struct psi_parser *P, struct psi_plist *list) {
+	assert(list);
+	if (!P->vars) {
+		P->vars = psi_plist_init((psi_plist_dtor) psi_decl_extvar_free);
+	}
+	P->vars = psi_plist_add_r(P->vars, psi_plist_count(list), psi_plist_eles(list));
+	free(list);
+}
 static inline void psi_parser_proc_add_impl(struct psi_parser *P, struct psi_impl *impl) {
 	assert(impl);
 	if (!P->impls) {
@@ -350,8 +358,8 @@ struct psi_parser;
 %destructor	{psi_decl_enum_free(&$$);}			decl_enum
 %type		<struct psi_decl_enum_item *>		decl_enum_item
 %destructor	{psi_decl_enum_item_free(&$$);}		decl_enum_item
-%type		<struct psi_plist *>				decl_args decl_arg_list decl_struct_args struct_args_block struct_args struct_arg_var_list decl_enum_items decl_vars decl_vars_with_layout call_decl_vars
-%destructor	{psi_plist_free($$);}				decl_args decl_arg_list decl_struct_args struct_args_block struct_args struct_arg_var_list decl_enum_items decl_vars decl_vars_with_layout call_decl_vars
+%type		<struct psi_plist *>				decl_args decl_arg_list decl_struct_args struct_args_block struct_args struct_arg_var_list decl_enum_items decl_vars decl_vars_with_layout call_decl_vars decl_extvar_stmt decl_extvar_list
+%destructor	{psi_plist_free($$);}				decl_args decl_arg_list decl_struct_args struct_args_block struct_args struct_arg_var_list decl_enum_items decl_vars decl_vars_with_layout call_decl_vars decl_extvar_stmt decl_extvar_list
 
 %type		<struct psi_layout>					align_and_size
 %destructor	{}									align_and_size
@@ -460,8 +468,10 @@ block:
 |	decl_stmt {
 	psi_parser_proc_add_decl(P, $decl_stmt);
 }
+|	decl_extvar_stmt[list] {
+	psi_parser_proc_add_decl_extvars(P, $list);
+}
 |	ignored_decl
-|	decl_ext_var_stmt
 |	decl_typedef[def] {
 	psi_parser_proc_add_typedef(P, $def);
 }
@@ -761,6 +771,7 @@ impl_def_val[val]:
 	$val = NULL;
 }
 |	num_exp[num] %dprec 1 {
+	/* FIXME */
 	if (psi_num_exp_validate(PSI_DATA(P), $num, NULL, NULL, NULL, NULL, NULL)) {
 		impl_val res = {0};
 		token_t type = psi_num_exp_exec($num, &res, NULL, &P->preproc->defs);
@@ -1096,20 +1107,42 @@ ignored_quoted_strings:
 |	ignored_quoted_strings QUOTED_STRING
 ;
 
-decl_ext_var_stmt:
-	decl_ext_var EOS
-;
-
-decl_ext_var: 
-	NAME decl_arg decl_ext_var_list {
-	psi_decl_arg_free(&$decl_arg);
+decl_extvar_stmt[list]:
+	NAME decl_arg decl_extvar_list[vars] EOS {
+	struct psi_plist *list = psi_plist_init((psi_plist_dtor) psi_decl_extvar_free);
+	
+	if ($vars) {
+		size_t i = 0;
+		struct psi_decl_var *var;
+		
+		while (psi_plist_get($vars, i++, &var)) {
+			if (psi_decl_extvar_is_blacklisted(var->name)) {
+				psi_decl_var_free(&var);
+			} else {
+				list = psi_plist_add(list, psi_decl_extvar_init(
+					psi_decl_arg_init(psi_decl_type_copy($decl_arg->type), var)));
+				}
+		}
+		free($vars);
+	}
+	
+	if (psi_decl_extvar_is_blacklisted($decl_arg->var->name)) {
+		psi_decl_arg_free(&$decl_arg);
+	} else {
+		struct psi_decl_extvar *evar = psi_decl_extvar_init($decl_arg);
+		list = psi_plist_add(list, &evar);
+	}
+	
+	$list = list;
 }
 ;
 
-decl_ext_var_list:
-	%empty
+decl_extvar_list[list]:
+	%empty {
+	$list = NULL;
+}
 |	COMMA decl_vars {
-	psi_plist_free($decl_vars);
+	$list = $decl_vars;
 }
 ;
 
