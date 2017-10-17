@@ -345,6 +345,7 @@ static PHP_GINIT_FUNCTION(psi)
 	/* va_list as arg */
 	BL_DECL_ADD("*v*printf");
 	BL_DECL_ADD("*v*scanf");
+	BL_DECL_ADD("vsyslog");
 
 	/* LFS/LFO for 32bit */
 	BL_DECL_ADD("*stat*64");
