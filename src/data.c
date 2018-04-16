@@ -40,6 +40,12 @@ struct psi_data *psi_data_ctor_with_dtors(struct psi_data *data,
 
 	data->error = error;
 	data->flags = flags;
+	if (!data->file.libnames) {
+		data->file.libnames = psi_plist_init((psi_plist_dtor) psi_names_free);
+	}
+	if (!data->file.dlopened) {
+		data->file.dlopened = psi_plist_init((psi_plist_dtor) psi_libs_free);
+	}
 
 	if (!data->consts) {
 		data->consts = psi_plist_init((psi_plist_dtor) psi_const_free);
@@ -65,9 +71,6 @@ struct psi_data *psi_data_ctor_with_dtors(struct psi_data *data,
 	if (!data->impls) {
 		data->impls = psi_plist_init((psi_plist_dtor) psi_impl_free);
 	}
-	if (!data->libs) {
-		data->libs = psi_plist_init((psi_plist_dtor) psi_libs_free);
-	}
 	return data;
 }
 
@@ -80,6 +83,13 @@ struct psi_data *psi_data_ctor(struct psi_data *data, psi_error_cb error,
 
 	data->error = error;
 	data->flags = flags;
+
+	if (!data->file.libnames) {
+		data->file.libnames = psi_plist_init(NULL);
+	}
+	if (!data->file.dlopened) {
+		data->file.dlopened = psi_plist_init(NULL);
+	}
 
 	if (!data->consts) {
 		data->consts = psi_plist_init(NULL);
@@ -104,9 +114,6 @@ struct psi_data *psi_data_ctor(struct psi_data *data, psi_error_cb error,
 	}
 	if (!data->impls) {
 		data->impls = psi_plist_init(NULL);
-	}
-	if (!data->libs) {
-		data->libs = psi_plist_init(NULL);
 	}
 	return data;
 }
@@ -147,19 +154,19 @@ void psi_data_dtor(struct psi_data *data)
 	if (data->impls) {
 		psi_plist_free(data->impls);
 	}
-	if (data->libs) {
-		psi_plist_free(data->libs);
-	}
 
 	psi_decl_file_dtor(&data->file);
 }
 
 void psi_data_dump(int fd, struct psi_data *D)
 {
-	if (D->file.fn) {
-		dprintf(fd, "// filename=%s (%u errors)\n", D->file.fn, D->errors);
-		if (D->file.ln) {
-			dprintf(fd, "lib \"%s\";\n", D->file.ln);
+	if (D->file.filename) {
+		size_t i = 0;
+		char *libname;
+
+		dprintf(fd, "// filename=%s (%u errors)\n", D->file.filename, D->errors);
+		while (psi_plist_get(D->file.libnames, i++, &libname)) {
+			dprintf(fd, "lib \"%s\";\n", libname);
 		}
 	} else {
 		dprintf(fd, "// builtin predef\n");

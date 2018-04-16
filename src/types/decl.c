@@ -93,7 +93,7 @@ void psi_decl_dump(int fd, struct psi_decl *decl)
 }
 
 static inline bool psi_decl_validate_func(struct psi_data *data,
-		struct psi_decl *decl, struct psi_decl_arg *func, void *dl)
+		struct psi_decl *decl, struct psi_decl_arg *func)
 {
 	struct psi_func_redir *redir;
 
@@ -108,13 +108,21 @@ static inline bool psi_decl_validate_func(struct psi_data *data,
 		}
 	}
 	if (!decl->sym) {
+		size_t i = 0;
+		void *dl;
+
+		while (!decl->sym && psi_plist_get(data->file.dlopened, i++, &dl)) {
+			decl->sym = dlsym(dl, decl->redir ?: func->var->name);
+		}
+	}
+	if (!decl->sym) {
 #ifndef RTLD_NEXT
 # define RTLD_NEXT ((void *) -1l)
 #endif
 #ifndef RTLD_DEFAULT
 # define RTLD_DEFAULT ((void *) 0)
 #endif
-		decl->sym = dlsym(dl ?: RTLD_DEFAULT, decl->redir ?: func->var->name);
+		decl->sym = dlsym(RTLD_DEFAULT, decl->redir ?: func->var->name);
 		if (!decl->sym) {
 			data->error(data, func->token, PSI_WARNING,
 					"Failed to locate symbol '%s(%s)': %s",
@@ -132,7 +140,7 @@ bool psi_decl_validate(struct psi_data *data, struct psi_decl *decl,
 	if (!psi_decl_validate_nodl(data, decl, scope)) {
 		return false;
 	}
-	if (!psi_decl_validate_func(data, decl, decl->func, scope->dlopened)) {
+	if (!psi_decl_validate_func(data, decl, decl->func)) {
 		return false;
 	}
 

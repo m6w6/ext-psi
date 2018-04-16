@@ -456,12 +456,8 @@ block:
 	}
 }
 |	lib {
-	if (P->file.ln) {
-		P->error(PSI_DATA(P), $lib, PSI_WARNING,
-				"Extra 'lib \"%s\"' statement has no effect", $lib->text);
-	} else {
-		P->file.ln = strndup($lib->text, $lib->size);
-	}
+	char *libname = strdup($lib->text);
+	P->file.libnames = psi_plist_add(P->file.libnames, &libname);
 }
 |	constant {
 	psi_parser_proc_add_const(P, $constant);

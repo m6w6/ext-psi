@@ -29,13 +29,15 @@
 struct psi_data;
 
 struct psi_decl_file {
-	char *ln;
-	char *fn;
+	char *filename;
+	struct psi_plist *libnames;
+	struct psi_plist *dlopened;
 };
 
 void psi_decl_file_dtor(struct psi_decl_file *file);
-bool psi_decl_file_validate(struct psi_data *dst, struct psi_data *src, void **dlopened);
+bool psi_decl_file_validate(struct psi_data *dst, struct psi_data *src);
 
 void psi_libs_free(void **dlopened);
+void psi_names_free(char **name);
 
 #endif

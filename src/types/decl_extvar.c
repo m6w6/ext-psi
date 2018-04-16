@@ -71,13 +71,21 @@ bool psi_decl_extvar_validate(struct psi_data *data,
 	}
 
 	if (!evar->sym) {
+		size_t i = 0;
+		void *dl;
+
+		while (!evar->sym && psi_plist_get(data->file.dlopened, i++, &dl)) {
+			evar->sym = dlsym(dl, evar->arg->var->name);
+		}
+	}
+	if (!evar->sym) {
 #ifndef RTLD_NEXT
 # define RTLD_NEXT ((void *) -1l)
 #endif
 #ifndef RTLD_DEFAULT
 # define RTLD_DEFAULT ((void *) 0)
 #endif
-		evar->sym = dlsym(scope->dlopened ?: RTLD_DEFAULT, evar->arg->var->name);
+		evar->sym = dlsym(RTLD_DEFAULT, evar->arg->var->name);
 		if (!evar->sym) {
 			data->error(data, evar->arg->var->token, PSI_WARNING,
 					"Failed to locate symbol '%s': %s", evar->arg->var->name,

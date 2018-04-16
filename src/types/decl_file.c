@@ -30,49 +30,74 @@
 
 void psi_decl_file_dtor(struct psi_decl_file *file)
 {
-	if (file->ln) {
-		free(file->ln);
+	if (file->libnames) {
+		psi_plist_free(file->libnames);
 	}
-	if (file->fn) {
-		free(file->fn);
+	if (file->dlopened) {
+		psi_plist_free(file->dlopened);
+	}
+	if (file->filename) {
+		free(file->filename);
 	}
 	memset(file, 0, sizeof(*file));
 }
 
-bool psi_decl_file_validate(struct psi_data *dst, struct psi_data *src, void **dlopened)
+static inline bool validate_lib(struct psi_data *dst, const char *libname, void **dlopened)
 {
 	char lib[MAXPATHLEN];
-	const char *ptr = src->file.ln;
 	size_t len;
 
-	if (!ptr) {
+	if (!libname) {
 		/* FIXME: assume stdlib */
 		return true;
-	} else if (!strchr(ptr, '/')) {
-		len = snprintf(lib, MAXPATHLEN, "lib%s.%s", ptr, PHP_PSI_SHLIB_SUFFIX);
+	} else if (!strchr(libname, '/')) {
+		len = snprintf(lib, MAXPATHLEN, "lib%s.%s", libname, PHP_PSI_SHLIB_SUFFIX);
 		if (MAXPATHLEN == len) {
 			dst->error(dst, NULL, PSI_WARNING, "Library name too long: '%s'",
-					ptr);
+					libname);
 		}
 		lib[len] = 0;
-		ptr = lib;
+		libname = lib;
 	}
-	if (!(*dlopened = dlopen(ptr, RTLD_LAZY | RTLD_LOCAL))) {
+	if (!(*dlopened = dlopen(libname, RTLD_LAZY | RTLD_LOCAL))) {
 		dst->error(dst, NULL, PSI_WARNING, "Could not open library '%s': %s.",
-				src->file.ln, dlerror());
+				libname, dlerror());
 		return false;
 	}
 
-	if (!dst->libs) {
-		dst->libs = psi_plist_init((psi_plist_dtor) psi_libs_free);
-	}
-	dst->libs = psi_plist_add(dst->libs, dlopened);
+	return true;
+}
 
+bool psi_decl_file_validate(struct psi_data *dst, struct psi_data *src)
+{
+	size_t i = 0;
+	char *libname;
+	void *dlopened;
+
+	while (psi_plist_get(src->file.libnames, i++, &libname)) {
+		if (!validate_lib(dst, libname, &dlopened)) {
+			return false;
+		}
+
+		libname = strdup(libname);
+		dst->file.libnames = psi_plist_add(dst->file.libnames, &libname);
+		dst->file.dlopened = psi_plist_add(dst->file.dlopened, &dlopened);
+	}
+
+	if (src->file.filename) {
+		dst->file.filename = strdup(src->file.filename);
+	}
 	return true;
 }
 
 void psi_libs_free(void **dlopened) {
 	if (*dlopened) {
 		dlclose(*dlopened);
+	}
+}
+
+void psi_names_free(char **name) {
+	if (*name) {
+		free(*name);
 	}
 }

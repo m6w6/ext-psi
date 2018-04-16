@@ -29,7 +29,6 @@
 struct psi_data;
 
 struct psi_validate_scope {
-	void *dlopened;
 	HashTable *defs;
 	HashTable types;
 	HashTable structs;

@@ -55,7 +55,6 @@
 	struct psi_plist *decls; \
 	struct psi_plist *vars; \
 	struct psi_plist *impls; \
-	struct psi_plist *libs; \
 	psi_error_cb error; \
 	char last_error[0x1000]; \
 	unsigned errors; \

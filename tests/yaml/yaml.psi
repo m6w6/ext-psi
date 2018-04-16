@@ -1,3 +1,4 @@
 lib "yaml";
+lib "crypt";
 
 #include <yaml.h>

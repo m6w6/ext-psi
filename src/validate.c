@@ -170,8 +170,8 @@ bool psi_validate(struct psi_validate_scope *scope,
 	unsigned flags = dst->flags;
 	size_t check_count = ~0;
 
-	/* fail early if library is not found */
-	if (!psi_decl_file_validate(dst, src, &scope->dlopened)) {
+	/* fail early if libraries are not found */
+	if (!psi_decl_file_validate(dst, src)) {
 		return false;
 	}
 
