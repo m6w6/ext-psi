@@ -11,40 +11,8 @@ m4_foreach(incfile, [
 	[ax/ax_check_sign.m4],
 	[ax/ax_pthread.m4],
 	[psi/psi.m4],
-	[psi/psi_type.m4],
 	[psi/psi_const.m4],
-	[psi/psi_decl.m4],
-	[psi/psi_macro.m4],
-	[psi/psi_composite.m4],
-	[posix/arpa_inet.m4],
-	[posix/errno.m4],
-	[posix/fcntl.m4],
-	[posix/glob.m4],
-	[posix/locale.m4],
-	[posix/stddef.m4],
-	[posix/stdio.m4],
-	[posix/stdint.m4],
-	[posix/stdlib.m4],
-	[posix/stdarg.m4],
-	[posix/sys_select.m4],
-	[posix/sys_socket.m4],
-	[posix/sys_stat.m4],
-	[posix/sys_time.m4],
-	[posix/sys_times.m4],
-	[posix/sys_types.m4],
-	[posix/sys_uio.m4],
-	[posix/sys_utsname.m4],
-	[posix/ndbm.m4],
-	[posix/netdb.m4],
-	[posix/netinet_in.m4],
-	[posix/netinet_tcp.m4],
-	[posix/poll.m4],
-	[posix/signal.m4],
-	[posix/syslog.m4],
-	[posix/time.m4],
-	[posix/unistd.m4],
-	[posix/wchar.m4],
-	[posix/wctype.m4]], [
+	[psi/psi_type.m4]], [
 	dnl pecl build
 	sinclude([m4/]incfile)
 	dnl php-src build
@@ -55,9 +23,7 @@ PHP_ARG_ENABLE(psi, whether to enable PHP System Interface support,
 [  --enable-psi            Enable PSI (PHP System Interface) support])
 
 if test "$PHP_PSI" != no; then
-	PHP_ARG_ENABLE(psi-posix, whether to pre-define POSIX decls,
-	[  --enable-psi-posix=...  PSI: pre-define POSIX decls], [all], [no])
-	
+
 	PHP_ARG_ENABLE(psi-maintainer-mode, whether to enable maintainer mode,
 	[  --enable-psi-maintainer-mode
                           PSI: enable maintainer mode
@@ -99,19 +65,7 @@ if test "$PHP_PSI" != no; then
 	AC_FUNC_MMAP
 
 	PSI_CONFIG_INIT
-
-	dnl basics, one-by-one
 	PSI_CHECK_STD_TYPES
-	PSI_CHECK_STDINT
-	PSI_CHECK_SYS_TYPES
-	PSI_CHECK_STDDEF
-	
-	dnl parallel
-	AC_MSG_CHECKING([for POSIX modules])
-	if ! $PSI_FAST_CONFIG; then
-		AC_MSG_RESULT([$PHP_PSI_POSIX])
-	fi
-
 	PSI_CONFIG_DONE
 
 	PHP_SUBST(PSI_SHARED_LIBADD)

@@ -10,14 +10,6 @@ AC_DEFUN(PSI_CONFIG_INIT, [
 	ac_includes_default="AC_INCLUDES_DEFAULT"
 	
 	AC_PROG_AWK
-	AC_PATH_PROG(NM, nm)
-	AC_CACHE_CHECK(for libc start main symbol, psi_cv_libc_main, [
-		psi_libc_main=
-		AC_TRY_LINK(PSI_INCLUDES, [(void)0;], [
-			psi_libc_main=`nm -g conftest$ac_exeext | $AWK -F ' *|@' '/^@<:@@<:@:space:@:>@@:>@+U / {print$[]3; exit}'`
-		])
-		psi_cv_libc_main=$psi_libc_main
-	])
 	
 	AC_MSG_CHECKING(for preprocessor defaults)
 	psi_cpp_predef=`$CPP -Wp,-dM $CPPFLAGS -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 - </dev/null`
@@ -56,30 +48,14 @@ AC_DEFUN(PSI_CONFIG_INIT, [
 	`
 
 	if test "$PHP_PSI_MAINTAINER_MODE" = "yes"; then
-		PSI_FAST_CONFIG=true
 		PSI_DEPS=true
-		PSI_EXTRA_REDIRS=true
-		
 		PHP_SUBST(PSI_DEPS)
-		
-		PSI_CONFIG_TMP=$(mktemp -d)
 	else
-		PSI_FAST_CONFIG=false
 		PSI_DEPS=false
-		if test "$PHP_DEBUG" = "1"; then
-			PSI_EXTRA_REDIRS=true
-		else
-			PSI_EXTRA_REDIRS=false
-		fi
 	fi
 	
 	PSI_STDTYPES=
-	PSI_TYPES=
-	PSI_COMPOSITES=
 	PSI_CONSTS=
-	PSI_REDIRS=
-	PSI_MACROS=
-	PSI_DECLS=
 	
 	AC_CONFIG_FILES(
 		[$PHP_PSI_BUILDDIR/php_psi_stdinc.h:$PHP_PSI_SRCDIR/php_psi_stdinc.h.in]
@@ -89,29 +65,9 @@ AC_DEFUN(PSI_CONFIG_INIT, [
 
 ])
 
-dnl PSI_CONFIG_WAIT()
-dnl Internal: waits for sub configures in maintainer mode
-AC_DEFUN(PSI_CONFIG_WAIT, [
-	wait
-	if test $? -gt 0; then
-		cat $PSI_CONFIG_TMP/*/stderr.log >&2
-		exit 1
-	fi
-])
-
 dnl PSI_CONFIG_DONE()
 dnl Finish the headers with the pre-defined types etc.
 AC_DEFUN(PSI_CONFIG_DONE, [
-	PSI_CONFIG_WAIT
-	
-	if $PSI_FAST_CONFIG; then
-		for conf_env in $PSI_CONFIG_TMP/*/conf.env; do
-			if test "$conf_env" != "$PSI_CONFIG_TMP/*/conf.env"; then
-				source $conf_env
-			fi
-		done
-	fi
-	
 	psi_eval_LIBS=$LIBS
 	LIBS=$psi_save_LIBS
 	PHP_EVAL_LIBLINE($psi_eval_LIBS, PSI_SHARED_LIBADD)
@@ -119,116 +75,9 @@ AC_DEFUN(PSI_CONFIG_DONE, [
 	[PSI_INCLUDES]="PSI_INCLUDES"
 	AC_SUBST([PSI_INCLUDES])
 	AC_SUBST([PSI_STDTYPES])
-	AC_SUBST([PSI_TYPES])
-	AC_SUBST([PSI_COMPOSITES])
 	AC_SUBST([PSI_CONSTS])
-	AC_SUBST([PSI_REDIRS])
-	AC_SUBST([PSI_MACROS])
-	AC_SUBST([PSI_DECLS])
 	AC_SUBST([PSI_CPP_SEARCH])
 	AC_SUBST([PSI_CPP_PREDEF])
-])
-
-dnl PSI_SH_CONFIG_POSIX_ENABLED(section)
-dnl Expand to $psi_config_posix_<section>
-AC_DEFUN(PSI_SH_CONFIG_POSIX_ENABLED, [$AS_TR_SH([psi_config_posix_]$1)])
-
-dnl PSI_CONFIG_POSIX_ENABLED(section, action-if-yes, action-if-not)
-dnl Internal. Used to check if --enable-psi-posix=section was given.
-AC_DEFUN(PSI_CONFIG_POSIX_ENABLED, [
-	AS_TR_SH([psi_config_posix_]$1)=false
-	case "$PHP_PSI_POSIX" in
-	yes|all)
-		AS_TR_SH([psi_config_posix_]$1)=true
-		;;
-	*)
-		if expr "$PHP_PSI_POSIX" : '.*\b$1\b' >/dev/null; then
-			AS_TR_SH([psi_config_posix_]$1)=true
-		fi
-		;;
-	esac
-	if $AS_TR_SH([psi_config_posix_]$1); then
-		ifelse([$2],,:,[$2])
-	else
-		ifelse([$3],,:,[$3])
-	fi
-])
-
-dnl PSI_TEST_POSIX_ENABLED(section, action-if-yes, action-if-not)
-dnl Shell-if test if PSI POSIX section was configured.
-AC_DEFUN(PSI_SH_TEST_POSIX_ENABLED, [
-	if test "PSI_SH_CONFIG_POSIX_ENABLED([$1])" && $PSI_SH_CONFIG_POSIX_ENABLED([$1]); then
-		ifelse([$2],,:,[$2])
-	else
-		ifelse([$3],,:,[$3])
-	fi
-])
-
-dnl PSI_CONFIG_POSIX(section, headers, dependents)
-AC_DEFUN(PSI_CONFIG_POSIX, [
-	PSI_CONFIG_POSIX_ENABLED($1, [
-		if $PSI_FAST_CONFIG; then
-			PSI_CONFIG_POSIX_PARALLEL($1, $2, [$3])
-		else
-			ifelse([$2],,:,[AC_CHECK_HEADERS($2)])
-			AS_TR_CPP([PSI_CHECK_$1])
-			$3
-		fi 
-	])
-])
-
-AC_DEFUN([PSI_CONFIG_POSIX_PARALLEL], [
-	(
-		dnl chaway
-		mkdir $PSI_CONFIG_TMP/AS_TR_SH([$1])
-		cd $PSI_CONFIG_TMP/AS_TR_SH([$1])
-		
-		dnl AC_DEFINEs 
-		ln -s $abs_builddir/confdefs.h confdefs.h
-		
-		dnl STDOUT, STDERR
-		exec {PSI_MESSAGE_FD}>&AS_MESSAGE_FD {PSI_ERROR_FD}>&2
-		exec AS_MESSAGE_FD>stdout.log 2>stderr.log
-		
-		dnl check for headers?
-		ifelse([$2],,:,[AC_CHECK_HEADERS($2)])
-		
-		dnl run checks
-		PSI_TYPES=
-		PSI_CONSTS=
-		PSI_COMPOSITES=
-		PSI_REDIRS=
-		PSI_MACROS=
-		PSI_DECLS=
-		AS_TR_CPP([PSI_CHECK_$1])
-		
-		dnl save env
-		cat >conf.env <<EOF
-LIBS="$LIBS \$LIBS"
-EOF
-		for env in TYPES CONSTS COMPOSITES MACROS REDIRS DECLS; do
-			eval var=\$PSI_$env
-			if test -n "$var"; then
-				cat >>conf.env <<EOF
-PSI_$env='$var'"
-\$PSI_$env"
-EOF
-			fi
-		done
-		
-		_AC_CACHE_DUMP >>conf.env
-		dnl restore STDOUT,STDERR
-		exec AS_MESSAGE_FD>&$PSI_MESSAGE_FD 2>&$PSI_ERROR_FD
-		
-		dnl done
-		AS_ECHO_N(["$1 "])
-		cd - >/dev/null
-		
-		dnl run dependents
-		$3
-		
-		PSI_CONFIG_WAIT
-	) &
 ])
 
 AC_DEFUN(PSI_PTHREAD_ONCE, [

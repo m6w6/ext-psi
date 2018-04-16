@@ -38,32 +38,6 @@ static struct psi_std_type {
 };
 #endif
 
-#ifdef PSI_PREDEF_TYPES
-static struct psi_predef_type {
-	token_t type_tag;
-	const char *type_name;
-	const char *alias;
-} psi_predef_types[] = {
-@PSI_TYPES@
-	{0}
-};
-#endif
-
-#ifdef PSI_PREDEF_COMPOSITES
-static struct psi_predef_composite {
-	token_t type_tag;
-	const char *type_name;
-	const char *var_name;
-	size_t offset;
-	size_t size;
-	size_t pointer_level;
-	size_t array_size;
-} psi_predef_composites[] = {
-@PSI_COMPOSITES@
-	{0}
-};
-#endif
-
 #ifdef PSI_PREDEF_CONSTS
 static struct psi_predef_const {
 	token_t type_tag;
@@ -76,27 +50,7 @@ static struct psi_predef_const {
 };
 #endif
 
-#ifdef PSI_PREDEF_DECLS
-static struct psi_predef_decl {
-	enum {
-		DECL_KIND_STD,
-		DECL_KIND_VARARG,
-		DECL_KIND_FUNCTOR
-	} kind;
-	token_t type_tag;
-	const char *type_name;
-	const char *var_name;
-	size_t pointer_level;
-	size_t array_size;
-} psi_predef_decls[] = {
-@PSI_DECLS@
-	{0}
-};
-#endif
-
 #ifdef PSI_FUNC_REDIRS
-@PSI_MACROS@
-
 typedef void (*psi_func_ptr)();
 static struct psi_func_redir {
 	const char *name;
@@ -109,7 +63,6 @@ static struct psi_func_redir {
 	{"mknod", (psi_func_ptr) mknod},
 	{"mknodat", (psi_func_ptr) mknodat},
 	{"stat", (psi_func_ptr) stat},
-@PSI_REDIRS@
 	{0}
 };
 #endif
