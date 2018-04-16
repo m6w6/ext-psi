@@ -57,6 +57,9 @@ void psi_decl_free(struct psi_decl **d_ptr)
 		if (d->args) {
 			psi_plist_free(d->args);
 		}
+		if (d->redir) {
+			free(d->redir);
+		}
 		free(d);
 	}
 }
@@ -65,6 +68,7 @@ void psi_decl_dump(int fd, struct psi_decl *decl)
 {
 	psi_decl_abi_dump(fd, decl->abi);
 	dprintf(fd, " ");
+	/* FIXME: functions returning arrays */
 	psi_decl_arg_dump(fd, decl->func, 0);
 	dprintf(fd, "(");
 	if (decl->args) {
@@ -81,7 +85,11 @@ void psi_decl_dump(int fd, struct psi_decl *decl)
 			dprintf(fd, ", ...");
 		}
 	}
-	dprintf(fd, ");");
+	if (decl->redir) {
+		dprintf(fd, ") __asm__ (\"%s\");", decl->redir);
+	} else {
+		dprintf(fd, ");");
+	}
 }
 
 static inline bool psi_decl_validate_func(struct psi_data *data,
@@ -106,10 +114,11 @@ static inline bool psi_decl_validate_func(struct psi_data *data,
 #ifndef RTLD_DEFAULT
 # define RTLD_DEFAULT ((void *) 0)
 #endif
-		decl->sym = dlsym(dl ?: RTLD_DEFAULT, func->var->name);
+		decl->sym = dlsym(dl ?: RTLD_DEFAULT, decl->redir ?: func->var->name);
 		if (!decl->sym) {
 			data->error(data, func->token, PSI_WARNING,
-					"Failed to locate symbol '%s': %s", func->var->name,
+					"Failed to locate symbol '%s(%s)': %s",
+					func->var->name, decl->redir ?: "",
 					dlerror() ?: "not found");
 			return false;
 		}
@@ -117,13 +126,13 @@ static inline bool psi_decl_validate_func(struct psi_data *data,
 	return true;
 }
 
-bool psi_decl_validate(struct psi_data *data, struct psi_decl *decl, void *dl,
-		struct psi_validate_stack *type_stack)
+bool psi_decl_validate(struct psi_data *data, struct psi_decl *decl,
+		struct psi_validate_scope *scope)
 {
-	if (!psi_decl_validate_nodl(data, decl, type_stack)) {
+	if (!psi_decl_validate_nodl(data, decl, scope)) {
 		return false;
 	}
-	if (!psi_decl_validate_func(data, decl, decl->func, dl)) {
+	if (!psi_decl_validate_func(data, decl, decl->func, scope->dlopened)) {
 		return false;
 	}
 
@@ -131,7 +140,7 @@ bool psi_decl_validate(struct psi_data *data, struct psi_decl *decl, void *dl,
 }
 
 bool psi_decl_validate_nodl(struct psi_data *data, struct psi_decl *decl,
-		struct psi_validate_stack *type_stack)
+		struct psi_validate_scope *scope)
 {
 	if (!decl->abi) {
 		decl->abi = psi_decl_abi_init("default");
@@ -140,7 +149,7 @@ bool psi_decl_validate_nodl(struct psi_data *data, struct psi_decl *decl,
 				"Invalid calling convention: '%s'", decl->abi->token->text);
 		return false;
 	}
-	if (!psi_decl_arg_validate(data, decl->func, type_stack)) {
+	if (!psi_decl_arg_validate(data, decl->func, scope)) {
 		return false;
 	}
 	if (decl->args) {
@@ -153,7 +162,7 @@ bool psi_decl_validate_nodl(struct psi_data *data, struct psi_decl *decl,
 				snprintf(arg->var->name, 6, "arg%zu", i);
 				arg->var->fqn = strdup(arg->var->name);
 			}
-			if (!psi_decl_arg_validate(data, arg, type_stack)) {
+			if (!psi_decl_arg_validate(data, arg, scope)) {
 				return false;
 			}
 		}
@@ -173,5 +182,20 @@ bool psi_decl_is_blacklisted(const char *name)
 		}
 	}
 	return false;
+}
+
+struct psi_decl_arg *psi_decl_get_arg(struct psi_decl *decl, struct psi_decl_var *var) {
+	if (var->arg) {
+		size_t i = 0;
+		struct psi_decl_arg *arg = decl->func;
+
+		do {
+			if (var->arg == arg) {
+				return arg;
+			}
+		} while (psi_plist_get(decl->args, i++, &arg));
+	}
+
+	return psi_decl_arg_get_by_var(var, decl->args, decl->func);
 }
 

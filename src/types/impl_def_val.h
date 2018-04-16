@@ -35,13 +35,16 @@ struct psi_impl_type;
 struct psi_impl_def_val {
 	struct psi_token *token;
 	token_t type;
-	char *text;
+	union {
+		struct psi_num_exp *num;
+	} data;
 	impl_val ival;
 };
 
-struct psi_impl_def_val *psi_impl_def_val_init(token_t t, const char *text);
+struct psi_impl_def_val *psi_impl_def_val_init(token_t t, void *data);
 void psi_impl_def_val_free(struct psi_impl_def_val **def_ptr);
 void psi_impl_def_val_dump(int fd, struct psi_impl_def_val *val);
-bool psi_impl_def_val_validate(struct psi_data *data, struct psi_impl_def_val *def, token_t i_type_t, const char *i_type_n);
+bool psi_impl_def_val_validate(struct psi_data *data, struct psi_impl_def_val *def,
+		struct psi_impl_type *cmp, struct psi_validate_scope *scope);
 
 #endif

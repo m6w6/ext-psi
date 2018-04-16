@@ -156,25 +156,25 @@ void psi_let_exp_dump(int fd, struct psi_let_exp *val, unsigned level, int last)
 }
 
 bool psi_let_exp_validate(struct psi_data *data, struct psi_let_exp *val,
-		struct psi_impl *impl)
+		struct psi_validate_scope *scope)
 {
 	struct psi_decl_var *dvar = psi_let_exp_get_decl_var(val);
 
 	switch (val->kind) {
 	case PSI_LET_TMP:
-		if (!psi_decl_var_validate(data, val->data.var, impl, impl->decl, val, NULL)) {
+		if (!psi_decl_var_validate(data, val->data.var, scope)) {
 			data->error(data, dvar->token ? : **(struct psi_token ***) &val->data,
 					PSI_WARNING, "Unknown variable '%s' in temp let statment of implementation '%s'",
-					dvar->name, impl->func->name);
+					dvar->name, scope->impl->func->name);
 			return false;
 		}
 		break;
 
 	default:
-		if (!psi_decl_var_validate(data, dvar, impl, impl->decl, val, NULL)) {
+		if (!psi_decl_var_validate(data, dvar, scope)) {
 			data->error(data, dvar->token ? : **(struct psi_token ***) &val->data,
 					PSI_WARNING, "Unknown variable '%s' in let statement of implementation '%s'",
-					dvar->name, impl->func->name);
+					dvar->name, scope->impl->func->name);
 			return false;
 		}
 		break;
@@ -189,28 +189,28 @@ bool psi_let_exp_validate(struct psi_data *data, struct psi_let_exp *val,
 		val->var->arg = val->data.var->arg;
 		break;
 	case PSI_LET_NUMEXP:
-		if (!psi_num_exp_validate(data, val->data.num, impl, NULL, val, NULL, NULL)) {
+		if (!psi_num_exp_validate(data, val->data.num, scope)) {
 			return false;
 		}
 		break;
 	case PSI_LET_CALLOC:
-		if (!psi_num_exp_validate(data, val->data.alloc->nmemb, impl, NULL, val, NULL, NULL)) {
+		if (!psi_num_exp_validate(data, val->data.alloc->nmemb, scope)) {
 			return false;
 		}
-		if (!psi_num_exp_validate(data, val->data.alloc->size, impl, NULL, val, NULL, NULL)) {
+		if (!psi_num_exp_validate(data, val->data.alloc->size, scope)) {
 			return false;
 		}
 		break;
 	case PSI_LET_CALLBACK:
-		if (!psi_let_func_validate(data, val, val->data.callback->func, impl)) {
+		if (!psi_let_func_validate(data, val->data.callback->func, scope)) {
 			return false;
 		}
-		if (!psi_let_callback_validate(data, val, val->data.callback, impl)) {
+		if (!psi_let_callback_validate(data, val->data.callback, scope)) {
 			return false;
 		}
 		break;
 	case PSI_LET_FUNC:
-		if (!psi_let_func_validate(data, val, val->data.func, impl)) {
+		if (!psi_let_func_validate(data, val->data.func, scope)) {
 			return false;
 		}
 		break;
@@ -249,8 +249,8 @@ void *psi_let_exp_exec(struct psi_let_exp *val, struct psi_decl_arg *darg,
 
 	case PSI_LET_CALLOC:
 		{
-			zend_long n = psi_long_num_exp(val->data.alloc->nmemb, frame, NULL);
-			zend_long s = psi_long_num_exp(val->data.alloc->size, frame, NULL);
+			zend_long n = psi_num_exp_get_long(val->data.alloc->nmemb, frame, NULL);
+			zend_long s = psi_num_exp_get_long(val->data.alloc->size, frame, NULL);
 			void *tmp;
 
 			if (val->data.alloc->static_memory) {

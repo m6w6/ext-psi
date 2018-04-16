@@ -27,10 +27,11 @@ $(PHP_PSI_SRCDIR)/src/parser.c: $(PHP_PSI_SRCDIR)/src/parser.re
 $(PHP_PSI_SRCDIR)/src/calc/%.h: $(PHP_PSI_SRCDIR)/scripts/gen_calc_%.php
 	$(PHP_EXECUTABLE) $< >$@
 
-$(PHP_PSI_SRCDIR)/src/calc.h: | $(PHP_PSI_SRCDIR)/src/calc/basic.h $(PHP_PSI_SRCDIR)/src/calc/bin.h $(PHP_PSI_SRCDIR)/src/calc/bool.h $(PHP_PSI_SRCDIR)/src/calc/cast.h $(PHP_PSI_SRCDIR)/src/calc/cmp.h $(PHP_PSI_SRCDIR)/src/calc/oper.h
+$(PHP_PSI_SRCDIR)/src/calc.h: | $(PHP_PSI_SRCDIR)/src/calc/basic.h $(PHP_PSI_SRCDIR)/src/calc/bin.h $(PHP_PSI_SRCDIR)/src/calc/bool.h $(PHP_PSI_SRCDIR)/src/calc/unary.h $(PHP_PSI_SRCDIR)/src/calc/cast.h $(PHP_PSI_SRCDIR)/src/calc/cmp.h $(PHP_PSI_SRCDIR)/src/calc/oper.h
 
 .PHONY: psi-generated
 psi-generated: $(PHP_PSI_GENERATED)
+	
 
 PHP_PSI_DEPEND = $(patsubst $(PHP_PSI_SRCDIR)/%,$(PHP_PSI_BUILDDIR)/%,$(PHP_PSI_SOURCES:.c=.dep))
 
@@ -87,6 +88,10 @@ psi-clean-depend:
 	-rm -f $(PHP_PSI_DEPEND)
 
 psi-clean: psi-clean-depend
+
+.PHONY: psi-watch
+psi-watch:
+	-while inotifywait -q -e modify -r $(PHP_PSI_SRCDIR); do $(MAKE); done
 
 install-headers: psi-build-headers
 clean: psi-clean-headers psi-clean-aux

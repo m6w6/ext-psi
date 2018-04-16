@@ -221,8 +221,6 @@ union YYSTYPE
   struct psi_assert_stmt * PSI_T_assert_stmt;
   /* constant  */
   struct psi_const * PSI_T_constant;
-  /* constant_type  */
-  struct psi_const_type * PSI_T_constant_type;
   /* cpp  */
   struct psi_cpp_exp * PSI_T_cpp;
   /* cpp_exp  */
@@ -231,6 +229,8 @@ union YYSTYPE
   struct psi_cpp_macro_decl * PSI_T_cpp_macro_decl;
   /* decl_stmt  */
   struct psi_decl * PSI_T_decl_stmt;
+  /* ignored_decl  */
+  struct psi_decl * PSI_T_ignored_decl;
   /* decl  */
   struct psi_decl * PSI_T_decl;
   /* decl_body  */
@@ -239,6 +239,8 @@ union YYSTYPE
   struct psi_decl * PSI_T_decl_func_body;
   /* decl_functor_body  */
   struct psi_decl * PSI_T_decl_functor_body;
+  /* decl_anon_functor_body  */
+  struct psi_decl * PSI_T_decl_anon_functor_body;
   /* decl_typedef  */
   struct psi_decl_arg * PSI_T_decl_typedef;
   /* typedef  */
@@ -251,6 +253,8 @@ union YYSTYPE
   struct psi_decl_arg * PSI_T_typedef_anon_decl;
   /* decl_functor  */
   struct psi_decl_arg * PSI_T_decl_functor;
+  /* decl_anon_functor  */
+  struct psi_decl_arg * PSI_T_decl_anon_functor;
   /* decl_func  */
   struct psi_decl_arg * PSI_T_decl_func;
   /* decl_anon_arg  */
@@ -287,6 +291,8 @@ union YYSTYPE
   struct psi_impl_func * PSI_T_impl_func;
   /* impl_type  */
   struct psi_impl_type * PSI_T_impl_type;
+  /* impl_type_restricted  */
+  struct psi_impl_type * PSI_T_impl_type_restricted;
   /* impl_var  */
   struct psi_impl_var * PSI_T_impl_var;
   /* align_and_size  */
@@ -677,10 +683,6 @@ union YYSTYPE
   struct psi_token * PSI_T_cpp_name_arg_token;
   /* cpp_exp_arg_token  */
   struct psi_token * PSI_T_cpp_exp_arg_token;
-  /* cpp_special_name_token  */
-  struct psi_token * PSI_T_cpp_special_name_token;
-  /* constant_type_token  */
-  struct psi_token * PSI_T_constant_type_token;
   /* impl_def_val_token  */
   struct psi_token * PSI_T_impl_def_val_token;
   /* decl_type_simple  */
@@ -701,6 +703,10 @@ union YYSTYPE
   struct psi_token * PSI_T_signed_long_types;
   /* int_width_types  */
   struct psi_token * PSI_T_int_width_types;
+  /* decl_asm  */
+  struct psi_token * PSI_T_decl_asm;
+  /* quoted_strings  */
+  struct psi_token * PSI_T_quoted_strings;
   /* enum_name  */
   struct psi_token * PSI_T_enum_name;
   /* union_name  */
@@ -711,6 +717,10 @@ union YYSTYPE
   struct psi_token * PSI_T_optional_name;
   /* impl_type_token  */
   struct psi_token * PSI_T_impl_type_token;
+  /* impl_type_restricted_token  */
+  struct psi_token * PSI_T_impl_type_restricted_token;
+  /* impl_type_extended_token  */
+  struct psi_token * PSI_T_impl_type_extended_token;
   /* let_func_token  */
   struct psi_token * PSI_T_let_func_token;
   /* callback_rval  */
@@ -721,7 +731,7 @@ union YYSTYPE
   struct psi_token * PSI_T_assert_stmt_token;
   /* impl_stmt  */
   struct psi_token ** PSI_T_impl_stmt;
-#line 725 "src/parser_proc.h" /* glr.c:197  */
+#line 735 "src/parser_proc.h" /* glr.c:197  */
 };
 
 typedef union YYSTYPE YYSTYPE;

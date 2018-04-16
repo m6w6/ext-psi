@@ -133,6 +133,7 @@ static PHP_FUNCTION(psi_validate)
 	struct psi_parser_input *I;
 	struct psi_parser P;
 	struct psi_data D = {0};
+	struct psi_validate_scope S = {0};
 	zend_long flags = 0;
 
 #if PHP_DEBUG
@@ -155,7 +156,10 @@ static PHP_FUNCTION(psi_validate)
 
 	psi_parser_parse(&P, I);
 	psi_data_ctor(&D, P.error, P.flags);
-	RETVAL_BOOL(psi_data_validate(&D, PSI_DATA(&P)) && !P.errors);
+	psi_validate_scope_ctor(&S);
+	S.defs = &P.preproc->defs;
+	RETVAL_BOOL(psi_validate(&S, &D, PSI_DATA(&P)) && !P.errors);
+	psi_validate_scope_dtor(&S);
 	psi_data_dtor(&D);
 	psi_parser_dtor(&P);
 	free(I);
@@ -170,6 +174,7 @@ static PHP_FUNCTION(psi_validate_string)
 	struct psi_parser_input *I;
 	struct psi_parser P;
 	struct psi_data D = {0};
+	struct psi_validate_scope S = {0};
 	zend_long flags = 0;
 
 #if PHP_DEBUG
@@ -192,7 +197,10 @@ static PHP_FUNCTION(psi_validate_string)
 
 	psi_parser_parse(&P, I);
 	psi_data_ctor(&D, P.error, P.flags);
-	RETVAL_BOOL(psi_data_validate(&D, PSI_DATA(&P)) && !P.errors);
+	psi_validate_scope_ctor(&S);
+	S.defs = &P.preproc->defs;
+	RETVAL_BOOL(psi_validate(&S, &D, PSI_DATA(&P)) && !P.errors);
+	psi_validate_scope_dtor(&S);
 	psi_data_dtor(&D);
 	psi_parser_dtor(&P);
 	free(I);

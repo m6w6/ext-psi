@@ -110,6 +110,16 @@ static struct psi_func_redir {
 	const char *name;
 	psi_func_ptr func;
 } psi_func_redirs[] = {
+	{"fstat", (psi_func_ptr) fstat},
+	{"fstatat", (psi_func_ptr) fstatat},
+	{"lstat", (psi_func_ptr) lstat},
+	{"mknod", (psi_func_ptr) mknod},
+	{"mknodat", (psi_func_ptr) mknodat},
+	{"stat", (psi_func_ptr) stat},
+	{"getaddrinfo_a", (psi_func_ptr) getaddrinfo_a},
+	{"gai_suspend", (psi_func_ptr) gai_suspend},
+	{"gai_error", (psi_func_ptr) gai_error},
+	{"gai_cancel", (psi_func_ptr) gai_cancel},
 @PSI_REDIRS@
 	{0}
 };

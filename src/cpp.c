@@ -67,6 +67,7 @@ bool psi_cpp_load_defaults(struct psi_cpp *cpp)
 	return false;
 }
 
+#if PSI_CPP_DEBUG
 static int dump_def(zval *p)
 {
 	struct psi_cpp_macro_decl *decl = Z_PTR_P(p);
@@ -78,17 +79,18 @@ static int dump_def(zval *p)
 	}
 	return ZEND_HASH_APPLY_KEEP;
 }
+#endif
 
 void psi_cpp_free(struct psi_cpp **cpp_ptr)
 {
 	if (*cpp_ptr) {
 		struct psi_cpp *cpp = *cpp_ptr;
 
+#if PSI_CPP_DEBUG
+		fprintf(stderr, "PSI: CPP decls:\n");
+		zend_hash_apply(&cpp->defs, dump_def);
+#endif
 		*cpp_ptr = NULL;
-		if (cpp->parser->flags & PSI_DEBUG) {
-			fprintf(stderr, "PSI: CPP decls:\n");
-			zend_hash_apply(&cpp->defs, dump_def);
-		}
 		zend_hash_destroy(&cpp->defs);
 		zend_hash_destroy(&cpp->once);
 		free(cpp);
@@ -373,6 +375,15 @@ void psi_cpp_define(struct psi_cpp *cpp, struct psi_cpp_macro_decl *decl)
 		cpp->parser->error(PSI_DATA(cpp->parser), old->token, PSI_WARNING,
 				"'%s' previously defined", old->token->text);
 	}
+#if PSI_CPP_DEBUG
+	if (decl->exp) {
+		fprintf(stderr, "MACRO: num_exp: ", decl->token->text);
+	} else if (decl->tokens) {
+		fprintf(stderr, "MACRO: decl   : ", decl->token->text);
+	}
+	psi_cpp_macro_decl_dump(2, decl);
+	fprintf(stderr, "\n");
+#endif
 	zend_hash_str_update_ptr(&cpp->defs, decl->token->text, decl->token->size, decl);
 }
 
@@ -383,10 +394,13 @@ bool psi_cpp_undef(struct psi_cpp *cpp, struct psi_token *tok)
 
 bool psi_cpp_if(struct psi_cpp *cpp, struct psi_cpp_exp *exp)
 {
-	if (!psi_num_exp_validate(PSI_DATA(cpp->parser), exp->data.num, NULL, NULL, NULL, NULL, NULL)) {
+	struct psi_validate_scope scope = {0};
+
+	scope.defs = &cpp->defs;
+	if (!psi_num_exp_validate(PSI_DATA(cpp->parser), exp->data.num, &scope)) {
 		return false;
 	}
-	if (!psi_long_num_exp(exp->data.num, NULL, &cpp->defs)) {
+	if (!psi_num_exp_get_long(exp->data.num, NULL, &cpp->defs)) {
 		return false;
 	}
 	return true;

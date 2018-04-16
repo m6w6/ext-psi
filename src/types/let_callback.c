@@ -78,13 +78,14 @@ static inline bool psi_let_callback_validate_decl_args(struct psi_data *data,
 	return true;
 }
 
-bool psi_let_callback_validate(struct psi_data *data, struct psi_let_exp *exp,
-		struct psi_let_callback *cb, struct psi_impl *impl)
+bool psi_let_callback_validate(struct psi_data *data, struct psi_let_callback *cb,
+		struct psi_validate_scope *scope)
 {
 	size_t i = 0;
 	struct psi_decl_type *cb_type;
+	struct psi_let_exp *exp = scope->current_let;
 	struct psi_decl_var *cb_var = exp->var;
-	struct psi_set_exp *set_exp;
+	struct psi_set_exp *set_exp, *parent_set = scope->current_set;
 
 	cb_type = psi_decl_type_get_real(cb_var->arg->type);
 	if (cb_type->type != PSI_T_FUNCTION) {
@@ -95,10 +96,10 @@ bool psi_let_callback_validate(struct psi_data *data, struct psi_let_exp *exp,
 	}
 	cb->decl = cb_type->real.func;
 
-	if (!psi_decl_validate_nodl(data, cb->decl,  NULL /* FIXME type_stack */)) {
+	if (!psi_decl_validate_nodl(data, cb->decl, scope)) {
 		return false;
 	}
-	if (!psi_let_callback_validate_decl_args(data, cb, cb->decl, impl)) {
+	if (!psi_let_callback_validate_decl_args(data, cb, cb->decl, scope->impl)) {
 		return false;
 	}
 	while (psi_plist_get(cb->args, i++, &set_exp)) {
@@ -110,9 +111,17 @@ bool psi_let_callback_validate(struct psi_data *data, struct psi_let_exp *exp,
 				dvar->arg = cb_var->arg;
 			}
 		}
-		if (!psi_set_exp_validate(data, set_exp, impl, cb->decl)) {
+
+		scope->current_set = set_exp;
+		scope->cb_decl = cb->decl;
+
+		if (!psi_set_exp_validate(data, set_exp, scope)) {
+			scope->cb_decl = NULL;
+			scope->current_set = parent_set;
 			return false;
 		}
+		scope->cb_decl = NULL;
+		scope->current_set = parent_set;
 	}
 
 	return true;

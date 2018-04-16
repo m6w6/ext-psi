@@ -12,6 +12,8 @@ $types = [
 		"UINT32" => "u32",
 		"INT64" => "i64",
 		"UINT64" => "u64",
+		"INT128" => "i128",
+		"UINT128" => "u128",
 		"FLOAT" => "fval",
 		"DOUBLE" => "dval",
 		"LONG_DOUBLE" => "ldval",
@@ -29,6 +31,8 @@ function t_is_int($t) {
 
 function t_is_special($t) {
 	switch ($t) {
+		case "INT128_T":
+		case "UINT128_T":
 		case "LONG_DOUBLE":
 			return true;
 		default:

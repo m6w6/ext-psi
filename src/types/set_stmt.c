@@ -61,44 +61,51 @@ void psi_set_stmt_dump(int fd, struct psi_set_stmt *set)
 }
 
 
-bool psi_set_stmts_validate(struct psi_data *data, struct psi_impl *impl)
+bool psi_set_stmts_validate(struct psi_data *data, struct psi_validate_scope *scope)
 {
 	size_t i = 0;
 	struct psi_set_stmt *set;
 
 	/* we can have any count of set stmts; processing out vars */
 	/* check that set stmts reference known variables */
-	while (psi_plist_get(impl->stmts.set, i++, &set)) {
+	while (psi_plist_get(scope->impl->stmts.set, i++, &set)) {
 		if (!set->exp->var) {
 			data->error(data, set->token, PSI_WARNING,
 					"Missing variable of `set` statement of implementation '%s'",
-					impl->func->name);
+					scope->impl->func->name);
 			return false;
 		}
-		if (!psi_impl_get_arg(impl, set->exp->var)) {
+		if (!psi_impl_get_arg(scope->impl, set->exp->var)) {
 			data->error(data, set->token, PSI_WARNING,
 					"Unknown variable '%s' of `set` statement of implementation '%s'",
-					set->exp->var->name, impl->func->name);
+					set->exp->var->name, scope->impl->func->name);
 			return false;
 		}
+
+		scope->current_set = set->exp;
 
 		switch (set->exp->kind) {
 		case PSI_SET_NUMEXP:
 			break;
 		case PSI_SET_FUNC:
-			if (!psi_impl_get_decl_arg(impl, set->exp->data.func->var)) {
-				if (!psi_impl_get_temp_let_arg(impl, set->exp->data.func->var)) {
+			if (!psi_impl_get_decl_arg(scope->impl, set->exp->data.func->var)) {
+				if (!psi_impl_get_temp_let_arg(scope->impl, set->exp->data.func->var)) {
 					data->error(data, set->token, PSI_WARNING,
 							"Unknown variable '%s' of `set` statement of implementation '%s'",
-							set->exp->data.func->var->name, impl->func->name);
+							set->exp->data.func->var->name, scope->impl->func->name);
+					scope->current_set = NULL;
 					return false;
 				}
 			}
 		}
+
 		/* validate the expression itself */
-		if (!psi_set_exp_validate(data, set->exp, impl, NULL)) {
+		if (!psi_set_exp_validate(data, set->exp, scope)) {
+			scope->current_set = NULL;
 			return false;
 		}
+
+		scope->current_set = NULL;
 	}
 
 	return true;

@@ -35,6 +35,7 @@ struct psi_decl {
 	struct psi_decl_abi *abi;
 	struct psi_decl_arg *func;
 	struct psi_plist *args;
+	char *redir;
 	void *sym;
 	void *info;
 	unsigned varargs:1;
@@ -44,12 +45,10 @@ struct psi_decl *psi_decl_init(struct psi_decl_arg *func, struct psi_plist *args
 void psi_decl_free(struct psi_decl **d_ptr);
 void psi_decl_dump(int fd, struct psi_decl *decl);
 
-bool psi_decl_validate(struct psi_data *data, struct psi_decl *decl, void *dl, struct psi_validate_stack *type_stack);
-bool psi_decl_validate_nodl(struct psi_data *data, struct psi_decl *decl, struct psi_validate_stack *type_stack);
+bool psi_decl_validate(struct psi_data *data, struct psi_decl *decl, struct psi_validate_scope *scope);
+bool psi_decl_validate_nodl(struct psi_data *data, struct psi_decl *decl, struct psi_validate_scope *scope);
 
-static inline struct psi_decl_arg *psi_decl_get_arg(struct psi_decl *decl, struct psi_decl_var *var) {
-	return psi_decl_arg_get_by_var(var, decl->args, decl->func);
-}
+struct psi_decl_arg *psi_decl_get_arg(struct psi_decl *decl, struct psi_decl_var *var);
 
 bool psi_decl_is_blacklisted(const char *name);
 

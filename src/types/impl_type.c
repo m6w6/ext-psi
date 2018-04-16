@@ -36,6 +36,11 @@ struct psi_impl_type *psi_impl_type_init(token_t type, const char *name)
 	return t;
 }
 
+void psi_impl_type_dump(int fd, struct psi_impl_type *type)
+{
+	dprintf(fd, "%s", type->name);
+}
+
 void psi_impl_type_free(struct psi_impl_type **type_ptr)
 {
 	if (*type_ptr) {

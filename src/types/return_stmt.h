@@ -43,6 +43,6 @@ struct psi_return_stmt *psi_return_stmt_init(struct psi_return_exp *exp);
 void psi_return_stmt_free(struct psi_return_stmt **ret_ptr);
 void psi_return_stmt_dump(int fd, struct psi_return_stmt *ret);
 void psi_return_stmt_exec(struct psi_return_stmt *ret, zval *return_value, struct psi_call_frame *frame);
-bool psi_return_stmt_validate(struct psi_data *data, struct psi_impl *impl);
+bool psi_return_stmt_validate(struct psi_data *data, struct psi_validate_scope *impl);
 
 #endif

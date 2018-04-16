@@ -29,15 +29,16 @@
 #include "token.h"
 #include "types/impl_val.h"
 
-#define PRIfval "f"
-#define PRIdval "lf"
-#define PRIldval "Lf"
+#define PRIfval ".13gF"
+#define PRIdval ".53lg"
+#define PRIldval ".64LgL"
 
 typedef token_t (*psi_calc)(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
 
 #include "calc/basic.h"
 #include "calc/bin.h"
 #include "calc/bool.h"
+#include "calc/unary.h"
 #include "calc/cast.h"
 #include "calc/cmp.h"
 #include "calc/oper.h"

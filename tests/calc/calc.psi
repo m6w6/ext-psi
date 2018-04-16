@@ -1,7 +1,9 @@
+#include <stdlib.h>
+
 function test\calc1() : array {
 	let numerator = 3 * 5 + 2;
 	let denominator = 17;
-	return to_array(div,
+	return div(numerator, denominator) as to_array(div,
 		to_int(quot),
 		to_int(rem)
 	);
@@ -10,7 +12,7 @@ function test\calc1() : array {
 function test\calc2() : array {
 	let numerator = 4 + 5 * 2;
 	let denominator = 14;
-	return to_array(div,
+	return div(numerator, denominator) as to_array(div,
 		to_int(quot),
 		to_int(rem)
 	);
@@ -19,7 +21,7 @@ function test\calc2() : array {
 function test\calc3() : array {
 	let numerator = -1 + 2 - 3 * 2;
 	let denominator = -5;
-	return to_array(div,
+	return div(numerator, denominator) as to_array(div,
 		to_int(quot),
 		to_int(rem)
 	);
@@ -28,7 +30,7 @@ function test\calc3() : array {
 function test\calc4() : array {
 	let numerator = 1 * 5 / 5 * -1 / -1 * 10 / 5 + 4 * 2;
 	let denominator = 10;
-	return to_array(div,
+	return div(numerator, denominator) as to_array(div,
 		to_int(quot),
 		to_int(rem)
 	);
@@ -37,7 +39,7 @@ function test\calc4() : array {
 function test\calc5() : array {
 	let numerator = 5 % 3;
 	let denominator = 2;
-	return to_array(div,
+	return div(numerator, denominator) as to_array(div,
 		to_int(quot),
 		to_int(rem)
 	);
@@ -46,7 +48,7 @@ function test\calc5() : array {
 function test\calc6() : array {
 	let numerator = 5 % 3 + 1;
 	let denominator = 3;
-	return to_array(div,
+	return div(numerator, denominator) as to_array(div,
 		to_int(quot),
 		to_int(rem)
 	);
@@ -55,7 +57,7 @@ function test\calc6() : array {
 function test\calc7() : array {
 	let numerator = 5 % (3 + 1);
 	let denominator = 1;
-	return to_array(div,
+	return div(numerator, denominator) as to_array(div,
 		to_int(quot),
 		to_int(rem)
 	);
@@ -64,7 +66,7 @@ function test\calc7() : array {
 function test\calc8() : array {
 	let numerator = !0 + !0 + !0;
 	let denominator = 3;
-	return to_array(div,
+	return div(numerator, denominator) as to_array(div,
 		to_int(quot),
 		to_int(rem)
 	);
@@ -73,7 +75,7 @@ function test\calc8() : array {
 function test\calc9() : array {
 	let numerator = 1 && 2;
 	let denominator = 1;
-	return to_array(div,
+	return div(numerator, denominator) as to_array(div,
 		to_int(quot),
 		to_int(rem)
 	);
@@ -82,7 +84,7 @@ function test\calc9() : array {
 function test\calc10() : array {
 	let numerator = (1 | 2 | 4) & ~3;
 	let denominator = 4;
-	return to_array(div,
+	return div(numerator, denominator) as to_array(div,
 		to_int(quot),
 		to_int(rem)
 	);
@@ -91,7 +93,7 @@ function test\calc10() : array {
 function test\calc11() : array {
 	let numerator = 1 + (1 + 1 < 2);
 	let denominator = 1;
-	return to_array(div,
+	return div(numerator, denominator) as to_array(div,
 		to_int(quot),
 		to_int(rem)
 	);
@@ -100,7 +102,7 @@ function test\calc11() : array {
 function test\calc12() : array {
 	let numerator = 1 + (1 + 1 < 3);
 	let denominator = 2;
-	return to_array(div,
+	return div(numerator, denominator) as to_array(div,
 		to_int(quot),
 		to_int(rem)
 	);

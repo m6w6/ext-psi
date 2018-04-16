@@ -86,7 +86,7 @@ static inline struct psi_decl *locate_free_decl(struct psi_plist *decls,
 }
 
 bool psi_free_exp_validate(struct psi_data *data, struct psi_free_exp *exp,
-		struct psi_impl *impl)
+		struct psi_validate_scope *scope)
 {
 	size_t i;
 	struct psi_decl_var *free_var;
@@ -95,22 +95,22 @@ bool psi_free_exp_validate(struct psi_data *data, struct psi_free_exp *exp,
 	if (!locate_free_decl(data->decls, exp)) {
 		data->error(data, exp->token, PSI_WARNING,
 				"Missing declaration '%s' in `free` statement"
-				" of implementation '%s'", exp->func, impl->func->name);
+				" of implementation '%s'", exp->func, scope->impl->func->name);
 		return false;
 	}
 
 	/* now check for known vars */
 	exp->let = calloc(psi_plist_count(exp->vars), sizeof(*exp->let));
 	for (i = 0; psi_plist_get(exp->vars, i, &free_var); ++i) {
-		if (!psi_impl_get_decl_arg(impl, free_var)) {
+		if (!psi_impl_get_decl_arg(scope->impl, free_var)) {
 			data->error(data, free_var->token, PSI_WARNING,
 					"Unknown variable '%s' of `free` statement"
 					" of implementation '%s'",
-					free_var->name, impl->func->name);
+					free_var->name, scope->impl->func->name);
 			return false;
 		}
 
-		exp->let[i] = psi_impl_get_let(impl, free_var);
+		exp->let[i] = psi_impl_get_let(scope->impl, free_var);
 		assert(exp->let[i]);
 	}
 

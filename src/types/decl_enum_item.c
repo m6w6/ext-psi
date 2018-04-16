@@ -78,6 +78,8 @@ void psi_decl_enum_item_dump(int fd, struct psi_decl_enum_item *item)
 bool psi_decl_enum_item_validate(struct psi_data *data,
 		struct psi_decl_enum *enm, struct psi_decl_enum_item *item, size_t seq)
 {
+	struct psi_validate_scope scope = {0};
+
 	if (!item->num) {
 		if (seq) {
 			int64_t one = 1;
@@ -97,11 +99,12 @@ bool psi_decl_enum_item_validate(struct psi_data *data,
 		}
 	}
 
-	if (!psi_num_exp_validate(data, item->num, NULL, NULL, NULL, NULL, enm)) {
+	scope.current_enum = enm;
+	if (!psi_num_exp_validate(data, item->num, &scope)) {
 		return false;
 	}
 
-	item->val = psi_long_num_exp(item->num, NULL, NULL);
+	item->val = psi_num_exp_get_long(item->num, NULL, NULL);
 
 	return true;
 }

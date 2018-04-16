@@ -164,7 +164,7 @@ if test "$PHP_PSI" != no; then
 
 	PHP_PSI_HEADERS=" \
 		src/calc/basic.h src/calc/bin.h src/calc/bool.h src/calc/cast.h \
-		src/calc/cmp.h src/calc/oper.h \
+		src/calc/unary.h src/calc/cmp.h src/calc/oper.h \
 		`(cd $PHP_PSI_SRCDIR/src && ls *.h types/*.h)` \
 	"
 	# parser* should come first
@@ -177,7 +177,7 @@ if test "$PHP_PSI" != no; then
 	PHP_PSI_GENERATED=" \
 		src/parser_proc.c src/parser.c \
 		src/calc/basic.h src/calc/bin.h src/calc/bool.h src/calc/cast.h \
-		src/calc/cmp.h src/calc/oper.h \
+		src/calc/unary.h src/calc/cmp.h src/calc/oper.h \
 	"
 
 	PHP_NEW_EXTENSION(psi, $PHP_PSI_SOURCES, $ext_shared)

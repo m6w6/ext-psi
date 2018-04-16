@@ -36,6 +36,7 @@ struct psi_let_exp;
 struct psi_set_exp;
 struct psi_call_frame;
 struct psi_cpp_macro_call;
+struct psi_validate_scope;
 
 enum psi_number_suffix {
 	PSI_NUMBER_U	= 0x0100,
@@ -78,11 +79,13 @@ void psi_number_free(struct psi_number **exp_ptr);
 void psi_number_dump(int fd, struct psi_number *exp);
 
 bool psi_number_validate(struct psi_data *data, struct psi_number *exp,
-		struct psi_impl *impl, struct psi_decl *cb_decl,
-		struct psi_let_exp *current_let, struct psi_set_exp *current_set,
-		struct psi_decl_enum *current_enum);
+		struct psi_validate_scope *scope);
 
 token_t psi_number_eval(struct psi_number *exp, impl_val *res,
-		struct psi_call_frame *frame, HashTable *defs);
+		struct psi_call_frame *frame, HashTable *defs,
+		struct psi_num_exp *rec_guard);
+
+struct psi_plist *psi_number_tokens(struct psi_number *exp,
+		struct psi_plist *list);
 
 #endif

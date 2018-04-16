@@ -82,7 +82,7 @@ void psi_let_func_dump(int fd, struct psi_let_func *func, unsigned level)
 }
 
 static inline int validate_let_func_type(struct psi_data *data,
-		struct psi_let_func *func, struct psi_impl *impl)
+		struct psi_let_func *func, struct psi_validate_scope *scope)
 {
 	switch (func->type) {
 	case PSI_T_BOOLVAL:
@@ -108,15 +108,16 @@ static inline int validate_let_func_type(struct psi_data *data,
 	default:
 		data->error(data, func->var->token, PSI_WARNING,
 				"Unknown `let` cast function '%s' of implementation '%s'",
-				func->name, impl->func->name);
+				func->name, scope->impl->func->name);
 		return false;
 	}
 }
 
 static inline bool validate_let_func_inner(struct psi_data *data,
-		struct psi_let_exp *exp, struct psi_let_func *func,
-		struct psi_impl *impl)
+		struct psi_let_func *func, struct psi_validate_scope *scope)
 {
+	struct psi_let_exp *exp = scope->current_let;
+
 	if (func->inner) {
 		struct psi_decl_var *let_var = psi_let_exp_get_decl_var(exp);
 		struct psi_decl_type *var_typ;
@@ -144,8 +145,13 @@ static inline bool validate_let_func_inner(struct psi_data *data,
 					/* remove expr for portability with different struct members */
 					psi_plist_del(func->inner, --i, NULL);
 					psi_let_exp_free(&inner);
-				} else if (!psi_let_exp_validate(data, inner, impl)) {
-					return false;
+				} else {
+					scope->current_let = inner;
+					if (!psi_let_exp_validate(data, inner, scope)) {
+						scope->current_let = exp;
+						return false;
+					}
+					scope->current_let = exp;
 				}
 			}
 		} else if (func->type == PSI_T_ARRVAL
@@ -169,9 +175,12 @@ static inline bool validate_let_func_inner(struct psi_data *data,
 								" reference the same variable");
 				return false;
 			}
-			if (!psi_let_exp_validate(data, inner, impl)) {
+			scope->current_let = inner;
+			if (!psi_let_exp_validate(data, inner, scope)) {
+				scope->current_let = exp;
 				return false;
 			}
+			scope->current_let = exp;
 		} else {
 			data->error(data, let_var->token, PSI_WARNING,
 					"Inner let statement's values must refer to a structure or"
@@ -191,22 +200,22 @@ static inline bool validate_let_func_inner(struct psi_data *data,
 	return true;
 }
 
-bool psi_let_func_validate(struct psi_data *data, struct psi_let_exp *val,
-		struct psi_let_func *func, struct psi_impl *impl)
+bool psi_let_func_validate(struct psi_data *data, struct psi_let_func *func,
+		struct psi_validate_scope *scope)
 {
-	if (impl->func->args) {
+	if (scope->impl->func->args) {
 		/* FIXME, func->var does not need to be referring to a func arg */
-		psi_impl_get_arg(impl, func->var);
+		psi_impl_get_arg(scope->impl, func->var);
 	}
 
-	if (!psi_impl_var_validate(data, func->var, impl, val, NULL)) {
+	if (!psi_impl_var_validate(data, func->var, scope)) {
 		return false;
 	}
 
-	if (!validate_let_func_type(data, func, impl)) {
+	if (!validate_let_func_type(data, func, scope)) {
 		return false;
 	}
-	if (!validate_let_func_inner(data, val, func, impl)) {
+	if (!validate_let_func_inner(data, func, scope)) {
 		return false;
 	}
 	return 1;
@@ -260,7 +269,7 @@ void exec_let_func_arrval_seq(struct psi_let_func *func,
 		struct psi_let_exp *inner_let_exp, void *container,
 		struct psi_call_frame *frame)
 {
-	zval *zval_ptr;
+	zval *zval_ptr = NULL;
 	psi_marshal_let let_fn;
 	size_t i = 0, size;
 	struct psi_decl_var *dvar;

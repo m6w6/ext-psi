@@ -54,13 +54,12 @@ void psi_impl_arg_free(struct psi_impl_arg **arg_ptr)
 
 void psi_impl_arg_dump(int fd, struct psi_impl_arg *iarg, bool vararg)
 {
-	dprintf(fd, "%s %s%s%s",
-			iarg->type->name,
-			iarg->var->reference ? "&" : "",
-			vararg ? "..." : "",
-			iarg->var->name);
+	psi_impl_type_dump(fd, iarg->type);
+	dprintf(fd, " ");
+	psi_impl_var_dump(fd, iarg->var, vararg);
 	if (iarg->def) {
-		dprintf(fd, " = %s", iarg->def->text);
+		dprintf(fd, " = ");
+		psi_impl_def_val_dump(fd, iarg->def);
 	}
 
 }

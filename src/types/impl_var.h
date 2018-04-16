@@ -29,6 +29,7 @@
 struct psi_token;
 struct psi_impl;
 struct psi_impl_arg;
+struct psi_validate_scope;
 
 struct psi_impl_var {
 	struct psi_token *token;
@@ -40,6 +41,7 @@ struct psi_impl_var {
 struct psi_impl_var *psi_impl_var_init(const char *name, bool is_reference);
 struct psi_impl_var *psi_impl_var_copy(struct psi_impl_var *var);
 void psi_impl_var_free(struct psi_impl_var **var_ptr);
+void psi_impl_var_dump(int fd, struct psi_impl_var *var, bool vararg);
 
 #include <string.h>
 
@@ -65,7 +67,7 @@ static inline char *psi_impl_var_name_prepend(char *current, const char *prepend
 	return current;
 }
 
-bool psi_impl_var_validate(struct psi_data *data, struct psi_impl_var *ivar, struct psi_impl *impl,
-		struct psi_let_exp *current_let_exp, struct psi_set_exp *current_set_exp);
+bool psi_impl_var_validate(struct psi_data *data, struct psi_impl_var *ivar,
+		struct psi_validate_scope *scope);
 
 #endif

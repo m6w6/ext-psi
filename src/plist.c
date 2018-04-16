@@ -121,7 +121,7 @@ struct psi_plist *psi_plist_add(struct psi_plist *list, void *ptr) {
 }
 
 struct psi_plist *psi_plist_add_r(struct psi_plist *list, size_t num_eles, void **eles) {
-	if (list && list->count) {
+	if (list) {
 		list = realloc(list, sizeof(*list) + list->size + (num_eles + list->count) * list->size);
 	}
 	if (list) {

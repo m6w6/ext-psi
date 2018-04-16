@@ -50,7 +50,8 @@ struct psi_impl {
 struct psi_impl *psi_impl_init(struct psi_impl_func *func, struct psi_plist *stmts);
 void psi_impl_free(struct psi_impl **impl_ptr);
 void psi_impl_dump(int fd, struct psi_impl *impl);
-bool psi_impl_validate(struct psi_data *data, struct psi_impl *impl);
+bool psi_impl_validate(struct psi_data *data, struct psi_impl *impl,
+		struct psi_validate_scope *scope);
 
 size_t psi_impl_num_min_args(struct psi_impl *impl);
 

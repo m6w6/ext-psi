@@ -39,7 +39,6 @@
 #include "types/impl_type.h"
 #include "types/impl_var.h"
 #include "types/impl_def_val.h"
-#include "types/const_type.h"
 #include "types/const.h"
 #include "types/impl_arg.h"
 #include "types/impl_func.h"

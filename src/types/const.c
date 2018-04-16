@@ -26,7 +26,7 @@
 #include "php_psi_stdinc.h"
 #include "data.h"
 
-struct psi_const *psi_const_init(struct psi_const_type *type, const char *name,
+struct psi_const *psi_const_init(struct psi_impl_type *type, const char *name,
 		struct psi_impl_def_val *val)
 {
 	struct psi_const *c = calloc(1, sizeof(*c));
@@ -45,7 +45,7 @@ void psi_const_free(struct psi_const **constant_ptr)
 		if (constant->token) {
 			free(constant->token);
 		}
-		psi_const_type_free(&constant->type);
+		psi_impl_type_free(&constant->type);
 		free(constant->name);
 		psi_impl_def_val_free(&constant->val);
 		free(constant);
@@ -55,15 +55,16 @@ void psi_const_free(struct psi_const **constant_ptr)
 void psi_const_dump(int fd, struct psi_const *cnst)
 {
 	dprintf(fd, "const ");
-	psi_const_type_dump(fd, cnst->type);
+	psi_impl_type_dump(fd, cnst->type);
 	dprintf(fd, " %s = ", cnst->name);
 	psi_impl_def_val_dump(fd, cnst->val);
 	dprintf(fd, ";");
 }
 
-bool psi_const_validate(struct psi_data *data, struct psi_const *c)
+bool psi_const_validate(struct psi_data *data, struct psi_const *c,
+		struct psi_validate_scope *scope)
 {
-	if (!psi_impl_def_val_validate(data, c->val, c->type->type, c->type->name)) {
+	if (!psi_impl_def_val_validate(data, c->val, c->type, scope)) {
 		return false;
 	}
 	return true;

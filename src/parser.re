@@ -197,6 +197,67 @@ bool psi_parser_process(struct psi_parser *P, struct psi_plist *tokens, size_t *
 	return true;
 }
 
+void psi_parser_postprocess(struct psi_parser *P)
+{
+	unsigned flags;
+	zend_string *name;
+	struct psi_validate_scope scope = {0};
+
+	psi_validate_scope_ctor(&scope);
+	scope.defs = &P->preproc->defs;
+
+	flags = P->flags;
+	P->flags |= PSI_SILENT;
+
+	/* register const macros */
+	ZEND_HASH_FOREACH_STR_KEY_PTR(&P->preproc->defs, name, scope.macro)
+	{
+		if (scope.macro->sig) {
+		} else if (scope.macro->exp) {
+			if (psi_num_exp_validate(PSI_DATA(P), scope.macro->exp, &scope)) {
+				struct psi_impl_type *type;
+				struct psi_impl_def_val *def;
+				struct psi_const *cnst;
+				struct psi_num_exp *num;
+				char *name_str = malloc(name->len + sizeof("psi\\"));
+
+				strcat(strcpy(name_str, "psi\\"), name->val);
+				num = psi_num_exp_copy(scope.macro->exp);
+				def = psi_impl_def_val_init(PSI_T_NUMBER, num);
+				type = psi_impl_type_init(PSI_T_NUMBER, "<eval number>");
+				cnst = psi_const_init(type, name_str, def);
+				P->consts = psi_plist_add(P->consts, &cnst);
+				free(name_str);
+			}
+		} else {
+			if (psi_plist_count(scope.macro->tokens) == 1) {
+				struct psi_token *t;
+
+				if (psi_plist_get(scope.macro->tokens, 0, &t)) {
+					if (t->type == PSI_T_QUOTED_STRING) {
+						struct psi_impl_type *type;
+						struct psi_impl_def_val *def;
+						struct psi_const *cnst;
+						char *name_str = malloc(name->len + sizeof("psi\\"));
+
+						strcat(strcpy(name_str, "psi\\"), name->val);
+						type = psi_impl_type_init(PSI_T_STRING, "string");
+						def = psi_impl_def_val_init(PSI_T_QUOTED_STRING, t->text);
+						cnst = psi_const_init(type, name_str, def);
+						P->consts = psi_plist_add(P->consts, &cnst);
+						free(name_str);
+					}
+				}
+			}
+		}
+	}
+	ZEND_HASH_FOREACH_END();
+
+	P->flags = flags;
+
+	psi_validate_scope_dtor(&scope);
+}
+
 bool psi_parser_parse(struct psi_parser *P, struct psi_parser_input *I)
 {
 	struct psi_plist *scanned, *preproc;
@@ -215,6 +276,8 @@ bool psi_parser_parse(struct psi_parser *P, struct psi_parser_input *I)
 		psi_plist_free(preproc);
 		return false;
 	}
+
+	psi_parser_postprocess(P);
 
 	psi_plist_free(preproc);
 	return true;
@@ -250,7 +313,7 @@ void psi_parser_free(struct psi_parser **P)
 	}
 
 union int_suffix {
-	char s[SIZEOF_UINT32_T];
+	char s[4];
 	uint32_t i;
 };
 
@@ -325,7 +388,7 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input 
 		"u8" / "\""		{ char_width = 1; }
 		"u" / ['"]		{ char_width = 2; }
 		"U" / ['"]		{ char_width = 4; }
-		"L" / ['"]		{ char_width = SIZEOF_WCHAR_T/8; }
+		"L" / ['"]		{ char_width = sizeof(wchar_t)/8; }
 
 		"/*"			{ goto comment; }
 		"//"			{ goto comment_sl; }

@@ -106,7 +106,9 @@ AC_DEFUN(PSI_CONFIG_DONE, [
 	
 	if $PSI_FAST_CONFIG; then
 		for conf_env in $PSI_CONFIG_TMP/*/conf.env; do
-			source $conf_env
+			if test "$conf_env" != "$PSI_CONFIG_TMP/*/conf.env"; then
+				source $conf_env
+			fi
 		done
 	fi
 	

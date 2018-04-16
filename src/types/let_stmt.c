@@ -57,14 +57,14 @@ void psi_let_stmt_dump(int fd, struct psi_let_stmt *let)
 	dprintf(fd, "\n");
 }
 
-bool psi_let_stmts_validate(struct psi_data *data, struct psi_impl *impl)
+bool psi_let_stmts_validate(struct psi_data *data, struct psi_validate_scope *scope)
 {
 	size_t i = 0;
 	struct psi_let_stmt *let;
 
 	/* we can have multiple let stmts */
 	/* check that we have a decl arg and impl arg for every let stmt */
-	while (psi_plist_get(impl->stmts.let, i++, &let)) {
+	while (psi_plist_get(scope->impl->stmts.let, i++, &let)) {
 		struct psi_decl_var *let_var;
 		struct psi_impl_var *let_ivar = NULL;
 
@@ -77,14 +77,14 @@ bool psi_let_stmts_validate(struct psi_data *data, struct psi_impl *impl)
 		if (!let->exp->var) {
 			data->error(data, let->token, PSI_WARNING,
 					"Missing variable in `let` statement for implementation %s",
-					impl->func->name);
+					scope->impl->func->name);
 			return false;
 		}
 
-		if (!psi_impl_get_decl_arg(impl, let_var)) {
+		if (!psi_impl_get_decl_arg(scope->impl, let_var)) {
 			data->error(data, let_var->token, PSI_WARNING,
 					"Unknown variable '%s' in `let` statement  of implementation '%s'",
-					let_var->name, impl->func->name);
+					let_var->name, scope->impl->func->name);
 			return false;
 		}
 		switch (let->exp->kind) {
@@ -97,30 +97,33 @@ bool psi_let_stmts_validate(struct psi_data *data, struct psi_impl *impl)
 		default:
 			break;
 		}
-		if (let_ivar && !psi_impl_get_arg(impl, let_ivar)) {
+		if (let_ivar && !psi_impl_get_arg(scope->impl, let_ivar)) {
 			data->error(data, let_var->token, PSI_WARNING,
 					"Unknown variable '%s' in `let` statement of implementation '%s'",
-					let_ivar->name, impl->func->name);
+					let_ivar->name, scope->impl->func->name);
 			return false;
 		}
 
-		if (!psi_let_exp_validate(data, let->exp, impl)) {
+		scope->current_let = let->exp;
+		if (!psi_let_exp_validate(data, let->exp, scope)) {
+			scope->current_let = NULL;
 			return false;
 		}
+		scope->current_let = NULL;
 	}
 	/* check that we have a let stmt for every decl arg */
-	if (impl->decl->args) {
+	if (scope->impl->decl->args) {
 		struct psi_decl_arg *darg;
 
-		for (i = 0; psi_plist_get(impl->decl->args, i, &darg); ++i) {
-			if (!psi_impl_get_let(impl, darg->var)) {
-				data->error(data, impl->func->token, PSI_WARNING,
+		for (i = 0; psi_plist_get(scope->impl->decl->args, i, &darg); ++i) {
+			if (!psi_impl_get_let(scope->impl, darg->var)) {
+				data->error(data, scope->impl->func->token, PSI_WARNING,
 						"Missing `let` statement for arg '%s %s%s'"
 								" of declaration '%s' for implementation '%s'",
 						darg->type->name,
 						psi_t_indirection(darg->var->pointer_level),
-						darg->var->name, impl->decl->func->var->name,
-						impl->func->name);
+						darg->var->name, scope->impl->decl->func->var->name,
+						scope->impl->func->name);
 				return false;
 			}
 		}

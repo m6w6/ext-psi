@@ -79,7 +79,7 @@ struct psi_decl_arg *psi_decl_struct_get_arg(struct psi_decl_struct *s,
 }
 
 bool psi_decl_struct_validate(struct psi_data *data, struct psi_decl_struct *s,
-		struct psi_validate_stack *type_stack)
+		struct psi_validate_scope *scope)
 {
 	size_t i, pos, len, size, align;
 	struct psi_decl_arg *darg, *prev_arg;
@@ -87,7 +87,7 @@ bool psi_decl_struct_validate(struct psi_data *data, struct psi_decl_struct *s,
 	if (!s) {
 		return false;
 	}
-	if (psi_validate_stack_has_struct(type_stack, s->name)) {
+	if (psi_validate_scope_has_struct(scope, s->name)) {
 		return true;
 	}
 
@@ -95,13 +95,13 @@ bool psi_decl_struct_validate(struct psi_data *data, struct psi_decl_struct *s,
 		return false;
 	}
 
-	psi_validate_stack_add_struct(type_stack, s->name, s);
+	psi_validate_scope_add_struct(scope, s->name, s);
 
 	for (i = 0; psi_plist_get(s->args, i, &darg); ++i) {
 		darg->var->arg = darg;
 
-		if (!psi_decl_arg_validate(data, darg, type_stack)) {
-			psi_validate_stack_del_struct(type_stack, s->name);
+		if (!psi_decl_arg_validate(data, darg, scope)) {
+			psi_validate_scope_del_struct(scope, s->name);
 			return false;
 		}
 
@@ -113,7 +113,7 @@ bool psi_decl_struct_validate(struct psi_data *data, struct psi_decl_struct *s,
 				data->error(data, darg->token, PSI_WARNING,
 						"Computed zero alignment of %s.%s of type '%s'",
 						len, s->name, darg->var->name, darg->type->name);
-				psi_validate_stack_del_struct(type_stack, s->name);
+				psi_validate_scope_del_struct(scope, s->name);
 				return false;
 			}
 
@@ -149,7 +149,7 @@ bool psi_decl_struct_validate(struct psi_data *data, struct psi_decl_struct *s,
 					default:
 						data->error(data, darg->token, PSI_WARNING,
 								"Unsupported type for bit field: %s", real->name);
-						psi_validate_stack_del_struct(type_stack, s->name);
+						psi_validate_scope_del_struct(scope, s->name);
 						return false;
 					}
 					darg->layout->bfw->pos = prev_arg->layout->bfw->pos + prev_arg->layout->bfw->len;

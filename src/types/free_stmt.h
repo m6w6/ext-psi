@@ -40,7 +40,7 @@ struct psi_free_stmt *psi_free_stmt_init(struct psi_plist *calls);
 void psi_free_stmt_free(struct psi_free_stmt **f_ptr);
 void psi_free_stmt_dump(int fd, struct psi_free_stmt *fre);
 
-bool psi_free_stmts_validate(struct psi_data *data, struct psi_impl *impl);
+bool psi_free_stmts_validate(struct psi_data *data, struct psi_validate_scope *scope);
 void psi_free_stmt_exec(struct psi_free_stmt *fre, struct psi_call_frame *frame);
 
 #endif

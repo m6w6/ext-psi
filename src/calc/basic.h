@@ -58,6 +58,12 @@ static inline token_t psi_calc_add(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->i64 = v1->i8 + v2->u64;
 			return PSI_T_INT64;
+		case PSI_T_INT128:
+			res->i128 = v1->i8 + v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->i8 + v2->u128;
+			return PSI_T_UINT128;
 		case PSI_T_FLOAT:
 			res->fval = v1->i8 + v2->fval;
 			return PSI_T_FLOAT;
@@ -101,6 +107,12 @@ static inline token_t psi_calc_add(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->u64 = v1->u8 + v2->u64;
 			return PSI_T_UINT64;
+		case PSI_T_INT128:
+			res->i128 = v1->u8 + v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->u8 + v2->u128;
+			return PSI_T_UINT128;
 		case PSI_T_FLOAT:
 			res->fval = v1->u8 + v2->fval;
 			return PSI_T_FLOAT;
@@ -144,6 +156,12 @@ static inline token_t psi_calc_add(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->i64 = v1->i16 + v2->u64;
 			return PSI_T_INT64;
+		case PSI_T_INT128:
+			res->i128 = v1->i16 + v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->i16 + v2->u128;
+			return PSI_T_UINT128;
 		case PSI_T_FLOAT:
 			res->fval = v1->i16 + v2->fval;
 			return PSI_T_FLOAT;
@@ -187,6 +205,12 @@ static inline token_t psi_calc_add(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->u64 = v1->u16 + v2->u64;
 			return PSI_T_UINT64;
+		case PSI_T_INT128:
+			res->i128 = v1->u16 + v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->u16 + v2->u128;
+			return PSI_T_UINT128;
 		case PSI_T_FLOAT:
 			res->fval = v1->u16 + v2->fval;
 			return PSI_T_FLOAT;
@@ -230,6 +254,12 @@ static inline token_t psi_calc_add(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->i64 = v1->i32 + v2->u64;
 			return PSI_T_INT64;
+		case PSI_T_INT128:
+			res->i128 = v1->i32 + v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->i32 + v2->u128;
+			return PSI_T_UINT128;
 		case PSI_T_FLOAT:
 			res->fval = v1->i32 + v2->fval;
 			return PSI_T_FLOAT;
@@ -273,6 +303,12 @@ static inline token_t psi_calc_add(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->u64 = v1->u32 + v2->u64;
 			return PSI_T_UINT64;
+		case PSI_T_INT128:
+			res->i128 = v1->u32 + v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->u32 + v2->u128;
+			return PSI_T_UINT128;
 		case PSI_T_FLOAT:
 			res->fval = v1->u32 + v2->fval;
 			return PSI_T_FLOAT;
@@ -316,6 +352,12 @@ static inline token_t psi_calc_add(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->i64 = v1->i64 + v2->u64;
 			return PSI_T_INT64;
+		case PSI_T_INT128:
+			res->i128 = v1->i64 + v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->i64 + v2->u128;
+			return PSI_T_UINT128;
 		case PSI_T_FLOAT:
 			res->fval = v1->i64 + v2->fval;
 			return PSI_T_FLOAT;
@@ -359,6 +401,12 @@ static inline token_t psi_calc_add(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->u64 = v1->u64 + v2->u64;
 			return PSI_T_UINT64;
+		case PSI_T_INT128:
+			res->i128 = v1->u64 + v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->u64 + v2->u128;
+			return PSI_T_UINT128;
 		case PSI_T_FLOAT:
 			res->fval = v1->u64 + v2->fval;
 			return PSI_T_FLOAT;
@@ -368,6 +416,104 @@ static inline token_t psi_calc_add(token_t t1, impl_val *v1, token_t t2, impl_va
 #	if HAVE_LONG_DOUBLE
 		case PSI_T_LONG_DOUBLE:
 			res->ldval = v1->u64 + v2->ldval;
+			return PSI_T_LONG_DOUBLE;
+#	endif
+
+		default:
+			assert(0);
+			break;
+		}
+		break;
+	case PSI_T_INT128:
+		switch (t2) {
+		case PSI_T_INT8:
+			res->i128 = v1->i128 + v2->i8;
+			return PSI_T_INT128;
+		case PSI_T_UINT8:
+			res->i128 = v1->i128 + v2->u8;
+			return PSI_T_INT128;
+		case PSI_T_INT16:
+			res->i128 = v1->i128 + v2->i16;
+			return PSI_T_INT128;
+		case PSI_T_UINT16:
+			res->i128 = v1->i128 + v2->u16;
+			return PSI_T_INT128;
+		case PSI_T_INT32:
+			res->i128 = v1->i128 + v2->i32;
+			return PSI_T_INT128;
+		case PSI_T_UINT32:
+			res->i128 = v1->i128 + v2->u32;
+			return PSI_T_INT128;
+		case PSI_T_INT64:
+			res->i128 = v1->i128 + v2->i64;
+			return PSI_T_INT128;
+		case PSI_T_UINT64:
+			res->i128 = v1->i128 + v2->u64;
+			return PSI_T_INT128;
+		case PSI_T_INT128:
+			res->i128 = v1->i128 + v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->i128 + v2->u128;
+			return PSI_T_UINT128;
+		case PSI_T_FLOAT:
+			res->fval = v1->i128 + v2->fval;
+			return PSI_T_FLOAT;
+		case PSI_T_DOUBLE:
+			res->dval = v1->i128 + v2->dval;
+			return PSI_T_DOUBLE;
+#	if HAVE_LONG_DOUBLE
+		case PSI_T_LONG_DOUBLE:
+			res->ldval = v1->i128 + v2->ldval;
+			return PSI_T_LONG_DOUBLE;
+#	endif
+
+		default:
+			assert(0);
+			break;
+		}
+		break;
+	case PSI_T_UINT128:
+		switch (t2) {
+		case PSI_T_INT8:
+			res->u128 = v1->u128 + v2->i8;
+			return PSI_T_UINT128;
+		case PSI_T_UINT8:
+			res->u128 = v1->u128 + v2->u8;
+			return PSI_T_UINT128;
+		case PSI_T_INT16:
+			res->u128 = v1->u128 + v2->i16;
+			return PSI_T_UINT128;
+		case PSI_T_UINT16:
+			res->u128 = v1->u128 + v2->u16;
+			return PSI_T_UINT128;
+		case PSI_T_INT32:
+			res->u128 = v1->u128 + v2->i32;
+			return PSI_T_UINT128;
+		case PSI_T_UINT32:
+			res->u128 = v1->u128 + v2->u32;
+			return PSI_T_UINT128;
+		case PSI_T_INT64:
+			res->u128 = v1->u128 + v2->i64;
+			return PSI_T_UINT128;
+		case PSI_T_UINT64:
+			res->u128 = v1->u128 + v2->u64;
+			return PSI_T_UINT128;
+		case PSI_T_INT128:
+			res->u128 = v1->u128 + v2->i128;
+			return PSI_T_UINT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->u128 + v2->u128;
+			return PSI_T_UINT128;
+		case PSI_T_FLOAT:
+			res->fval = v1->u128 + v2->fval;
+			return PSI_T_FLOAT;
+		case PSI_T_DOUBLE:
+			res->dval = v1->u128 + v2->dval;
+			return PSI_T_DOUBLE;
+#	if HAVE_LONG_DOUBLE
+		case PSI_T_LONG_DOUBLE:
+			res->ldval = v1->u128 + v2->ldval;
 			return PSI_T_LONG_DOUBLE;
 #	endif
 
@@ -401,6 +547,12 @@ static inline token_t psi_calc_add(token_t t1, impl_val *v1, token_t t2, impl_va
 			return PSI_T_FLOAT;
 		case PSI_T_UINT64:
 			res->fval = v1->fval + v2->u64;
+			return PSI_T_FLOAT;
+		case PSI_T_INT128:
+			res->fval = v1->fval + v2->i128;
+			return PSI_T_FLOAT;
+		case PSI_T_UINT128:
+			res->fval = v1->fval + v2->u128;
 			return PSI_T_FLOAT;
 		case PSI_T_FLOAT:
 			res->fval = v1->fval + v2->fval;
@@ -445,6 +597,12 @@ static inline token_t psi_calc_add(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->dval = v1->dval + v2->u64;
 			return PSI_T_DOUBLE;
+		case PSI_T_INT128:
+			res->dval = v1->dval + v2->i128;
+			return PSI_T_DOUBLE;
+		case PSI_T_UINT128:
+			res->dval = v1->dval + v2->u128;
+			return PSI_T_DOUBLE;
 		case PSI_T_FLOAT:
 			res->dval = v1->dval + v2->fval;
 			return PSI_T_DOUBLE;
@@ -488,6 +646,12 @@ static inline token_t psi_calc_add(token_t t1, impl_val *v1, token_t t2, impl_va
 			return PSI_T_LONG_DOUBLE;
 		case PSI_T_UINT64:
 			res->ldval = v1->ldval + v2->u64;
+			return PSI_T_LONG_DOUBLE;
+		case PSI_T_INT128:
+			res->ldval = v1->ldval + v2->i128;
+			return PSI_T_LONG_DOUBLE;
+		case PSI_T_UINT128:
+			res->ldval = v1->ldval + v2->u128;
 			return PSI_T_LONG_DOUBLE;
 		case PSI_T_FLOAT:
 			res->ldval = v1->ldval + v2->fval;
@@ -545,6 +709,12 @@ static inline token_t psi_calc_sub(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->i64 = v1->i8 - v2->u64;
 			return PSI_T_INT64;
+		case PSI_T_INT128:
+			res->i128 = v1->i8 - v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->i8 - v2->u128;
+			return PSI_T_UINT128;
 		case PSI_T_FLOAT:
 			res->fval = v1->i8 - v2->fval;
 			return PSI_T_FLOAT;
@@ -588,6 +758,12 @@ static inline token_t psi_calc_sub(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->u64 = v1->u8 - v2->u64;
 			return PSI_T_UINT64;
+		case PSI_T_INT128:
+			res->i128 = v1->u8 - v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->u8 - v2->u128;
+			return PSI_T_UINT128;
 		case PSI_T_FLOAT:
 			res->fval = v1->u8 - v2->fval;
 			return PSI_T_FLOAT;
@@ -631,6 +807,12 @@ static inline token_t psi_calc_sub(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->i64 = v1->i16 - v2->u64;
 			return PSI_T_INT64;
+		case PSI_T_INT128:
+			res->i128 = v1->i16 - v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->i16 - v2->u128;
+			return PSI_T_UINT128;
 		case PSI_T_FLOAT:
 			res->fval = v1->i16 - v2->fval;
 			return PSI_T_FLOAT;
@@ -674,6 +856,12 @@ static inline token_t psi_calc_sub(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->u64 = v1->u16 - v2->u64;
 			return PSI_T_UINT64;
+		case PSI_T_INT128:
+			res->i128 = v1->u16 - v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->u16 - v2->u128;
+			return PSI_T_UINT128;
 		case PSI_T_FLOAT:
 			res->fval = v1->u16 - v2->fval;
 			return PSI_T_FLOAT;
@@ -717,6 +905,12 @@ static inline token_t psi_calc_sub(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->i64 = v1->i32 - v2->u64;
 			return PSI_T_INT64;
+		case PSI_T_INT128:
+			res->i128 = v1->i32 - v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->i32 - v2->u128;
+			return PSI_T_UINT128;
 		case PSI_T_FLOAT:
 			res->fval = v1->i32 - v2->fval;
 			return PSI_T_FLOAT;
@@ -760,6 +954,12 @@ static inline token_t psi_calc_sub(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->u64 = v1->u32 - v2->u64;
 			return PSI_T_UINT64;
+		case PSI_T_INT128:
+			res->i128 = v1->u32 - v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->u32 - v2->u128;
+			return PSI_T_UINT128;
 		case PSI_T_FLOAT:
 			res->fval = v1->u32 - v2->fval;
 			return PSI_T_FLOAT;
@@ -803,6 +1003,12 @@ static inline token_t psi_calc_sub(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->i64 = v1->i64 - v2->u64;
 			return PSI_T_INT64;
+		case PSI_T_INT128:
+			res->i128 = v1->i64 - v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->i64 - v2->u128;
+			return PSI_T_UINT128;
 		case PSI_T_FLOAT:
 			res->fval = v1->i64 - v2->fval;
 			return PSI_T_FLOAT;
@@ -846,6 +1052,12 @@ static inline token_t psi_calc_sub(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->u64 = v1->u64 - v2->u64;
 			return PSI_T_UINT64;
+		case PSI_T_INT128:
+			res->i128 = v1->u64 - v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->u64 - v2->u128;
+			return PSI_T_UINT128;
 		case PSI_T_FLOAT:
 			res->fval = v1->u64 - v2->fval;
 			return PSI_T_FLOAT;
@@ -855,6 +1067,104 @@ static inline token_t psi_calc_sub(token_t t1, impl_val *v1, token_t t2, impl_va
 #	if HAVE_LONG_DOUBLE
 		case PSI_T_LONG_DOUBLE:
 			res->ldval = v1->u64 - v2->ldval;
+			return PSI_T_LONG_DOUBLE;
+#	endif
+
+		default:
+			assert(0);
+			break;
+		}
+		break;
+	case PSI_T_INT128:
+		switch (t2) {
+		case PSI_T_INT8:
+			res->i128 = v1->i128 - v2->i8;
+			return PSI_T_INT128;
+		case PSI_T_UINT8:
+			res->i128 = v1->i128 - v2->u8;
+			return PSI_T_INT128;
+		case PSI_T_INT16:
+			res->i128 = v1->i128 - v2->i16;
+			return PSI_T_INT128;
+		case PSI_T_UINT16:
+			res->i128 = v1->i128 - v2->u16;
+			return PSI_T_INT128;
+		case PSI_T_INT32:
+			res->i128 = v1->i128 - v2->i32;
+			return PSI_T_INT128;
+		case PSI_T_UINT32:
+			res->i128 = v1->i128 - v2->u32;
+			return PSI_T_INT128;
+		case PSI_T_INT64:
+			res->i128 = v1->i128 - v2->i64;
+			return PSI_T_INT128;
+		case PSI_T_UINT64:
+			res->i128 = v1->i128 - v2->u64;
+			return PSI_T_INT128;
+		case PSI_T_INT128:
+			res->i128 = v1->i128 - v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->i128 - v2->u128;
+			return PSI_T_UINT128;
+		case PSI_T_FLOAT:
+			res->fval = v1->i128 - v2->fval;
+			return PSI_T_FLOAT;
+		case PSI_T_DOUBLE:
+			res->dval = v1->i128 - v2->dval;
+			return PSI_T_DOUBLE;
+#	if HAVE_LONG_DOUBLE
+		case PSI_T_LONG_DOUBLE:
+			res->ldval = v1->i128 - v2->ldval;
+			return PSI_T_LONG_DOUBLE;
+#	endif
+
+		default:
+			assert(0);
+			break;
+		}
+		break;
+	case PSI_T_UINT128:
+		switch (t2) {
+		case PSI_T_INT8:
+			res->u128 = v1->u128 - v2->i8;
+			return PSI_T_UINT128;
+		case PSI_T_UINT8:
+			res->u128 = v1->u128 - v2->u8;
+			return PSI_T_UINT128;
+		case PSI_T_INT16:
+			res->u128 = v1->u128 - v2->i16;
+			return PSI_T_UINT128;
+		case PSI_T_UINT16:
+			res->u128 = v1->u128 - v2->u16;
+			return PSI_T_UINT128;
+		case PSI_T_INT32:
+			res->u128 = v1->u128 - v2->i32;
+			return PSI_T_UINT128;
+		case PSI_T_UINT32:
+			res->u128 = v1->u128 - v2->u32;
+			return PSI_T_UINT128;
+		case PSI_T_INT64:
+			res->u128 = v1->u128 - v2->i64;
+			return PSI_T_UINT128;
+		case PSI_T_UINT64:
+			res->u128 = v1->u128 - v2->u64;
+			return PSI_T_UINT128;
+		case PSI_T_INT128:
+			res->u128 = v1->u128 - v2->i128;
+			return PSI_T_UINT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->u128 - v2->u128;
+			return PSI_T_UINT128;
+		case PSI_T_FLOAT:
+			res->fval = v1->u128 - v2->fval;
+			return PSI_T_FLOAT;
+		case PSI_T_DOUBLE:
+			res->dval = v1->u128 - v2->dval;
+			return PSI_T_DOUBLE;
+#	if HAVE_LONG_DOUBLE
+		case PSI_T_LONG_DOUBLE:
+			res->ldval = v1->u128 - v2->ldval;
 			return PSI_T_LONG_DOUBLE;
 #	endif
 
@@ -888,6 +1198,12 @@ static inline token_t psi_calc_sub(token_t t1, impl_val *v1, token_t t2, impl_va
 			return PSI_T_FLOAT;
 		case PSI_T_UINT64:
 			res->fval = v1->fval - v2->u64;
+			return PSI_T_FLOAT;
+		case PSI_T_INT128:
+			res->fval = v1->fval - v2->i128;
+			return PSI_T_FLOAT;
+		case PSI_T_UINT128:
+			res->fval = v1->fval - v2->u128;
 			return PSI_T_FLOAT;
 		case PSI_T_FLOAT:
 			res->fval = v1->fval - v2->fval;
@@ -932,6 +1248,12 @@ static inline token_t psi_calc_sub(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->dval = v1->dval - v2->u64;
 			return PSI_T_DOUBLE;
+		case PSI_T_INT128:
+			res->dval = v1->dval - v2->i128;
+			return PSI_T_DOUBLE;
+		case PSI_T_UINT128:
+			res->dval = v1->dval - v2->u128;
+			return PSI_T_DOUBLE;
 		case PSI_T_FLOAT:
 			res->dval = v1->dval - v2->fval;
 			return PSI_T_DOUBLE;
@@ -975,6 +1297,12 @@ static inline token_t psi_calc_sub(token_t t1, impl_val *v1, token_t t2, impl_va
 			return PSI_T_LONG_DOUBLE;
 		case PSI_T_UINT64:
 			res->ldval = v1->ldval - v2->u64;
+			return PSI_T_LONG_DOUBLE;
+		case PSI_T_INT128:
+			res->ldval = v1->ldval - v2->i128;
+			return PSI_T_LONG_DOUBLE;
+		case PSI_T_UINT128:
+			res->ldval = v1->ldval - v2->u128;
 			return PSI_T_LONG_DOUBLE;
 		case PSI_T_FLOAT:
 			res->ldval = v1->ldval - v2->fval;
@@ -1032,6 +1360,12 @@ static inline token_t psi_calc_mul(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->i64 = v1->i8 * v2->u64;
 			return PSI_T_INT64;
+		case PSI_T_INT128:
+			res->i128 = v1->i8 * v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->i8 * v2->u128;
+			return PSI_T_UINT128;
 		case PSI_T_FLOAT:
 			res->fval = v1->i8 * v2->fval;
 			return PSI_T_FLOAT;
@@ -1075,6 +1409,12 @@ static inline token_t psi_calc_mul(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->u64 = v1->u8 * v2->u64;
 			return PSI_T_UINT64;
+		case PSI_T_INT128:
+			res->i128 = v1->u8 * v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->u8 * v2->u128;
+			return PSI_T_UINT128;
 		case PSI_T_FLOAT:
 			res->fval = v1->u8 * v2->fval;
 			return PSI_T_FLOAT;
@@ -1118,6 +1458,12 @@ static inline token_t psi_calc_mul(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->i64 = v1->i16 * v2->u64;
 			return PSI_T_INT64;
+		case PSI_T_INT128:
+			res->i128 = v1->i16 * v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->i16 * v2->u128;
+			return PSI_T_UINT128;
 		case PSI_T_FLOAT:
 			res->fval = v1->i16 * v2->fval;
 			return PSI_T_FLOAT;
@@ -1161,6 +1507,12 @@ static inline token_t psi_calc_mul(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->u64 = v1->u16 * v2->u64;
 			return PSI_T_UINT64;
+		case PSI_T_INT128:
+			res->i128 = v1->u16 * v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->u16 * v2->u128;
+			return PSI_T_UINT128;
 		case PSI_T_FLOAT:
 			res->fval = v1->u16 * v2->fval;
 			return PSI_T_FLOAT;
@@ -1204,6 +1556,12 @@ static inline token_t psi_calc_mul(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->i64 = v1->i32 * v2->u64;
 			return PSI_T_INT64;
+		case PSI_T_INT128:
+			res->i128 = v1->i32 * v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->i32 * v2->u128;
+			return PSI_T_UINT128;
 		case PSI_T_FLOAT:
 			res->fval = v1->i32 * v2->fval;
 			return PSI_T_FLOAT;
@@ -1247,6 +1605,12 @@ static inline token_t psi_calc_mul(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->u64 = v1->u32 * v2->u64;
 			return PSI_T_UINT64;
+		case PSI_T_INT128:
+			res->i128 = v1->u32 * v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->u32 * v2->u128;
+			return PSI_T_UINT128;
 		case PSI_T_FLOAT:
 			res->fval = v1->u32 * v2->fval;
 			return PSI_T_FLOAT;
@@ -1290,6 +1654,12 @@ static inline token_t psi_calc_mul(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->i64 = v1->i64 * v2->u64;
 			return PSI_T_INT64;
+		case PSI_T_INT128:
+			res->i128 = v1->i64 * v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->i64 * v2->u128;
+			return PSI_T_UINT128;
 		case PSI_T_FLOAT:
 			res->fval = v1->i64 * v2->fval;
 			return PSI_T_FLOAT;
@@ -1333,6 +1703,12 @@ static inline token_t psi_calc_mul(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->u64 = v1->u64 * v2->u64;
 			return PSI_T_UINT64;
+		case PSI_T_INT128:
+			res->i128 = v1->u64 * v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->u64 * v2->u128;
+			return PSI_T_UINT128;
 		case PSI_T_FLOAT:
 			res->fval = v1->u64 * v2->fval;
 			return PSI_T_FLOAT;
@@ -1342,6 +1718,104 @@ static inline token_t psi_calc_mul(token_t t1, impl_val *v1, token_t t2, impl_va
 #	if HAVE_LONG_DOUBLE
 		case PSI_T_LONG_DOUBLE:
 			res->ldval = v1->u64 * v2->ldval;
+			return PSI_T_LONG_DOUBLE;
+#	endif
+
+		default:
+			assert(0);
+			break;
+		}
+		break;
+	case PSI_T_INT128:
+		switch (t2) {
+		case PSI_T_INT8:
+			res->i128 = v1->i128 * v2->i8;
+			return PSI_T_INT128;
+		case PSI_T_UINT8:
+			res->i128 = v1->i128 * v2->u8;
+			return PSI_T_INT128;
+		case PSI_T_INT16:
+			res->i128 = v1->i128 * v2->i16;
+			return PSI_T_INT128;
+		case PSI_T_UINT16:
+			res->i128 = v1->i128 * v2->u16;
+			return PSI_T_INT128;
+		case PSI_T_INT32:
+			res->i128 = v1->i128 * v2->i32;
+			return PSI_T_INT128;
+		case PSI_T_UINT32:
+			res->i128 = v1->i128 * v2->u32;
+			return PSI_T_INT128;
+		case PSI_T_INT64:
+			res->i128 = v1->i128 * v2->i64;
+			return PSI_T_INT128;
+		case PSI_T_UINT64:
+			res->i128 = v1->i128 * v2->u64;
+			return PSI_T_INT128;
+		case PSI_T_INT128:
+			res->i128 = v1->i128 * v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->i128 * v2->u128;
+			return PSI_T_UINT128;
+		case PSI_T_FLOAT:
+			res->fval = v1->i128 * v2->fval;
+			return PSI_T_FLOAT;
+		case PSI_T_DOUBLE:
+			res->dval = v1->i128 * v2->dval;
+			return PSI_T_DOUBLE;
+#	if HAVE_LONG_DOUBLE
+		case PSI_T_LONG_DOUBLE:
+			res->ldval = v1->i128 * v2->ldval;
+			return PSI_T_LONG_DOUBLE;
+#	endif
+
+		default:
+			assert(0);
+			break;
+		}
+		break;
+	case PSI_T_UINT128:
+		switch (t2) {
+		case PSI_T_INT8:
+			res->u128 = v1->u128 * v2->i8;
+			return PSI_T_UINT128;
+		case PSI_T_UINT8:
+			res->u128 = v1->u128 * v2->u8;
+			return PSI_T_UINT128;
+		case PSI_T_INT16:
+			res->u128 = v1->u128 * v2->i16;
+			return PSI_T_UINT128;
+		case PSI_T_UINT16:
+			res->u128 = v1->u128 * v2->u16;
+			return PSI_T_UINT128;
+		case PSI_T_INT32:
+			res->u128 = v1->u128 * v2->i32;
+			return PSI_T_UINT128;
+		case PSI_T_UINT32:
+			res->u128 = v1->u128 * v2->u32;
+			return PSI_T_UINT128;
+		case PSI_T_INT64:
+			res->u128 = v1->u128 * v2->i64;
+			return PSI_T_UINT128;
+		case PSI_T_UINT64:
+			res->u128 = v1->u128 * v2->u64;
+			return PSI_T_UINT128;
+		case PSI_T_INT128:
+			res->u128 = v1->u128 * v2->i128;
+			return PSI_T_UINT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->u128 * v2->u128;
+			return PSI_T_UINT128;
+		case PSI_T_FLOAT:
+			res->fval = v1->u128 * v2->fval;
+			return PSI_T_FLOAT;
+		case PSI_T_DOUBLE:
+			res->dval = v1->u128 * v2->dval;
+			return PSI_T_DOUBLE;
+#	if HAVE_LONG_DOUBLE
+		case PSI_T_LONG_DOUBLE:
+			res->ldval = v1->u128 * v2->ldval;
 			return PSI_T_LONG_DOUBLE;
 #	endif
 
@@ -1375,6 +1849,12 @@ static inline token_t psi_calc_mul(token_t t1, impl_val *v1, token_t t2, impl_va
 			return PSI_T_FLOAT;
 		case PSI_T_UINT64:
 			res->fval = v1->fval * v2->u64;
+			return PSI_T_FLOAT;
+		case PSI_T_INT128:
+			res->fval = v1->fval * v2->i128;
+			return PSI_T_FLOAT;
+		case PSI_T_UINT128:
+			res->fval = v1->fval * v2->u128;
 			return PSI_T_FLOAT;
 		case PSI_T_FLOAT:
 			res->fval = v1->fval * v2->fval;
@@ -1419,6 +1899,12 @@ static inline token_t psi_calc_mul(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->dval = v1->dval * v2->u64;
 			return PSI_T_DOUBLE;
+		case PSI_T_INT128:
+			res->dval = v1->dval * v2->i128;
+			return PSI_T_DOUBLE;
+		case PSI_T_UINT128:
+			res->dval = v1->dval * v2->u128;
+			return PSI_T_DOUBLE;
 		case PSI_T_FLOAT:
 			res->dval = v1->dval * v2->fval;
 			return PSI_T_DOUBLE;
@@ -1462,6 +1948,12 @@ static inline token_t psi_calc_mul(token_t t1, impl_val *v1, token_t t2, impl_va
 			return PSI_T_LONG_DOUBLE;
 		case PSI_T_UINT64:
 			res->ldval = v1->ldval * v2->u64;
+			return PSI_T_LONG_DOUBLE;
+		case PSI_T_INT128:
+			res->ldval = v1->ldval * v2->i128;
+			return PSI_T_LONG_DOUBLE;
+		case PSI_T_UINT128:
+			res->ldval = v1->ldval * v2->u128;
 			return PSI_T_LONG_DOUBLE;
 		case PSI_T_FLOAT:
 			res->ldval = v1->ldval * v2->fval;
@@ -1519,6 +2011,12 @@ static inline token_t psi_calc_div(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->i64 = v1->i8 / v2->u64;
 			return PSI_T_INT64;
+		case PSI_T_INT128:
+			res->i128 = v1->i8 / v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->i8 / v2->u128;
+			return PSI_T_UINT128;
 		case PSI_T_FLOAT:
 			res->fval = v1->i8 / v2->fval;
 			return PSI_T_FLOAT;
@@ -1562,6 +2060,12 @@ static inline token_t psi_calc_div(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->u64 = v1->u8 / v2->u64;
 			return PSI_T_UINT64;
+		case PSI_T_INT128:
+			res->i128 = v1->u8 / v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->u8 / v2->u128;
+			return PSI_T_UINT128;
 		case PSI_T_FLOAT:
 			res->fval = v1->u8 / v2->fval;
 			return PSI_T_FLOAT;
@@ -1605,6 +2109,12 @@ static inline token_t psi_calc_div(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->i64 = v1->i16 / v2->u64;
 			return PSI_T_INT64;
+		case PSI_T_INT128:
+			res->i128 = v1->i16 / v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->i16 / v2->u128;
+			return PSI_T_UINT128;
 		case PSI_T_FLOAT:
 			res->fval = v1->i16 / v2->fval;
 			return PSI_T_FLOAT;
@@ -1648,6 +2158,12 @@ static inline token_t psi_calc_div(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->u64 = v1->u16 / v2->u64;
 			return PSI_T_UINT64;
+		case PSI_T_INT128:
+			res->i128 = v1->u16 / v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->u16 / v2->u128;
+			return PSI_T_UINT128;
 		case PSI_T_FLOAT:
 			res->fval = v1->u16 / v2->fval;
 			return PSI_T_FLOAT;
@@ -1691,6 +2207,12 @@ static inline token_t psi_calc_div(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->i64 = v1->i32 / v2->u64;
 			return PSI_T_INT64;
+		case PSI_T_INT128:
+			res->i128 = v1->i32 / v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->i32 / v2->u128;
+			return PSI_T_UINT128;
 		case PSI_T_FLOAT:
 			res->fval = v1->i32 / v2->fval;
 			return PSI_T_FLOAT;
@@ -1734,6 +2256,12 @@ static inline token_t psi_calc_div(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->u64 = v1->u32 / v2->u64;
 			return PSI_T_UINT64;
+		case PSI_T_INT128:
+			res->i128 = v1->u32 / v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->u32 / v2->u128;
+			return PSI_T_UINT128;
 		case PSI_T_FLOAT:
 			res->fval = v1->u32 / v2->fval;
 			return PSI_T_FLOAT;
@@ -1777,6 +2305,12 @@ static inline token_t psi_calc_div(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->i64 = v1->i64 / v2->u64;
 			return PSI_T_INT64;
+		case PSI_T_INT128:
+			res->i128 = v1->i64 / v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->i64 / v2->u128;
+			return PSI_T_UINT128;
 		case PSI_T_FLOAT:
 			res->fval = v1->i64 / v2->fval;
 			return PSI_T_FLOAT;
@@ -1820,6 +2354,12 @@ static inline token_t psi_calc_div(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->u64 = v1->u64 / v2->u64;
 			return PSI_T_UINT64;
+		case PSI_T_INT128:
+			res->i128 = v1->u64 / v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->u64 / v2->u128;
+			return PSI_T_UINT128;
 		case PSI_T_FLOAT:
 			res->fval = v1->u64 / v2->fval;
 			return PSI_T_FLOAT;
@@ -1829,6 +2369,104 @@ static inline token_t psi_calc_div(token_t t1, impl_val *v1, token_t t2, impl_va
 #	if HAVE_LONG_DOUBLE
 		case PSI_T_LONG_DOUBLE:
 			res->ldval = v1->u64 / v2->ldval;
+			return PSI_T_LONG_DOUBLE;
+#	endif
+
+		default:
+			assert(0);
+			break;
+		}
+		break;
+	case PSI_T_INT128:
+		switch (t2) {
+		case PSI_T_INT8:
+			res->i128 = v1->i128 / v2->i8;
+			return PSI_T_INT128;
+		case PSI_T_UINT8:
+			res->i128 = v1->i128 / v2->u8;
+			return PSI_T_INT128;
+		case PSI_T_INT16:
+			res->i128 = v1->i128 / v2->i16;
+			return PSI_T_INT128;
+		case PSI_T_UINT16:
+			res->i128 = v1->i128 / v2->u16;
+			return PSI_T_INT128;
+		case PSI_T_INT32:
+			res->i128 = v1->i128 / v2->i32;
+			return PSI_T_INT128;
+		case PSI_T_UINT32:
+			res->i128 = v1->i128 / v2->u32;
+			return PSI_T_INT128;
+		case PSI_T_INT64:
+			res->i128 = v1->i128 / v2->i64;
+			return PSI_T_INT128;
+		case PSI_T_UINT64:
+			res->i128 = v1->i128 / v2->u64;
+			return PSI_T_INT128;
+		case PSI_T_INT128:
+			res->i128 = v1->i128 / v2->i128;
+			return PSI_T_INT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->i128 / v2->u128;
+			return PSI_T_UINT128;
+		case PSI_T_FLOAT:
+			res->fval = v1->i128 / v2->fval;
+			return PSI_T_FLOAT;
+		case PSI_T_DOUBLE:
+			res->dval = v1->i128 / v2->dval;
+			return PSI_T_DOUBLE;
+#	if HAVE_LONG_DOUBLE
+		case PSI_T_LONG_DOUBLE:
+			res->ldval = v1->i128 / v2->ldval;
+			return PSI_T_LONG_DOUBLE;
+#	endif
+
+		default:
+			assert(0);
+			break;
+		}
+		break;
+	case PSI_T_UINT128:
+		switch (t2) {
+		case PSI_T_INT8:
+			res->u128 = v1->u128 / v2->i8;
+			return PSI_T_UINT128;
+		case PSI_T_UINT8:
+			res->u128 = v1->u128 / v2->u8;
+			return PSI_T_UINT128;
+		case PSI_T_INT16:
+			res->u128 = v1->u128 / v2->i16;
+			return PSI_T_UINT128;
+		case PSI_T_UINT16:
+			res->u128 = v1->u128 / v2->u16;
+			return PSI_T_UINT128;
+		case PSI_T_INT32:
+			res->u128 = v1->u128 / v2->i32;
+			return PSI_T_UINT128;
+		case PSI_T_UINT32:
+			res->u128 = v1->u128 / v2->u32;
+			return PSI_T_UINT128;
+		case PSI_T_INT64:
+			res->u128 = v1->u128 / v2->i64;
+			return PSI_T_UINT128;
+		case PSI_T_UINT64:
+			res->u128 = v1->u128 / v2->u64;
+			return PSI_T_UINT128;
+		case PSI_T_INT128:
+			res->u128 = v1->u128 / v2->i128;
+			return PSI_T_UINT128;
+		case PSI_T_UINT128:
+			res->u128 = v1->u128 / v2->u128;
+			return PSI_T_UINT128;
+		case PSI_T_FLOAT:
+			res->fval = v1->u128 / v2->fval;
+			return PSI_T_FLOAT;
+		case PSI_T_DOUBLE:
+			res->dval = v1->u128 / v2->dval;
+			return PSI_T_DOUBLE;
+#	if HAVE_LONG_DOUBLE
+		case PSI_T_LONG_DOUBLE:
+			res->ldval = v1->u128 / v2->ldval;
 			return PSI_T_LONG_DOUBLE;
 #	endif
 
@@ -1862,6 +2500,12 @@ static inline token_t psi_calc_div(token_t t1, impl_val *v1, token_t t2, impl_va
 			return PSI_T_FLOAT;
 		case PSI_T_UINT64:
 			res->fval = v1->fval / v2->u64;
+			return PSI_T_FLOAT;
+		case PSI_T_INT128:
+			res->fval = v1->fval / v2->i128;
+			return PSI_T_FLOAT;
+		case PSI_T_UINT128:
+			res->fval = v1->fval / v2->u128;
 			return PSI_T_FLOAT;
 		case PSI_T_FLOAT:
 			res->fval = v1->fval / v2->fval;
@@ -1906,6 +2550,12 @@ static inline token_t psi_calc_div(token_t t1, impl_val *v1, token_t t2, impl_va
 		case PSI_T_UINT64:
 			res->dval = v1->dval / v2->u64;
 			return PSI_T_DOUBLE;
+		case PSI_T_INT128:
+			res->dval = v1->dval / v2->i128;
+			return PSI_T_DOUBLE;
+		case PSI_T_UINT128:
+			res->dval = v1->dval / v2->u128;
+			return PSI_T_DOUBLE;
 		case PSI_T_FLOAT:
 			res->dval = v1->dval / v2->fval;
 			return PSI_T_DOUBLE;
@@ -1949,6 +2599,12 @@ static inline token_t psi_calc_div(token_t t1, impl_val *v1, token_t t2, impl_va
 			return PSI_T_LONG_DOUBLE;
 		case PSI_T_UINT64:
 			res->ldval = v1->ldval / v2->u64;
+			return PSI_T_LONG_DOUBLE;
+		case PSI_T_INT128:
+			res->ldval = v1->ldval / v2->i128;
+			return PSI_T_LONG_DOUBLE;
+		case PSI_T_UINT128:
+			res->ldval = v1->ldval / v2->u128;
 			return PSI_T_LONG_DOUBLE;
 		case PSI_T_FLOAT:
 			res->ldval = v1->ldval / v2->fval;
@@ -2015,6 +2671,14 @@ static inline token_t psi_calc_mod(token_t t1, impl_val *v1, token_t t2, impl_va
 		i1.i64 = v1->u64;
 		break;
 
+	case PSI_T_INT128:
+		i1.i64 = v1->i128;
+		break;
+
+	case PSI_T_UINT128:
+		i1.i64 = v1->u128;
+		break;
+
 	case PSI_T_FLOAT:
 		i1.i64 = v1->fval;
 		break;
@@ -2059,6 +2723,12 @@ static inline token_t psi_calc_mod(token_t t1, impl_val *v1, token_t t2, impl_va
 		break;
 	case PSI_T_UINT64:
 		i2.i64 = v2->u64;
+		break;
+	case PSI_T_INT128:
+		i2.i64 = v2->i128;
+		break;
+	case PSI_T_UINT128:
+		i2.i64 = v2->u128;
 		break;
 	case PSI_T_FLOAT:
 		i2.i64 = v2->fval;

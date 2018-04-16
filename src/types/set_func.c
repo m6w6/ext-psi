@@ -202,15 +202,15 @@ static inline bool psi_set_func_validate_to_recursive(struct psi_data *data,
 }
 
 bool psi_set_func_validate(struct psi_data *data, struct psi_set_func *func,
-		struct psi_set_exp *set, struct psi_impl *impl, struct psi_decl *cb_decl)
+		struct psi_validate_scope *scope)
 {
-	if (!func->var->arg
-			&& !psi_decl_var_validate(data, func->var, impl, impl->decl, NULL, set)
-			&& !psi_decl_var_validate(data, func->var, NULL, cb_decl, NULL, NULL)
-			&& !psi_impl_get_temp_let_arg(impl, func->var)) {
+	struct psi_set_exp *set = scope->current_set;
+
+	if (!psi_decl_var_validate(data, func->var, scope)
+			&& !psi_impl_get_temp_let_arg(scope->impl, func->var)) {
 		data->error(data, func->var->token, PSI_WARNING,
 				"Unknown variable '%s' in implementation %s",
-				func->var->name, impl->func->name);
+				func->var->name, scope->impl->func->name);
 		return false;
 	}
 
@@ -223,7 +223,6 @@ bool psi_set_func_validate(struct psi_data *data, struct psi_set_func *func,
 	}
 
 	if (func->inner && (!set->outer || set->outer->inner != func->inner)) {
-
 		size_t i = 0;
 		struct psi_set_exp *inner;
 
@@ -232,17 +231,26 @@ bool psi_set_func_validate(struct psi_data *data, struct psi_set_func *func,
 			struct psi_plist *sub_args;
 
 			inner->outer = set;
+			scope->current_set = inner;
 
+			/* skip to "fail:" if field does not exists */
 			sub_var = psi_set_exp_get_decl_var(inner);
 			sub_args = psi_decl_type_get_args(func->var->arg->type, NULL);
-			if (sub_var && sub_args && !psi_decl_arg_get_by_var(sub_var, sub_args, NULL)) {
-				/* remove expr for portability with different struct members */
-				psi_plist_del(func->inner, --i, NULL);
-				psi_set_exp_free(&inner);
-			} else if (!psi_set_exp_validate(data, inner, impl, cb_decl)) {
-				/* remove exp for portability */
-				psi_plist_del(func->inner, --i, NULL);
+			if (sub_var && sub_args) {
+				if (!psi_decl_arg_get_by_var(sub_var, sub_args, NULL)) {
+					goto fail;
+				}
 			}
+
+			if (psi_set_exp_validate(data, inner, scope)) {
+				scope->current_set = set;
+				continue;
+			}
+		fail:
+			scope->current_set = set;
+			/* remove expr for portability with different struct members */
+			psi_plist_del(func->inner, --i, NULL);
+			psi_set_exp_free(&inner);
 		}
 	}
 
@@ -266,19 +274,19 @@ bool psi_set_func_validate(struct psi_data *data, struct psi_set_func *func,
 		func->handler = psi_set_to_object;
 		break;
 	case PSI_T_TO_STRING:
-		if (!psi_set_func_validate_to_string(data, func, set, impl)) {
+		if (!psi_set_func_validate_to_string(data, func, set, scope->impl)) {
 			return false;
 		}
 		break;
 	case PSI_T_TO_ARRAY:
-		if (!psi_set_func_validate_to_array(data, func, set, impl)) {
+		if (!psi_set_func_validate_to_array(data, func, set, scope->impl)) {
 			return false;
 		}
 		break;
 	default:
 		data->error(data, func->token, PSI_WARNING,
 				"Unknown cast '%s' in `set` statement of implementation '%s'",
-				func->name, impl->func->name);
+				func->name, scope->impl->func->name);
 		return false;
 	}
 

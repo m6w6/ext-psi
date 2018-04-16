@@ -61,12 +61,13 @@ void psi_return_stmt_dump(int fd, struct psi_return_stmt *ret)
 	dprintf(fd, ";\n");
 }
 
-bool psi_return_stmt_validate(struct psi_data *data, struct psi_impl *impl)
+bool psi_return_stmt_validate(struct psi_data *data,
+		struct psi_validate_scope *scope)
 {
 	struct psi_return_stmt *ret;
-	size_t count = psi_plist_count(impl->stmts.ret);
+	size_t count = psi_plist_count(scope->impl->stmts.ret);
 
-	psi_plist_get(impl->stmts.ret, 0, &ret);
+	psi_plist_get(scope->impl->stmts.ret, 0, &ret);
 
 	/*
 	 * we must have exactly one ret stmt declaring the native func to call
@@ -77,18 +78,18 @@ bool psi_return_stmt_validate(struct psi_data *data, struct psi_impl *impl)
 		data->error(data, ret->token, PSI_WARNING,
 				"Too many `return` statements for implementation %s;"
 				" found %zu, exactly one is required",
-				impl->func->name, count);
+				scope->impl->func->name, count);
 		return false;
 	case 0:
-		data->error(data, impl->func->token, PSI_WARNING,
+		data->error(data, scope->impl->func->token, PSI_WARNING,
 				"Missing `return` statement for implementation %s",
-				impl->func->name);
+				scope->impl->func->name);
 		return false;
 	case 1:
 		break;
 	}
 
-	if (!psi_return_exp_validate(data, ret->exp, impl)) {
+	if (!psi_return_exp_validate(data, ret->exp, scope)) {
 		return false;
 	}
 

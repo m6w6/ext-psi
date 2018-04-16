@@ -62,18 +62,18 @@ void psi_free_stmt_dump(int fd, struct psi_free_stmt *fre)
 	dprintf(fd, ";\n");
 }
 
-bool psi_free_stmts_validate(struct psi_data *data, struct psi_impl *impl)
+bool psi_free_stmts_validate(struct psi_data *data, struct psi_validate_scope *scope)
 {
 	size_t i;
 	struct psi_free_stmt *fre;
 
 	/* we can have any count of free stmts; freeing any out vars */
-	for (i = 0; psi_plist_get(impl->stmts.fre, i, &fre); ++i) {
+	for (i = 0; psi_plist_get(scope->impl->stmts.fre, i, &fre); ++i) {
 		size_t j;
 		struct psi_free_exp *exp;
 
 		for (j = 0; psi_plist_get(fre->exps, j, &exp); ++j) {
-			if (!psi_free_exp_validate(data, exp, impl)) {
+			if (!psi_free_exp_validate(data, exp, scope)) {
 				return false;
 			}
 		}

@@ -1,19 +1,21 @@
 lib "sqlite3";
 
-extern const char *sqlite3_libversion(void);
+#include <sqlite3.h>
+
+//extern const char *sqlite3_libversion(void);
 function sqlite3\version() : string {
 	return to_string(sqlite3_libversion);
 }
 
-extern const char *sqlite3_errstr(int errno);
+//extern const char *sqlite3_errstr(int err);
 function sqlite3\errstr(int $errno) : string {
-	let errno = intval($errno);
-	return to_string(sqlite3_errstr);
+	let err = intval($errno);
+	return sqlite3_errstr(err) to_string(sqlite3_errstr);
 }
 
 /* obviously fake, we ever always need a pointer to it */
-struct sqlite3;
-
+//struct sqlite3;
+/*
 typedef struct sqlite3 sqlite3;
 
 typedef int64_t sqlite_int64;
@@ -25,28 +27,30 @@ typedef sqlite_uint64 sqlite3_uint64;
 extern void sqlite3_free(void *ptr);
 
 extern int sqlite3_close(sqlite3 *db);
+*/
+
 function sqlite3\close(object &$db) : int {
 	let db = objval($db);
-	return to_int(sqlite3_close);
+	return sqlite3_close(db) as to_int(sqlite3_close);
 	// unset($db) as safe-guard
 	set $db = void(db);
 }
 
-extern int sqlite3_open(const char *filename, sqlite3 **db_ptr);
+//extern int sqlite3_open(const char *filename, sqlite3 **db_ptr);
 function sqlite3\open(string $uri, object &$db) : int {
 	let filename = pathval($uri);
 	let db_ptr = &NULL;
-	return to_int(sqlite3_open);
+	return sqlite3_open(filename, db_ptr) as to_int(sqlite3_open);
 	set $db = to_object(*db_ptr);
 }
 
-typedef int (*sqlite3_callback)(void *data, int argc, char** argv, char** cols);
+//typedef int (*sqlite3_callback)(void *data, int argc, char** argv, char** cols);
 
-extern int sqlite3_exec(sqlite3 *db, const char *sql, sqlite3_callback cb, void *data, char **errmsg);
+//extern int sqlite3_exec(sqlite3 *db, const char *sql, sqlite3_callback cb, void *data, char **errmsg);
 function sqlite3\exec(object $db, string $sql, callable $cb, mixed $cd, string &$error = null) : int {
 	let db = objval($db);
 	let sql = strval($sql);
-	let cb = callback intval(
+	let cb = callback(data, argc, argv, cols) as intval(
 		$cb(
 			zval(data), 
 			to_int(argc), 
@@ -56,7 +60,7 @@ function sqlite3\exec(object $db, string $sql, callable $cb, mixed $cd, string &
 	);
 	let data = zval($cd);
 	let errmsg = &NULL;
-	return to_int(sqlite3_exec);
+	return sqlite3_exec(db, sql, cb, data, errmsg) as to_int(sqlite3_exec);
 	set $error = to_string(*errmsg);
 	free sqlite3_free(*errmsg);
 }

@@ -184,11 +184,11 @@ struct psi_impl_var *psi_set_exp_get_impl_var(struct psi_set_exp *exp)
 }
 
 bool psi_set_exp_validate(struct psi_data *data, struct psi_set_exp *set,
-		struct psi_impl *impl, struct psi_decl *cb_decl)
+		struct psi_validate_scope *scope)
 {
 	struct psi_impl_var *ivar = psi_set_exp_get_impl_var(set);
 
-	if (ivar && !psi_impl_var_validate(data, ivar, impl, NULL, set)) {
+	if (ivar && !psi_impl_var_validate(data, ivar, scope)) {
 		data->error(data, ivar->token ? : **(struct psi_token ***) &set->data,
 				PSI_WARNING, "Unknown variable '%s'", ivar->name);
 		return false;
@@ -196,12 +196,12 @@ bool psi_set_exp_validate(struct psi_data *data, struct psi_set_exp *set,
 
 	switch (set->kind) {
 	case PSI_SET_NUMEXP:
-		if (!psi_num_exp_validate(data, set->data.num, impl, cb_decl, NULL, set, NULL)) {
+		if (!psi_num_exp_validate(data, set->data.num, scope)) {
 			return false;
 		}
 		break;
 	case PSI_SET_FUNC:
-		if (!psi_set_func_validate(data, set->data.func, set, impl, cb_decl)) {
+		if (!psi_set_func_validate(data, set->data.func, scope)) {
 			return false;
 		}
 		break;

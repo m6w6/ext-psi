@@ -86,14 +86,13 @@ void psi_decl_var_dump(int fd, struct psi_decl_var *var)
 }
 
 bool psi_decl_var_validate(struct psi_data *data, struct psi_decl_var *dvar,
-		struct psi_impl *impl, struct psi_decl *decl,
-		struct psi_let_exp *let_exp, struct psi_set_exp *set_exp)
+		struct psi_validate_scope *scope)
 {
 	bool okay = false;
-	struct psi_let_exp *current_let_exp = let_exp;
-	struct psi_set_exp *current_set_exp = set_exp;
 
-	if (current_let_exp) {
+	if (scope && scope->current_let) {
+		struct psi_let_exp *current_let_exp = scope->current_let;
+
 		/* walk up the let expression tree until found */
 		while ((current_let_exp = current_let_exp->outer)) {
 			struct psi_decl_var *svar = current_let_exp->var;
@@ -114,7 +113,9 @@ bool psi_decl_var_validate(struct psi_data *data, struct psi_decl_var *dvar,
 				dvar->fqn = psi_decl_var_name_prepend(dvar->fqn, svar->name);
 			}
 		}
-	} else if (current_set_exp) {
+	} else if (scope && scope->current_set) {
+		struct psi_set_exp *current_set_exp = scope->current_set;
+
 		/* walk up the set expression tree until found */
 		while ((current_set_exp = current_set_exp->outer)) {
 			struct psi_decl_var *svar = psi_set_exp_get_decl_var(
@@ -137,10 +138,10 @@ bool psi_decl_var_validate(struct psi_data *data, struct psi_decl_var *dvar,
 		}
 	}
 
-	if (!okay && impl && psi_impl_get_decl_arg(impl, dvar)) {
+	if (!okay && scope && scope->impl && psi_impl_get_decl_arg(scope->impl, dvar)) {
 		okay = true;
 	}
-	if (!okay && decl && psi_decl_get_arg(decl, dvar)) {
+	if (!okay && scope && scope->cb_decl && psi_decl_get_arg(scope->cb_decl, dvar)) {
 		okay = true;
 	}
 

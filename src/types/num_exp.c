@@ -287,25 +287,59 @@ static inline const char *psi_num_exp_op_tok(token_t op)
 	return 0;
 }
 
-void psi_num_exp_dump(int fd, struct psi_num_exp *exp)
+struct psi_plist *psi_num_exp_tokens(struct psi_num_exp *exp,
+		struct psi_plist *list)
 {
+	struct psi_token *ntoken;
+	if (!list) {
+		list = psi_plist_init((psi_plist_dtor) psi_token_free);
+	}
+
 	switch (exp->op) {
 	case PSI_T_NUMBER:
-		psi_number_dump(fd, exp->data.n);
+		list = psi_number_tokens(exp->data.n, list);
+		break;
+
+	case PSI_T_CAST:
+		ntoken = exp->data.c.typ->token;
+		ntoken = psi_token_init(PSI_T_LPAREN, "(", 1, ntoken->col-1, ntoken->line, ntoken->file);
+		list = psi_plist_add(list, &ntoken);
+		ntoken = psi_token_copy(exp->data.c.typ->token);
+		list = psi_plist_add(list, &ntoken);
+		ntoken = psi_token_init(PSI_T_RPAREN, ")", 1, ntoken->col+ntoken->size, ntoken->line, ntoken->file);
+		list = psi_plist_add(list, &ntoken);
 		break;
 
 	case PSI_T_NOT:
 	case PSI_T_TILDE:
-		dprintf(fd, "%s", psi_num_exp_op_tok(exp->op));
-		psi_num_exp_dump(fd, exp->data.u);
+	unary:
+		ntoken = psi_token_copy(exp->token);
+		list = psi_plist_add(list, &ntoken);
+		list = psi_num_exp_tokens(exp->data.u, list);
 		break;
 
 	case PSI_T_LPAREN:
-		dprintf(fd, "(");
-		psi_num_exp_dump(fd, exp->data.u);
-		dprintf(fd, ")");
+		ntoken = psi_token_copy(exp->token);
+		list = psi_plist_add(list, &ntoken);
+		list = psi_num_exp_tokens(exp->data.u, list);
+		psi_plist_top(list, &ntoken);
+		ntoken = psi_token_init(PSI_T_RPAREN, ")", 1, ntoken->col+ntoken->size, ntoken->line, ntoken->file);
+		list = psi_plist_add(list, &ntoken);
 		break;
 
+	case PSI_T_PLUS:
+	case PSI_T_MINUS:
+		if (!exp->data.b.rhs) {
+			goto unary;
+		}
+		/* no break */
+	case PSI_T_PIPE:
+	case PSI_T_CARET:
+	case PSI_T_AMPERSAND:
+	case PSI_T_LSHIFT:
+	case PSI_T_RSHIFT:
+	case PSI_T_ASTERISK:
+	case PSI_T_SLASH:
 
 	case PSI_T_OR:
 	case PSI_T_AND:
@@ -317,15 +351,80 @@ void psi_num_exp_dump(int fd, struct psi_num_exp *exp)
 	case PSI_T_RCHEVR:
 	case PSI_T_LCHEVR:
 
+		list = psi_num_exp_tokens(exp->data.b.lhs, list);
+		ntoken = psi_token_copy(exp->token);
+		list = psi_plist_add(list, &ntoken);
+		list = psi_num_exp_tokens(exp->data.b.rhs, list);
+		break;
+
+	case PSI_T_IIF:
+		list = psi_num_exp_tokens(exp->data.t.cond, list);
+		ntoken = psi_token_copy(exp->token);
+		list = psi_plist_add(list, &ntoken);
+		list = psi_num_exp_tokens(exp->data.t.truthy, list);
+		psi_plist_top(list, &ntoken);
+		ntoken = psi_token_init(PSI_T_COLON, ":", 1, ntoken->col+ntoken->size, ntoken->line, ntoken->file);
+		list = psi_plist_add(list, &ntoken);
+		list = psi_plist_add(list, &ntoken);
+		list = psi_num_exp_tokens(exp->data.t.falsy, list);
+		break;
+
+	default:
+		assert(0);
+	}
+
+	return list;
+}
+
+void psi_num_exp_dump(int fd, struct psi_num_exp *exp)
+{
+	switch (exp->op) {
+	case PSI_T_NUMBER:
+		psi_number_dump(fd, exp->data.n);
+		break;
+
+	case PSI_T_CAST:
+		dprintf(fd, "(");
+		psi_decl_type_dump(1, exp->data.c.typ, 0);
+		dprintf(fd, ")");
+		break;
+
+	case PSI_T_NOT:
+	case PSI_T_TILDE:
+	unary:
+		dprintf(fd, "%s", psi_num_exp_op_tok(exp->op));
+		psi_num_exp_dump(fd, exp->data.u);
+		break;
+
+	case PSI_T_LPAREN:
+		dprintf(fd, "(");
+		psi_num_exp_dump(fd, exp->data.u);
+		dprintf(fd, ")");
+		break;
+
+	case PSI_T_PLUS:
+	case PSI_T_MINUS:
+		if (!exp->data.b.rhs) {
+			goto unary;
+		}
+		/* no break */
 	case PSI_T_PIPE:
 	case PSI_T_CARET:
 	case PSI_T_AMPERSAND:
 	case PSI_T_LSHIFT:
 	case PSI_T_RSHIFT:
-	case PSI_T_PLUS:
-	case PSI_T_MINUS:
 	case PSI_T_ASTERISK:
 	case PSI_T_SLASH:
+
+	case PSI_T_OR:
+	case PSI_T_AND:
+
+	case PSI_T_CMP_EQ:
+	case PSI_T_CMP_NE:
+	case PSI_T_CMP_LE:
+	case PSI_T_CMP_GE:
+	case PSI_T_RCHEVR:
+	case PSI_T_LCHEVR:
 		psi_num_exp_dump(fd, exp->data.b.lhs);
 		dprintf(fd, " %s ", psi_num_exp_op_tok(exp->op));
 		psi_num_exp_dump(fd, exp->data.b.rhs);
@@ -346,8 +445,7 @@ void psi_num_exp_dump(int fd, struct psi_num_exp *exp)
 }
 
 bool psi_num_exp_validate(struct psi_data *data, struct psi_num_exp *exp,
-		struct psi_impl *impl, struct psi_decl *cb_decl, struct psi_let_exp *current_let,
-		struct psi_set_exp *current_set, struct psi_decl_enum *current_enum)
+		struct psi_validate_scope *scope)
 {
 	if (exp->op && exp->op != PSI_T_NUMBER) {
 		switch (exp->op) {
@@ -404,10 +502,16 @@ bool psi_num_exp_validate(struct psi_data *data, struct psi_num_exp *exp,
 			exp->calc = psi_calc_bin_rshift;
 			break;
 		case PSI_T_PLUS:
-			exp->calc = psi_calc_add;
+			if (exp->data.b.rhs) {
+				exp->calc = psi_calc_add;
+			}
 			break;
 		case PSI_T_MINUS:
-			exp->calc = psi_calc_sub;
+			if (exp->data.b.rhs) {
+				exp->calc = psi_calc_sub;
+			} else {
+				exp->calc = psi_calc_minus;
+			}
 			break;
 		case PSI_T_ASTERISK:
 			exp->calc = psi_calc_mul;
@@ -427,18 +531,34 @@ bool psi_num_exp_validate(struct psi_data *data, struct psi_num_exp *exp,
 
 	switch (exp->op) {
 	case PSI_T_NUMBER:
-		return psi_number_validate(data, exp->data.n, impl, cb_decl, current_let, current_set, current_enum);
+		return psi_number_validate(data, exp->data.n, scope);
 
 	case PSI_T_CAST:
-		return psi_num_exp_validate(data, exp->data.c.num, impl, cb_decl, current_let, current_set, current_enum)
-				&& psi_decl_type_validate(data, exp->data.c.typ, 0, NULL);
+		return psi_num_exp_validate(data, exp->data.c.num, scope)
+				&& psi_decl_type_validate(data, exp->data.c.typ, NULL, scope);
 		break;
 
 	case PSI_T_NOT:
 	case PSI_T_TILDE:
 	case PSI_T_LPAREN:
-		return psi_num_exp_validate(data, exp->data.u, impl, cb_decl, current_let, current_set, current_enum);
+	unary:
+		return psi_num_exp_validate(data, exp->data.u, scope);
 		break;
+
+	case PSI_T_PLUS:
+	case PSI_T_MINUS:
+		if (!exp->data.b.rhs) {
+			goto unary;
+		}
+		/* no break */
+	case PSI_T_PIPE:
+	case PSI_T_CARET:
+	case PSI_T_AMPERSAND:
+	case PSI_T_LSHIFT:
+	case PSI_T_RSHIFT:
+	case PSI_T_ASTERISK:
+	case PSI_T_SLASH:
+	case PSI_T_MODULO:
 
 	case PSI_T_OR:
 	case PSI_T_AND:
@@ -449,24 +569,13 @@ bool psi_num_exp_validate(struct psi_data *data, struct psi_num_exp *exp,
 	case PSI_T_CMP_GE:
 	case PSI_T_RCHEVR:
 	case PSI_T_LCHEVR:
-
-	case PSI_T_PIPE:
-	case PSI_T_CARET:
-	case PSI_T_AMPERSAND:
-	case PSI_T_LSHIFT:
-	case PSI_T_RSHIFT:
-	case PSI_T_PLUS:
-	case PSI_T_MINUS:
-	case PSI_T_ASTERISK:
-	case PSI_T_SLASH:
-	case PSI_T_MODULO:
-		return psi_num_exp_validate(data, exp->data.b.lhs, impl, cb_decl, current_let, current_set, current_enum)
-				&& psi_num_exp_validate(data, exp->data.b.rhs, impl, cb_decl, current_let, current_set, current_enum);
+		return psi_num_exp_validate(data, exp->data.b.lhs, scope)
+				&& psi_num_exp_validate(data, exp->data.b.rhs, scope);
 
 	case PSI_T_IIF:
-		return psi_num_exp_validate(data, exp->data.t.cond, impl, cb_decl, current_let, current_set, current_enum)
-				&& psi_num_exp_validate(data, exp->data.t.truthy, impl, cb_decl, current_let, current_set, current_enum)
-				&& psi_num_exp_validate(data, exp->data.t.falsy, impl, cb_decl, current_let, current_set, current_enum);
+		return psi_num_exp_validate(data, exp->data.t.cond, scope)
+				&& psi_num_exp_validate(data, exp->data.t.truthy, scope)
+				&& psi_num_exp_validate(data, exp->data.t.falsy, scope);
 
 	default:
 		assert(0);
@@ -533,7 +642,7 @@ static void psi_num_exp_reduce(struct psi_num_exp *exp, struct psi_plist **outpu
 
 	switch (exp->op) {
 	case PSI_T_NUMBER:
-		entry.type = psi_number_eval(exp->data.n, &entry.data.value, frame, defs);
+		entry.type = psi_number_eval(exp->data.n, &entry.data.value, frame, defs, exp);
 		output = psi_plist_add(output, &entry);
 		break;
 
@@ -597,6 +706,19 @@ static void psi_num_exp_reduce(struct psi_num_exp *exp, struct psi_plist **outpu
 		}
 		break;
 
+	case PSI_T_MINUS:
+	case PSI_T_PLUS:
+		/* unary */
+		if (!exp->data.b.rhs) {
+			entry.type = psi_num_exp_exec(exp->data.b.lhs, &entry.data.value, frame, defs);
+
+			if (exp->calc) {
+				entry.type = exp->calc(entry.type, &entry.data.value, 0, NULL, &entry.data.value);
+			}
+			output = psi_plist_add(output, &entry);
+			break;
+		}
+		/* no break */
 	default:
 		psi_num_exp_reduce(exp->data.b.lhs, &output, &input, frame, defs);
 		while (psi_plist_top(input, &entry)) {

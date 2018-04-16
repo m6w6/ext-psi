@@ -1,0 +1,2 @@
+lib "gdbm";
+#include <gdbm.h>

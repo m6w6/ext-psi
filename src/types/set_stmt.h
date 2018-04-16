@@ -41,6 +41,6 @@ struct psi_set_stmt *psi_set_stmt_init(struct psi_set_exp *val);
 void psi_set_stmt_free(struct psi_set_stmt **set_ptr);
 void psi_set_stmt_dump(int fd, struct psi_set_stmt *set);
 void psi_set_stmt_exec(struct psi_set_stmt *set, struct psi_call_frame *frame);
-bool psi_set_stmts_validate(struct psi_data *data, struct psi_impl *impl);
+bool psi_set_stmts_validate(struct psi_data *data, struct psi_validate_scope *scope);
 
 #endif

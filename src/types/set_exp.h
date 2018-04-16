@@ -34,6 +34,7 @@ struct psi_set_func;
 struct psi_num_exp;
 struct psi_impl;
 struct psi_decl;
+struct psi_validate_scope;
 
 enum psi_set_exp_kind {
 	PSI_SET_FUNC,
@@ -56,7 +57,7 @@ void psi_set_exp_free(struct psi_set_exp **exp_ptr);
 void psi_set_exp_dump(int fd, struct psi_set_exp *set, unsigned level, int last);
 void psi_set_exp_exec(struct psi_set_exp *val, struct psi_call_frame *frame);
 void psi_set_exp_exec_ex(struct psi_set_exp *val, zval *zv, impl_val *iv, struct psi_call_frame *frame);
-bool psi_set_exp_validate(struct psi_data *data, struct psi_set_exp *set, struct psi_impl *impl, struct psi_decl *cb_decl);
+bool psi_set_exp_validate(struct psi_data *data, struct psi_set_exp *set, struct psi_validate_scope *scope);
 
 struct psi_impl_var *psi_set_exp_get_impl_var(struct psi_set_exp *exp);
 struct psi_decl_var *psi_set_exp_get_decl_var(struct psi_set_exp *exp);

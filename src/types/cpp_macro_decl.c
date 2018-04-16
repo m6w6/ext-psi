@@ -78,7 +78,9 @@ void psi_cpp_macro_decl_dump(int fd, struct psi_cpp_macro_decl *macro)
 	if (macro->exp) {
 		dprintf(fd, " ");
 		psi_num_exp_dump(fd, macro->exp);
-	} else if (macro->tokens) {
+		if (!macro->tokens) abort();
+	} else
+	if (macro->tokens) {
 		size_t i = 0;
 		struct psi_token *tok;
 
@@ -129,6 +131,8 @@ bool psi_cpp_macro_decl_equal(struct psi_cpp_macro_decl *d1, struct psi_cpp_macr
 		if (!cmp_token_list(d1->sig, d2->sig)) {
 			return false;
 		}
+	} else if (d2->sig) {
+		return false;
 	}
 
 	if (d1->tokens) {
@@ -139,6 +143,8 @@ bool psi_cpp_macro_decl_equal(struct psi_cpp_macro_decl *d1, struct psi_cpp_macr
 		if (!cmp_token_list(d1->tokens, d2->tokens)) {
 			return false;
 		}
+	} else if (d2->tokens) {
+		return false;
 	}
 
 	/* FIXME compare num_exps */

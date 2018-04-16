@@ -29,6 +29,7 @@
 #include "types.h"
 #include "error.h"
 #include "plist.h"
+#include "validate.h"
 
 #define PSI_DEBUG 0x1
 #define PSI_SILENT 0x2
@@ -67,56 +68,7 @@ struct psi_data {
 struct psi_data *psi_data_ctor(struct psi_data *data, psi_error_cb error, unsigned flags);
 struct psi_data *psi_data_ctor_with_dtors(struct psi_data *data, psi_error_cb error, unsigned flags);
 struct psi_data *psi_data_exchange(struct psi_data *dest, struct psi_data *src);
-bool psi_data_validate(struct psi_data *dst, struct psi_data *src);
 void psi_data_dtor(struct psi_data *data);
 void psi_data_dump(int fd, struct psi_data *data);
-
-struct psi_validate_stack {
-	HashTable types;
-	HashTable structs;
-	HashTable unions;
-};
-
-static inline void psi_validate_stack_ctor(struct psi_validate_stack *stack)
-{
-	zend_hash_init(&stack->types, 0, NULL, NULL, 0);
-	zend_hash_init(&stack->structs, 0, NULL, NULL, 0);
-	zend_hash_init(&stack->unions, 0, NULL, NULL, 0);
-}
-
-static inline void psi_validate_stack_dtor(struct psi_validate_stack *stack)
-{
-	zend_hash_destroy(&stack->types);
-	zend_hash_destroy(&stack->structs);
-	zend_hash_destroy(&stack->unions);
-}
-
-#define psi_validate_stack_has_type(s, t) \
-	((s) ? zend_hash_str_exists(&(s)->types, (t), strlen(t)) : false)
-#define psi_validate_stack_has_struct(s, t) \
-	((s) ? zend_hash_str_exists(&(s)->structs, (t), strlen(t)) : false)
-#define psi_validate_stack_has_union(s, t) \
-	((s) ? zend_hash_str_exists(&(s)->unions, (t), strlen(t)) : false)
-
-#define psi_validate_stack_add_type(s, t, p) \
-	do { if (s) zend_hash_str_add_ptr(&(s)->types, (t), strlen(t), (p)); } while(0)
-#define psi_validate_stack_add_struct(s, t, p) \
-	do { if (s) zend_hash_str_add_ptr(&(s)->structs, (t), strlen(t), (p)); } while(0)
-#define psi_validate_stack_add_union(s, t, p) \
-	do { if (s) zend_hash_str_add_ptr(&(s)->unions, (t), strlen(t), (p)); } while(0)
-
-#define psi_validate_stack_get_type(s, t) \
-	((s) ? zend_hash_str_find_ptr(&(s)->types, (t), strlen(t)) : NULL)
-#define psi_validate_stack_get_struct(s, t) \
-	((s) ? zend_hash_str_find_ptr(&(s)->structs, (t), strlen(t)) : NULL)
-#define psi_validate_stack_get_union(s, t) \
-	((s) ? zend_hash_str_find_ptr(&(s)->unions, (t), strlen(t)) : NULL)
-
-#define psi_validate_stack_del_type(s, t) \
-	do { if (s) zend_hash_str_del(&(s)->types, (t), strlen(t)); } while(0)
-#define psi_validate_stack_del_struct(s, t) \
-	do { if (s) zend_hash_str_del(&(s)->structs, (t), strlen(t)); } while(0)
-#define psi_validate_stack_del_union(s, t) \
-	do { if (s) zend_hash_str_del(&(s)->unions, (t), strlen(t)); } while(0)
 
 #endif

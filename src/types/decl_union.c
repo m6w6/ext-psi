@@ -75,12 +75,12 @@ struct psi_decl_arg *psi_decl_union_get_arg(struct psi_decl_union *u,
 }
 
 bool psi_decl_union_validate(struct psi_data *data, struct psi_decl_union *u,
-		struct psi_validate_stack *type_stack)
+		struct psi_validate_scope *scope)
 {
 	size_t i, pos, len, size = 0, align;
 	struct psi_decl_arg *darg;
 
-	if (psi_validate_stack_has_union(type_stack, u->name)) {
+	if (psi_validate_scope_has_union(scope, u->name)) {
 		return true;
 	}
 
@@ -90,13 +90,13 @@ bool psi_decl_union_validate(struct psi_data *data, struct psi_decl_union *u,
 		return false;
 	}
 
-	psi_validate_stack_add_union(type_stack, u->name, u);
+	psi_validate_scope_add_union(scope, u->name, u);
 
 	for (i = 0; psi_plist_get(u->args, i, &darg); ++i) {
 		darg->var->arg = darg;
 
-		if (!psi_decl_arg_validate(data, darg, type_stack)) {
-			psi_validate_stack_del_union(type_stack, u->name);
+		if (!psi_decl_arg_validate(data, darg, scope)) {
+			psi_validate_scope_del_union(scope, u->name);
 			return false;
 		}
 

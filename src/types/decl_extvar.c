@@ -57,10 +57,9 @@ void psi_decl_extvar_free(struct psi_decl_extvar **evar_ptr)
 }
 
 bool psi_decl_extvar_validate(struct psi_data *data,
-		struct psi_decl_extvar *evar, void *dl,
-		struct psi_validate_stack *type_stack)
+		struct psi_decl_extvar *evar, struct psi_validate_scope *scope)
 {
-	if (!psi_decl_arg_validate(data, evar->arg, type_stack)) {
+	if (!psi_decl_arg_validate(data, evar->arg, scope)) {
 		return false;
 	}
 
@@ -78,7 +77,7 @@ bool psi_decl_extvar_validate(struct psi_data *data,
 #ifndef RTLD_DEFAULT
 # define RTLD_DEFAULT ((void *) 0)
 #endif
-		evar->sym = dlsym(dl ?: RTLD_DEFAULT, evar->arg->var->name);
+		evar->sym = dlsym(scope->dlopened ?: RTLD_DEFAULT, evar->arg->var->name);
 		if (!evar->sym) {
 			data->error(data, evar->arg->var->token, PSI_WARNING,
 					"Failed to locate symbol '%s': %s", evar->arg->var->name,
@@ -88,11 +87,11 @@ bool psi_decl_extvar_validate(struct psi_data *data,
 	}
 
 	evar->getter = psi_decl_extvar_getter(evar);
-	if (!psi_decl_validate_nodl(data, evar->getter, type_stack)) {
+	if (!psi_decl_validate_nodl(data, evar->getter, scope)) {
 		return false;
 	}
 	evar->setter = psi_decl_extvar_setter(evar);
-	if (!psi_decl_validate_nodl(data, evar->setter, type_stack)) {
+	if (!psi_decl_validate_nodl(data, evar->setter, scope)) {
 		return false;
 	}
 
@@ -117,6 +116,8 @@ struct psi_decl *psi_decl_extvar_setter(struct psi_decl_extvar *evar)
 	struct psi_plist *args = psi_plist_init((psi_plist_dtor) psi_decl_arg_free);
 	struct psi_decl *decl = psi_decl_init(func, psi_plist_add(args, &arg));
 
+	func_var->pointer_level = 0;
+	func_var->array_size = 0;
 	func_var->name = realloc(func_var->name, strlen(evar->arg->var->name) + sizeof("_set"));
 	strcat(func_var->name, "_set");
 

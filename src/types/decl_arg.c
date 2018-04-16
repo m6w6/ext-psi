@@ -93,9 +93,9 @@ void psi_decl_arg_dump(int fd, struct psi_decl_arg *arg, unsigned level)
 }
 
 bool psi_decl_arg_validate(struct psi_data *data, struct psi_decl_arg *arg,
-		struct psi_validate_stack *type_stack)
+		struct psi_validate_scope *scope)
 {
-	if (!psi_decl_type_validate(data, arg->type, arg->var->pointer_level, type_stack)) {
+	if (!psi_decl_type_validate(data, arg->type, arg, scope)) {
 		 if (!arg->var->pointer_level) {
 			data->error(data, arg->type->token, PSI_WARNING,
 					"Cannot use '%s' as type for '%s'%s%s", arg->type->name,
@@ -107,12 +107,12 @@ bool psi_decl_arg_validate(struct psi_data *data, struct psi_decl_arg *arg,
 }
 
 bool psi_decl_arg_validate_typedef(struct psi_data *data,
-		struct psi_decl_arg *def, struct psi_validate_stack *type_stack)
+		struct psi_decl_arg *def, struct psi_validate_scope *scope)
 {
-	if (psi_validate_stack_has_type(type_stack, def->var->name)) {
+	if (psi_validate_scope_has_type(scope, def->var->name)) {
 		return true;
 	}
-	psi_validate_stack_add_type(type_stack, def->var->name, def);
+	psi_validate_scope_add_type(scope, def->var->name, def);
 
 	if (def->type->type == PSI_T_VOID) {
 		if (def->var->pointer_level) {
@@ -122,7 +122,7 @@ bool psi_decl_arg_validate_typedef(struct psi_data *data,
 					"Type '%s' cannot be aliased to 'void'", def->type->name);
 			return false;
 		}
-	} else if (!psi_decl_type_validate(data, def->type, def->var->pointer_level, type_stack)) {
+	} else if (!psi_decl_type_validate(data, def->type, def, scope)) {
 		const char *pre;
 
 		switch (def->type->type) {

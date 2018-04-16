@@ -40,7 +40,7 @@ void psi_return_exp_dump(int fd, struct psi_return_exp *exp);
 void psi_return_exp_exec(struct psi_return_exp *exp, zval *return_value,
 		struct psi_call_frame *frame);
 bool psi_return_exp_validate(struct psi_data *data, struct psi_return_exp *exp,
-		struct psi_impl *impl);
+		struct psi_validate_scope *scope);
 const char *psi_return_exp_get_decl_name(struct psi_return_exp *exp);
 
 #endif /* RETURN_EXP_H */

@@ -34,7 +34,7 @@ function psi\inet_ntoa(array $in) : string {
 function psi\inet_ntop(int $af, string $src) : string {
 	let af = intval($af);
 	let src = strval($src);
-	let size = psi\SIZEOF_STRUCT_SOCKADDR_STORAGE;
+	let size = sizeof(struct sockaddr_storage);
 	let dst = calloc(1, size);
 	return inet_ntop(af, src, dst, size) as to_string(inet_ntop);
 }
@@ -42,7 +42,7 @@ function psi\inet_ntop(int $af, string $src) : string {
 function psi\inet_pton(int $af, string $src, string &$dst) : int {
 	let af = intval($af);
 	let src = strval($src);
-	let dst = calloc(1, psi\SIZEOF_STRUCT_SOCKADDR_STORAGE);
+	let dst = calloc(1, sizeof(struct sockaddr_storage));
 	return inet_pton(af, src, dst) as to_int(inet_pton);
-	set $dst = to_string(dst, psi\SIZEOF_STRUCT_SOCKADDR_STORAGE);
+	set $dst = to_string(dst, sizeof(struct sockaddr_storage));
 }

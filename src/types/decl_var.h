@@ -31,6 +31,7 @@ struct psi_token;
 struct psi_decl_arg;
 struct psi_let_exp;
 struct psi_set_exp;
+struct psi_validate_scope;
 
 struct psi_decl_var {
 	struct psi_token *token;
@@ -61,8 +62,7 @@ static inline char *psi_decl_var_name_prepend(char *current, const char *prepend
 }
 
 bool psi_decl_var_validate(struct psi_data *data, struct psi_decl_var *dvar,
-		struct psi_impl *impl, struct psi_decl *decl,
-		struct psi_let_exp *current_let_exp, struct psi_set_exp *current_set_exp);
+		struct psi_validate_scope *scope);
 
 size_t psi_decl_var_get_size(struct psi_decl_var *var);
 

@@ -29,7 +29,7 @@ struct psi_data;
 struct psi_token;
 struct psi_plist;
 struct psi_decl_var;
-struct psi_validate_stack;
+struct psi_validate_scope;
 
 struct psi_decl_union {
 	struct psi_token *token;
@@ -43,7 +43,7 @@ struct psi_decl_union *psi_decl_union_init(const char *name, struct psi_plist *a
 void psi_decl_union_free(struct psi_decl_union **u_ptr);
 void psi_decl_union_dump(int fd, struct psi_decl_union *unn);
 
-bool psi_decl_union_validate(struct psi_data *data, struct psi_decl_union *u, struct psi_validate_stack *type_stack);
+bool psi_decl_union_validate(struct psi_data *data, struct psi_decl_union *u, struct psi_validate_scope *scope);
 
 size_t psi_decl_union_get_align(struct psi_decl_union *u);
 struct psi_decl_arg *psi_decl_union_get_arg(struct psi_decl_union *u, struct psi_decl_var *var);

@@ -27,61 +27,51 @@
 #include <assert.h>
 
 #include "token.h"
-static inline token_t psi_calc_bool_or(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res)
+static inline token_t psi_calc_minus(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res)
 {
+	(void) t2;
+	(void) v2;
+
 	switch (t1) {
 	case PSI_T_INT8:
-		if (v1->i8)
-			goto return_true;
+		res->i8 = -v1->i8;
 		break;
 	case PSI_T_UINT8:
-		if (v1->u8)
-			goto return_true;
+		res->u8 = -v1->u8;
 		break;
 	case PSI_T_INT16:
-		if (v1->i16)
-			goto return_true;
+		res->i16 = -v1->i16;
 		break;
 	case PSI_T_UINT16:
-		if (v1->u16)
-			goto return_true;
+		res->u16 = -v1->u16;
 		break;
 	case PSI_T_INT32:
-		if (v1->i32)
-			goto return_true;
+		res->i32 = -v1->i32;
 		break;
 	case PSI_T_UINT32:
-		if (v1->u32)
-			goto return_true;
+		res->u32 = -v1->u32;
 		break;
 	case PSI_T_INT64:
-		if (v1->i64)
-			goto return_true;
+		res->i64 = -v1->i64;
 		break;
 	case PSI_T_UINT64:
-		if (v1->u64)
-			goto return_true;
+		res->u64 = -v1->u64;
 		break;
 	case PSI_T_INT128:
-		if (v1->i128)
-			goto return_true;
+		res->i128 = -v1->i128;
 		break;
 	case PSI_T_UINT128:
-		if (v1->u128)
-			goto return_true;
+		res->u128 = -v1->u128;
 		break;
 	case PSI_T_FLOAT:
-		if (v1->fval)
-			goto return_true;
+		res->fval = -v1->fval;
 		break;
 	case PSI_T_DOUBLE:
-		if (v1->dval)
-			goto return_true;
+		res->dval = -v1->dval;
 		break;
 #if HAVE_LONG_DOUBLE
 	case PSI_T_LONG_DOUBLE:
-		if (v1->ldval)
-			goto return_true;
+		res->ldval = -v1->ldval;
 		break;
 #endif
 
@@ -89,60 +79,55 @@ static inline token_t psi_calc_bool_or(token_t t1, impl_val *v1, token_t t2, imp
 		assert(0);
 		break;
 	}
+	return t1;
+}
 
-	switch (t2) {
+
+static inline token_t psi_calc_bool_not(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res)
+{
+	(void) t2;
+	(void) v2;
+
+	switch (t1) {
 	case PSI_T_INT8:
-		if (v2->i8)
-			goto return_true;
+		res->u8 = !v1->i8;
 		break;
 	case PSI_T_UINT8:
-		if (v2->u8)
-			goto return_true;
+		res->u8 = !v1->u8;
 		break;
 	case PSI_T_INT16:
-		if (v2->i16)
-			goto return_true;
+		res->u8 = !v1->i16;
 		break;
 	case PSI_T_UINT16:
-		if (v2->u16)
-			goto return_true;
+		res->u8 = !v1->u16;
 		break;
 	case PSI_T_INT32:
-		if (v2->i32)
-			goto return_true;
+		res->u8 = !v1->i32;
 		break;
 	case PSI_T_UINT32:
-		if (v2->u32)
-			goto return_true;
+		res->u8 = !v1->u32;
 		break;
 	case PSI_T_INT64:
-		if (v2->i64)
-			goto return_true;
+		res->u8 = !v1->i64;
 		break;
 	case PSI_T_UINT64:
-		if (v2->u64)
-			goto return_true;
+		res->u8 = !v1->u64;
 		break;
 	case PSI_T_INT128:
-		if (v2->i128)
-			goto return_true;
+		res->u8 = !v1->i128;
 		break;
 	case PSI_T_UINT128:
-		if (v2->u128)
-			goto return_true;
+		res->u8 = !v1->u128;
 		break;
 	case PSI_T_FLOAT:
-		if (v2->fval)
-			goto return_true;
+		res->u8 = !v1->fval;
 		break;
 	case PSI_T_DOUBLE:
-		if (v2->dval)
-			goto return_true;
+		res->u8 = !v1->dval;
 		break;
 #if HAVE_LONG_DOUBLE
 	case PSI_T_LONG_DOUBLE:
-		if (v2->ldval)
-			goto return_true;
+		res->u8 = !v1->ldval;
 		break;
 #endif
 
@@ -150,71 +135,71 @@ static inline token_t psi_calc_bool_or(token_t t1, impl_val *v1, token_t t2, imp
 		assert(0);
 		break;
 	}
-
-	res->u8 = 0;
-	return PSI_T_UINT8;
-
-return_true:
-	res->u8 = 1;
 	return PSI_T_UINT8;
 }
 
-static inline token_t psi_calc_bool_and(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res)
+
+static inline token_t psi_calc_bin_not(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res)
 {
+	impl_val i1;
+
+	(void) t2;
+	(void) v2;
+
 	switch (t1) {
 	case PSI_T_INT8:
-		if (!v1->i8)
-			goto return_false;
+		i1.u64 = v1->i8;
 		break;
+
 	case PSI_T_UINT8:
-		if (!v1->u8)
-			goto return_false;
+		i1.u64 = v1->u8;
 		break;
+
 	case PSI_T_INT16:
-		if (!v1->i16)
-			goto return_false;
+		i1.u64 = v1->i16;
 		break;
+
 	case PSI_T_UINT16:
-		if (!v1->u16)
-			goto return_false;
+		i1.u64 = v1->u16;
 		break;
+
 	case PSI_T_INT32:
-		if (!v1->i32)
-			goto return_false;
+		i1.u64 = v1->i32;
 		break;
+
 	case PSI_T_UINT32:
-		if (!v1->u32)
-			goto return_false;
+		i1.u64 = v1->u32;
 		break;
+
 	case PSI_T_INT64:
-		if (!v1->i64)
-			goto return_false;
+		i1.u64 = v1->i64;
 		break;
+
 	case PSI_T_UINT64:
-		if (!v1->u64)
-			goto return_false;
+		i1.u64 = v1->u64;
 		break;
+
 	case PSI_T_INT128:
-		if (!v1->i128)
-			goto return_false;
+		i1.u64 = v1->i128;
 		break;
+
 	case PSI_T_UINT128:
-		if (!v1->u128)
-			goto return_false;
+		i1.u64 = v1->u128;
 		break;
+
 	case PSI_T_FLOAT:
-		if (!v1->fval)
-			goto return_false;
+		i1.u64 = v1->fval;
 		break;
+
 	case PSI_T_DOUBLE:
-		if (!v1->dval)
-			goto return_false;
+		i1.u64 = v1->dval;
 		break;
+
 #if HAVE_LONG_DOUBLE
 	case PSI_T_LONG_DOUBLE:
-		if (!v1->ldval)
-			goto return_false;
+		i1.u64 = v1->ldval;
 		break;
+
 #endif
 
 	default:
@@ -222,71 +207,6 @@ static inline token_t psi_calc_bool_and(token_t t1, impl_val *v1, token_t t2, im
 		break;
 	}
 
-	switch (t2) {
-	case PSI_T_INT8:
-		if (!v2->i8)
-			goto return_false;
-		break;
-	case PSI_T_UINT8:
-		if (!v2->u8)
-			goto return_false;
-		break;
-	case PSI_T_INT16:
-		if (!v2->i16)
-			goto return_false;
-		break;
-	case PSI_T_UINT16:
-		if (!v2->u16)
-			goto return_false;
-		break;
-	case PSI_T_INT32:
-		if (!v2->i32)
-			goto return_false;
-		break;
-	case PSI_T_UINT32:
-		if (!v2->u32)
-			goto return_false;
-		break;
-	case PSI_T_INT64:
-		if (!v2->i64)
-			goto return_false;
-		break;
-	case PSI_T_UINT64:
-		if (!v2->u64)
-			goto return_false;
-		break;
-	case PSI_T_INT128:
-		if (!v2->i128)
-			goto return_false;
-		break;
-	case PSI_T_UINT128:
-		if (!v2->u128)
-			goto return_false;
-		break;
-	case PSI_T_FLOAT:
-		if (!v2->fval)
-			goto return_false;
-		break;
-	case PSI_T_DOUBLE:
-		if (!v2->dval)
-			goto return_false;
-		break;
-#if HAVE_LONG_DOUBLE
-	case PSI_T_LONG_DOUBLE:
-		if (!v2->ldval)
-			goto return_false;
-		break;
-#endif
-
-	default:
-		assert(0);
-		break;
-	}
-
-	res->u8 = 1;
-	return PSI_T_UINT8;
-
-return_false:
-	res->u8 = 0;
-	return PSI_T_UINT8;
+	res->u64 = ~i1.u64;
+	return PSI_T_UINT64;
 }

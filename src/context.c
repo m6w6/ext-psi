@@ -56,20 +56,10 @@
 #include "token.h"
 #include "parser.h"
 
-#define PSI_PREDEF_TYPES
-#define PSI_PREDEF_CONSTS
-#define PSI_PREDEF_COMPOSITES
-#define PSI_PREDEF_DECLS
 #include "php_psi_posix.h"
 
 struct psi_context *psi_context_init(struct psi_context *C, struct psi_context_ops *ops, psi_error_cb error, unsigned flags)
 {
-	struct psi_data T;
-	struct psi_predef_type *predef_type;
-	struct psi_predef_const *predef_const;
-	struct psi_predef_composite *predef_composite;
-	struct psi_predef_decl *predef_decl;
-
 	if (!C) {
 		C = malloc(sizeof(*C));
 	}
@@ -85,139 +75,6 @@ struct psi_context *psi_context_init(struct psi_context *C, struct psi_context_o
 	assert(ops->call != NULL);
 	assert(ops->compile != NULL);
 
-	/* build up predefs in a temporary psi_data for validation */
-	memset(&T, 0, sizeof(T));
-	psi_data_ctor_with_dtors(&T, error, flags);
-
-#if PHP_DEBUG
-	if (psi_check_env("PSI_SKIP"))
-		goto skip_predefs;
-#endif
-
-	for (predef_type = &psi_predef_types[0]; predef_type->type_tag; ++predef_type) {
-		struct psi_decl_type *type = psi_decl_type_init(predef_type->type_tag, predef_type->type_name);
-		struct psi_decl_var *var = psi_decl_var_init(predef_type->alias, 0, 0); /* FIXME: indirection */
-		struct psi_decl_arg *def = psi_decl_arg_init(type, var);
-
-		T.types = psi_plist_add(T.types, &def);
-	}
-	for (predef_const = &psi_predef_consts[0]; predef_const->type_tag; ++predef_const) {
-		struct psi_const_type *type = psi_const_type_init(predef_const->type_tag, predef_const->type_name);
-		struct psi_impl_def_val *val;
-		struct psi_const *constant;
-
-		switch (type->type) {
-		case PSI_T_INT:
-			val = psi_impl_def_val_init(PSI_T_INT, NULL);
-			val->ival.zend.lval = predef_const->value.zend.lval;
-			break;
-		case PSI_T_STRING:
-			val = psi_impl_def_val_init(PSI_T_STRING, NULL);
-			val->ival.zend.str = zend_string_init(predef_const->value.ptr, strlen(predef_const->value.ptr), 1);
-			break;
-		default:
-			assert(0);
-			break;
-		}
-
-		constant = psi_const_init(type, predef_const->var_name, val);
-		T.consts = psi_plist_add(T.consts, &constant);
-	}
-	for (predef_composite = &psi_predef_composites[0]; predef_composite->type_tag; ++predef_composite) {
-		struct psi_predef_composite *member;
-		struct psi_decl_struct *dstruct;
-		struct psi_decl_union *dunion;
-		struct psi_plist *dargs = psi_plist_init((psi_plist_dtor) psi_decl_arg_free);
-
-		switch (predef_composite->type_tag) {
-		case PSI_T_STRUCT:
-			dstruct = psi_decl_struct_init(predef_composite->var_name, dargs);
-			dstruct->size = predef_composite->size;
-			dstruct->align = predef_composite->offset;
-			break;
-		case PSI_T_UNION:
-			dunion = psi_decl_union_init(predef_composite->var_name, dargs);
-			dunion->size = predef_composite->size;
-			dunion->align = predef_composite->offset;
-			break;
-		default:
-			assert(0);
-		}
-		for (member = &predef_composite[1]; member->type_tag; ++member) {
-			struct psi_decl_type *type;
-			struct psi_decl_var *dvar;
-			struct psi_decl_arg *darg;
-
-			type = psi_decl_type_init(member->type_tag, member->type_name);
-			dvar = psi_decl_var_init(member->var_name, member->pointer_level, member->array_size);
-			darg = psi_decl_arg_init(type, dvar);
-			darg->layout = psi_layout_init(member->offset, member->size, NULL);
-
-			switch (predef_composite->type_tag) {
-			case PSI_T_STRUCT:
-				dstruct->args = psi_plist_add(dstruct->args, &darg);
-				break;
-			case PSI_T_UNION:
-				dunion->args = psi_plist_add(dunion->args, &darg);
-				break;
-			default:
-				assert(0);
-			}
-		}
-		switch (predef_composite->type_tag) {
-		case PSI_T_STRUCT:
-			T.structs = psi_plist_add(T.structs, &dstruct);
-			break;
-		case PSI_T_UNION:
-			T.unions = psi_plist_add(T.unions, &dunion);
-			break;
-		default:
-			assert(0);
-		}
-
-		predef_composite = member;
-	}
-	for (predef_decl = &psi_predef_decls[0]; predef_decl->type_tag; ++predef_decl) {
-		struct psi_predef_decl *farg;
-		struct psi_decl_type *dtype, *ftype = psi_decl_type_init(predef_decl->type_tag, predef_decl->type_name);
-		struct psi_decl_var *fname = psi_decl_var_init(predef_decl->var_name, predef_decl->pointer_level, predef_decl->array_size);
-		struct psi_decl_arg *tdef, *func = psi_decl_arg_init(ftype, fname);
-		struct psi_plist *args = psi_plist_init((psi_plist_dtor) psi_decl_arg_free);
-		struct psi_decl *decl = psi_decl_init(func, args);
-
-		for (farg = &predef_decl[1]; farg->type_tag; ++farg) {
-			struct psi_decl_type *arg_type = psi_decl_type_init(farg->type_tag, farg->type_name);
-			struct psi_decl_var *arg_var = psi_decl_var_init(farg->var_name, farg->pointer_level, farg->array_size);
-			struct psi_decl_arg *darg = psi_decl_arg_init(arg_type, arg_var);
-			decl->args = psi_plist_add(decl->args, &darg);
-		}
-
-		switch (predef_decl->kind) {
-		case DECL_KIND_VARARG:
-			decl->varargs = 1;
-			/* no break */
-		case DECL_KIND_STD:
-			T.decls = psi_plist_add(T.decls, &decl);
-			break;
-		case DECL_KIND_FUNCTOR:
-			dtype = psi_decl_type_init(PSI_T_FUNCTION, fname->name);
-			dtype->real.func = decl;
-			tdef = psi_decl_arg_init(dtype, psi_decl_var_copy(fname));
-			T.types = psi_plist_add(T.types, &tdef);
-			break;
-		default:
-			assert(0);
-		}
-
-		predef_decl = farg;
-	}
-
-#if PHP_DEBUG
-	skip_predefs:
-#endif
-
-	psi_context_add_data(C, &T);
-
 	return C;
 }
 
@@ -227,6 +84,23 @@ static int psi_select_dirent(const struct dirent *entry)
 # define FNM_CASEFOLD 0
 #endif
 	return 0 == fnmatch("*.psi", entry->d_name, FNM_CASEFOLD);
+}
+
+static bool psi_context_add(struct psi_context *C, struct psi_parser *P)
+{
+	bool valid;
+	struct psi_data *D;
+	struct psi_validate_scope scope = {0};
+
+	C->data = realloc(C->data, (C->count + 1) * sizeof(*C->data));
+	D = psi_data_exchange(&C->data[C->count++], PSI_DATA(P));
+
+	psi_validate_scope_ctor(&scope);
+	scope.defs = &P->preproc->defs;
+	valid = psi_validate(&scope, PSI_DATA(C), D);
+	psi_validate_scope_dtor(&scope);
+
+	return valid;
 }
 
 void psi_context_build(struct psi_context *C, const char *paths)
@@ -266,7 +140,7 @@ void psi_context_build(struct psi_context *C, const char *paths)
 					continue;
 				}
 				psi_parser_parse(&P, I);
-				psi_context_add_data(C, PSI_DATA(&P));
+				psi_context_add(C, &P);
 				psi_parser_dtor(&P);
 				free(I);
 			}
@@ -317,6 +191,7 @@ zend_function_entry *psi_context_compile(struct psi_context *C)
 				ZVAL_LONG(&zc.value, c->val->ival.zend.lval);
 				break;
 			case PSI_T_FLOAT:
+			case PSI_T_DOUBLE:
 				ZVAL_DOUBLE(&zc.value, c->val->ival.dval);
 				break;
 			case PSI_T_STRING:
@@ -355,7 +230,7 @@ zend_function_entry *psi_context_compile(struct psi_context *C)
 				}
 
 				zc.name = zend_string_dup(name, 1);
-				ZVAL_LONG(&zc.value, psi_long_num_exp(item->num, NULL, NULL));
+				ZVAL_LONG(&zc.value, psi_num_exp_get_long(item->num, NULL, NULL));
 				zend_register_constant(&zc);
 				zend_string_release(name);
 			}
@@ -447,29 +322,10 @@ void psi_context_free(struct psi_context **C)
 	}
 }
 
-bool psi_context_add_data(struct psi_context *C, struct psi_data *P)
-{
-	struct psi_data *D;
-
-	C->data = realloc(C->data, (C->count + 1) * sizeof(*C->data));
-	D = psi_data_exchange(&C->data[C->count++], P);
-
-	return psi_data_validate(PSI_DATA(C), D);
-}
-
 void psi_context_dump(struct psi_context *C, int fd)
 {
-
 	dprintf(fd, "// psi.engine=%s\n",
 			(char *) C->ops->query(C, PSI_CONTEXT_QUERY_SELF, NULL));
 
 	psi_data_dump(fd, PSI_DATA(C));
-
-//	size_t i;
-//	dprintf(fd, "/* parsed\n");
-//	for (i = 0; i < C->count; ++i) {
-//		psi_data_dump(fd, &C->data[i]);
-//	}
-//	dprintf(fd, "*/\n");
-
 }

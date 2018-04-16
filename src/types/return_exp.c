@@ -122,23 +122,32 @@ static inline bool psi_return_exp_validate_decl_args(struct psi_data *data,
 }
 
 bool psi_return_exp_validate(struct psi_data *data, struct psi_return_exp *exp,
-		struct psi_impl *impl)
+		struct psi_validate_scope *scope)
 {
 	size_t i = 0;
 	struct psi_decl *decl;
 	const char *name = psi_return_exp_get_decl_name(exp);
 
+
+
 	while (psi_plist_get(data->decls, i++, &decl)) {
 		if (!strcmp(decl->func->var->name, name)) {
-			impl->decl = decl;
-			return psi_return_exp_validate_decl_args(data, exp, impl) &&
-					psi_set_exp_validate(data, exp->set, impl, NULL);
+			scope->impl->decl = decl;
+			if (psi_return_exp_validate_decl_args(data, exp, scope->impl)) {
+				scope->current_set = exp->set;
+				if (psi_set_exp_validate(data, exp->set, scope)) {
+					scope->current_set = NULL;
+					return true;
+				}
+				scope->current_set = NULL;
+			}
+			return false;
 		}
 	}
 
 	data->error(data, exp->token, PSI_WARNING,
 			"Missing declaration '%s' for `return` statement of implementation %s",
-			name, impl->func->name);
+			name, scope->impl->func->name);
 	return false;
 }
 

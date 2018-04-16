@@ -65,6 +65,14 @@ static inline token_t psi_calc_bin_lshift(token_t t1, impl_val *v1, token_t t2, 
 		i1.u64 = v1->u64;
 		break;
 
+	case PSI_T_INT128:
+		i1.u64 = v1->i128;
+		break;
+
+	case PSI_T_UINT128:
+		i1.u64 = v1->u128;
+		break;
+
 	case PSI_T_FLOAT:
 		i1.u64 = v1->fval;
 		break;
@@ -109,6 +117,12 @@ static inline token_t psi_calc_bin_lshift(token_t t1, impl_val *v1, token_t t2, 
 		break;
 	case PSI_T_UINT64:
 		i2.u64 = v2->u64;
+		break;
+	case PSI_T_INT128:
+		i2.u64 = v2->i128;
+		break;
+	case PSI_T_UINT128:
+		i2.u64 = v2->u128;
 		break;
 	case PSI_T_FLOAT:
 		i2.u64 = v2->fval;
@@ -168,6 +182,14 @@ static inline token_t psi_calc_bin_rshift(token_t t1, impl_val *v1, token_t t2, 
 		i1.u64 = v1->u64;
 		break;
 
+	case PSI_T_INT128:
+		i1.u64 = v1->i128;
+		break;
+
+	case PSI_T_UINT128:
+		i1.u64 = v1->u128;
+		break;
+
 	case PSI_T_FLOAT:
 		i1.u64 = v1->fval;
 		break;
@@ -212,6 +234,12 @@ static inline token_t psi_calc_bin_rshift(token_t t1, impl_val *v1, token_t t2, 
 		break;
 	case PSI_T_UINT64:
 		i2.u64 = v2->u64;
+		break;
+	case PSI_T_INT128:
+		i2.u64 = v2->i128;
+		break;
+	case PSI_T_UINT128:
+		i2.u64 = v2->u128;
 		break;
 	case PSI_T_FLOAT:
 		i2.u64 = v2->fval;
@@ -271,6 +299,14 @@ static inline token_t psi_calc_bin_and(token_t t1, impl_val *v1, token_t t2, imp
 		i1.u64 = v1->u64;
 		break;
 
+	case PSI_T_INT128:
+		i1.u64 = v1->i128;
+		break;
+
+	case PSI_T_UINT128:
+		i1.u64 = v1->u128;
+		break;
+
 	case PSI_T_FLOAT:
 		i1.u64 = v1->fval;
 		break;
@@ -315,6 +351,12 @@ static inline token_t psi_calc_bin_and(token_t t1, impl_val *v1, token_t t2, imp
 		break;
 	case PSI_T_UINT64:
 		i2.u64 = v2->u64;
+		break;
+	case PSI_T_INT128:
+		i2.u64 = v2->i128;
+		break;
+	case PSI_T_UINT128:
+		i2.u64 = v2->u128;
 		break;
 	case PSI_T_FLOAT:
 		i2.u64 = v2->fval;
@@ -374,6 +416,14 @@ static inline token_t psi_calc_bin_xor(token_t t1, impl_val *v1, token_t t2, imp
 		i1.u64 = v1->u64;
 		break;
 
+	case PSI_T_INT128:
+		i1.u64 = v1->i128;
+		break;
+
+	case PSI_T_UINT128:
+		i1.u64 = v1->u128;
+		break;
+
 	case PSI_T_FLOAT:
 		i1.u64 = v1->fval;
 		break;
@@ -418,6 +468,12 @@ static inline token_t psi_calc_bin_xor(token_t t1, impl_val *v1, token_t t2, imp
 		break;
 	case PSI_T_UINT64:
 		i2.u64 = v2->u64;
+		break;
+	case PSI_T_INT128:
+		i2.u64 = v2->i128;
+		break;
+	case PSI_T_UINT128:
+		i2.u64 = v2->u128;
 		break;
 	case PSI_T_FLOAT:
 		i2.u64 = v2->fval;
@@ -477,6 +533,14 @@ static inline token_t psi_calc_bin_or(token_t t1, impl_val *v1, token_t t2, impl
 		i1.u64 = v1->u64;
 		break;
 
+	case PSI_T_INT128:
+		i1.u64 = v1->i128;
+		break;
+
+	case PSI_T_UINT128:
+		i1.u64 = v1->u128;
+		break;
+
 	case PSI_T_FLOAT:
 		i1.u64 = v1->fval;
 		break;
@@ -522,6 +586,12 @@ static inline token_t psi_calc_bin_or(token_t t1, impl_val *v1, token_t t2, impl
 	case PSI_T_UINT64:
 		i2.u64 = v2->u64;
 		break;
+	case PSI_T_INT128:
+		i2.u64 = v2->i128;
+		break;
+	case PSI_T_UINT128:
+		i2.u64 = v2->u128;
+		break;
 	case PSI_T_FLOAT:
 		i2.u64 = v2->fval;
 		break;
@@ -540,69 +610,5 @@ static inline token_t psi_calc_bin_or(token_t t1, impl_val *v1, token_t t2, impl
 	}
 
 	res->u64 = i1.u64 | i2.u64;
-	return PSI_T_UINT64;
-}
-
-static inline token_t psi_calc_bin_not(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res)
-{
-	impl_val i1;
-
-	(void) t2;
-	(void) v2;
-
-	switch (t1) {
-	case PSI_T_INT8:
-		i1.u64 = v1->i8;
-		break;
-
-	case PSI_T_UINT8:
-		i1.u64 = v1->u8;
-		break;
-
-	case PSI_T_INT16:
-		i1.u64 = v1->i16;
-		break;
-
-	case PSI_T_UINT16:
-		i1.u64 = v1->u16;
-		break;
-
-	case PSI_T_INT32:
-		i1.u64 = v1->i32;
-		break;
-
-	case PSI_T_UINT32:
-		i1.u64 = v1->u32;
-		break;
-
-	case PSI_T_INT64:
-		i1.u64 = v1->i64;
-		break;
-
-	case PSI_T_UINT64:
-		i1.u64 = v1->u64;
-		break;
-
-	case PSI_T_FLOAT:
-		i1.u64 = v1->fval;
-		break;
-
-	case PSI_T_DOUBLE:
-		i1.u64 = v1->dval;
-		break;
-
-#if HAVE_LONG_DOUBLE
-	case PSI_T_LONG_DOUBLE:
-		i1.u64 = v1->ldval;
-		break;
-
-#endif
-
-	default:
-		assert(0);
-		break;
-	}
-
-	res->u64 = ~i1.u64;
 	return PSI_T_UINT64;
 }

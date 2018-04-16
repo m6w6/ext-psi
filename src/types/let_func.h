@@ -48,7 +48,7 @@ void psi_let_func_free(struct psi_let_func **func_ptr);
 void psi_let_func_dump(int fd, struct psi_let_func *func, unsigned level);
 
 void *psi_let_func_exec(struct psi_let_exp *func_val, struct psi_let_func *func, struct psi_decl_arg *darg, struct psi_call_frame *frame);
-bool psi_let_func_validate(struct psi_data *data, struct psi_let_exp *exp, struct psi_let_func *func, struct psi_impl *impl);
+bool psi_let_func_validate(struct psi_data *data, struct psi_let_func *func, struct psi_validate_scope *scope);
 
 #include "marshal.h"
 

@@ -61,7 +61,8 @@ void psi_impl_func_free(struct psi_impl_func **f_ptr)
 	}
 }
 
-bool psi_impl_func_validate(struct psi_data *data, struct psi_impl_func *func)
+bool psi_impl_func_validate(struct psi_data *data, struct psi_impl_func *func,
+		struct psi_validate_scope *scope)
 {
 	int def = 0;
 	size_t i = 0;
@@ -70,7 +71,7 @@ bool psi_impl_func_validate(struct psi_data *data, struct psi_impl_func *func)
 	while (psi_plist_get(func->args, i++, &iarg)) {
 		if (iarg->def) {
 			def = 1;
-			if (!psi_impl_def_val_validate(data, iarg->def, iarg->type->type, iarg->type->name)) {
+			if (!psi_impl_def_val_validate(data, iarg->def, iarg->type, scope)) {
 				return 0;
 			}
 		} else if (def) {

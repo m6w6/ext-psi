@@ -36,7 +36,7 @@ struct psi_decl_struct;
 struct psi_decl_union;
 struct psi_decl_enum;
 struct psi_decl;
-struct psi_validate_stack;
+struct psi_validate_scope;
 
 struct psi_decl_type {
 	struct psi_token *token;
@@ -58,7 +58,8 @@ struct psi_decl_type *psi_decl_type_init(token_t type, const char *name);
 struct psi_decl_type *psi_decl_type_copy(struct psi_decl_type *src);
 void psi_decl_type_free(struct psi_decl_type **type_ptr);
 void psi_decl_type_dump(int fd, struct psi_decl_type *t, unsigned level);
-bool psi_decl_type_validate(struct psi_data *data, struct psi_decl_type *type, bool is_pointer, struct psi_validate_stack *type_stack);
+bool psi_decl_type_validate(struct psi_data *data, struct psi_decl_type *type,
+		struct psi_decl_arg *def, struct psi_validate_scope *scope);
 
 bool psi_decl_type_validate_args(struct psi_data *data, struct psi_decl_type *decl_type, token_t type, void *current);
 

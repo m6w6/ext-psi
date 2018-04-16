@@ -423,8 +423,8 @@ stop:
  */
 impl_val *psi_let_intval(impl_val *tmp, struct psi_decl_arg *spec, token_t impl_type, impl_val *ival, zval *zvalue, void **to_free)
 {
-	zend_long intval;
-	token_t real_type = spec ? psi_decl_type_get_real(spec->type)->type : PSI_T_LONG;
+	int64_t intval;
+	token_t real_type = spec ? psi_decl_type_get_real(spec->type)->type : PSI_T_INT64;
 
 
 	if (ival && impl_type == PSI_T_INT) {
@@ -551,7 +551,7 @@ void psi_set_to_stringl(zval *return_value, struct psi_set_exp *set, impl_val *r
 		struct psi_set_exp *sub_exp;
 
 		psi_plist_get(set->inner, 0, &sub_exp);
-		RETVAL_STRINGL(str, psi_long_num_exp(sub_exp->data.num, frame, NULL));
+		RETVAL_STRINGL(str, psi_num_exp_get_long(sub_exp->data.num, frame, NULL));
 	} else {
 		RETVAL_EMPTY_STRING();
 	}
@@ -686,7 +686,7 @@ void psi_set_to_array_counted(zval *return_value, struct psi_set_exp *set, impl_
 	}
 
 	psi_plist_get(set->inner, 0, &sub_exp);
-	count = psi_long_num_exp(sub_exp->data.num, frame, NULL);
+	count = psi_num_exp_get_long(sub_exp->data.num, frame, NULL);
 	psi_plist_get(set->inner, 1, &sub_exp);
 
 	for (ptr = (char *) ret_val; 0 < count--; ptr += size) {

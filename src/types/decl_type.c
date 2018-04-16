@@ -213,18 +213,23 @@ bool psi_decl_type_get_decl(struct psi_decl_type *type, struct psi_plist *decls)
 }
 
 bool psi_decl_type_validate(struct psi_data *data, struct psi_decl_type *type,
-		bool is_pointer, struct psi_validate_stack *type_stack)
+		struct psi_decl_arg *def, struct psi_validate_scope *scope)
 {
 	if (psi_decl_type_is_weak(type)) {
 		if (!psi_decl_type_get_alias(type, data->types)) {
-			if (!psi_validate_stack_has_type(type_stack, type->name)) {
+			if (!psi_validate_scope_has_type(scope, type->name)) {
 				return false;
 			}
-			type->real.def = psi_validate_stack_get_type(type_stack, type->name);
+			type->real.def = psi_validate_scope_get_type(scope, type->name);
 		}
 		if (type->real.def) {
-			return psi_decl_type_validate(data, type->real.def->type,
-					is_pointer, type_stack);
+			if (!psi_decl_type_validate(data, type->real.def->type,
+					type->real.def, scope)) {
+				return false;
+			}
+			if (def) {
+				def->var->pointer_level += type->real.def->var->pointer_level;
+			}
 		}
 		return true;
 	}
@@ -232,9 +237,9 @@ bool psi_decl_type_validate(struct psi_data *data, struct psi_decl_type *type,
 	switch (type->type) {
 	case PSI_T_STRUCT:
 		if (!psi_decl_type_get_struct(type, data->structs)) {
-			if (psi_validate_stack_has_struct(type_stack, type->name)) {
-				type->real.strct = psi_validate_stack_get_struct(type_stack, type->name);
-			} else if (is_pointer) {
+			if (psi_validate_scope_has_struct(scope, type->name)) {
+				type->real.strct = psi_validate_scope_get_struct(scope, type->name);
+			} else if (def && def->var->pointer_level) {
 				return true;
 			} else {
 				data->error(data, type->token, PSI_WARNING,
@@ -242,15 +247,15 @@ bool psi_decl_type_validate(struct psi_data *data, struct psi_decl_type *type,
 				return false;
 			}
 		}
-		if (!psi_decl_struct_validate(data, type->real.strct, type_stack)) {
+		if (!psi_decl_struct_validate(data, type->real.strct, scope)) {
 			return false;
 		}
 		break;
 	case PSI_T_UNION:
 		if (!psi_decl_type_get_union(type, data->unions)) {
-			if (psi_validate_stack_has_union(type_stack, type->name)) {
-				type->real.unn = psi_validate_stack_get_union(type_stack, type->name);
-			} else if (is_pointer) {
+			if (psi_validate_scope_has_union(scope, type->name)) {
+				type->real.unn = psi_validate_scope_get_union(scope, type->name);
+			} else if (def && def->var->pointer_level) {
 				return true;
 			} else {
 				data->error(data, type->token, PSI_WARNING,
@@ -258,7 +263,7 @@ bool psi_decl_type_validate(struct psi_data *data, struct psi_decl_type *type,
 				return false;
 			}
 		}
-		if (!psi_decl_union_validate(data, type->real.unn, type_stack)) {
+		if (!psi_decl_union_validate(data, type->real.unn, scope)) {
 			return false;
 		}
 		break;
@@ -275,7 +280,7 @@ bool psi_decl_type_validate(struct psi_data *data, struct psi_decl_type *type,
 					"Unknown decl '%s'", type->name);
 			return false;
 		}
-		if (!psi_decl_validate_nodl(data, type->real.func, type_stack)) {
+		if (!psi_decl_validate_nodl(data, type->real.func, scope)) {
 			return false;
 		}
 		break;

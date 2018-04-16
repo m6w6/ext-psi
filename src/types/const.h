@@ -28,19 +28,21 @@
 
 struct psi_data;
 struct psi_token;
-struct psi_const_type;
+struct psi_impl_type;
 struct psi_impl_def_val;
 
 struct psi_const {
 	struct psi_token *token;
-	struct psi_const_type *type;
+	struct psi_impl_type *type;
 	char *name;
 	struct psi_impl_def_val *val;
 };
 
-struct psi_const *psi_const_init(struct psi_const_type *type, const char *name, struct psi_impl_def_val *val);
+struct psi_const *psi_const_init(struct psi_impl_type *type, const char *name,
+		struct psi_impl_def_val *val);
 void psi_const_free(struct psi_const **constant_ptr);
 void psi_const_dump(int fd, struct psi_const *cnst);
-bool psi_const_validate(struct psi_data *data, struct psi_const *c);
+bool psi_const_validate(struct psi_data *data, struct psi_const *c,
+		struct psi_validate_scope *scope);
 
 #endif

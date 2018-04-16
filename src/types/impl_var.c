@@ -67,18 +67,27 @@ void psi_impl_var_free(struct psi_impl_var **var_ptr)
 	}
 }
 
+void psi_impl_var_dump(int fd, struct psi_impl_var *var, bool vararg)
+{
+	dprintf(fd, "%s%s%s",
+		var->reference ? "&" : "",
+		vararg ? "..." : "",
+		var->name);
+}
 
 bool psi_impl_var_validate(struct psi_data *data, struct psi_impl_var *ivar,
-		struct psi_impl *impl, struct psi_let_exp *current_let_exp,
-		struct psi_set_exp *current_set_exp)
+		struct psi_validate_scope *scope)
 {
-	if (current_let_exp) {
+	if (scope && scope->current_let) {
+		struct psi_let_exp *current_let_exp = scope->current_let;
+
 		while ((current_let_exp = current_let_exp->outer)) {
 			struct psi_impl_var *svar = psi_let_exp_get_impl_var(current_let_exp);
 
 			ivar->fqn = psi_impl_var_name_prepend(ivar->fqn, svar->name + 1);
 		}
-	} else if (current_set_exp) {
+	} else if (scope && scope->current_set) {
+		struct psi_set_exp *current_set_exp = scope->current_set;
 		while ((current_set_exp = current_set_exp->outer)) {
 			struct psi_impl_var *svar = psi_set_exp_get_impl_var(current_set_exp);
 

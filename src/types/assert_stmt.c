@@ -68,14 +68,14 @@ bool psi_assert_stmt_exec(struct psi_assert_stmt *stmt, struct psi_call_frame *f
 	return chk.u8;
 }
 
-bool psi_assert_stmts_validate(struct psi_data *data, struct psi_impl *impl)
+bool psi_assert_stmts_validate(struct psi_data *data, struct psi_validate_scope *scope)
 {
 	size_t i = 0;
 	struct psi_assert_stmt *ass;
 
 	/* we can have multiple assert stmts */
-	while (psi_plist_get(impl->stmts.ass, i++, &ass)) {
-		if (!psi_num_exp_validate(data, ass->exp, impl, NULL, NULL, NULL, NULL)) {
+	while (psi_plist_get(scope->impl->stmts.ass, i++, &ass)) {
+		if (!psi_num_exp_validate(data, ass->exp, scope)) {
 			return false;
 		}
 	}

@@ -65,7 +65,7 @@ void psi_let_exp_free(struct psi_let_exp **let_ptr);
 void psi_let_exp_dump(int fd, struct psi_let_exp *exp, unsigned level, int last);
 
 void *psi_let_exp_exec(struct psi_let_exp *exp, struct psi_decl_arg *darg, void *actual_location, size_t actual_size, struct psi_call_frame *frame);
-bool psi_let_exp_validate(struct psi_data *data, struct psi_let_exp *exp, struct psi_impl *impl);
+bool psi_let_exp_validate(struct psi_data *data, struct psi_let_exp *exp, struct psi_validate_scope *scope);
 
 struct psi_let_func *psi_let_exp_get_func(struct psi_let_exp *exp);
 struct psi_impl_var *psi_let_exp_get_impl_var(struct psi_let_exp *exp);

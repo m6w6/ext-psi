@@ -46,7 +46,7 @@ struct psi_free_exp *psi_free_exp_init(const char *func, struct psi_plist *vars)
 void psi_free_exp_free(struct psi_free_exp **f_ptr);
 void psi_free_exp_dump(int fd, struct psi_free_exp *call);
 
-bool psi_free_exp_validate(struct psi_data *data, struct psi_free_exp *fc, struct psi_impl *impl);
+bool psi_free_exp_validate(struct psi_data *data, struct psi_free_exp *fc, struct psi_validate_scope *scope);
 
 void psi_free_exp_exec(struct psi_free_exp *f, struct psi_call_frame *frame);
 

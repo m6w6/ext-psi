@@ -1,8 +1,14 @@
+#include <fcntl.h>
+
+lib "gdbm_compat";
+#include <ndbm.h>
+
+
 function psi\dbm_open(string $file, int $open_flags, int $file_mode) : object {
 	let file = pathval($file);
 	let open_flags = intval($open_flags);
 	let file_mode = intval($file_mode);
-	return to_object(dbm_open);
+	return dbm_open(file, open_flags, file_mode) as to_object(dbm_open);
 }
 
 function psi\dbm_store(object $db, string $key, string $data, int $mode) : int {
@@ -16,7 +22,7 @@ function psi\dbm_store(object $db, string $key, string $data, int $mode) : int {
 		dsize = strlen($0)
 	);
 	let store_mode = intval($mode);
-	return to_int(dbm_store);
+	return dbm_store(db, key, content, store_mode) as to_int(dbm_store);
 }
 
 function psi\dbm_fetch(object $db, array $key) : array {
@@ -25,7 +31,7 @@ function psi\dbm_fetch(object $db, array $key) : array {
 		dptr = strval($dptr),
 		dsize = intval($dsize)
 	);
-	return to_array(dbm_fetch,
+	return dbm_fetch(db, key) as to_array(dbm_fetch,
 		to_int(dsize),
 		to_string(dptr, dsize)
 	);
@@ -33,5 +39,5 @@ function psi\dbm_fetch(object $db, array $key) : array {
 
 function psi\dbm_close(object $db) : void {
 	let db = objval($db);
-	return void(dbm_close);
+	return dbm_close(db) as void(dbm_close);
 }

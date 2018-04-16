@@ -6,7 +6,7 @@ psi.directory={PWD}/../../psi.d:{PWD}
 <?php
 extension_loaded("psi") or die("skip - need ext/psi");
 PHP_OS === "Linux" or die("skip - only for Linux");
-defined("psi\\SIZEOF_STRUCT_UTSNAME_DOMAINNAME") or die("skip - only for systems with utsname.domainname");
+defined("psi\\_UTSNAME_DOMAIN_LENGTH") or die("skip - only for systems with utsname.domainname");
 ?>
 --FILE--
 ===TEST===

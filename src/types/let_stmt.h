@@ -42,6 +42,6 @@ void psi_let_stmt_free(struct psi_let_stmt **stmt_ptr);
 void psi_let_stmt_dump(int fd, struct psi_let_stmt *stmt);
 
 void *psi_let_stmt_exec(struct psi_let_stmt *stmt, struct psi_call_frame *frame);
-bool psi_let_stmts_validate(struct psi_data *data, struct psi_impl *impl);
+bool psi_let_stmts_validate(struct psi_data *data, struct psi_validate_scope *scope);
 
 #endif

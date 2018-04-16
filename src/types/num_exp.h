@@ -37,6 +37,7 @@ struct psi_decl_enum_item;
 struct psi_let_exp;
 struct psi_set_exp;
 struct psi_call_frame;
+struct psi_validate_scope;
 
 struct psi_num_exp {
 	struct psi_token *token;
@@ -76,35 +77,33 @@ void psi_num_exp_free(struct psi_num_exp **c_ptr);
 struct psi_num_exp *psi_num_exp_copy(struct psi_num_exp *exp);
 void psi_num_exp_dump(int fd, struct psi_num_exp *exp);
 bool psi_num_exp_validate(struct psi_data *data, struct psi_num_exp *exp,
-		struct psi_impl *impl, struct psi_decl *cb_decl,
-		struct psi_let_exp *current_let, struct psi_set_exp *current_set,
-		struct psi_decl_enum *current_enum);
+		struct psi_validate_scope *scope);
 
 token_t psi_num_exp_exec(struct psi_num_exp *exp, impl_val *res,
 		struct psi_call_frame *frame, HashTable *defs);
 
-#include <assert.h>
+struct psi_plist *psi_num_exp_tokens(struct psi_num_exp *exp,
+		struct psi_plist *list);
 
-static inline zend_long psi_long_num_exp(struct psi_num_exp *exp,
+
+#include "calc.h"
+static inline zend_long psi_num_exp_get_long(struct psi_num_exp *exp,
 		struct psi_call_frame *frame, HashTable *defs) {
-	impl_val val = {0};
+	impl_val res = {0};
 
-	switch (psi_num_exp_exec(exp, &val, frame, defs)) {
-	case PSI_T_UINT8:	return val.u8;
-	case PSI_T_UINT16:	return val.u16;
-	case PSI_T_UINT32:	return val.u32;
-	case PSI_T_UINT64:	return val.u64; /* FIXME */
-	case PSI_T_INT8:	return val.i8;
-	case PSI_T_INT16:	return val.i16;
-	case PSI_T_INT32:	return val.i32;
-	case PSI_T_INT64:	return val.i64;
-	case PSI_T_FLOAT:	return val.fval;
-	case PSI_T_DOUBLE:	return val.dval;
-	default:
-		assert(0);
-	}
-	return 0;
+	psi_calc_cast(psi_num_exp_exec(exp, &res, frame, defs), &res,
+			PSI_T_INT64, &res);
+
+	return res.i64;
 }
+static inline double psi_num_exp_get_double(struct psi_num_exp *exp,
+		struct psi_call_frame *frame, HashTable *defs) {
+	impl_val res = {0};
 
+	psi_calc_cast(psi_num_exp_exec(exp, &res, frame, defs), &res,
+			PSI_T_DOUBLE, &res);
+
+	return res.dval;
+}
 
 #endif

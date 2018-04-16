@@ -116,24 +116,27 @@ void psi_impl_dump(int fd, struct psi_impl *impl)
 	dprintf(fd, "}\n");
 }
 
-bool psi_impl_validate(struct psi_data *data, struct psi_impl *impl)
+bool psi_impl_validate(struct psi_data *data, struct psi_impl *impl,
+		struct psi_validate_scope *scope)
 {
-	if (!psi_impl_func_validate(data, impl->func)) {
+	scope->impl = impl;
+
+	if (!psi_impl_func_validate(data, impl->func, scope)) {
 		return false;
 	}
-	if (!psi_return_stmt_validate(data, impl)) {
+	if (!psi_return_stmt_validate(data, scope)) {
 		return false;
 	}
-	if (!psi_let_stmts_validate(data, impl)) {
+	if (!psi_let_stmts_validate(data, scope)) {
 		return false;
 	}
-	if (!psi_set_stmts_validate(data, impl)) {
+	if (!psi_set_stmts_validate(data, scope)) {
 		return false;
 	}
-	if (!psi_assert_stmts_validate(data, impl)) {
+	if (!psi_assert_stmts_validate(data, scope)) {
 		return false;
 	}
-	if (!psi_free_stmts_validate(data, impl)) {
+	if (!psi_free_stmts_validate(data, scope)) {
 		return false;
 	}
 	return true;

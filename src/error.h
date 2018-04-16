@@ -30,6 +30,7 @@
 
 #define PSI_ERROR 16
 #define PSI_WARNING 32
+#define PSI_NOTICE 1024
 
 struct psi_data;
 struct psi_token;

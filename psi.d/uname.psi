@@ -1,7 +1,7 @@
 #include <sys/utsname.h>
 
 function psi\uname(array &$u = NULL) : int {
-	let name = calloc(1, psi\SIZEOF_STRUCT_UTSNAME);
+	let name = calloc(1, sizeof(struct utsname));
 	return uname(name) as to_int(uname);
 	set $u = to_array(*name,
 		to_string(sysname),

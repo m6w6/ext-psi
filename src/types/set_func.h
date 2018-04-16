@@ -31,6 +31,7 @@
 
 struct psi_plist;
 struct psi_decl_var;
+struct psi_validate_scope;
 
 struct psi_set_func {
 	struct psi_token *token;
@@ -46,6 +47,6 @@ struct psi_set_func *psi_set_func_init(token_t type, const char *name, struct ps
 void psi_set_func_free(struct psi_set_func **func_ptr);
 void psi_set_func_dump(int fd, struct psi_set_func *func, unsigned level);
 bool psi_set_func_validate(struct psi_data *data, struct psi_set_func *func,
-		struct psi_set_exp *set, struct psi_impl *impl, struct psi_decl *cb_decl);
+		struct psi_validate_scope *scope);
 
 #endif
