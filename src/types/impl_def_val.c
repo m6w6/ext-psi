@@ -163,6 +163,9 @@ bool psi_impl_def_val_validate(struct psi_data *data,
 
 void psi_impl_def_val_dump(int fd, struct psi_impl_def_val *val) {
 	switch (val->type) {
+	case PSI_T_NULL:
+		dprintf(fd, "NULL");
+		break;
 	case PSI_T_TRUE:
 		dprintf(fd, "true");
 		break;
