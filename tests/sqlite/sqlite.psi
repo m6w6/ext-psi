@@ -1,5 +1,10 @@
 lib "sqlite3";
 
+#define NDEBUG 1
+
+typedef int (*my_sqlite3_callback)(void *data, int argc, char** argv, char** cols);
+extern int sqlite3_exec(sqlite3 *db, const char *sql, my_sqlite3_callback cb, void *data, char **errmsg);
+
 #include <sqlite3.h>
 
 //extern const char *sqlite3_libversion(void);
@@ -10,7 +15,7 @@ function sqlite3\version() : string {
 //extern const char *sqlite3_errstr(int err);
 function sqlite3\errstr(int $errno) : string {
 	let err = intval($errno);
-	return sqlite3_errstr(err) to_string(sqlite3_errstr);
+	return sqlite3_errstr(err) as to_string(sqlite3_errstr);
 }
 
 /* obviously fake, we ever always need a pointer to it */
@@ -44,9 +49,7 @@ function sqlite3\open(string $uri, object &$db) : int {
 	set $db = to_object(*db_ptr);
 }
 
-//typedef int (*sqlite3_callback)(void *data, int argc, char** argv, char** cols);
 
-//extern int sqlite3_exec(sqlite3 *db, const char *sql, sqlite3_callback cb, void *data, char **errmsg);
 function sqlite3\exec(object $db, string $sql, callable $cb, mixed $cd, string &$error = null) : int {
 	let db = objval($db);
 	let sql = strval($sql);

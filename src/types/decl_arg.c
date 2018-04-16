@@ -61,6 +61,9 @@ void psi_decl_arg_dump(int fd, struct psi_decl_arg *arg, unsigned level)
 {
 	if (arg->type->type == PSI_T_FUNCTION) {
 		psi_decl_type_dump(fd, arg->type->real.func->func->type, level);
+		if (arg->type->real.func->func->type->type == PSI_T_FUNCTION) {
+			dprintf(fd, "(");
+		}
 		dprintf(fd, " %s(*%s)",
 				psi_t_indirection(arg->var->pointer_level - !! arg->var->array_size),
 				arg->var->name);
@@ -82,6 +85,26 @@ void psi_decl_arg_dump(int fd, struct psi_decl_arg *arg, unsigned level)
 			}
 		}
 		dprintf(fd, ")");
+		if (arg->type->real.func->func->type->type == PSI_T_FUNCTION) {
+			struct psi_decl *decl = arg->type->real.func->func->type->real.func;
+
+			dprintf(fd, "(");
+			if (decl->args) {
+				size_t i;
+				struct psi_decl_arg *arg;
+
+				for (i = 0; psi_plist_get(decl->args, i, &arg); ++i) {
+					if (i) {
+						dprintf(fd, ", ");
+					}
+					psi_decl_arg_dump(fd, arg, 0);
+				}
+				if (decl->varargs) {
+					dprintf(fd, ", ...");
+				}
+			}
+			dprintf(fd, "))");
+		}
 		if (arg->var->array_size) {
 			dprintf(fd, "[%u]", arg->var->array_size);
 		}

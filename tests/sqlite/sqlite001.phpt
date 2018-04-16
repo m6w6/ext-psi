@@ -2,6 +2,7 @@
 sqlite3
 --INI--
 psi.directory={PWD}:{PWD}/../../psi.d
+psi.blacklist.decls="sqlite3_*serialize,sqlite3_stmt_scanstatus*,sqlite3_snapshot*"
 --SKIPIF--
 <?php
 extension_loaded("psi") or printf("%s\n", "skip - need ext/psi");

@@ -364,6 +364,10 @@ void psi_decl_type_dump(int fd, struct psi_decl_type *t, unsigned level)
 		}
 		break;
 
+	case PSI_T_FUNCTION:
+		psi_decl_type_dump(fd, t->real.func->func->type, level);
+		return;
+
 	default:
 		break;
 	}

@@ -51,9 +51,69 @@
 
 ZEND_DECLARE_MODULE_GLOBALS(psi);
 
+//#define ZEND_INI_MH(name) int name(zend_ini_entry *entry, zend_string *new_value, void *mh_arg1, void *mh_arg2, void *mh_arg3, int stage)
+
+static void OnUpdateBlacklist(const char *str, void (*cb)(const char*, size_t))
+{
+	const char *end;
+
+	do {
+		size_t len;
+
+		end = strchr(str, ',');
+		if (end) {
+			len = end - str;
+		} else {
+			len = strlen(str);
+		}
+		if (len) {
+			cb(str, len);
+		}
+
+		str = end + 1;
+	} while (end);
+}
+
+static void psi_blacklist_add_decl(const char *pattern, size_t len);
+static ZEND_INI_MH(OnUpdateBlacklistedDecls)
+{
+	OnUpdateBlacklist(new_value->val, psi_blacklist_add_decl);
+	return SUCCESS;
+}
+
+static void psi_blacklist_add_var(const char *pattern, size_t len);
+static ZEND_INI_MH(OnUpdateBlacklistedVars)
+{
+	OnUpdateBlacklist(new_value->val, psi_blacklist_add_var);
+	return SUCCESS;
+}
+
+static void OnDisplayBlacklist(struct psi_plist *bl)
+{
+	size_t i = 0;
+	char *item;
+
+	while (psi_plist_get(bl, i++, &item)) {
+		if (i > 1) {
+			PUTS(",");
+		}
+		PUTS(item);
+	}
+}
+static ZEND_INI_DISP(OnDisplayBlacklistedDecls)
+{
+	OnDisplayBlacklist(PSI_G(blacklist).decls);
+}
+static ZEND_INI_DISP(OnDisplayBlacklistedVars)
+{
+	OnDisplayBlacklist(PSI_G(blacklist).vars);
+}
+
 PHP_INI_BEGIN()
 	STD_PHP_INI_ENTRY("psi.engine", PSI_ENGINE, PHP_INI_SYSTEM, OnUpdateString, engine, zend_psi_globals, psi_globals)
 	STD_PHP_INI_ENTRY("psi.directory", "psi.d", PHP_INI_SYSTEM, OnUpdateString, directory, zend_psi_globals, psi_globals)
+	PHP_INI_ENTRY_EX("psi.blacklist.decls", "", PHP_INI_SYSTEM, OnUpdateBlacklistedDecls, OnDisplayBlacklistedDecls)
+	PHP_INI_ENTRY_EX("psi.blacklist.vars", "", PHP_INI_SYSTEM, OnUpdateBlacklistedVars, OnDisplayBlacklistedVars)
 PHP_INI_END();
 
 static zend_object_handlers psi_object_handlers;
@@ -328,6 +388,22 @@ static PHP_MINFO_FUNCTION(psi)
 static void ptr_free(void *ptr)
 {
 	free(*(void **) ptr);
+}
+
+static void psi_blacklist_add_decl(const char *pattern, size_t len)
+{
+	char *tmp = strndup(pattern, len);
+	struct psi_plist **decls = &PSI_G(blacklist).decls;
+
+	*decls = psi_plist_add(*decls, &tmp);
+}
+
+static void psi_blacklist_add_var(const char *pattern, size_t len)
+{
+	char *tmp = strndup(pattern, len);
+	struct psi_plist **vars = &PSI_G(blacklist).vars;
+
+	*vars = psi_plist_add(*vars, &tmp);
 }
 
 static PHP_GINIT_FUNCTION(psi)

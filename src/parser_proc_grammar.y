@@ -1250,7 +1250,31 @@ decl_functor_body[decl]:
 	func->token = psi_token_copy($NAME);
 	
 	$decl = psi_decl_init(func, $args);
+}
+|	qualified_decl_type[rval_type] indirection[i] LPAREN indirection[unused1] LPAREN indirection[unused2] name_token[NAME] RPAREN LPAREN decl_args[args] RPAREN RPAREN LPAREN decl_args[rval_args] RPAREN array_size[as] {
+	(void) $unused1;
+	(void) $unused2;
+	$NAME->type = PSI_T_NAME;
 	
+	struct psi_token *type_token = psi_token_append("@", psi_token_copy($NAME), 1, "rval");
+	struct psi_decl_arg *rval_func = psi_decl_arg_init($rval_type, psi_decl_var_init(type_token->text, $i, 0));
+	struct psi_decl *rval_decl = psi_decl_init(rval_func, $rval_args);
+	
+	rval_func->var->token = psi_token_copy(type_token);
+	rval_func->token = psi_token_copy(type_token);
+	if ($as) {
+		rval_func->var->pointer_level += 1;
+		rval_func->var->array_size = $as;
+	}
+	
+	struct psi_decl_type *type = psi_decl_type_init(PSI_T_FUNCTION, type_token->text);
+	struct psi_decl_arg *func = psi_decl_arg_init(type, psi_decl_var_init($NAME->text, 1, 0));
+	
+	type->real.func = rval_decl;
+	func->var->token = psi_token_copy($NAME);
+	func->token = psi_token_copy($NAME);
+	
+	$decl = psi_decl_init(func, $args);
 }
 ;
 
