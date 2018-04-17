@@ -41,6 +41,9 @@ The acronym PSI may be read as:
    <file role="src" name="config.m4"/>
    <file role="src" name="Makefile.frag"/>
    <file role="src" name="php_psi.h"/>
+   <file role="src" name="php_psi_cpp.h.in"/>
+   <file role="src" name="php_psi_posix.h.in"/>
+   <file role="src" name="php_psi_stdinc.h.in"/>
    <dir name="m4">
     <dir name="ax">
      <file role="src" name="ax_check_sign.m4"/>
@@ -291,7 +294,7 @@ The acronym PSI may be read as:
  <dependencies>
   <required>
    <php>
-    <min>7.3.0-dev</min>
+    <min>7.2.0-dev</min>
    </php>
    <pearinstaller>
     <min>1.4.1</min>

@@ -88,7 +88,7 @@ A comma separated list of C function declarations to ignore.
 
 ### psi.blacklist.vars
 
-A comma separated list of C variable declarations do ignore.
+A comma separated list of C variable declarations to ignore.
 
 ## PSI files
 
