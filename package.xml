@@ -7,12 +7,7 @@
 PSI is a PHP extension, which provides a foreign function interface through libffi and/or libjit.
 
 The acronym PSI may be read as:
-
     PHP System Interface
-    POSIX Standard Interface
-
-The latter because PSI can be configured to include declarations for most of the base definitions
-and system interfaces of POSIX.1-2008 (http://pubs.opengroup.org/onlinepubs/9699919799/).
 ]]></description>
  <lead>
   <name>Michael Wallner</name>
@@ -46,9 +41,48 @@ and system interfaces of POSIX.1-2008 (http://pubs.opengroup.org/onlinepubs/9699
    <file role="src" name="config.m4"/>
    <file role="src" name="Makefile.frag"/>
    <file role="src" name="php_psi.h"/>
+   <dir name="m4">
+    <dir name="ax">
+     <file role="src" name="ax_check_sign.m4"/>
+     <file role="src" name="ax_pthread.m4"/>
+    </dir>
+    <dir name="psi">
+     <file role="src" name="psi.m4"/>
+     <file role="src" name="psi_const.m4"/>
+     <file role="src" name="psi_type.m4"/>
+    </dir>
+   </dir>
+   <dir name="psi.d">
+    <file role="src" name="arpa_inet.psi"/>
+    <file role="src" name="errno.psi"/>
+    <file role="src" name="getopt.psi"/>
+    <file role="src" name="glob.psi"/>
+    <file role="src" name="netdb.psi"/>
+    <file role="src" name="stat.psi"/>
+    <file role="src" name="stdio.psi"/>
+    <file role="src" name="stdlib.psi"/>
+    <file role="src" name="string.psi"/>
+    <file role="src" name="syslog.psi"/>
+    <file role="src" name="time.psi"/>
+    <file role="src" name="uname.psi"/>
+   </dir>
+   <dir name="scripts">
+    <file role="src" name="_include.php"/>
+    <file role="src" name="gen_calc_basic.php"/>
+    <file role="src" name="gen_calc_bin.php"/>
+    <file role="src" name="gen_calc_bool.php"/>
+    <file role="src" name="gen_calc_cast.php"/>
+    <file role="src" name="gen_calc_cmp.php"/>
+    <file role="src" name="gen_calc_oper.php"/>
+    <file role="src" name="gen_calc_unary.php"/>
+    <file role="src" name="gen_package_xml.php"/>
+    <file role="src" name="gen_travis_yml.php"/>
+   </dir>
    <dir name="src">
     <file role="src" name="call.c"/>
     <file role="src" name="context.c"/>
+    <file role="src" name="cpp.c"/>
+    <file role="src" name="cpp_tokiter.c"/>
     <file role="src" name="data.c"/>
     <file role="src" name="error.c"/>
     <file role="src" name="libffi.c"/>
@@ -59,22 +93,24 @@ and system interfaces of POSIX.1-2008 (http://pubs.opengroup.org/onlinepubs/9699
     <file role="src" name="parser_proc.c"/>
     <file role="src" name="plist.c"/>
     <file role="src" name="token.c"/>
+    <file role="src" name="validate.c"/>
     <file role="src" name="calc.h"/>
     <file role="src" name="call.h"/>
     <file role="src" name="context.h"/>
+    <file role="src" name="cpp.h"/>
     <file role="src" name="data.h"/>
     <file role="src" name="error.h"/>
     <file role="src" name="libffi.h"/>
     <file role="src" name="libjit.h"/>
     <file role="src" name="marshal.h"/>
     <file role="src" name="parser.h"/>
-    <file role="src" name="parser_proc_grammar.y"/>
-    <file role="src" name="parser_proc.c"/>
     <file role="src" name="parser_proc.h"/>
-    <file role="src" name="parser.re"/>
     <file role="src" name="plist.h"/>
     <file role="src" name="token.h"/>
     <file role="src" name="types.h"/>
+    <file role="src" name="validate.h"/>
+    <file role="src" name="parser_proc_grammar.y"/>
+    <file role="src" name="parser.re"/>
     <dir name="calc">
      <file role="src" name="basic.h"/>
      <file role="src" name="bin.h"/>
@@ -82,16 +118,20 @@ and system interfaces of POSIX.1-2008 (http://pubs.opengroup.org/onlinepubs/9699
      <file role="src" name="cast.h"/>
      <file role="src" name="cmp.h"/>
      <file role="src" name="oper.h"/>
+     <file role="src" name="unary.h"/>
     </dir>
     <dir name="types">
      <file role="src" name="assert_stmt.c"/>
      <file role="src" name="const.c"/>
-     <file role="src" name="const_type.c"/>
+     <file role="src" name="cpp_exp.c"/>
+     <file role="src" name="cpp_macro_call.c"/>
+     <file role="src" name="cpp_macro_decl.c"/>
      <file role="src" name="decl.c"/>
      <file role="src" name="decl_abi.c"/>
      <file role="src" name="decl_arg.c"/>
      <file role="src" name="decl_enum.c"/>
      <file role="src" name="decl_enum_item.c"/>
+     <file role="src" name="decl_extvar.c"/>
      <file role="src" name="decl_file.c"/>
      <file role="src" name="decl_struct.c"/>
      <file role="src" name="decl_type.c"/>
@@ -113,18 +153,22 @@ and system interfaces of POSIX.1-2008 (http://pubs.opengroup.org/onlinepubs/9699
      <file role="src" name="let_stmt.c"/>
      <file role="src" name="num_exp.c"/>
      <file role="src" name="number.c"/>
+     <file role="src" name="return_exp.c"/>
      <file role="src" name="return_stmt.c"/>
      <file role="src" name="set_exp.c"/>
      <file role="src" name="set_func.c"/>
      <file role="src" name="set_stmt.c"/>
      <file role="src" name="assert_stmt.h"/>
      <file role="src" name="const.h"/>
-     <file role="src" name="const_type.h"/>
+     <file role="src" name="cpp_exp.h"/>
+     <file role="src" name="cpp_macro_call.h"/>
+     <file role="src" name="cpp_macro_decl.h"/>
      <file role="src" name="decl.h"/>
      <file role="src" name="decl_abi.h"/>
      <file role="src" name="decl_arg.h"/>
      <file role="src" name="decl_enum.h"/>
      <file role="src" name="decl_enum_item.h"/>
+     <file role="src" name="decl_extvar.h"/>
      <file role="src" name="decl_file.h"/>
      <file role="src" name="decl_struct.h"/>
      <file role="src" name="decl_type.h"/>
@@ -147,6 +191,7 @@ and system interfaces of POSIX.1-2008 (http://pubs.opengroup.org/onlinepubs/9699
      <file role="src" name="let_stmt.h"/>
      <file role="src" name="num_exp.h"/>
      <file role="src" name="number.h"/>
+     <file role="src" name="return_exp.h"/>
      <file role="src" name="return_stmt.h"/>
      <file role="src" name="set_exp.h"/>
      <file role="src" name="set_func.h"/>
@@ -192,13 +237,14 @@ and system interfaces of POSIX.1-2008 (http://pubs.opengroup.org/onlinepubs/9699
     </dir>
     <dir name="ndbm">
      <file role="test" name="ndbm001.phpt"/>
+     <file role="test" name="gdbm.psi"/>
      <file role="test" name="ndbm.psi"/>
     </dir>
     <dir name="netdb">
      <file role="test" name="gai001.phpt"/>
     </dir>
     <dir name="parser">
-     <file role="test" name="validate001.phpt"/>
+     <file role="test" name="cpp001.phpt"/>
      <file role="test" name="dump001.phpt"/>
      <file role="test" name="enum001.phpt"/>
      <file role="test" name="validate001.phpt"/>
@@ -207,6 +253,7 @@ and system interfaces of POSIX.1-2008 (http://pubs.opengroup.org/onlinepubs/9699
      <file role="test" name="validate004.phpt"/>
      <file role="test" name="validate005.phpt"/>
      <file role="test" name="validate006.phpt"/>
+     <file role="test" name="validate007.phpt"/>
     </dir>
     <dir name="pipe">
      <file role="test" name="pipe001.phpt"/>
@@ -244,7 +291,7 @@ and system interfaces of POSIX.1-2008 (http://pubs.opengroup.org/onlinepubs/9699
  <dependencies>
   <required>
    <php>
-    <min>7.0.0-dev</min>
+    <min>7.3.0-dev</min>
    </php>
    <pearinstaller>
     <min>1.4.1</min>

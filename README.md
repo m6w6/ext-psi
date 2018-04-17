@@ -8,26 +8,21 @@ PSI is a PHP extension, which provides a foreign function interface through
 
 The acronym PSI may be read as:
 * PHP System Interface
-* POSIX Standard Interface
-
-The latter because PSI can be configured to include declarations for most of the
-[base definitions and system interfaces of POSIX.1-2008](http://pubs.opengroup.org/onlinepubs/9699919799/).
 
 > **WARNING:**  
-> This is heavy WIP. Only a small part of configuration and implementation has been completed yet.
+> This is heavy WIP.
 
 ## Features
 
-* standard scalar types mapped to stdint types
 * structs, unions, enums and typedefs
-* simple numeric expressions
-* string and int constants
+* numeric and boolean expressions
+* scalar constants
 * vararg calls
 
 ## Installing
 
 > **WARNING:**  
-> This is heavy WIP. Installation only works from a source checkout yet.
+> This is heavy WIP. Installation only works from a source checkout with php-src@master yet.
 
 ### PECL
 
@@ -66,46 +61,6 @@ PSI supports the following configure switches:
 This is only relevant for an in-tree build. Use `--enable-psi` to include
 the PSI extension in the build.
 
-### --enable-psi-posix
-**Pre-define POSIX decls.**
-
-Use `--enable-psi-posix=all` to enable all available POSIX checks.
-
-Use `--enable-psi-posix=section,another,onemore` to enable specific modules only.
-
-The following modules are included by default:
-
-[stdint](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/stdint.h.html),
-[stddef](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/stddef.h.html),
-[stdlib](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/stdlib.h.html),
-[sys/types](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/sys_types.h.html)
-
-The following modules are available to select:
-
-[errno](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/errno.h.html),
-[fcntl](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/fcntl.h.html),
-[glob](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/glob.h.html),
-[locale](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/locale.h.html),
-[ndbm](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/ndbm.h.html),
-[netdb](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/netdb.h.html),
-[netinet/in](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/netinet_in.h.html),
-[netinet/tcp](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/netinet_tcp.h.html),
-[poll](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/poll.h.html),
-[signal](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/signal.h.html),
-[stdio](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/stdio.h.html),
-[sys/select](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/sys_select.h.html),
-[sys/socket](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/sys_socket.h.html),
-[sys/stat](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/sys_stat.h.html),
-[sys/time](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/sys_time.h.html),
-[sys/times](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/sys_times.h.html),
-[sys/uio](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/sys_uio.h.html),
-[sys/utsname](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/sys_utsname.h.html),
-[syslog](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/syslog.h.html),
-[time](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/time.h.html),
-[unistd](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/unistd.h.html),
-[wchar](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/wchar.h.html),
-[wctype](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/wctype.h.html),
-
 ### --with-psi-libjit
 **Path to libjit.**
 
@@ -127,7 +82,24 @@ The backend that PSI should use as FFI, either _jit_ for `libjit` or _ffi_ for `
 
 A colon separated list of directories to scan for `*.psi` files. Defaults to "psi.d".
 
+### psi.blacklist.decls
+
+A comma separated list of C function declarations to ignore.
+
+### psi.blacklist.vars
+
+A comma separated list of C variable declarations do ignore.
+
 ## PSI files
+
+### CPP
+
+* conditional parsing
+* including headers
+
+```c
+#include <string.h>
+```
 
 ### Comments
 
@@ -212,7 +184,7 @@ lib "awesome";
 ```
 
 These statements define what library should be `dlopen()`-ed to look up symbols from declarations.
-They must only occur once in a file. When a `lib` statement is omitted, stdlib is assumed.
+When a `lib` statement is omitted, stdlib is assumed.
 
 ### Declarations
 
