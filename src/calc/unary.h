@@ -57,12 +57,18 @@ static inline token_t psi_calc_minus(token_t t1, impl_val *v1, token_t t2, impl_
 	case PSI_T_UINT64:
 		res->u64 = -v1->u64;
 		break;
+#if HAVE_INT128
 	case PSI_T_INT128:
 		res->i128 = -v1->i128;
 		break;
+#endif
+
+#if HAVE_UINT128
 	case PSI_T_UINT128:
 		res->u128 = -v1->u128;
 		break;
+#endif
+
 	case PSI_T_FLOAT:
 		res->fval = -v1->fval;
 		break;
@@ -113,12 +119,18 @@ static inline token_t psi_calc_bool_not(token_t t1, impl_val *v1, token_t t2, im
 	case PSI_T_UINT64:
 		res->u8 = !v1->u64;
 		break;
+#if HAVE_INT128
 	case PSI_T_INT128:
 		res->u8 = !v1->i128;
 		break;
+#endif
+
+#if HAVE_UINT128
 	case PSI_T_UINT128:
 		res->u8 = !v1->u128;
 		break;
+#endif
+
 	case PSI_T_FLOAT:
 		res->u8 = !v1->fval;
 		break;
@@ -179,13 +191,19 @@ static inline token_t psi_calc_bin_not(token_t t1, impl_val *v1, token_t t2, imp
 		i1.u64 = v1->u64;
 		break;
 
+#if HAVE_INT128
 	case PSI_T_INT128:
 		i1.u64 = v1->i128;
 		break;
 
+#endif
+
+#if HAVE_UINT128
 	case PSI_T_UINT128:
 		i1.u64 = v1->u128;
 		break;
+
+#endif
 
 	case PSI_T_FLOAT:
 		i1.u64 = v1->fval;

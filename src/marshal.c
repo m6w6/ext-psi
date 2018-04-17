@@ -226,6 +226,7 @@ impl_val *psi_let_boolval(impl_val *tmp, struct psi_decl_arg *spec, token_t impl
 	return psi_val_boolval(tmp, real_type, boolval);
 }
 
+#if HAVE_INT128
 static inline char *psi_u128_to_buf(char *buf, unsigned __int128 u128)
 {
 	for (*buf = 0; u128 > 0; u128 /= 10) {
@@ -245,7 +246,6 @@ static inline char *psi_i128_to_buf(char *buf, __int128 i128)
 	return psi_u128_to_buf(buf, i128);
 }
 
-#if HAVE_INT128
 # define RETVAL_LONG_STR(V, s) do {\
 		char buf[0x30] = {0}; \
 		if (s && V >= ZEND_LONG_MIN && V <= ZEND_LONG_MAX) { \

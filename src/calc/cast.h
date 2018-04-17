@@ -57,12 +57,18 @@ static inline void psi_calc_cast(token_t in_type, impl_val *in_val, token_t out_
 		case PSI_T_UINT64:
 			out_val->i8 = in_val->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			out_val->i8 = in_val->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			out_val->i8 = in_val->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			out_val->i8 = in_val->fval;
 			break;
@@ -106,12 +112,18 @@ static inline void psi_calc_cast(token_t in_type, impl_val *in_val, token_t out_
 		case PSI_T_UINT64:
 			out_val->u8 = in_val->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			out_val->u8 = in_val->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			out_val->u8 = in_val->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			out_val->u8 = in_val->fval;
 			break;
@@ -155,12 +167,18 @@ static inline void psi_calc_cast(token_t in_type, impl_val *in_val, token_t out_
 		case PSI_T_UINT64:
 			out_val->i16 = in_val->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			out_val->i16 = in_val->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			out_val->i16 = in_val->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			out_val->i16 = in_val->fval;
 			break;
@@ -204,12 +222,18 @@ static inline void psi_calc_cast(token_t in_type, impl_val *in_val, token_t out_
 		case PSI_T_UINT64:
 			out_val->u16 = in_val->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			out_val->u16 = in_val->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			out_val->u16 = in_val->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			out_val->u16 = in_val->fval;
 			break;
@@ -253,12 +277,18 @@ static inline void psi_calc_cast(token_t in_type, impl_val *in_val, token_t out_
 		case PSI_T_UINT64:
 			out_val->i32 = in_val->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			out_val->i32 = in_val->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			out_val->i32 = in_val->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			out_val->i32 = in_val->fval;
 			break;
@@ -302,12 +332,18 @@ static inline void psi_calc_cast(token_t in_type, impl_val *in_val, token_t out_
 		case PSI_T_UINT64:
 			out_val->u32 = in_val->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			out_val->u32 = in_val->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			out_val->u32 = in_val->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			out_val->u32 = in_val->fval;
 			break;
@@ -351,12 +387,18 @@ static inline void psi_calc_cast(token_t in_type, impl_val *in_val, token_t out_
 		case PSI_T_UINT64:
 			out_val->i64 = in_val->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			out_val->i64 = in_val->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			out_val->i64 = in_val->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			out_val->i64 = in_val->fval;
 			break;
@@ -400,12 +442,18 @@ static inline void psi_calc_cast(token_t in_type, impl_val *in_val, token_t out_
 		case PSI_T_UINT64:
 			out_val->u64 = in_val->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			out_val->u64 = in_val->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			out_val->u64 = in_val->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			out_val->u64 = in_val->fval;
 			break;
@@ -423,6 +471,7 @@ static inline void psi_calc_cast(token_t in_type, impl_val *in_val, token_t out_
 			break;
 		}
 		break;
+#if HAVE_INT128
 	case PSI_T_INT128:
 		switch (in_type) {
 		case PSI_T_INT8:
@@ -449,12 +498,18 @@ static inline void psi_calc_cast(token_t in_type, impl_val *in_val, token_t out_
 		case PSI_T_UINT64:
 			out_val->i128 = in_val->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			out_val->i128 = in_val->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			out_val->i128 = in_val->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			out_val->i128 = in_val->fval;
 			break;
@@ -472,6 +527,9 @@ static inline void psi_calc_cast(token_t in_type, impl_val *in_val, token_t out_
 			break;
 		}
 		break;
+#endif
+
+#if HAVE_UINT128
 	case PSI_T_UINT128:
 		switch (in_type) {
 		case PSI_T_INT8:
@@ -498,12 +556,18 @@ static inline void psi_calc_cast(token_t in_type, impl_val *in_val, token_t out_
 		case PSI_T_UINT64:
 			out_val->u128 = in_val->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			out_val->u128 = in_val->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			out_val->u128 = in_val->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			out_val->u128 = in_val->fval;
 			break;
@@ -521,6 +585,8 @@ static inline void psi_calc_cast(token_t in_type, impl_val *in_val, token_t out_
 			break;
 		}
 		break;
+#endif
+
 	case PSI_T_FLOAT:
 		switch (in_type) {
 		case PSI_T_INT8:
@@ -547,12 +613,18 @@ static inline void psi_calc_cast(token_t in_type, impl_val *in_val, token_t out_
 		case PSI_T_UINT64:
 			out_val->fval = in_val->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			out_val->fval = in_val->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			out_val->fval = in_val->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			out_val->fval = in_val->fval;
 			break;
@@ -596,12 +668,18 @@ static inline void psi_calc_cast(token_t in_type, impl_val *in_val, token_t out_
 		case PSI_T_UINT64:
 			out_val->dval = in_val->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			out_val->dval = in_val->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			out_val->dval = in_val->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			out_val->dval = in_val->fval;
 			break;
@@ -646,12 +724,18 @@ static inline void psi_calc_cast(token_t in_type, impl_val *in_val, token_t out_
 		case PSI_T_UINT64:
 			out_val->ldval = in_val->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			out_val->ldval = in_val->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			out_val->ldval = in_val->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			out_val->ldval = in_val->fval;
 			break;

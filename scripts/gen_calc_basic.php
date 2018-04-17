@@ -127,11 +127,11 @@ static inline token_t psi_calc_mod(token_t t1, impl_val *v1, token_t t2, impl_va
 	case PSI_T_<?=$t2?>:
 		i2.i64 = v2-><?=$v2?>;
 		break;<?php /*nobr*/ ?>
-	<?php endforeach; ?>
 	<?php if (t_is_special($t2)) : ?>
 
 #endif
 	<?php endif; ?>
+	<?php endforeach; ?>
 
 	default:
 		assert(0);

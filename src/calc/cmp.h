@@ -57,12 +57,18 @@ static inline token_t psi_calc_cmp_eq(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->i8 == v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->i8 == v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->i8 == v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->i8 == v2->fval;
 			break;
@@ -106,12 +112,18 @@ static inline token_t psi_calc_cmp_eq(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->u8 == v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->u8 == v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->u8 == v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->u8 == v2->fval;
 			break;
@@ -155,12 +167,18 @@ static inline token_t psi_calc_cmp_eq(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->i16 == v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->i16 == v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->i16 == v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->i16 == v2->fval;
 			break;
@@ -204,12 +222,18 @@ static inline token_t psi_calc_cmp_eq(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->u16 == v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->u16 == v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->u16 == v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->u16 == v2->fval;
 			break;
@@ -253,12 +277,18 @@ static inline token_t psi_calc_cmp_eq(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->i32 == v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->i32 == v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->i32 == v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->i32 == v2->fval;
 			break;
@@ -302,12 +332,18 @@ static inline token_t psi_calc_cmp_eq(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->u32 == v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->u32 == v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->u32 == v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->u32 == v2->fval;
 			break;
@@ -351,12 +387,18 @@ static inline token_t psi_calc_cmp_eq(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->i64 == v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->i64 == v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->i64 == v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->i64 == v2->fval;
 			break;
@@ -400,12 +442,18 @@ static inline token_t psi_calc_cmp_eq(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->u64 == v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->u64 == v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->u64 == v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->u64 == v2->fval;
 			break;
@@ -423,6 +471,7 @@ static inline token_t psi_calc_cmp_eq(token_t t1, impl_val *v1, token_t t2, impl
 			break;
 		}
 		break;
+#if HAVE_INT128
 	case PSI_T_INT128:
 		switch (t2) {
 		case PSI_T_INT8:
@@ -449,12 +498,18 @@ static inline token_t psi_calc_cmp_eq(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->i128 == v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->i128 == v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->i128 == v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->i128 == v2->fval;
 			break;
@@ -472,6 +527,9 @@ static inline token_t psi_calc_cmp_eq(token_t t1, impl_val *v1, token_t t2, impl
 			break;
 		}
 		break;
+#endif
+
+#if HAVE_UINT128
 	case PSI_T_UINT128:
 		switch (t2) {
 		case PSI_T_INT8:
@@ -498,12 +556,18 @@ static inline token_t psi_calc_cmp_eq(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->u128 == v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->u128 == v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->u128 == v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->u128 == v2->fval;
 			break;
@@ -521,6 +585,8 @@ static inline token_t psi_calc_cmp_eq(token_t t1, impl_val *v1, token_t t2, impl
 			break;
 		}
 		break;
+#endif
+
 	case PSI_T_FLOAT:
 		switch (t2) {
 		case PSI_T_INT8:
@@ -547,12 +613,18 @@ static inline token_t psi_calc_cmp_eq(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->fval == v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->fval == v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->fval == v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->fval == v2->fval;
 			break;
@@ -596,12 +668,18 @@ static inline token_t psi_calc_cmp_eq(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->dval == v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->dval == v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->dval == v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->dval == v2->fval;
 			break;
@@ -646,12 +724,18 @@ static inline token_t psi_calc_cmp_eq(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->ldval == v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->ldval == v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->ldval == v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->ldval == v2->fval;
 			break;
@@ -707,12 +791,18 @@ static inline token_t psi_calc_cmp_ne(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->i8 != v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->i8 != v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->i8 != v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->i8 != v2->fval;
 			break;
@@ -756,12 +846,18 @@ static inline token_t psi_calc_cmp_ne(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->u8 != v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->u8 != v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->u8 != v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->u8 != v2->fval;
 			break;
@@ -805,12 +901,18 @@ static inline token_t psi_calc_cmp_ne(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->i16 != v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->i16 != v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->i16 != v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->i16 != v2->fval;
 			break;
@@ -854,12 +956,18 @@ static inline token_t psi_calc_cmp_ne(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->u16 != v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->u16 != v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->u16 != v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->u16 != v2->fval;
 			break;
@@ -903,12 +1011,18 @@ static inline token_t psi_calc_cmp_ne(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->i32 != v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->i32 != v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->i32 != v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->i32 != v2->fval;
 			break;
@@ -952,12 +1066,18 @@ static inline token_t psi_calc_cmp_ne(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->u32 != v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->u32 != v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->u32 != v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->u32 != v2->fval;
 			break;
@@ -1001,12 +1121,18 @@ static inline token_t psi_calc_cmp_ne(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->i64 != v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->i64 != v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->i64 != v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->i64 != v2->fval;
 			break;
@@ -1050,12 +1176,18 @@ static inline token_t psi_calc_cmp_ne(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->u64 != v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->u64 != v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->u64 != v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->u64 != v2->fval;
 			break;
@@ -1073,6 +1205,7 @@ static inline token_t psi_calc_cmp_ne(token_t t1, impl_val *v1, token_t t2, impl
 			break;
 		}
 		break;
+#if HAVE_INT128
 	case PSI_T_INT128:
 		switch (t2) {
 		case PSI_T_INT8:
@@ -1099,12 +1232,18 @@ static inline token_t psi_calc_cmp_ne(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->i128 != v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->i128 != v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->i128 != v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->i128 != v2->fval;
 			break;
@@ -1122,6 +1261,9 @@ static inline token_t psi_calc_cmp_ne(token_t t1, impl_val *v1, token_t t2, impl
 			break;
 		}
 		break;
+#endif
+
+#if HAVE_UINT128
 	case PSI_T_UINT128:
 		switch (t2) {
 		case PSI_T_INT8:
@@ -1148,12 +1290,18 @@ static inline token_t psi_calc_cmp_ne(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->u128 != v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->u128 != v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->u128 != v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->u128 != v2->fval;
 			break;
@@ -1171,6 +1319,8 @@ static inline token_t psi_calc_cmp_ne(token_t t1, impl_val *v1, token_t t2, impl
 			break;
 		}
 		break;
+#endif
+
 	case PSI_T_FLOAT:
 		switch (t2) {
 		case PSI_T_INT8:
@@ -1197,12 +1347,18 @@ static inline token_t psi_calc_cmp_ne(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->fval != v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->fval != v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->fval != v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->fval != v2->fval;
 			break;
@@ -1246,12 +1402,18 @@ static inline token_t psi_calc_cmp_ne(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->dval != v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->dval != v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->dval != v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->dval != v2->fval;
 			break;
@@ -1296,12 +1458,18 @@ static inline token_t psi_calc_cmp_ne(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->ldval != v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->ldval != v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->ldval != v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->ldval != v2->fval;
 			break;
@@ -1357,12 +1525,18 @@ static inline token_t psi_calc_cmp_lt(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->i8 < v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->i8 < v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->i8 < v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->i8 < v2->fval;
 			break;
@@ -1406,12 +1580,18 @@ static inline token_t psi_calc_cmp_lt(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->u8 < v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->u8 < v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->u8 < v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->u8 < v2->fval;
 			break;
@@ -1455,12 +1635,18 @@ static inline token_t psi_calc_cmp_lt(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->i16 < v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->i16 < v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->i16 < v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->i16 < v2->fval;
 			break;
@@ -1504,12 +1690,18 @@ static inline token_t psi_calc_cmp_lt(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->u16 < v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->u16 < v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->u16 < v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->u16 < v2->fval;
 			break;
@@ -1553,12 +1745,18 @@ static inline token_t psi_calc_cmp_lt(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->i32 < v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->i32 < v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->i32 < v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->i32 < v2->fval;
 			break;
@@ -1602,12 +1800,18 @@ static inline token_t psi_calc_cmp_lt(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->u32 < v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->u32 < v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->u32 < v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->u32 < v2->fval;
 			break;
@@ -1651,12 +1855,18 @@ static inline token_t psi_calc_cmp_lt(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->i64 < v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->i64 < v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->i64 < v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->i64 < v2->fval;
 			break;
@@ -1700,12 +1910,18 @@ static inline token_t psi_calc_cmp_lt(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->u64 < v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->u64 < v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->u64 < v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->u64 < v2->fval;
 			break;
@@ -1723,6 +1939,7 @@ static inline token_t psi_calc_cmp_lt(token_t t1, impl_val *v1, token_t t2, impl
 			break;
 		}
 		break;
+#if HAVE_INT128
 	case PSI_T_INT128:
 		switch (t2) {
 		case PSI_T_INT8:
@@ -1749,12 +1966,18 @@ static inline token_t psi_calc_cmp_lt(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->i128 < v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->i128 < v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->i128 < v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->i128 < v2->fval;
 			break;
@@ -1772,6 +1995,9 @@ static inline token_t psi_calc_cmp_lt(token_t t1, impl_val *v1, token_t t2, impl
 			break;
 		}
 		break;
+#endif
+
+#if HAVE_UINT128
 	case PSI_T_UINT128:
 		switch (t2) {
 		case PSI_T_INT8:
@@ -1798,12 +2024,18 @@ static inline token_t psi_calc_cmp_lt(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->u128 < v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->u128 < v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->u128 < v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->u128 < v2->fval;
 			break;
@@ -1821,6 +2053,8 @@ static inline token_t psi_calc_cmp_lt(token_t t1, impl_val *v1, token_t t2, impl
 			break;
 		}
 		break;
+#endif
+
 	case PSI_T_FLOAT:
 		switch (t2) {
 		case PSI_T_INT8:
@@ -1847,12 +2081,18 @@ static inline token_t psi_calc_cmp_lt(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->fval < v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->fval < v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->fval < v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->fval < v2->fval;
 			break;
@@ -1896,12 +2136,18 @@ static inline token_t psi_calc_cmp_lt(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->dval < v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->dval < v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->dval < v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->dval < v2->fval;
 			break;
@@ -1946,12 +2192,18 @@ static inline token_t psi_calc_cmp_lt(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->ldval < v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->ldval < v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->ldval < v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->ldval < v2->fval;
 			break;
@@ -2007,12 +2259,18 @@ static inline token_t psi_calc_cmp_gt(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->i8 > v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->i8 > v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->i8 > v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->i8 > v2->fval;
 			break;
@@ -2056,12 +2314,18 @@ static inline token_t psi_calc_cmp_gt(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->u8 > v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->u8 > v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->u8 > v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->u8 > v2->fval;
 			break;
@@ -2105,12 +2369,18 @@ static inline token_t psi_calc_cmp_gt(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->i16 > v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->i16 > v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->i16 > v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->i16 > v2->fval;
 			break;
@@ -2154,12 +2424,18 @@ static inline token_t psi_calc_cmp_gt(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->u16 > v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->u16 > v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->u16 > v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->u16 > v2->fval;
 			break;
@@ -2203,12 +2479,18 @@ static inline token_t psi_calc_cmp_gt(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->i32 > v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->i32 > v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->i32 > v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->i32 > v2->fval;
 			break;
@@ -2252,12 +2534,18 @@ static inline token_t psi_calc_cmp_gt(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->u32 > v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->u32 > v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->u32 > v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->u32 > v2->fval;
 			break;
@@ -2301,12 +2589,18 @@ static inline token_t psi_calc_cmp_gt(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->i64 > v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->i64 > v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->i64 > v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->i64 > v2->fval;
 			break;
@@ -2350,12 +2644,18 @@ static inline token_t psi_calc_cmp_gt(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->u64 > v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->u64 > v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->u64 > v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->u64 > v2->fval;
 			break;
@@ -2373,6 +2673,7 @@ static inline token_t psi_calc_cmp_gt(token_t t1, impl_val *v1, token_t t2, impl
 			break;
 		}
 		break;
+#if HAVE_INT128
 	case PSI_T_INT128:
 		switch (t2) {
 		case PSI_T_INT8:
@@ -2399,12 +2700,18 @@ static inline token_t psi_calc_cmp_gt(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->i128 > v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->i128 > v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->i128 > v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->i128 > v2->fval;
 			break;
@@ -2422,6 +2729,9 @@ static inline token_t psi_calc_cmp_gt(token_t t1, impl_val *v1, token_t t2, impl
 			break;
 		}
 		break;
+#endif
+
+#if HAVE_UINT128
 	case PSI_T_UINT128:
 		switch (t2) {
 		case PSI_T_INT8:
@@ -2448,12 +2758,18 @@ static inline token_t psi_calc_cmp_gt(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->u128 > v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->u128 > v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->u128 > v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->u128 > v2->fval;
 			break;
@@ -2471,6 +2787,8 @@ static inline token_t psi_calc_cmp_gt(token_t t1, impl_val *v1, token_t t2, impl
 			break;
 		}
 		break;
+#endif
+
 	case PSI_T_FLOAT:
 		switch (t2) {
 		case PSI_T_INT8:
@@ -2497,12 +2815,18 @@ static inline token_t psi_calc_cmp_gt(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->fval > v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->fval > v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->fval > v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->fval > v2->fval;
 			break;
@@ -2546,12 +2870,18 @@ static inline token_t psi_calc_cmp_gt(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->dval > v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->dval > v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->dval > v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->dval > v2->fval;
 			break;
@@ -2596,12 +2926,18 @@ static inline token_t psi_calc_cmp_gt(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->ldval > v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->ldval > v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->ldval > v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->ldval > v2->fval;
 			break;
@@ -2657,12 +2993,18 @@ static inline token_t psi_calc_cmp_le(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->i8 <= v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->i8 <= v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->i8 <= v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->i8 <= v2->fval;
 			break;
@@ -2706,12 +3048,18 @@ static inline token_t psi_calc_cmp_le(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->u8 <= v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->u8 <= v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->u8 <= v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->u8 <= v2->fval;
 			break;
@@ -2755,12 +3103,18 @@ static inline token_t psi_calc_cmp_le(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->i16 <= v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->i16 <= v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->i16 <= v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->i16 <= v2->fval;
 			break;
@@ -2804,12 +3158,18 @@ static inline token_t psi_calc_cmp_le(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->u16 <= v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->u16 <= v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->u16 <= v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->u16 <= v2->fval;
 			break;
@@ -2853,12 +3213,18 @@ static inline token_t psi_calc_cmp_le(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->i32 <= v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->i32 <= v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->i32 <= v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->i32 <= v2->fval;
 			break;
@@ -2902,12 +3268,18 @@ static inline token_t psi_calc_cmp_le(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->u32 <= v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->u32 <= v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->u32 <= v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->u32 <= v2->fval;
 			break;
@@ -2951,12 +3323,18 @@ static inline token_t psi_calc_cmp_le(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->i64 <= v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->i64 <= v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->i64 <= v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->i64 <= v2->fval;
 			break;
@@ -3000,12 +3378,18 @@ static inline token_t psi_calc_cmp_le(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->u64 <= v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->u64 <= v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->u64 <= v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->u64 <= v2->fval;
 			break;
@@ -3023,6 +3407,7 @@ static inline token_t psi_calc_cmp_le(token_t t1, impl_val *v1, token_t t2, impl
 			break;
 		}
 		break;
+#if HAVE_INT128
 	case PSI_T_INT128:
 		switch (t2) {
 		case PSI_T_INT8:
@@ -3049,12 +3434,18 @@ static inline token_t psi_calc_cmp_le(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->i128 <= v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->i128 <= v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->i128 <= v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->i128 <= v2->fval;
 			break;
@@ -3072,6 +3463,9 @@ static inline token_t psi_calc_cmp_le(token_t t1, impl_val *v1, token_t t2, impl
 			break;
 		}
 		break;
+#endif
+
+#if HAVE_UINT128
 	case PSI_T_UINT128:
 		switch (t2) {
 		case PSI_T_INT8:
@@ -3098,12 +3492,18 @@ static inline token_t psi_calc_cmp_le(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->u128 <= v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->u128 <= v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->u128 <= v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->u128 <= v2->fval;
 			break;
@@ -3121,6 +3521,8 @@ static inline token_t psi_calc_cmp_le(token_t t1, impl_val *v1, token_t t2, impl
 			break;
 		}
 		break;
+#endif
+
 	case PSI_T_FLOAT:
 		switch (t2) {
 		case PSI_T_INT8:
@@ -3147,12 +3549,18 @@ static inline token_t psi_calc_cmp_le(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->fval <= v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->fval <= v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->fval <= v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->fval <= v2->fval;
 			break;
@@ -3196,12 +3604,18 @@ static inline token_t psi_calc_cmp_le(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->dval <= v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->dval <= v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->dval <= v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->dval <= v2->fval;
 			break;
@@ -3246,12 +3660,18 @@ static inline token_t psi_calc_cmp_le(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->ldval <= v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->ldval <= v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->ldval <= v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->ldval <= v2->fval;
 			break;
@@ -3307,12 +3727,18 @@ static inline token_t psi_calc_cmp_ge(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->i8 >= v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->i8 >= v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->i8 >= v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->i8 >= v2->fval;
 			break;
@@ -3356,12 +3782,18 @@ static inline token_t psi_calc_cmp_ge(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->u8 >= v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->u8 >= v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->u8 >= v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->u8 >= v2->fval;
 			break;
@@ -3405,12 +3837,18 @@ static inline token_t psi_calc_cmp_ge(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->i16 >= v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->i16 >= v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->i16 >= v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->i16 >= v2->fval;
 			break;
@@ -3454,12 +3892,18 @@ static inline token_t psi_calc_cmp_ge(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->u16 >= v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->u16 >= v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->u16 >= v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->u16 >= v2->fval;
 			break;
@@ -3503,12 +3947,18 @@ static inline token_t psi_calc_cmp_ge(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->i32 >= v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->i32 >= v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->i32 >= v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->i32 >= v2->fval;
 			break;
@@ -3552,12 +4002,18 @@ static inline token_t psi_calc_cmp_ge(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->u32 >= v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->u32 >= v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->u32 >= v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->u32 >= v2->fval;
 			break;
@@ -3601,12 +4057,18 @@ static inline token_t psi_calc_cmp_ge(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->i64 >= v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->i64 >= v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->i64 >= v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->i64 >= v2->fval;
 			break;
@@ -3650,12 +4112,18 @@ static inline token_t psi_calc_cmp_ge(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->u64 >= v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->u64 >= v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->u64 >= v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->u64 >= v2->fval;
 			break;
@@ -3673,6 +4141,7 @@ static inline token_t psi_calc_cmp_ge(token_t t1, impl_val *v1, token_t t2, impl
 			break;
 		}
 		break;
+#if HAVE_INT128
 	case PSI_T_INT128:
 		switch (t2) {
 		case PSI_T_INT8:
@@ -3699,12 +4168,18 @@ static inline token_t psi_calc_cmp_ge(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->i128 >= v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->i128 >= v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->i128 >= v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->i128 >= v2->fval;
 			break;
@@ -3722,6 +4197,9 @@ static inline token_t psi_calc_cmp_ge(token_t t1, impl_val *v1, token_t t2, impl
 			break;
 		}
 		break;
+#endif
+
+#if HAVE_UINT128
 	case PSI_T_UINT128:
 		switch (t2) {
 		case PSI_T_INT8:
@@ -3748,12 +4226,18 @@ static inline token_t psi_calc_cmp_ge(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->u128 >= v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->u128 >= v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->u128 >= v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->u128 >= v2->fval;
 			break;
@@ -3771,6 +4255,8 @@ static inline token_t psi_calc_cmp_ge(token_t t1, impl_val *v1, token_t t2, impl
 			break;
 		}
 		break;
+#endif
+
 	case PSI_T_FLOAT:
 		switch (t2) {
 		case PSI_T_INT8:
@@ -3797,12 +4283,18 @@ static inline token_t psi_calc_cmp_ge(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->fval >= v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->fval >= v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->fval >= v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->fval >= v2->fval;
 			break;
@@ -3846,12 +4338,18 @@ static inline token_t psi_calc_cmp_ge(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->dval >= v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->dval >= v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->dval >= v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->dval >= v2->fval;
 			break;
@@ -3896,12 +4394,18 @@ static inline token_t psi_calc_cmp_ge(token_t t1, impl_val *v1, token_t t2, impl
 		case PSI_T_UINT64:
 			res->u8 = v1->ldval >= v2->u64;
 			break;
+#	if HAVE_INT128
 		case PSI_T_INT128:
 			res->u8 = v1->ldval >= v2->i128;
 			break;
+#	endif
+
+#	if HAVE_UINT128
 		case PSI_T_UINT128:
 			res->u8 = v1->ldval >= v2->u128;
 			break;
+#	endif
+
 		case PSI_T_FLOAT:
 			res->u8 = v1->ldval >= v2->fval;
 			break;

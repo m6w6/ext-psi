@@ -31,8 +31,8 @@ function t_is_int($t) {
 
 function t_is_special($t) {
 	switch ($t) {
-		case "INT128_T":
-		case "UINT128_T":
+		case "INT128":
+		case "UINT128":
 		case "LONG_DOUBLE":
 			return true;
 		default:

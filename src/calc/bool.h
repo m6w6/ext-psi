@@ -62,14 +62,20 @@ static inline token_t psi_calc_bool_or(token_t t1, impl_val *v1, token_t t2, imp
 		if (v1->u64)
 			goto return_true;
 		break;
+#if HAVE_INT128
 	case PSI_T_INT128:
 		if (v1->i128)
 			goto return_true;
 		break;
+#endif
+
+#if HAVE_UINT128
 	case PSI_T_UINT128:
 		if (v1->u128)
 			goto return_true;
 		break;
+#endif
+
 	case PSI_T_FLOAT:
 		if (v1->fval)
 			goto return_true;
@@ -123,14 +129,20 @@ static inline token_t psi_calc_bool_or(token_t t1, impl_val *v1, token_t t2, imp
 		if (v2->u64)
 			goto return_true;
 		break;
+#if HAVE_INT128
 	case PSI_T_INT128:
 		if (v2->i128)
 			goto return_true;
 		break;
+#endif
+
+#if HAVE_UINT128
 	case PSI_T_UINT128:
 		if (v2->u128)
 			goto return_true;
 		break;
+#endif
+
 	case PSI_T_FLOAT:
 		if (v2->fval)
 			goto return_true;
@@ -194,14 +206,20 @@ static inline token_t psi_calc_bool_and(token_t t1, impl_val *v1, token_t t2, im
 		if (!v1->u64)
 			goto return_false;
 		break;
+#if HAVE_INT128
 	case PSI_T_INT128:
 		if (!v1->i128)
 			goto return_false;
 		break;
+#endif
+
+#if HAVE_UINT128
 	case PSI_T_UINT128:
 		if (!v1->u128)
 			goto return_false;
 		break;
+#endif
+
 	case PSI_T_FLOAT:
 		if (!v1->fval)
 			goto return_false;
@@ -255,14 +273,20 @@ static inline token_t psi_calc_bool_and(token_t t1, impl_val *v1, token_t t2, im
 		if (!v2->u64)
 			goto return_false;
 		break;
+#if HAVE_INT128
 	case PSI_T_INT128:
 		if (!v2->i128)
 			goto return_false;
 		break;
+#endif
+
+#if HAVE_UINT128
 	case PSI_T_UINT128:
 		if (!v2->u128)
 			goto return_false;
 		break;
+#endif
+
 	case PSI_T_FLOAT:
 		if (!v2->fval)
 			goto return_false;
