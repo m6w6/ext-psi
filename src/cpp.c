@@ -469,7 +469,7 @@ bool psi_cpp_include(struct psi_cpp *cpp, const struct psi_token *file, unsigned
 	bool parsed = false;
 	int f_len = strlen(file->text);
 
-	if (!(flags & PSI_CPP_INCLUDE_NEXT) || *file->text == '/') {
+	if (file->type == PSI_T_QUOTED_STRING && (!(flags & PSI_CPP_INCLUDE_NEXT) || *file->text == '/')) {
 		/* first try as is, full or relative path */
 		char temp[PATH_MAX], *path = temp;
 
@@ -499,7 +499,7 @@ bool psi_cpp_include(struct psi_cpp *cpp, const struct psi_token *file, unsigned
 			}
 		}
 
-		if (!(flags & PSI_CPP_INCLUDE_NEXT) || !cpp->search) {
+		if (!(flags & PSI_CPP_INCLUDE_NEXT)) {
 			cpp->search = PSI_G(search_path);
 		}
 
