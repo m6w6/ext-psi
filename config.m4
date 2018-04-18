@@ -27,9 +27,7 @@ if test "$PHP_PSI" != no; then
 	PHP_ARG_ENABLE(psi-maintainer-mode, whether to enable maintainer mode,
 	[  --enable-psi-maintainer-mode
                           PSI: enable maintainer mode
-                           . parallel configure
-                           . make dependencies
-                           . extra debug wrappers], [no], [no])
+                           . make dependencies], [no], [no])
 
 	PHP_ARG_WITH(psi-libjit, where to find libjit,
 	[  --with-psi-libjit=DIR   PSI: path to libjit], [ ], [ ])
