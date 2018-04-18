@@ -1111,9 +1111,10 @@ decl_extvar_stmt[list]:
 			if (psi_decl_extvar_is_blacklisted(var->name)) {
 				psi_decl_var_free(&var);
 			} else {
-				list = psi_plist_add(list, psi_decl_extvar_init(
-					psi_decl_arg_init(psi_decl_type_copy($decl_arg->type), var)));
-				}
+				struct psi_decl_extvar *evar = psi_decl_extvar_init(
+					psi_decl_arg_init(psi_decl_type_copy($decl_arg->type), var));
+				list = psi_plist_add(list, &evar);
+			}
 		}
 		free($vars);
 	}
