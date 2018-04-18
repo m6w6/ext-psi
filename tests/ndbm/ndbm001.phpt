@@ -5,7 +5,7 @@ psi.directory={PWD}:{PWD}/../../psi.d
 --SKIPIF--
 <?php
 extension_loaded("psi") or die("skip - need ext/psi");
-#function_exists("psi\\dbm_open") or die("skip - need nbdm support");
+function_exists("psi\\dbm_open") or die("skip - need nbdm support");
 ?>
 --FILE--
 ===TEST===

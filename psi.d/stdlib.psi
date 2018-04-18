@@ -1,3 +1,5 @@
+lib "crypt";
+
 #include <stdlib.h>
 
 function psi\abs(int $i) : int {
