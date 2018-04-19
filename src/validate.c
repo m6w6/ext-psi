@@ -223,5 +223,30 @@ bool psi_validate(struct psi_validate_scope *scope,
 	psi_validate_list(scope, dst, &consts, psi_validate_const);
 	psi_validate_list(scope, dst, &impls, psi_validate_impl);
 
+	if (types.cur != types.src) {
+		psi_plist_free(types.cur);
+	}
+	if (structs.cur != structs.src) {
+		psi_plist_free(structs.cur);
+	}
+	if (unions.cur != unions.src) {
+		psi_plist_free(unions.cur);
+	}
+	if (enums.cur != enums.src) {
+		psi_plist_free(enums.cur);
+	}
+	if (vars.cur != vars.src) {
+		psi_plist_free(vars.cur);
+	}
+	if (decls.cur != decls.src) {
+		psi_plist_free(decls.cur);
+	}
+	if (consts.cur != consts.src) {
+		psi_plist_free(consts.cur);
+	}
+	if (impls.cur != impls.src) {
+		psi_plist_free(impls.cur);
+	}
+
 	return true;
 }

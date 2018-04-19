@@ -79,7 +79,6 @@ bool psi_decl_file_validate(struct psi_data *dst, struct psi_data *src)
 			return false;
 		}
 
-		libname = strdup(libname);
 		dst->file.libnames = psi_plist_add(dst->file.libnames, &libname);
 		dst->file.dlopened = psi_plist_add(dst->file.dlopened, &dlopened);
 	}

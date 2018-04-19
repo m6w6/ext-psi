@@ -160,16 +160,17 @@ void psi_data_dtor(struct psi_data *data)
 
 void psi_data_dump(int fd, struct psi_data *D)
 {
+	size_t i = 0;
+	char *libname;
+
 	if (D->file.filename) {
 		size_t i = 0;
 		char *libname;
 
 		dprintf(fd, "// filename=%s (%u errors)\n", D->file.filename, D->errors);
-		while (psi_plist_get(D->file.libnames, i++, &libname)) {
-			dprintf(fd, "lib \"%s\";\n", libname);
-		}
-	} else {
-		dprintf(fd, "// builtin predef\n");
+	}
+	while (psi_plist_get(D->file.libnames, i++, &libname)) {
+		dprintf(fd, "lib \"%s\";\n", libname);
 	}
 	if (psi_plist_count(D->types)) {
 		size_t i = 0;
@@ -234,7 +235,7 @@ void psi_data_dump(int fd, struct psi_data *D)
 
 		while (psi_plist_get(D->decls, i++, &decl)) {
 			psi_decl_dump(fd, decl);
-			dprintf(fd, "\n");
+			dprintf(fd, "// %p \n", decl->sym);
 		}
 		dprintf(fd, "\n");
 	}
