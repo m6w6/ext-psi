@@ -1,3 +1,7 @@
+#ifdef linux /* old, anyway */
+lib "rt";
+#endif
+
 #include <sys/time.h>
 #include <time.h>
 #include <sys/times.h>
