@@ -92,6 +92,11 @@ bool psi_decl_struct_validate(struct psi_data *data, struct psi_decl_struct *s,
 	}
 
 	if (!s->size && !psi_plist_count(s->args)) {
+		/* TODO: return true and check those structs are only used by address */
+		/* suppress needless warning
+		data->error(data, s->token, PSI_WARNING, "Empty struct %s",
+				s->name);
+				*/
 		return false;
 	}
 

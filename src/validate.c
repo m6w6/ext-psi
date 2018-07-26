@@ -203,17 +203,20 @@ bool psi_validate(struct psi_validate_scope *scope,
 		}
 
 		/* nothing changed; bail out */
-		if (count_all && (dst->flags & PSI_SILENT) && !(flags & PSI_SILENT)) {
-			/* one last error-spitting round, if not explicitly suppressed */
-			dst->flags ^= PSI_SILENT;
-			check_count = ~0;
+		if (count_all) {
+			src->errors += count_all;
 
-			PSI_DEBUG_PRINT(dst, "PSI: validation bail out with %zu"
-					" type checks remaining, errors follow\n", count_all);
-			continue;
+			if ((dst->flags & PSI_SILENT) && !(flags & PSI_SILENT)) {
+				/* one last error-spitting round, if not explicitly suppressed */
+				dst->flags ^= PSI_SILENT;
+				check_count = ~0;
+
+				PSI_DEBUG_PRINT(dst, "PSI: validation bail out with %zu"
+						" type checks remaining, errors follow\n", count_all);
+				continue;
+			}
 		}
 
-		src->errors += count_all;
 		break;
 	}
 
