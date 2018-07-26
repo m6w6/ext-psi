@@ -105,9 +105,6 @@ void psi_decl_arg_dump(int fd, struct psi_decl_arg *arg, unsigned level)
 			}
 			dprintf(fd, "))");
 		}
-		if (arg->var->array_size) {
-			dprintf(fd, "[%u]", arg->var->array_size);
-		}
 	} else {
 		psi_decl_type_dump(fd, arg->type, level);
 		dprintf(fd, " ");
@@ -118,7 +115,7 @@ void psi_decl_arg_dump(int fd, struct psi_decl_arg *arg, unsigned level)
 bool psi_decl_arg_validate(struct psi_data *data, struct psi_decl_arg *arg,
 		struct psi_validate_scope *scope)
 {
-	if (!psi_decl_type_validate(data, arg->type, arg, scope)) {
+	if (!psi_decl_type_validate(data, arg->type, NULL, scope)) {
 		 if (!arg->var->pointer_level) {
 			data->error(data, arg->type->token, PSI_WARNING,
 					"Cannot use '%s' as type for '%s'%s%s", arg->type->name,

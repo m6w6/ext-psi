@@ -526,7 +526,9 @@ void psi_set_to_string(zval *return_value, struct psi_set_exp *set, impl_val *re
 	impl_val *ptr = deref_impl_val(ret_val, var);
 	char *str;
 
-	if (var->arg->var->array_size) {
+	/* holy moly, this breaks arrays of pointers to char,
+	 * like e.g. tzname */
+	if (var->arg->var->array_size && var->arg->var->pointer_level == 1) {
 		str = (char *) ptr;
 	} else {
 		str = ptr->ptr;
@@ -689,8 +691,8 @@ void psi_set_to_array_counted(zval *return_value, struct psi_set_exp *set, impl_
 	count = psi_num_exp_get_long(sub_exp->data.num, frame, NULL);
 	psi_plist_get(set->inner, 1, &sub_exp);
 
-	for (ptr = (char *) ret_val; 0 < count--; ptr += size) {
 	size = psi_decl_var_get_size(psi_set_exp_get_decl_var(sub_exp));
+	for (ptr = (char *) ret_val; 0 < count--; ptr += size) {
 		zval ele;
 
 		ZVAL_NULL(&ele);

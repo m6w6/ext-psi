@@ -51,6 +51,33 @@
 # endif
 #endif
 
+struct psi_ffi_context {
+	ffi_cif signature;
+	ffi_type *params[2];
+};
+
+struct psi_ffi_impl_info {
+	struct psi_context *context;
+	struct psi_call_frame *frame;
+
+	void *code;
+	ffi_closure *closure;
+};
+
+struct psi_ffi_callback_info {
+	struct psi_ffi_impl_info *impl_info;
+	struct psi_let_exp *let_exp;
+
+	void *code;
+	ffi_closure *closure;
+};
+
+struct psi_ffi_decl_info {
+	ffi_cif signature;
+	ffi_type *rv_array;
+	ffi_type *params[1];
+};
+
 static void *psi_ffi_closure_alloc(size_t s, void **code)
 {
 #ifdef PSI_HAVE_FFI_CLOSURE_ALLOC
@@ -110,7 +137,8 @@ static ffi_type *ffi_type_sint128;
 static ffi_type *ffi_type_uint128;
 #endif
 
-static inline ffi_type *psi_ffi_decl_arg_type(struct psi_decl_arg *darg);
+static inline ffi_type *psi_ffi_decl_arg_type(struct psi_decl_arg *darg,
+		struct psi_decl *fn);
 
 static inline ffi_type *psi_ffi_token_type(token_t t) {
 	switch (t) {
@@ -173,7 +201,7 @@ static inline ffi_type *psi_ffi_impl_type(token_t impl_type) {
 	}
 	return NULL;
 }
-static void psi_ffi_struct_type_dtor(void *type) {
+static void psi_ffi_type_dtor(void *type) {
 	ffi_type *strct = type;
 
 	if (strct->elements) {
@@ -200,76 +228,98 @@ static size_t psi_ffi_struct_type_pad(ffi_type **els, size_t padding) {
 	return padding;
 }
 
-static ffi_type **psi_ffi_struct_type_elements(struct psi_decl_struct *strct) {
-	size_t i = 0, argc, nels = 0, offset = 0, maxalign = 0, last_arg_pos = -1;
-	ffi_type **tmp, **els;
-	struct psi_decl_arg *darg;
+struct psi_ffi_struct_element_storage {
+	ffi_type **els;
+	size_t nels;
+	size_t argc;
+	size_t offset;
+	size_t max_align;
+	size_t last_arg_pos;
+};
 
-	argc = psi_plist_count(strct->args);
-	els = calloc(argc + 1, sizeof(*els));
+static inline void psi_ffi_struct_type_element(
+		struct psi_ffi_struct_element_storage *s, struct psi_decl_arg *darg) {
+
+	ffi_type *type, **tmp;
+	size_t padding;
+
+	if (darg->layout->pos == s->last_arg_pos) {
+		/* skip bit fields */
+		return;
+	}
+	s->last_arg_pos = darg->layout->pos;
+
+	type = malloc(sizeof(*type));
+	*type = *psi_ffi_decl_arg_type(darg, NULL);
+
+	if (type->alignment > s->max_align) {
+		s->max_align = type->alignment;
+	}
+
+	assert(type->size <= darg->layout->len);
+	if ((padding = psi_offset_padding(darg->layout->pos - s->offset, type->alignment))) {
+		if (s->nels + padding + 1 > s->argc) {
+			s->argc += padding;
+			tmp = realloc(s->els, (s->argc + 1) * sizeof(*s->els));
+			if (tmp) {
+				s->els = tmp;
+			} else {
+				free(s->els);
+				abort();
+			}
+			s->els[s->argc] = NULL;
+		}
+		psi_ffi_struct_type_pad(&s->els[s->nels], padding);
+		s->nels += padding;
+		s->offset += padding;
+	}
+	assert(s->offset == darg->layout->pos);
+
+	s->offset = (s->offset + darg->layout->len + type->alignment - 1) & ~(type->alignment - 1);
+	s->els[s->nels++] = type;
+}
+
+static ffi_type **psi_ffi_struct_type_elements(struct psi_decl_struct *strct) {
+	size_t i = 0;
+	ffi_type **tmp;
+	struct psi_decl_arg *darg;
+	struct psi_ffi_struct_element_storage s = {0};
+
+	s.last_arg_pos = -1;
+	s.argc = psi_plist_count(strct->args);
+	s.els = calloc(s.argc + 1, sizeof(*s.els));
 
 	while (psi_plist_get(strct->args, i++, &darg)) {
-		ffi_type *type;
-		size_t padding;
-
-		if (darg->layout->pos == last_arg_pos) {
-			/* skip bit fields */
-			continue;
-		}
-		last_arg_pos = darg->layout->pos;
-
-		type = malloc(sizeof(*type));
-		*type = *psi_ffi_decl_arg_type(darg);
-
-		if (type->alignment > maxalign) {
-			maxalign = type->alignment;
-		}
-
-		assert(type->size <= darg->layout->len);
-		if ((padding = psi_offset_padding(darg->layout->pos - offset, type->alignment))) {
-			if (nels + padding + 1 > argc) {
-				argc += padding;
-				tmp = realloc(els, (argc + 1) * sizeof(*els));
-				if (tmp) {
-					els = tmp;
-				} else {
-					free(els);
-					return NULL;
-				}
-				els[argc] = NULL;
-			}
-			psi_ffi_struct_type_pad(&els[nels], padding);
-			nels += padding;
-			offset += padding;
-		}
-		assert(offset == darg->layout->pos);
-
-		offset = (offset + darg->layout->len + type->alignment - 1) & ~(type->alignment - 1);
-		els[nels++] = type;
+		psi_ffi_struct_type_element(&s, darg);
 	}
 
 	/* apply struct alignment padding */
-	offset = (offset + maxalign - 1) & ~(maxalign - 1);
+	s.offset = (s.offset + s.max_align - 1) & ~(s.max_align - 1);
 
-	assert(offset <= strct->size);
-	if (offset < strct->size) {
-		size_t padding = strct->size - offset;
+	assert(s.offset <= strct->size);
+	if (s.offset < strct->size) { /* WTF? */
+		size_t padding = strct->size - s.offset;
 
-		tmp = realloc(els, (padding + argc + 1) * sizeof(*els));
+		tmp = realloc(s.els, (padding + s.argc + 1) * sizeof(*s.els));
 		if (tmp) {
-			els = tmp;
+			s.els = tmp;
 		} else {
-			free(els);
+			free(s.els);
 			return NULL;
 		}
-		psi_ffi_struct_type_pad(&els[nels], padding);
-		els[argc + padding] = NULL;
+		psi_ffi_struct_type_pad(&s.els[s.nels], padding);
+		s.els[s.argc + padding] = NULL;
 	}
 
-	return els;
+	return s.els;
 }
+
 static inline ffi_type *psi_ffi_decl_type(struct psi_decl_type *type) {
 	struct psi_decl_type *real = psi_decl_type_get_real(type);
+
+	if (real != type && type->real.def->var->pointer_level) {
+		return &ffi_type_pointer;
+	}
 
 	switch (real->type) {
 	case PSI_T_STRUCT:
@@ -281,7 +331,7 @@ static inline ffi_type *psi_ffi_decl_type(struct psi_decl_type *type) {
 			strct->elements = psi_ffi_struct_type_elements(real->real.strct);
 
 			real->real.strct->engine.type = strct;
-			real->real.strct->engine.dtor = psi_ffi_struct_type_dtor;
+			real->real.strct->engine.dtor = psi_ffi_type_dtor;
 		}
 
 		return real->real.strct->engine.type;
@@ -290,15 +340,49 @@ static inline ffi_type *psi_ffi_decl_type(struct psi_decl_type *type) {
 		{
 			struct psi_decl_arg *arg;
 			psi_plist_get(real->real.unn->args, 0, &arg);
-			return psi_ffi_decl_arg_type(arg);
+			return psi_ffi_decl_arg_type(arg, NULL);
 		}
 
 	default:
-		return psi_ffi_token_type(real->type);
+		break;
 	}
+
+	return psi_ffi_token_type(real->type);
 }
-static inline ffi_type *psi_ffi_decl_arg_type(struct psi_decl_arg *darg) {
+
+static inline ffi_type *psi_ffi_decl_func_array_type(struct psi_decl *fn) {
+	struct psi_ffi_decl_info *info = fn->info;
+	struct psi_ffi_struct_element_storage s = {0};
+	struct psi_layout l;
+	size_t i;
+
+	s.last_arg_pos = -1;
+	s.argc = fn->func->var->array_size;
+	s.els = calloc(s.argc + 1, sizeof(*s.els));
+
+	assert(!fn->func->layout);
+	l.pos = 0;
+	l.len = psi_decl_arg_get_size(fn->func);
+
+	fn->func->layout = &l;
+	psi_ffi_struct_type_element(&s, fn->func);
+	fn->func->layout = NULL;
+
+	info->rv_array = calloc(1, sizeof(ffi_type));
+	info->rv_array->type = FFI_TYPE_STRUCT;
+	info->rv_array->size = 0;
+	info->rv_array->elements = s.els;
+
+	return info->rv_array;
+}
+
+static inline ffi_type *psi_ffi_decl_arg_type(struct psi_decl_arg *darg,
+		struct psi_decl *fn) {
 	if (darg->var->pointer_level) {
+		if (darg->var->array_size && fn) {
+			/* mimic a struct resembling the array return type of fn */
+			return psi_ffi_decl_func_array_type(fn);
+		}
 		return &ffi_type_pointer;
 	} else {
 		return psi_ffi_decl_type(darg->type);
@@ -321,32 +405,6 @@ static inline ffi_abi psi_ffi_abi(const char *convention) {
 	return FFI_DEFAULT_ABI;
 }
 
-struct psi_ffi_context {
-	ffi_cif signature;
-	ffi_type *params[2];
-};
-
-struct psi_ffi_impl_info {
-	struct psi_context *context;
-	struct psi_call_frame *frame;
-
-	void *code;
-	ffi_closure *closure;
-};
-
-struct psi_ffi_callback_info {
-	struct psi_ffi_impl_info *impl_info;
-	struct psi_let_exp *let_exp;
-
-	void *code;
-	ffi_closure *closure;
-};
-
-struct psi_ffi_decl_info {
-	ffi_cif signature;
-	ffi_type *params[1];
-};
-
 static inline struct psi_ffi_decl_info *psi_ffi_decl_init(struct psi_decl *decl) {
 	if (!decl->info) {
 		int rc;
@@ -354,18 +412,19 @@ static inline struct psi_ffi_decl_info *psi_ffi_decl_init(struct psi_decl *decl)
 		struct psi_decl_arg *arg;
 		struct psi_ffi_decl_info *info = calloc(1, sizeof(*info) + 2 * c * sizeof(void *));
 
+		decl->info = info;
+
 		for (i = 0; psi_plist_get(decl->args, i, &arg); ++i) {
-			info->params[i] = psi_ffi_decl_arg_type(arg);
+			info->params[i] = psi_ffi_decl_arg_type(arg, NULL);
 		}
 		info->params[c] = NULL;
 
 		rc = ffi_prep_cif(&info->signature, psi_ffi_abi(decl->abi->convention),
-				c, psi_ffi_decl_arg_type(decl->func), info->params);
+				c, psi_ffi_decl_arg_type(decl->func, decl), info->params);
 
 		if (FFI_OK != rc) {
 			free(info);
-		} else {
-			decl->info = info;
+			decl->info = NULL;
 		}
 	}
 
@@ -374,6 +433,11 @@ static inline struct psi_ffi_decl_info *psi_ffi_decl_init(struct psi_decl *decl)
 
 static inline void psi_ffi_decl_dtor(struct psi_decl *decl) {
 	if (decl->info) {
+		struct psi_ffi_decl_info *info = decl->info;
+
+		if (info->rv_array) {
+			psi_ffi_type_dtor(info->rv_array);
+		}
 		free(decl->info);
 		decl->info = NULL;
 	}
@@ -563,10 +627,17 @@ struct psi_ffi_extvar_info {
 	} set;
 };
 
-static inline ffi_status psi_ffi_extvar_init(struct psi_decl_extvar *evar,
-		ffi_type *type) {
+static inline ffi_status psi_ffi_extvar_init(struct psi_decl_extvar *evar) {
 	struct psi_ffi_extvar_info *info = calloc(1, sizeof(*info));
+	ffi_type *type;
 	ffi_status rc;
+
+	evar->info = info;
+
+	psi_ffi_decl_init(evar->getter);
+	psi_ffi_decl_init(evar->setter);
+
+	type = psi_ffi_decl_arg_type(evar->arg, evar->getter);
 
 	rc = ffi_prep_cif(&info->get.signature, FFI_DEFAULT_ABI, 0,
 			type, NULL);
@@ -591,7 +662,6 @@ static inline ffi_status psi_ffi_extvar_init(struct psi_decl_extvar *evar,
 		return rc;
 	}
 
-	evar->info = info;
 	evar->getter->sym = info->get.code;
 	evar->setter->sym = info->set.code;
 
@@ -673,9 +743,7 @@ static zend_function_entry *psi_ffi_compile(struct psi_context *C)
 	zend_function_entry *zfe = NULL;
 
 	while (psi_plist_get(C->vars, v++, &evar)) {
-		ffi_type *type = psi_ffi_decl_arg_type(evar->arg);
-
-		if (FFI_OK == psi_ffi_extvar_init(evar, type)) {
+		if (FFI_OK == psi_ffi_extvar_init(evar)) {
 			/* */
 		}
 	}
