@@ -186,6 +186,7 @@ static PHP_FUNCTION(psi_dump)
 ZEND_BEGIN_ARG_INFO_EX(ai_psi_validate, 0, 0, 1)
 	ZEND_ARG_INFO(0, file)
 	ZEND_ARG_INFO(0, flags)
+	ZEND_ARG_INFO(1, errcnt)
 ZEND_END_ARG_INFO();
 static PHP_FUNCTION(psi_validate)
 {
@@ -195,6 +196,7 @@ static PHP_FUNCTION(psi_validate)
 	struct psi_data D = {0};
 	struct psi_validate_scope S = {0};
 	zend_long flags = 0;
+	zval *errcnt = NULL;
 
 #if PHP_DEBUG
 	if (psi_check_env("PSI_DEBUG")) {
@@ -202,7 +204,7 @@ static PHP_FUNCTION(psi_validate)
 	}
 #endif
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "P|l", &file, &flags)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "P|lz", &file, &flags, &errcnt)) {
 		return;
 	}
 
@@ -218,7 +220,15 @@ static PHP_FUNCTION(psi_validate)
 	psi_data_ctor(&D, P.error, P.flags);
 	psi_validate_scope_ctor(&S);
 	S.defs = &P.preproc->defs;
-	RETVAL_BOOL(psi_validate(&S, &D, PSI_DATA(&P)) && !P.errors);
+
+	RETVAL_BOOL(psi_validate(&S, &D, PSI_DATA(&P)));
+
+	if (errcnt) {
+		ZVAL_DEREF(errcnt);
+		convert_to_long(errcnt);
+		ZVAL_LONG(errcnt, P.errors);
+	}
+
 	psi_validate_scope_dtor(&S);
 	psi_data_dtor(&D);
 	psi_parser_dtor(&P);
@@ -227,6 +237,8 @@ static PHP_FUNCTION(psi_validate)
 
 ZEND_BEGIN_ARG_INFO_EX(ai_psi_validate_string, 0, 0, 1)
 	ZEND_ARG_INFO(0, string)
+	ZEND_ARG_INFO(0, flags)
+	ZEND_ARG_INFO(1, errcnt)
 ZEND_END_ARG_INFO();
 static PHP_FUNCTION(psi_validate_string)
 {
@@ -236,6 +248,7 @@ static PHP_FUNCTION(psi_validate_string)
 	struct psi_data D = {0};
 	struct psi_validate_scope S = {0};
 	zend_long flags = 0;
+	zval *errcnt = NULL;
 
 #if PHP_DEBUG
 	if (psi_check_env("PSI_DEBUG")) {
@@ -243,7 +256,7 @@ static PHP_FUNCTION(psi_validate_string)
 	}
 #endif
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "S|l", &string, &flags)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "S|lz", &string, &flags, &errcnt)) {
 		return;
 	}
 
@@ -259,7 +272,15 @@ static PHP_FUNCTION(psi_validate_string)
 	psi_data_ctor(&D, P.error, P.flags);
 	psi_validate_scope_ctor(&S);
 	S.defs = &P.preproc->defs;
-	RETVAL_BOOL(psi_validate(&S, &D, PSI_DATA(&P)) && !P.errors);
+
+	RETVAL_BOOL(psi_validate(&S, &D, PSI_DATA(&P)));
+
+	if (errcnt) {
+		ZVAL_DEREF(errcnt);
+		convert_to_long(errcnt);
+		ZVAL_LONG(errcnt, P.errors);
+	}
+
 	psi_validate_scope_dtor(&S);
 	psi_data_dtor(&D);
 	psi_parser_dtor(&P);
@@ -457,8 +478,15 @@ static const zend_function_entry psi_functions[] = {
 	PHP_FE_END
 };
 
+static const zend_module_dep psi_deps[] = {
+	ZEND_MOD_REQUIRED("standard")
+	{0}
+};
+
 zend_module_entry psi_module_entry = {
-	STANDARD_MODULE_HEADER,
+	STANDARD_MODULE_HEADER_EX,
+	NULL,
+	psi_deps,
 	"psi",
 	psi_functions,
 	PHP_MINIT(psi),
