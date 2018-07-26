@@ -26,11 +26,16 @@
 #include "php_psi_stdinc.h"
 
 #include <assert.h>
+#include <math.h>
 
 #include "data.h"
 #include "calc.h"
 #include "call.h"
 #include "parser.h"
+
+#include "Zend/zend_constants.h"
+#include "Zend/zend_operators.h"
+
 
 struct psi_number *psi_number_init(token_t t, void *num, unsigned flags)
 {
@@ -282,14 +287,32 @@ void psi_number_dump(int fd, struct psi_number *exp)
 		dprintf(fd, "%" PRIu64, exp->data.ival.u64);
 		break;
 	case PSI_T_FLOAT:
-		dprintf(fd, "%" PRIfval, exp->data.ival.dval);
+		if (isinf(exp->data.ival.dval)) {
+			dprintf(fd, "\\INF");
+		} else if (isnan(exp->data.ival.dval)) {
+			dprintf(fd, "\\NAN");
+		} else {
+			dprintf(fd, "%" PRIfval, exp->data.ival.dval);
+		}
 		break;
 	case PSI_T_DOUBLE:
-		dprintf(fd, "%" PRIdval, exp->data.ival.dval);
+		if (isinf(exp->data.ival.dval)) {
+			dprintf(fd, "\\INF");
+		} else if (isnan(exp->data.ival.dval)) {
+			dprintf(fd, "\\NAN");
+		} else {
+			dprintf(fd, "%" PRIdval, exp->data.ival.dval);
+		}
 		break;
 #if HAVE_LONG_DOUBLE
 	case PSI_T_LONG_DOUBLE:
-		dprintf(fd, "%" PRIldval, exp->data.ival.ldval);
+		if (isinfl(exp->data.ival.ldval)) {
+			dprintf(fd, "\\INF");
+		} else if (isnanl(exp->data.ival.ldval)) {
+			dprintf(fd, "\\NAN");
+		} else {
+			dprintf(fd, "%" PRIldval, exp->data.ival.ldval);
+		}
 		break;
 #endif
 	case PSI_T_NULL:
@@ -630,6 +653,34 @@ bool psi_number_validate(struct psi_data *data, struct psi_number *exp,
 		break;
 
 	case PSI_T_NSNAME:
+		{
+			zval *zc;
+
+			if (*exp->data.numb == '\\') {
+				zc = zend_get_constant_str(exp->data.numb + 1, strlen(exp->data.numb) - 1);
+			} else {
+				zc = zend_get_constant_str(exp->data.numb, strlen(exp->data.numb));
+			}
+
+			if (zc) {
+				switch (Z_TYPE_P(zc)) {
+				case IS_LONG:
+					free(exp->data.numb);
+					exp->type = PSI_T_INT64;
+					exp->data.ival.i64 = Z_LVAL_P(zc);
+					return true;
+
+				case IS_DOUBLE:
+					free(exp->data.numb);
+					exp->type = PSI_T_DOUBLE;
+					exp->data.ival.dval = Z_DVAL_P(zc);
+					return true;
+
+				default:
+					assert(0);
+				}
+			}
+		}
 		while (psi_plist_get(data->consts, i++, &cnst)) {
 			if (!strcmp(cnst->name, exp->data.numb)) {
 				free(exp->data.numb);
@@ -655,8 +706,6 @@ bool psi_number_validate(struct psi_data *data, struct psi_number *exp,
 
 	return false;
 }
-
-#include "Zend/zend_constants.h"
 
 static inline token_t psi_number_eval_constant(struct psi_number *exp,
 		impl_val *res, struct psi_call_frame *frame)
