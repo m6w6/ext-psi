@@ -39,6 +39,7 @@ struct psi_decl {
 	void *sym;
 	void *info;
 	unsigned varargs:1;
+	unsigned extvar:1;
 };
 
 struct psi_decl *psi_decl_init(struct psi_decl_arg *func, struct psi_plist *args);

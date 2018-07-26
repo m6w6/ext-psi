@@ -129,6 +129,8 @@ struct psi_decl *psi_decl_extvar_setter(struct psi_decl_extvar *evar)
 	func_var->name = realloc(func_var->name, strlen(evar->arg->var->name) + sizeof("_set"));
 	strcat(func_var->name, "_set");
 
+	decl->extvar = 1;
+
 	return decl;
 }
 
@@ -146,6 +148,8 @@ struct psi_decl *psi_decl_extvar_getter(struct psi_decl_extvar *evar)
 
 	func_var->name = realloc(func_var->name, strlen(evar->arg->var->name) + sizeof("_get"));
 	strcat(func_var->name, "_get");
+
+	decl->extvar = 1;
 
 	return decl;
 }

@@ -164,9 +164,6 @@ void psi_data_dump(int fd, struct psi_data *D)
 	char *libname;
 
 	if (D->file.filename) {
-		size_t i = 0;
-		char *libname;
-
 		dprintf(fd, "// filename=%s (%u errors)\n", D->file.filename, D->errors);
 	}
 	while (psi_plist_get(D->file.libnames, i++, &libname)) {
@@ -234,8 +231,14 @@ void psi_data_dump(int fd, struct psi_data *D)
 		struct psi_decl *decl;
 
 		while (psi_plist_get(D->decls, i++, &decl)) {
+			if (decl->extvar) {
+				dprintf(fd, "/* extvar accessor\n");
+			}
 			psi_decl_dump(fd, decl);
-			dprintf(fd, "// %p \n", decl->sym);
+			dprintf(fd, "\n");
+			if (decl->extvar) {
+				dprintf(fd, "   extvar accessor */\n");
+			}
 		}
 		dprintf(fd, "\n");
 	}

@@ -66,7 +66,9 @@ void psi_decl_free(struct psi_decl **d_ptr)
 
 void psi_decl_dump(int fd, struct psi_decl *decl)
 {
-	psi_decl_abi_dump(fd, decl->abi);
+	if (decl->abi) {
+		psi_decl_abi_dump(fd, decl->abi);
+	}
 	dprintf(fd, " ");
 	/* FIXME: functions returning arrays */
 	psi_decl_arg_dump(fd, decl->func, 0);
@@ -84,6 +86,9 @@ void psi_decl_dump(int fd, struct psi_decl *decl)
 		if (decl->varargs) {
 			dprintf(fd, ", ...");
 		}
+	}
+	if (decl->func->var->array_size) {
+		dprintf(fd, ")[%zu]", decl->func->var->array_size);
 	}
 	if (decl->redir) {
 		dprintf(fd, ") __asm__ (\"%s\");", decl->redir);
