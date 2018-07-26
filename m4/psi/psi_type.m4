@@ -193,7 +193,7 @@ AC_DEFUN(PSI_TYPE_PAIR, [m4_case(m4_bregexp([$1], [^\w+], [\&]),
 dnl PSI_CHECK_STD_TYPES()
 dnl Checks for standard ANSI-C, stdint and stdbool types.
 AC_DEFUN(PSI_CHECK_STD_TYPES, [
-	
+
 	AC_HEADER_STDBOOL
 
 	PSI_CHECK_SIZEOF(void *)
@@ -255,7 +255,7 @@ AC_DEFUN(PSI_CHECK_STD_TYPES, [
 	PSI_STDTYPE(long long unsigned int, uint)
 	dnl this must come after the check for "unsigned long long int"; autoconf, wth?
 	PSI_STDTYPE(long long int, int)
-	
+
 	AC_CHECK_TYPE(__int128, [
 		AC_DEFINE([HAVE_INT128], [1], [ ])
 		AC_CHECK_ALIGNOF(__int128)
@@ -263,6 +263,10 @@ AC_DEFUN(PSI_CHECK_STD_TYPES, [
 		PSI_STDTYPE(signed __int128, int)
 		PSI_STDTYPE(unsigned __int128, uint)
 	])
-	
+
+	PSI_STDTYPE(_Float32)
+	PSI_STDTYPE(_Float32x)
+	PSI_STDTYPE(_Float64)
+	PSI_STDTYPE(_Float64x)
 	PSI_STDTYPE(_Float128)
 ])
