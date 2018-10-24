@@ -526,8 +526,6 @@ void psi_set_to_string(zval *return_value, struct psi_set_exp *set, impl_val *re
 	impl_val *ptr = deref_impl_val(ret_val, var);
 	char *str;
 
-	/* holy moly, this breaks arrays of pointers to char,
-	 * like e.g. tzname */
 	if (var->arg->var->array_size && var->arg->var->pointer_level == 1) {
 		str = (char *) ptr;
 	} else {

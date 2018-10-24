@@ -117,3 +117,12 @@ function psi\times(array &$tms = NULL) : int {
 		to_int(tms_cstime)
 	);
 }
+
+
+function psi\tzset() : void {
+	return tzset() as void(tzset);
+}
+
+function psi\tzname() : array {
+	return tzname_get() as to_array(tzname_get, 2, to_string(*tzname_get));
+}
