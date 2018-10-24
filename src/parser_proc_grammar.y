@@ -1149,18 +1149,18 @@ decl_vars[vars]:
 ;
 
 ignored_decl:
-	STATIC decl_body ignored_decl_body {
+	ignored_decl_qualifiers decl_body ignored_decl_body {
 	$ignored_decl = $decl_body;
 }
-|	STATIC CPP_INLINE decl_body ignored_decl_body {
-	$ignored_decl = $decl_body;
-}
-|	CPP_INLINE decl_body ignored_decl_body {
-	$ignored_decl = $decl_body;
-}
-|	NAME CPP_INLINE decl_body ignored_decl_body {
-	$ignored_decl = $decl_body;
-}
+;
+
+ignored_decl_qualifiers:
+	STATIC
+|	STATIC CPP_INLINE
+|	CPP_EXTENSION CPP_INLINE
+|	CPP_EXTENSION STATIC CPP_INLINE
+|	CPP_INLINE
+|	NAME CPP_INLINE
 ;
 
 ignored_decl_body:
