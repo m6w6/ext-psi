@@ -3,6 +3,8 @@ tzname
 --INI--
 psi.directory={PWD}/../../psi.d:{PWD}
 date.timezone=CET
+--ENV--
+TZ=CET
 --SKIPIF--
 <?php
 extension_loaded("psi") or die("skip - need ext/psi");
