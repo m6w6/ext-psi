@@ -168,8 +168,7 @@ zend_function_entry *psi_context_compile(struct psi_context *C)
 {
 	zend_constant zc;
 
-	zc.flags = CONST_PERSISTENT|CONST_CS;
-	zc.module_number = EG(current_module)->module_number;
+	ZEND_CONSTANT_SET_FLAGS(&zc, CONST_CS|CONST_PERSISTENT, EG(current_module)->module_number);
 
 	if (C->consts) {
 		size_t i = 0;
