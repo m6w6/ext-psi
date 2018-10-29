@@ -88,7 +88,7 @@ void psi_decl_dump(int fd, struct psi_decl *decl)
 		}
 	}
 	if (decl->func->var->array_size) {
-		dprintf(fd, ")[%zu]", decl->func->var->array_size);
+		dprintf(fd, ")[%u]", decl->func->var->array_size);
 	}
 	if (decl->redir) {
 		dprintf(fd, ") __asm__ (\"%s\");", decl->redir);
