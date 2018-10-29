@@ -770,7 +770,7 @@ impl_def_val[val]:
 }
 |	quoted_strings[token] {
 	$val = psi_impl_def_val_init($token->type, $token->text);
-	$val->token = psi_token_copy($token);
+	$val->token = $token;
 }
 ;
 
@@ -1270,6 +1270,7 @@ decl_functor_body[decl]:
 	type->real.func = rval_decl;
 	func->var->token = psi_token_copy($NAME);
 	func->token = psi_token_copy($NAME);
+	type->token = type_token;
 	
 	$decl = psi_decl_init(func, $args);
 }
