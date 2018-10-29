@@ -324,7 +324,6 @@ void psi_context_free(struct psi_context **C)
 void psi_context_dump(struct psi_context *C, int fd)
 {
 	size_t i;
-	struct psi_data *D;
 
 	dprintf(fd, "// psi.engine=%s\n// %lu files\n",
 			(char *) C->ops->query(C, PSI_CONTEXT_QUERY_SELF, NULL),
