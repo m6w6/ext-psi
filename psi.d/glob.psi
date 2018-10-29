@@ -27,4 +27,5 @@ function psi\glob(string $pattern, int $flags, array &$glob = NULL, callable $er
 		to_int(gl_flags),
 		to_array(*gl_pathv, gl_pathc + gl_offs, to_string(*gl_pathv))
 	);
+	free globfree(buf);
 }
