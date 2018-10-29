@@ -48,6 +48,8 @@ void psi_decl_arg_dump(int fd, struct psi_decl_arg *arg, unsigned level);
 bool psi_decl_arg_validate(struct psi_data *data, struct psi_decl_arg *arg, struct psi_validate_scope *scope);
 bool psi_decl_arg_validate_typedef(struct psi_data *data, struct psi_decl_arg *def, struct psi_validate_scope *scope);
 
+bool psi_decl_arg_is_pointer(struct psi_decl_arg *darg);
+
 size_t psi_decl_arg_align(struct psi_decl_arg *darg, size_t *pos, size_t *len);
 size_t psi_decl_arg_get_align(struct psi_decl_arg *darg);
 size_t psi_decl_arg_get_size(struct psi_decl_arg *darg);

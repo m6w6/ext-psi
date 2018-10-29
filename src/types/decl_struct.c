@@ -81,7 +81,7 @@ struct psi_decl_arg *psi_decl_struct_get_arg(struct psi_decl_struct *s,
 bool psi_decl_struct_validate(struct psi_data *data, struct psi_decl_struct *s,
 		struct psi_validate_scope *scope)
 {
-	size_t i, pos, len, size, align;
+	size_t i, pos = 0, len = 0;
 	struct psi_decl_arg *darg, *prev_arg;
 
 	if (!s) {
@@ -103,6 +103,8 @@ bool psi_decl_struct_validate(struct psi_data *data, struct psi_decl_struct *s,
 	psi_validate_scope_add_struct(scope, s->name, s);
 
 	for (i = 0; psi_plist_get(s->args, i, &darg); ++i) {
+		size_t align;
+
 		darg->var->arg = darg;
 
 		if (!psi_decl_arg_validate(data, darg, scope)) {
@@ -194,6 +196,8 @@ bool psi_decl_struct_validate(struct psi_data *data, struct psi_decl_struct *s,
 	}
 
 	if (psi_plist_count(s->args)) {
+		size_t size;
+
 		psi_plist_sort(s->args, psi_layout_sort_cmp, NULL);
 		psi_plist_get(s->args, psi_plist_count(s->args) - 1, &darg);
 
