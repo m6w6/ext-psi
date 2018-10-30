@@ -159,9 +159,9 @@ struct psi_call_frame_symbol *psi_call_frame_fetch_symbol(
 		struct psi_call_frame *frame, struct psi_decl_var *dvar) {
 	struct psi_call_frame_symbol *frame_sym;
 
-	frame_sym = zend_hash_str_find_ptr(&frame->symbols, dvar->fqn, strlen(dvar->fqn));
+	frame_sym = zend_hash_find_ptr(&frame->symbols, dvar->fqn);
 	if (!frame_sym) {
-		frame_sym = zend_hash_str_add_ptr(&frame->symbols, dvar->fqn, strlen(dvar->fqn),
+		frame_sym = zend_hash_add_ptr(&frame->symbols, dvar->fqn,
 				psi_call_frame_symbol_init(dvar));
 	}
 	return frame_sym;
@@ -173,17 +173,16 @@ zval *psi_call_frame_new_argument(struct psi_call_frame *frame,
 		/* varargs are just appended with numeric indices */
 		return zend_hash_next_index_insert_ptr(&frame->arguments, frame_arg);
 	} else {
-		return zend_hash_str_add_ptr(&frame->arguments,
-				frame_arg->spec->var->name, strlen(frame_arg->spec->var->name),
-				frame_arg);
+		return zend_hash_add_ptr(&frame->arguments,
+				frame_arg->spec->var->name, frame_arg);
 	}
 }
 
 zval *psi_call_frame_sub_argument(struct psi_call_frame *frame,
-		struct psi_impl_var *inner_var, zval *outer_zval, const char *name) {
+		struct psi_impl_var *inner_var, zval *outer_zval, zend_string *name) {
 	struct psi_call_frame_argument *iarg;
 	zval *inner_zval = zend_symtable_str_find(Z_ARRVAL_P(outer_zval),
-			&inner_var->name[1], strlen(&inner_var->name[1]));
+			&inner_var->name->val[1], inner_var->name->len - 1);
 
 	if (!inner_zval) {
 		zval empty_zval;
@@ -191,7 +190,7 @@ zval *psi_call_frame_sub_argument(struct psi_call_frame *frame,
 		SEPARATE_ZVAL(outer_zval);
 		ZVAL_NULL(&empty_zval);
 		inner_zval = zend_symtable_str_update(Z_ARRVAL_P(outer_zval),
-				&inner_var->name[1], strlen(&inner_var->name[1]),
+				&inner_var->name->val[1], inner_var->name->len - 1,
 				&empty_zval);
 	}
 
@@ -201,20 +200,20 @@ zval *psi_call_frame_sub_argument(struct psi_call_frame *frame,
 		struct psi_call_frame_argument *frame_arg;
 		impl_val empty_val = {0};
 		struct psi_impl_arg *carg_spec = psi_impl_arg_init(
-				psi_impl_type_init(PSI_T_MIXED, "mixed"),
+				psi_impl_type_init(PSI_T_MIXED, zend_string_init(ZEND_STRL("mixed"), 1)),
 				psi_impl_var_copy(inner_var), NULL);
 
 		psi_call_frame_push_auto_ex(frame, carg_spec, (void(*)(void*)) psi_impl_arg_free);
 		frame_arg = psi_call_frame_argument_init(carg_spec, &empty_val, inner_zval, 0);
-		zend_hash_str_add_ptr(&frame->arguments, name, strlen(name), frame_arg);
+		zend_hash_add_ptr(&frame->arguments, name, frame_arg);
 	}
 
 	return inner_zval;
 }
 
 struct psi_call_frame_argument *psi_call_frame_get_argument(
-		struct psi_call_frame *frame, const char *name) {
-	return zend_hash_str_find_ptr(&frame->arguments, name, strlen(name));
+		struct psi_call_frame *frame, zend_string *name) {
+	return zend_hash_find_ptr(&frame->arguments, name);
 }
 
 size_t psi_call_frame_num_var_args(struct psi_call_frame *frame) {
@@ -546,8 +545,7 @@ void psi_call_frame_free(struct psi_call_frame *frame) {
 
 		memcpy(temp, &frame->temp, sizeof(*temp));
 		ZVAL_OBJ(&zlocal, psi_object_init_ex(NULL, temp, psi_call_frame_local_auto_dtor));
-		zend_set_local_var_str(frame->impl->func->name,
-				strlen(frame->impl->func->name), &zlocal, /* force */ 1);
+		zend_set_local_var(frame->impl->func->name, &zlocal, /* force */ 1);
 	} else {
 		zend_llist_destroy(&frame->temp);
 	}

@@ -76,7 +76,7 @@ static bool psi_validate_type(struct psi_validate_scope *scope,
 {
 	struct psi_decl_arg *def = ptr;
 
-	PSI_DEBUG_PRINT(dst, "typedef %s", def->var->name);
+	PSI_DEBUG_PRINT(dst, "typedef %s", def->var->name->val);
 	return psi_decl_arg_validate_typedef(dst, def, scope);
 }
 
@@ -85,7 +85,7 @@ static bool psi_validate_struct(struct psi_validate_scope *scope,
 {
 	struct psi_decl_struct *str = ptr;
 
-	PSI_DEBUG_PRINT(dst, "struct %s", str->name);
+	PSI_DEBUG_PRINT(dst, "struct %s", str->name->val);
 	if (psi_decl_struct_validate(dst, str, scope)) {
 		PSI_DEBUG_PRINT(dst, "::(%zu, %zu)", str->align, str->size);
 		return true;
@@ -98,7 +98,7 @@ static bool psi_validate_union(struct psi_validate_scope *scope,
 {
 	struct psi_decl_union *unn = ptr;
 
-	PSI_DEBUG_PRINT(dst, "union %s", unn->name);
+	PSI_DEBUG_PRINT(dst, "union %s", unn->name->val);
 	if (psi_decl_union_validate(dst, unn, scope)) {
 		PSI_DEBUG_PRINT(dst, "::(%zu, %zu)", unn->align, unn->size);
 		return true;
@@ -111,7 +111,7 @@ static bool psi_validate_enum(struct psi_validate_scope *scope,
 {
 	struct psi_decl_enum *enm = ptr;
 
-	PSI_DEBUG_PRINT(dst, "enum %s", enm->name);
+	PSI_DEBUG_PRINT(dst, "enum %s", enm->name->val);
 	return psi_decl_enum_validate(dst, enm);
 }
 
@@ -120,7 +120,7 @@ static bool psi_validate_extvar(struct psi_validate_scope *scope,
 {
 	struct psi_decl_extvar *evar = ptr;
 
-	PSI_DEBUG_PRINT(dst, "extvar %s", evar->arg->var->name);
+	PSI_DEBUG_PRINT(dst, "extvar %s", evar->arg->var->name->val);
 	if (psi_decl_extvar_validate(dst, evar, scope)) {
 		dst->decls = psi_plist_add(dst->decls, &evar->getter);
 		dst->decls = psi_plist_add(dst->decls, &evar->setter);
@@ -134,7 +134,7 @@ static bool psi_validate_decl(struct psi_validate_scope *scope,
 {
 	struct psi_decl *decl = ptr;
 
-	PSI_DEBUG_PRINT(dst, "decl %s", decl->func->var->name);
+	PSI_DEBUG_PRINT(dst, "decl %s", decl->func->var->name->val);
 	return psi_decl_validate(dst, decl, scope);
 }
 
@@ -143,7 +143,7 @@ static bool psi_validate_const(struct psi_validate_scope *scope,
 {
 	struct psi_const *cnst = ptr;
 
-	PSI_DEBUG_PRINT(dst, "constant %s", cnst->name);
+	PSI_DEBUG_PRINT(dst, "constant %s", cnst->name->val);
 	return psi_const_validate(dst, cnst, scope);
 }
 
@@ -152,7 +152,7 @@ static bool psi_validate_impl(struct psi_validate_scope *scope,
 {
 	struct psi_impl *impl = ptr;
 
-	PSI_DEBUG_PRINT(dst, "impl %s", impl->func->name);
+	PSI_DEBUG_PRINT(dst, "impl %s", impl->func->name->val);
 	return psi_impl_validate(dst, impl, scope);
 }
 

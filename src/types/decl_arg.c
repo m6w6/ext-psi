@@ -46,7 +46,7 @@ void psi_decl_arg_free(struct psi_decl_arg **arg_ptr)
 
 		*arg_ptr = NULL;
 		if (arg->token && arg->token != arg->var->token) {
-			free(arg->token);
+			psi_token_free(&arg->token);
 		}
 		psi_decl_type_free(&arg->type);
 		psi_decl_var_free(&arg->var);
@@ -66,7 +66,7 @@ void psi_decl_arg_dump(int fd, struct psi_decl_arg *arg, unsigned level)
 		}
 		dprintf(fd, " %s(*%s)",
 				psi_t_indirection(arg->var->pointer_level - !! arg->var->array_size),
-				arg->var->name);
+				arg->var->name->val);
 		dprintf(fd, "(");
 		if (arg->type->real.func->args) {
 			size_t j = 0;
@@ -139,7 +139,7 @@ bool psi_decl_arg_validate_typedef(struct psi_data *data,
 			def->type->type = PSI_T_POINTER;
 		} else {
 			data->error(data, def->token, PSI_WARNING,
-					"Type '%s' cannot be aliased to 'void'", def->type->name);
+					"Type '%s' cannot be aliased to 'void'", def->type->name->val);
 			return false;
 		}
 	} else if (!psi_decl_type_validate(data, def->type, def, scope)) {
@@ -161,7 +161,7 @@ bool psi_decl_arg_validate_typedef(struct psi_data *data,
 		}
 		data->error(data, def->token, PSI_WARNING,
 				"Type '%s' cannot be aliased to '%s%s'%s%s", def->var->name, pre,
-				def->type->name, *data->last_error ? ": " : "", data->last_error);
+				def->type->name->val, *data->last_error ? ": " : "", data->last_error);
 		return false;
 	}
 
@@ -238,14 +238,14 @@ size_t psi_decl_arg_get_size(struct psi_decl_arg *darg)
 }
 
 struct psi_decl_arg *psi_decl_arg_get_by_name(struct psi_plist *args,
-		const char *name)
+		zend_string *name)
 {
 	size_t i = 0;
 	struct psi_decl_arg *arg;
 
 	if (args)
 		while (psi_plist_get(args, i++, &arg)) {
-			if (!strcmp(name, arg->var->name)) {
+			if (zend_string_equals(name, arg->var->name)) {
 				return arg;
 			}
 		}
@@ -264,7 +264,7 @@ struct psi_decl_arg *psi_decl_arg_get_by_var(struct psi_decl_var *var,
 		return var->arg = arg;
 	}
 
-	if (func && !strcmp(var->name, func->var->name)) {
+	if (func && !zend_string_equals(var->name, func->var->name)) {
 		return var->arg = func;
 	}
 

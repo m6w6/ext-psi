@@ -45,9 +45,7 @@ void psi_return_exp_free(struct psi_return_exp **exp_ptr)
 		struct psi_return_exp *exp = *exp_ptr;
 
 		*exp_ptr = NULL;
-		if (exp->token) {
-			psi_token_free(&exp->token);
-		}
+		psi_token_free(&exp->token);
 		if (exp->func) {
 			psi_decl_var_free(&exp->func);
 		}
@@ -110,7 +108,7 @@ static inline bool psi_return_exp_validate_decl_args(struct psi_data *data,
 			data->error(data, exp->token, PSI_WARNING,
 					"Argument count of return statement of implementation '%s'"
 					"does not match argument count of declaration '%s'",
-					impl->func->name, impl->decl->func->var->name);
+					impl->func->name->val, impl->decl->func->var->name->val);
 			return false;
 		}
 
@@ -126,12 +124,11 @@ bool psi_return_exp_validate(struct psi_data *data, struct psi_return_exp *exp,
 {
 	size_t i = 0;
 	struct psi_decl *decl;
-	const char *name = psi_return_exp_get_decl_name(exp);
-
+	zend_string *name = psi_return_exp_get_decl_name(exp);
 
 
 	while (psi_plist_get(data->decls, i++, &decl)) {
-		if (!strcmp(decl->func->var->name, name)) {
+		if (zend_string_equals(decl->func->var->name, name)) {
 			scope->impl->decl = decl;
 			if (psi_return_exp_validate_decl_args(data, exp, scope->impl)) {
 				scope->current_set = exp->set;
@@ -147,11 +144,11 @@ bool psi_return_exp_validate(struct psi_data *data, struct psi_return_exp *exp,
 
 	data->error(data, exp->token, PSI_WARNING,
 			"Missing declaration '%s' for `return` statement of implementation %s",
-			name, scope->impl->func->name);
+			name->val, scope->impl->func->name->val);
 	return false;
 }
 
-const char *psi_return_exp_get_decl_name(struct psi_return_exp *exp)
+zend_string *psi_return_exp_get_decl_name(struct psi_return_exp *exp)
 {
 	return exp->func ? exp->func->name : exp->set->data.func->var->name;
 }

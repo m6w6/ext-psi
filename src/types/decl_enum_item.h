@@ -33,14 +33,14 @@ struct psi_decl_enum;
 
 struct psi_decl_enum_item {
 	struct psi_token *token;
-	char *name;
+	zend_string *name;
 	int64_t val;
 	struct psi_num_exp inc;
 	struct psi_num_exp *num;
 	struct psi_decl_enum_item *prev;
 };
 
-struct psi_decl_enum_item *psi_decl_enum_item_init(const char *name, struct psi_num_exp *num);
+struct psi_decl_enum_item *psi_decl_enum_item_init(zend_string *name, struct psi_num_exp *num);
 void psi_decl_enum_item_free(struct psi_decl_enum_item **i_ptr);
 void psi_decl_enum_item_dump(int fd, struct psi_decl_enum_item *item);
 bool psi_decl_enum_item_validate(struct psi_data *data, struct psi_decl_enum *enm, struct psi_decl_enum_item *item, size_t seq);

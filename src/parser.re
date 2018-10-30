@@ -29,6 +29,8 @@
 #include <errno.h>
 #include <stdarg.h>
 
+#include <Zend/zend_smart_str.h>
+
 #include "parser.h"
 
 /*!max:re2c*/
@@ -67,7 +69,7 @@ struct psi_parser_input *psi_parser_open_file(struct psi_parser *P, const char *
 		return NULL;
 	}
 
-	if (!(fb = malloc(sizeof(*fb) + strlen(filename) + 1 + sb.st_size + YYMAXFILL))) {
+	if (!(fb = malloc(sizeof(*fb) + sb.st_size + YYMAXFILL))) {
 		if (report_errors) {
 			P->error(PSI_DATA(P), NULL, PSI_WARNING,
 					"Could not allocate %zu bytes for reading '%s': %s",
@@ -97,10 +99,8 @@ struct psi_parser_input *psi_parser_open_file(struct psi_parser *P, const char *
 		return NULL;
 	}
 
-	memset(fb->buffer + sb.st_size, 0, YYMAXFILL);
 	fb->length = sb.st_size;
-	fb->file = &fb->buffer[sb.st_size + YYMAXFILL];
-	memcpy(fb->file, filename, strlen(filename) + 1);
+	fb->file = zend_string_init(filename, strlen(filename), 1);
 
 	return fb;
 }
@@ -109,7 +109,7 @@ struct psi_parser_input *psi_parser_open_string(struct psi_parser *P, const char
 {
 	struct psi_parser_input *sb;
 
-	if (!(sb = malloc(sizeof(*sb) + sizeof("<stdin>") + length + YYMAXFILL))) {
+	if (!(sb = malloc(sizeof(*sb) + length + YYMAXFILL))) {
 		P->error(PSI_DATA(P), NULL, PSI_WARNING,
 				"Could not allocate %zu bytes: %s",
 				length + YYMAXFILL, strerror(errno));
@@ -120,67 +120,10 @@ struct psi_parser_input *psi_parser_open_string(struct psi_parser *P, const char
 	memset(sb->buffer + length, 0, YYMAXFILL);
 
 	sb->length = length;
-	sb->file = &sb->buffer[length + YYMAXFILL];
-	memcpy(sb->file, "<stdin>", sizeof("<stdin>"));
+	sb->file = zend_string_init("<stdin>", strlen("<stdin>"), 1);
 
 	return sb;
 }
-
-#if 0
-static void psi_parser_register_constants(struct psi_parser *P)
-{
-	zend_string *key;
-	zval *val;
-
-	ZEND_HASH_FOREACH_STR_KEY_VAL(&P->cpp.defs, key, val)
-	{
-		struct psi_impl_def_val *iv;
-		struct psi_const_type *ct;
-		struct psi_const *c;
-		const char *ctn;
-		token_t ctt;
-		impl_val tmp;
-		zend_string *str;
-
-		ZVAL_DEREF(val);
-		switch (Z_TYPE_P(val)) {
-		case IS_TRUE:
-		case IS_FALSE:
-			ctt = PSI_T_BOOL;
-			ctn = "bool";
-			tmp.zend.bval = Z_TYPE_P(val) == IS_TRUE;
-			break;
-		case IS_LONG:
-			ctt = PSI_T_INT;
-			ctn = "int";
-			tmp.zend.lval = Z_LVAL_P(val);
-			break;
-		case IS_DOUBLE:
-			ctt = PSI_T_FLOAT;
-			ctn = "float";
-			tmp.dval = Z_DVAL_P(val);
-			break;
-		default:
-			ctt = PSI_T_STRING;
-			ctn = "string";
-			str = zval_get_string(val);
-			tmp.zend.str = zend_string_dup(str, 1);
-			zend_string_release(str);
-			break;
-		}
-
-		iv = psi_impl_def_val_init(ctt, NULL);
-		iv->ival = tmp;
-		ct = psi_const_type_init(ctt, ctn);
-		c = psi_const_init(ct, key->val, iv);
-		if (!P->consts) {
-			P->consts = psi_plist_init((psi_plist_dtor) psi_const_free);
-		}
-		P->consts = psi_plist_add(P->consts, &c);
-	}
-	ZEND_HASH_FOREACH_END();
-}
-#endif
 
 struct psi_plist *psi_parser_preprocess(struct psi_parser *P, struct psi_plist **tokens)
 {
@@ -220,15 +163,20 @@ void psi_parser_postprocess(struct psi_parser *P)
 				struct psi_impl_def_val *def;
 				struct psi_const *cnst;
 				struct psi_num_exp *num;
-				char *name_str = malloc(name->len + sizeof("psi\\"));
+				smart_str ns_name = {0};
+				zend_string *name_str;
 
-				strcat(strcpy(name_str, "psi\\"), name->val);
+				smart_str_appendl_ex(&ns_name, ZEND_STRL("psi\\"), 1);
+				smart_str_append_ex(&ns_name, name, 1);
+				name_str = smart_str_extract(&ns_name);
+
 				num = psi_num_exp_copy(scope.macro->exp);
 				def = psi_impl_def_val_init(PSI_T_NUMBER, num);
-				type = psi_impl_type_init(PSI_T_NUMBER, "<eval number>");
+				type = psi_impl_type_init(PSI_T_NUMBER,
+						zend_string_init(ZEND_STRL("<eval number>"), 1));
 				cnst = psi_const_init(type, name_str, def);
 				P->consts = psi_plist_add(P->consts, &cnst);
-				free(name_str);
+				zend_string_release(name_str);
 			}
 		} else {
 			if (psi_plist_count(scope.macro->tokens) == 1) {
@@ -239,14 +187,19 @@ void psi_parser_postprocess(struct psi_parser *P)
 						struct psi_impl_type *type;
 						struct psi_impl_def_val *def;
 						struct psi_const *cnst;
-						char *name_str = malloc(name->len + sizeof("psi\\"));
+						smart_str ns_name = {0};
+						zend_string *name_str;
 
-						strcat(strcpy(name_str, "psi\\"), name->val);
-						type = psi_impl_type_init(PSI_T_STRING, "string");
+						smart_str_appendl_ex(&ns_name, ZEND_STRL("psi\\"), 1);
+						smart_str_append_ex(&ns_name, name, 1);
+						name_str = smart_str_extract(&ns_name);
+
+						type = psi_impl_type_init(PSI_T_STRING,
+								zend_string_init(ZEND_STRL("string"), 1));
 						def = psi_impl_def_val_init(PSI_T_QUOTED_STRING, t->text);
 						cnst = psi_const_init(type, name_str, def);
 						P->consts = psi_plist_add(P->consts, &cnst);
-						free(name_str);
+						zend_string_release(name_str);
 					}
 				}
 			}
@@ -327,7 +280,7 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input 
 	bool escaped;
 	token_t char_width;
 
-	PSI_DEBUG_PRINT(P, "PSI: scanning %s\n", I->file);
+	PSI_DEBUG_PRINT(P, "PSI: scanning %s\n", I->file->val);
 
 	tok = mrk = eol = cur = I->buffer;
 	lim = I->buffer + I->length;
@@ -586,7 +539,7 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input 
 error: ;
 
 	P->error(PSI_DATA(P), token, PSI_WARNING, "PSI syntax error: unexpected input (%d) '%.*s' at col %tu",
-			token->type, token->size, token->text, tok - eol + 1);
+			token->type, token->text->len, token->text->val, tok - eol + 1);
 	psi_plist_free(tokens);
 	return NULL;
 

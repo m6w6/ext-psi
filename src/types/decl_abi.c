@@ -26,10 +26,10 @@
 #include "php_psi_stdinc.h"
 #include "data.h"
 
-struct psi_decl_abi *psi_decl_abi_init(const char *convention)
+struct psi_decl_abi *psi_decl_abi_init(zend_string *convention)
 {
 	struct psi_decl_abi *abi = calloc(1, sizeof(*abi));
-	abi->convention = strdup(convention);
+	abi->convention = zend_string_copy(convention);
 	return abi;
 }
 
@@ -39,17 +39,15 @@ void psi_decl_abi_free(struct psi_decl_abi **abi_ptr)
 		struct psi_decl_abi *abi = *abi_ptr;
 
 		*abi_ptr = NULL;
-		if (abi->token) {
-			free(abi->token);
-		}
-		free(abi->convention);
+		psi_token_free(&abi->token);
+		zend_string_release(abi->convention);
 		free(abi);
 	}
 }
 
 void psi_decl_abi_dump(int fd, struct psi_decl_abi *abi)
 {
-	dprintf(fd, "%s", abi->convention);
+	dprintf(fd, "%s", abi->convention->val);
 }
 
 static const char * const abi_ccs[] = {
@@ -65,7 +63,7 @@ bool psi_decl_abi_validate(struct psi_data *data, struct psi_decl_abi *abi)
 	size_t i;
 
 	for (i = 0; i < sizeof(abi_ccs) / sizeof(char *); ++i) {
-		if (strcasecmp(abi->convention, abi_ccs[i])) {
+		if (!strcasecmp(abi->convention->val, abi_ccs[i])) {
 			return true;
 		}
 	}

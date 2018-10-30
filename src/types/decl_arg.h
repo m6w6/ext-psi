@@ -54,7 +54,7 @@ size_t psi_decl_arg_align(struct psi_decl_arg *darg, size_t *pos, size_t *len);
 size_t psi_decl_arg_get_align(struct psi_decl_arg *darg);
 size_t psi_decl_arg_get_size(struct psi_decl_arg *darg);
 
-struct psi_decl_arg *psi_decl_arg_get_by_name(struct psi_plist *args, const char *name);
+struct psi_decl_arg *psi_decl_arg_get_by_name(struct psi_plist *args, zend_string *name);
 struct psi_decl_arg *psi_decl_arg_get_by_var(struct psi_decl_var *var, struct psi_plist *args, struct psi_decl_arg *func);
 
 

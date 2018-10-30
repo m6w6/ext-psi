@@ -164,7 +164,7 @@ void psi_data_dump(int fd, struct psi_data *D)
 	char *libname;
 
 	if (D->file.filename) {
-		dprintf(fd, "// filename=%s (%u errors)\n", D->file.filename, D->errors);
+		dprintf(fd, "// filename=%s (%u errors)\n", D->file.filename->val, D->errors);
 	}
 	while (psi_plist_get(D->file.libnames, i++, &libname)) {
 		dprintf(fd, "lib \"%s\";\n", libname);

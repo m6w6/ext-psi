@@ -28,11 +28,11 @@
 
 #include <assert.h>
 
-struct psi_decl_struct* psi_decl_struct_init(const char *name,
+struct psi_decl_struct* psi_decl_struct_init(zend_string *name,
 		struct psi_plist *args)
 {
 	struct psi_decl_struct *s = calloc(1, sizeof(*s));
-	s->name = strdup(name);
+	s->name = zend_string_copy(name);
 	s->args = args;
 	return s;
 }
@@ -43,23 +43,21 @@ void psi_decl_struct_free(struct psi_decl_struct **s_ptr)
 		struct psi_decl_struct *s = *s_ptr;
 
 		*s_ptr = NULL;
-		if (s->token) {
-			free(s->token);
-		}
+		psi_token_free(&s->token);
 		if (s->args) {
 			psi_plist_free(s->args);
 		}
 		if (s->engine.type && s->engine.dtor) {
 			s->engine.dtor(s->engine.type);
 		}
-		free(s->name);
+		zend_string_release(s->name);
 		free(s);
 	}
 }
 
 void psi_decl_struct_dump(int fd, struct psi_decl_struct *strct)
 {
-	dprintf(fd, "struct %s::(%zu, %zu)", strct->name, strct->align,
+	dprintf(fd, "struct %s::(%zu, %zu)", strct->name->val, strct->align,
 			strct->size);
 	if (psi_plist_count(strct->args)) {
 		psi_decl_type_dump_args_with_layout(fd, strct->args, 0);
@@ -119,7 +117,8 @@ bool psi_decl_struct_validate(struct psi_data *data, struct psi_decl_struct *s,
 			if (!align) {
 				data->error(data, darg->token, PSI_WARNING,
 						"Computed zero alignment of %s.%s of type '%s'",
-						len, s->name, darg->var->name, darg->type->name);
+						len, s->name->val, darg->var->name->val,
+						darg->type->name->val);
 				psi_validate_scope_del_struct(scope, s->name);
 				return false;
 			}
@@ -128,14 +127,15 @@ bool psi_decl_struct_validate(struct psi_data *data, struct psi_decl_struct *s,
 				data->error(data, darg->token, PSI_WARNING,
 						"Computed size %zu of %s.%s does not match"
 						" pre-defined size %zu of type '%s'",
-						len, s->name, darg->var->name, darg->layout->len,
-						darg->type->name);
+						len, s->name->val, darg->var->name->val,
+						darg->layout->len, darg->type->name->val);
 			}
 			if (darg->layout->pos != pos) {
 				data->error(data, darg->token, PSI_WARNING,
 						"Computed offset %zu of %s.%s does not match"
 						" pre-defined offset %zu",
-						pos, s->name, darg->var->name, darg->layout->pos);
+						pos, s->name->val, darg->var->name->val,
+						darg->layout->pos);
 			}
 		} else {
 			if (i) {
@@ -155,7 +155,8 @@ bool psi_decl_struct_validate(struct psi_data *data, struct psi_decl_struct *s,
 						break;
 					default:
 						data->error(data, darg->token, PSI_WARNING,
-								"Unsupported type for bit field: %s", real->name);
+								"Unsupported type for bit field: %s",
+								real->name->val);
 						psi_validate_scope_del_struct(scope, s->name);
 						return false;
 					}
@@ -180,7 +181,8 @@ bool psi_decl_struct_validate(struct psi_data *data, struct psi_decl_struct *s,
 					data->error(data, darg->token, PSI_WARNING,
 							"Computed offset %zu of %s.%s does not match"
 							" pre-defined offset %zu",
-							pos, s->name, darg->var->name, darg->layout->pos);
+							pos, s->name->val, darg->var->name->val,
+							darg->layout->pos);
 				}
 				darg->layout->pos = pos;
 				darg->layout->len = len;

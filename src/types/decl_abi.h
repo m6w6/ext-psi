@@ -31,10 +31,10 @@ struct psi_data;
 
 struct psi_decl_abi {
 	struct psi_token *token;
-	char *convention;
+	zend_string *convention;
 };
 
-struct psi_decl_abi *psi_decl_abi_init(const char *convention);
+struct psi_decl_abi *psi_decl_abi_init(zend_string *convention);
 void psi_decl_abi_free(struct psi_decl_abi **abi_ptr);
 void psi_decl_abi_dump(int fd, struct psi_decl_abi *abi);
 bool psi_decl_abi_validate(struct psi_data *data, struct psi_decl_abi *abi);

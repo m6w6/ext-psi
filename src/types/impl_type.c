@@ -26,19 +26,19 @@
 #include "php_psi_stdinc.h"
 #include "data.h"
 
-struct psi_impl_type *psi_impl_type_init(token_t type, const char *name)
+struct psi_impl_type *psi_impl_type_init(token_t type, zend_string *name)
 {
 	struct psi_impl_type *t = calloc(1, sizeof(*t));
 
 	t->type = type;
-	t->name = strdup(name);
+	t->name = zend_string_copy(name);
 
 	return t;
 }
 
 void psi_impl_type_dump(int fd, struct psi_impl_type *type)
 {
-	dprintf(fd, "%s", type->name);
+	dprintf(fd, "%s", type->name->val);
 }
 
 void psi_impl_type_free(struct psi_impl_type **type_ptr)
@@ -47,10 +47,8 @@ void psi_impl_type_free(struct psi_impl_type **type_ptr)
 		struct psi_impl_type *type = *type_ptr;
 
 		*type_ptr = NULL;
-		if (type->token) {
-			free(type->token);
-		}
-		free(type->name);
+		psi_token_free(&type->token);
+		zend_string_release(type->name);
 		free(type);
 	}
 }

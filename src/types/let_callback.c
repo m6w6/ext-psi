@@ -47,9 +47,7 @@ void psi_let_callback_free(struct psi_let_callback **cb_ptr)
 		if (cb->cb_args) {
 			psi_plist_free(cb->cb_args);
 		}
-		if (cb->token) {
-			free(cb->token);
-		}
+		psi_token_free(&cb->token);
 		free(cb);
 	}
 }
@@ -67,7 +65,7 @@ static inline bool psi_let_callback_validate_decl_args(struct psi_data *data,
 			data->error(data, cb->token, PSI_WARNING,
 					"Argument count of callback statement of implementation '%s'"
 					"does not match argument count of callback declaration '%s'",
-					impl->func->name, cb_decl->func->var->name);
+					impl->func->name->val, cb_decl->func->var->name->val);
 			return false;
 		}
 
@@ -91,7 +89,7 @@ bool psi_let_callback_validate(struct psi_data *data, struct psi_let_callback *c
 	if (cb_type->type != PSI_T_FUNCTION) {
 		data->error(data, cb_var->token, PSI_WARNING,
 				"Expected a function: %s",
-				cb_var->name);
+				cb_var->name->val);
 		return false;
 	}
 	cb->decl = cb_type->real.func;
@@ -143,8 +141,8 @@ void psi_let_callback_dump(int fd, struct psi_let_callback *callback,
 		}
 	}
 	dprintf(fd, ") as %s(%s(",
-			callback->func->name,
-			callback->func->var->name);
+			callback->func->name->val,
+			callback->func->var->name->val);
 
 	if (callback->args) {
 		size_t i = 0, last = psi_plist_count(callback->args);

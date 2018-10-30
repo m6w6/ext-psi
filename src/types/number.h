@@ -63,7 +63,7 @@ struct psi_number {
 	token_t type;
 	unsigned flags;
 	union {
-		char *numb;
+		zend_string *numb;
 		impl_val ival;
 		struct psi_const *cnst;
 		struct psi_decl_var *dvar;

@@ -43,9 +43,7 @@ void psi_let_stmt_free(struct psi_let_stmt **stmt_ptr)
 		if (stmt->exp) {
 			psi_let_exp_free(&stmt->exp);
 		}
-		if (stmt->token) {
-			free(stmt->token);
-		}
+		psi_token_free(&stmt->token);
 		free(stmt);
 	}
 }
@@ -77,14 +75,14 @@ bool psi_let_stmts_validate(struct psi_data *data, struct psi_validate_scope *sc
 		if (!let->exp->var) {
 			data->error(data, let->token, PSI_WARNING,
 					"Missing variable in `let` statement for implementation %s",
-					scope->impl->func->name);
+					scope->impl->func->name->val);
 			return false;
 		}
 
 		if (!psi_impl_get_decl_arg(scope->impl, let_var)) {
 			data->error(data, let_var->token, PSI_WARNING,
 					"Unknown variable '%s' in `let` statement  of implementation '%s'",
-					let_var->name, scope->impl->func->name);
+					let_var->name->val, scope->impl->func->name->val);
 			return false;
 		}
 		switch (let->exp->kind) {
@@ -100,7 +98,7 @@ bool psi_let_stmts_validate(struct psi_data *data, struct psi_validate_scope *sc
 		if (let_ivar && !psi_impl_get_arg(scope->impl, let_ivar)) {
 			data->error(data, let_var->token, PSI_WARNING,
 					"Unknown variable '%s' in `let` statement of implementation '%s'",
-					let_ivar->name, scope->impl->func->name);
+					let_ivar->name->val, scope->impl->func->name->val);
 			return false;
 		}
 
@@ -120,10 +118,11 @@ bool psi_let_stmts_validate(struct psi_data *data, struct psi_validate_scope *sc
 				data->error(data, scope->impl->func->token, PSI_WARNING,
 						"Missing `let` statement for arg '%s %s%s'"
 								" of declaration '%s' for implementation '%s'",
-						darg->type->name,
+						darg->type->name->val,
 						psi_t_indirection(darg->var->pointer_level),
-						darg->var->name, scope->impl->decl->func->var->name,
-						scope->impl->func->name);
+						darg->var->name->val,
+						scope->impl->decl->func->var->name->val,
+						scope->impl->func->name->val);
 				return false;
 			}
 		}

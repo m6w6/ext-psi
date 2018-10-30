@@ -46,9 +46,7 @@ void psi_return_stmt_free(struct psi_return_stmt **ret_ptr)
 		struct psi_return_stmt *ret = *ret_ptr;
 
 		*ret_ptr = NULL;
-		if (ret->token) {
-			free(ret->token);
-		}
+		psi_token_free(&ret->token);
 		psi_return_exp_free(&ret->exp);
 		free(ret);
 	}
@@ -78,12 +76,12 @@ bool psi_return_stmt_validate(struct psi_data *data,
 		data->error(data, ret->token, PSI_WARNING,
 				"Too many `return` statements for implementation %s;"
 				" found %zu, exactly one is required",
-				scope->impl->func->name, count);
+				scope->impl->func->name->val, count);
 		return false;
 	case 0:
 		data->error(data, scope->impl->func->token, PSI_WARNING,
 				"Missing `return` statement for implementation %s",
-				scope->impl->func->name);
+				scope->impl->func->name->val);
 		return false;
 	case 1:
 		break;

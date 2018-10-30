@@ -176,11 +176,11 @@ zend_function_entry *psi_context_compile(struct psi_context *C)
 
 		while (psi_plist_get(C->consts, i++, &c)) {
 
-			if (zend_get_constant_str(c->name, strlen(c->name))) {
+			if (zend_get_constant(c->name)) {
 				continue;
 			}
 
-			zc.name = zend_string_init(c->name, strlen(c->name), 1);
+			zc.name = zend_string_copy(c->name);
 
 			switch (c->type->type) {
 			case PSI_T_BOOL:
@@ -218,9 +218,9 @@ zend_function_entry *psi_context_compile(struct psi_context *C)
 				zend_string *name;
 
 				if (psi_decl_type_is_anon(e->name, "enum")) {
-					name = strpprintf(0, "psi\\%s", item->name);
+					name = strpprintf(0, "psi\\%s", item->name->val);
 				} else {
-					name = strpprintf(0, "psi\\%s\\%s", e->name, item->name);
+					name = strpprintf(0, "psi\\%s\\%s", e->name->val, item->name->val);
 				}
 
 				if (zend_get_constant(name)) {

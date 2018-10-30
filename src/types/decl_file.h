@@ -29,7 +29,7 @@
 struct psi_data;
 
 struct psi_decl_file {
-	char *filename;
+	zend_string *filename;
 	struct psi_plist *libnames;
 	struct psi_plist *dlopened;
 };

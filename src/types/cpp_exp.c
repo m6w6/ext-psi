@@ -83,8 +83,7 @@ void psi_cpp_exp_free(struct psi_cpp_exp **exp_ptr)
 		case PSI_T_IMPORT:
 		case PSI_T_INCLUDE:
 		case PSI_T_INCLUDE_NEXT:
-			free(exp->data.tok);
-			exp->data.tok = NULL;
+			psi_token_free(&exp->data.tok);
 			break;
 		case PSI_T_DEFINE:
 			psi_cpp_macro_decl_free(&exp->data.decl);
@@ -101,16 +100,14 @@ void psi_cpp_exp_free(struct psi_cpp_exp **exp_ptr)
 			assert(0);
 			break;
 		}
-		if (exp->token) {
-			free(exp->token);
-		}
+		psi_token_free(&exp->token);
 		free(exp);
 	}
 }
 
 void psi_cpp_exp_dump(int fd, struct psi_cpp_exp *exp)
 {
-	dprintf(fd, "#%s ", exp->token->text);
+	dprintf(fd, "#%s ", exp->token->text->val);
 	switch (exp->type) {
 	case PSI_T_WARNING:
 	case PSI_T_ERROR:
@@ -121,15 +118,15 @@ void psi_cpp_exp_dump(int fd, struct psi_cpp_exp *exp)
 	case PSI_T_UNDEF:
 	case PSI_T_IFDEF:
 	case PSI_T_IFNDEF:
-		dprintf(fd, "%s", exp->data.tok->text);
+		dprintf(fd, "%s", exp->data.tok->text->val);
 		break;
 	case PSI_T_IMPORT:
 	case PSI_T_INCLUDE:
 	case PSI_T_INCLUDE_NEXT:
 		if (exp->data.tok->type == PSI_T_CPP_HEADER) {
-			dprintf(fd, "<%s>", exp->data.tok->text);
+			dprintf(fd, "<%s>", exp->data.tok->text->val);
 		} else {
-			dprintf(fd, "\"%s\"", exp->data.tok->text);
+			dprintf(fd, "\"%s\"", exp->data.tok->text->val);
 		}
 		break;
 	case PSI_T_DEFINE:
@@ -188,7 +185,7 @@ static inline void psi_cpp_level_unmask(struct psi_cpp *cpp)
 void psi_cpp_exp_exec(struct psi_cpp_exp *exp, struct psi_cpp *cpp, struct psi_data *D)
 {
 	PSI_DEBUG_PRINT(D, "PSI: CPP EVAL < %s (level=%u, skip=%u)\n",
-			exp->token->text, cpp->level, cpp->skip);
+			exp->token->text->val, cpp->level, cpp->skip);
 
 #if PSI_CPP_DEBUG
 	psi_cpp_exp_dump(2, exp);
@@ -198,13 +195,13 @@ void psi_cpp_exp_exec(struct psi_cpp_exp *exp, struct psi_cpp *cpp, struct psi_d
 	case PSI_T_ERROR:
 		if (!cpp->skip) {
 			D->error(D, exp->token, PSI_ERROR, "%s",
-					exp->data.tok ? exp->data.tok->text : "");
+					exp->data.tok ? exp->data.tok->text->val : "");
 		}
 		break;
 	case PSI_T_WARNING:
 		if (!cpp->skip) {
 			D->error(D, exp->token, PSI_WARNING, "%s",
-					exp->data.tok ? exp->data.tok->text : "");
+					exp->data.tok ? exp->data.tok->text->val : "");
 		}
 		break;
 	case PSI_T_UNDEF:
@@ -303,27 +300,27 @@ void psi_cpp_exp_exec(struct psi_cpp_exp *exp, struct psi_cpp *cpp, struct psi_d
 	case PSI_T_INCLUDE:
 		if (!cpp->skip) {
 			if (!psi_cpp_include(cpp, exp->data.tok, PSI_CPP_INCLUDE)) {
-				D->error(D, exp->token, PSI_WARNING, "Failed to include %s", exp->data.tok->text);
+				D->error(D, exp->token, PSI_WARNING, "Failed to include %s", exp->data.tok->text->val);
 			}
 		}
 		break;
 	case PSI_T_INCLUDE_NEXT:
 		if (!cpp->skip) {
 			if (!psi_cpp_include(cpp, exp->data.tok, PSI_CPP_INCLUDE_NEXT)) {
-				D->error(D, exp->token, PSI_WARNING, "Failed to include %s", exp->data.tok->text);
+				D->error(D, exp->token, PSI_WARNING, "Failed to include %s", exp->data.tok->text->val);
 			}
 		}
 		break;
 	case PSI_T_IMPORT:
 		if (!cpp->skip) {
 			if (!psi_cpp_include(cpp, exp->data.tok, PSI_CPP_INCLUDE_ONCE)) {
-				D->error(D, exp->token, PSI_WARNING, "Failed to include %s", exp->data.tok->text);
+				D->error(D, exp->token, PSI_WARNING, "Failed to include %s", exp->data.tok->text->val);
 			}
 		}
 		break;
 	case PSI_T_PRAGMA_ONCE:
 		if (!cpp->skip) {
-			zend_hash_str_add_empty_element(&cpp->once, exp->token->file, strlen(exp->token->file));
+			zend_hash_add_empty_element(&cpp->once, exp->token->file);
 		}
 		break;
 	default:
@@ -332,5 +329,5 @@ void psi_cpp_exp_exec(struct psi_cpp_exp *exp, struct psi_cpp *cpp, struct psi_d
 	}
 
 	PSI_DEBUG_PRINT(D, "PSI: CPP EVAL > %s (level=%u, skip=%u)\n",
-			exp->token->text, cpp->level, cpp->skip);
+			exp->token->text->val, cpp->level, cpp->skip);
 }

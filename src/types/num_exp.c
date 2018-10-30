@@ -216,9 +216,7 @@ void psi_num_exp_free(struct psi_num_exp **c_ptr)
 			assert(0);
 		}
 
-		if (c->token) {
-			free(c->token);
-		}
+		psi_token_free(&c->token);
 
 		free(c);
 	}
@@ -306,7 +304,7 @@ struct psi_plist *psi_num_exp_tokens(struct psi_num_exp *exp,
 		list = psi_plist_add(list, &ntoken);
 		ntoken = psi_token_copy(exp->data.c.typ->token);
 		list = psi_plist_add(list, &ntoken);
-		ntoken = psi_token_init(PSI_T_RPAREN, ")", 1, ntoken->col+ntoken->size, ntoken->line, ntoken->file);
+		ntoken = psi_token_init(PSI_T_RPAREN, ")", 1, ntoken->col+ntoken->text->len, ntoken->line, ntoken->file);
 		list = psi_plist_add(list, &ntoken);
 		break;
 
@@ -323,7 +321,7 @@ struct psi_plist *psi_num_exp_tokens(struct psi_num_exp *exp,
 		list = psi_plist_add(list, &ntoken);
 		list = psi_num_exp_tokens(exp->data.u, list);
 		psi_plist_top(list, &ntoken);
-		ntoken = psi_token_init(PSI_T_RPAREN, ")", 1, ntoken->col+ntoken->size, ntoken->line, ntoken->file);
+		ntoken = psi_token_init(PSI_T_RPAREN, ")", 1, ntoken->col+ntoken->text->len, ntoken->line, ntoken->file);
 		list = psi_plist_add(list, &ntoken);
 		break;
 
@@ -363,7 +361,7 @@ struct psi_plist *psi_num_exp_tokens(struct psi_num_exp *exp,
 		list = psi_plist_add(list, &ntoken);
 		list = psi_num_exp_tokens(exp->data.t.truthy, list);
 		psi_plist_top(list, &ntoken);
-		ntoken = psi_token_init(PSI_T_COLON, ":", 1, ntoken->col+ntoken->size, ntoken->line, ntoken->file);
+		ntoken = psi_token_init(PSI_T_COLON, ":", 1, ntoken->col+ntoken->text->len, ntoken->line, ntoken->file);
 		list = psi_plist_add(list, &ntoken);
 		list = psi_plist_add(list, &ntoken);
 		list = psi_num_exp_tokens(exp->data.t.falsy, list);

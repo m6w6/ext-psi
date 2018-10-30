@@ -112,7 +112,7 @@ zend_internal_arg_info *psi_internal_arginfo(struct psi_impl *impl)
 		struct psi_impl_arg *vararg = impl->func->vararg;
 		zend_internal_arg_info *ai = &aip[argc];
 
-		ai->name = vararg->var->name;
+		ai->name = vararg->var->name->val;
 #ifdef ZEND_TYPE_ENCODE
 		ai->type = ZEND_TYPE_ENCODE(psi_internal_type(vararg->type), 1);
 #else
@@ -128,7 +128,7 @@ zend_internal_arg_info *psi_internal_arginfo(struct psi_impl *impl)
 	while (psi_plist_get(impl->func->args, i++, &iarg)) {
 		zend_internal_arg_info *ai = &aip[i];
 
-		ai->name = iarg->var->name;
+		ai->name = iarg->var->name->val;
 #ifdef ZEND_TYPE_ENCODE
 		ai->type = ZEND_TYPE_ENCODE(psi_internal_type(iarg->type), 1);
 #else
@@ -732,7 +732,7 @@ void psi_set_to_array(zval *return_value, struct psi_set_exp *set, impl_val *r_v
 
 		ZVAL_NULL(&ele);
 		psi_set_exp_exec_ex(sub_exp, &ele, sym->ptr, frame);
-		add_assoc_zval(return_value, ivar->name + 1, &ele);
+		add_assoc_zval(return_value, ivar->name->val + 1, &ele);
 	}
 }
 

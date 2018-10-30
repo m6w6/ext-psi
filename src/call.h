@@ -77,9 +77,9 @@ size_t psi_call_frame_num_var_args(struct psi_call_frame *frame);
 size_t psi_call_frame_num_fixed_args(struct psi_call_frame *frame);
 
 zval *psi_call_frame_new_argument(struct psi_call_frame *frame, struct psi_call_frame_argument *frame_arg);
-zval *psi_call_frame_sub_argument(struct psi_call_frame *frame, struct psi_impl_var *inner_var, zval *outer_zval, const char *name);
+zval *psi_call_frame_sub_argument(struct psi_call_frame *frame, struct psi_impl_var *inner_var, zval *outer_zval, zend_string *name);
 
-struct psi_call_frame_argument *psi_call_frame_get_argument(struct psi_call_frame *frame, const char *name);
+struct psi_call_frame_argument *psi_call_frame_get_argument(struct psi_call_frame *frame, zend_string *name);
 struct psi_call_frame_argument *psi_call_frame_get_var_argument(struct psi_call_frame *frame, zend_long index);
 
 struct psi_call_frame_symbol *psi_call_frame_fetch_symbol(struct psi_call_frame *frame, struct psi_decl_var *dvar);

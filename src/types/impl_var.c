@@ -26,12 +26,14 @@
 #include "php_psi_stdinc.h"
 #include "data.h"
 
-struct psi_impl_var *psi_impl_var_init(const char *name, bool is_reference)
+#include <Zend/zend_smart_str.h>
+
+struct psi_impl_var *psi_impl_var_init(zend_string *name, bool is_reference)
 {
 	struct psi_impl_var *var = calloc(1, sizeof(*var));
 
-	var->name = strdup(name);
-	var->fqn = strdup(name);
+	var->name = zend_string_copy(name);
+	var->fqn = zend_string_copy(name);
 
 	var->reference = is_reference;
 	return var;
@@ -43,8 +45,8 @@ struct psi_impl_var *psi_impl_var_copy(struct psi_impl_var *var)
 
 	*cpy = *var;
 
-	cpy->name = strdup(cpy->name);
-	cpy->fqn = strdup(cpy->fqn);
+	cpy->name = zend_string_copy(cpy->name);
+	cpy->fqn = zend_string_copy(cpy->fqn);
 
 	if (cpy->token) {
 		cpy->token = psi_token_copy(cpy->token);
@@ -58,11 +60,9 @@ void psi_impl_var_free(struct psi_impl_var **var_ptr)
 		struct psi_impl_var *var = *var_ptr;
 
 		*var_ptr = NULL;
-		if (var->token) {
-			free(var->token);
-		}
-		free(var->name);
-		free(var->fqn);
+		psi_token_free(&var->token);
+		zend_string_release(var->name);
+		zend_string_release(var->fqn);
 		free(var);
 	}
 }
@@ -72,7 +72,16 @@ void psi_impl_var_dump(int fd, struct psi_impl_var *var, bool vararg)
 	dprintf(fd, "%s%s%s",
 		var->reference ? "&" : "",
 		vararg ? "..." : "",
-		var->name);
+		var->name->val);
+}
+
+static inline zend_string *psi_impl_var_name_prepend(zend_string *current, zend_string *prepend) {
+	smart_str name = {0};
+
+	smart_str_append_ex(&name, prepend, 1);
+	smart_str_appendc_ex(&name, '.', 1);
+	smart_str_appendl_ex(&name, ZSTR_VAL(current) + 1, ZSTR_LEN(current) - 1, 1);
+	return smart_str_extract(&name);
 }
 
 bool psi_impl_var_validate(struct psi_data *data, struct psi_impl_var *ivar,
@@ -83,15 +92,19 @@ bool psi_impl_var_validate(struct psi_data *data, struct psi_impl_var *ivar,
 
 		while ((current_let_exp = current_let_exp->outer)) {
 			struct psi_impl_var *svar = psi_let_exp_get_impl_var(current_let_exp);
+			zend_string *tmp = ivar->fqn;
 
-			ivar->fqn = psi_impl_var_name_prepend(ivar->fqn, svar->name + 1);
+			ivar->fqn = psi_impl_var_name_prepend(ivar->fqn, svar->name);
+			zend_string_release(tmp);
 		}
 	} else if (scope && scope->current_set) {
 		struct psi_set_exp *current_set_exp = scope->current_set;
 		while ((current_set_exp = current_set_exp->outer)) {
 			struct psi_impl_var *svar = psi_set_exp_get_impl_var(current_set_exp);
+			zend_string *tmp = ivar->fqn;
 
-			ivar->fqn = psi_impl_var_name_prepend(ivar->fqn, svar->name + 1);
+			ivar->fqn = psi_impl_var_name_prepend(ivar->fqn, svar->name);
+			zend_string_release(tmp);
 		}
 	}
 

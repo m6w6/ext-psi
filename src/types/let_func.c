@@ -32,12 +32,12 @@
 
 #include <assert.h>
 
-struct psi_let_func *psi_let_func_init(token_t type, const char *name,
+struct psi_let_func *psi_let_func_init(token_t type, zend_string *name,
 		struct psi_impl_var *var)
 {
 	struct psi_let_func *func = calloc(1, sizeof(*func));
 	func->type = type;
-	func->name = strdup(name);
+	func->name = zend_string_copy(name);
 	func->var = var;
 	return func;
 }
@@ -48,11 +48,9 @@ void psi_let_func_free(struct psi_let_func **func_ptr)
 		struct psi_let_func *func = *func_ptr;
 
 		*func_ptr = NULL;
-		if (func->token) {
-			free(func->token);
-		}
+		psi_token_free(&func->token);
 		psi_impl_var_free(&func->var);
-		free(func->name);
+		zend_string_release(func->name);
 		if (func->inner) {
 			psi_plist_free(func->inner);
 		}
@@ -62,7 +60,8 @@ void psi_let_func_free(struct psi_let_func **func_ptr)
 
 void psi_let_func_dump(int fd, struct psi_let_func *func, unsigned level)
 {
-	dprintf(fd, "%s(%s\t/* fqn=%s */", func->name, func->var->name, func->var->fqn);
+	dprintf(fd, "%s(%s\t/* fqn=%s */", func->name->val, func->var->name->val,
+			func->var->fqn->val);
 
 	if (func->inner) {
 		size_t i = 0, count = psi_plist_count(func->inner);
@@ -108,7 +107,7 @@ static inline int validate_let_func_type(struct psi_data *data,
 	default:
 		data->error(data, func->var->token, PSI_WARNING,
 				"Unknown `let` cast function '%s' of implementation '%s'",
-				func->name, scope->impl->func->name);
+				func->name->val, scope->impl->func->name->val);
 		return false;
 	}
 }
@@ -133,7 +132,7 @@ static inline bool validate_let_func_inner(struct psi_data *data,
 			struct psi_let_exp *inner;
 
 			while (psi_plist_get(func->inner, i++, &inner)) {
-				const char *name = psi_let_exp_get_decl_var_name(inner);
+				zend_string *name = psi_let_exp_get_decl_var_name(inner);
 				struct psi_decl_arg *sub_arg;
 
 				inner->outer = exp;
@@ -169,7 +168,7 @@ static inline bool validate_let_func_inner(struct psi_data *data,
 
 			sub_var = psi_let_exp_get_impl_var(exp);
 			sub_ref = psi_let_exp_get_impl_var(inner);
-			if (strcmp(sub_var->name, sub_ref->name)) {
+			if (!zend_string_equals(sub_var->name, sub_ref->name)) {
 				data->error(data, sub_var->token, E_WARNING,
 						"Inner `set` statement casts on pointers must"
 								" reference the same variable");
@@ -186,7 +185,7 @@ static inline bool validate_let_func_inner(struct psi_data *data,
 					"Inner let statement's values must refer to a structure or"
 							" array type, got '%s%s' for '%s'", var_typ->name,
 					psi_t_indirection(let_var->arg->var->pointer_level),
-					let_var->name);
+					let_var->name->val);
 			return false;
 		}
 
@@ -235,7 +234,7 @@ void exec_let_func_arrval_inner(struct psi_let_func *func,
 		 * we only want to set supplied data on unions
 		 */
 		if (!zend_symtable_str_exists(Z_ARRVAL_P(frame_arg->zval_ptr),
-				&inner_var->name[1], strlen(&inner_var->name[1]))) {
+				&inner_var->name->val[1], inner_var->name->len - 1)) {
 			return;
 		}
 	}
@@ -244,8 +243,8 @@ void exec_let_func_arrval_inner(struct psi_let_func *func,
 
 	/* example from dm_store/dbm_fetch with arrval($string) conversion:
 	 let key = arrval($key,
-	 dptr = strval($0),
-	 dsize = strlen($0)
+	   dptr = strval($0),
+	   dsize = strlen($0)
 	 );
 	 # ---
 	 darg = key

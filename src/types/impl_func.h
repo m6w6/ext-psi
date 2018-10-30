@@ -35,7 +35,7 @@ struct psi_impl_type;
 
 struct psi_impl_func {
 	struct psi_token *token;
-	char *name;
+	zend_string *name;
 	struct psi_plist *args;
 	struct psi_impl_arg *vararg;
 	struct psi_impl_type *return_type;
@@ -43,7 +43,8 @@ struct psi_impl_func {
 	unsigned static_memory:1;
 };
 
-struct psi_impl_func *psi_impl_func_init(const char *name, struct psi_plist *args, struct psi_impl_type *return_type);
+struct psi_impl_func *psi_impl_func_init(zend_string *name,
+		struct psi_plist *args, struct psi_impl_type *return_type);
 void psi_impl_func_free(struct psi_impl_func **f_ptr);
 void psi_impl_func_dump(int fd, struct psi_impl_func *func);
 bool psi_impl_func_validate(struct psi_data *data, struct psi_impl_func *func,

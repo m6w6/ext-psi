@@ -30,6 +30,8 @@
 
 #include <assert.h>
 
+#include <Zend/zend_smart_str.h>
+
 struct psi_let_exp *psi_let_exp_init_ex(struct psi_decl_var *var,
 		enum psi_let_exp_kind kind, void *data)
 {
@@ -123,7 +125,7 @@ void psi_let_exp_dump(int fd, struct psi_let_exp *val, unsigned level, int last)
 		break;
 	case PSI_LET_TMP:
 		psi_decl_var_dump(fd, val->data.var);
-		dprintf(fd, "\t/* fqn=%s */", val->data.var->fqn);
+		dprintf(fd, "\t/* fqn=%s */", val->data.var->fqn->val);
 		break;
 	case PSI_LET_CALLOC:
 		psi_let_calloc_dump(fd, val->data.alloc);
@@ -143,7 +145,7 @@ void psi_let_exp_dump(int fd, struct psi_let_exp *val, unsigned level, int last)
 	}
 
 	if (val->var) {
-		dprintf(fd, "\t/* fqn=%s */", val->var->fqn);
+		dprintf(fd, "\t/* fqn=%s */", val->var->fqn->val);
 	}
 
 	if (level > 1) {
@@ -165,7 +167,7 @@ bool psi_let_exp_validate(struct psi_data *data, struct psi_let_exp *val,
 		if (!psi_decl_var_validate(data, val->data.var, scope)) {
 			data->error(data, dvar->token ? : **(struct psi_token ***) &val->data,
 					PSI_WARNING, "Unknown variable '%s' in temp let statment of implementation '%s'",
-					dvar->name, scope->impl->func->name);
+					dvar->name->val, scope->impl->func->name->val);
 			return false;
 		}
 		break;
@@ -174,7 +176,7 @@ bool psi_let_exp_validate(struct psi_data *data, struct psi_let_exp *val,
 		if (!psi_decl_var_validate(data, dvar, scope)) {
 			data->error(data, dvar->token ? : **(struct psi_token ***) &val->data,
 					PSI_WARNING, "Unknown variable '%s' in let statement of implementation '%s'",
-					dvar->name, scope->impl->func->name);
+					dvar->name->val, scope->impl->func->name->val);
 			return false;
 		}
 		break;
@@ -322,10 +324,11 @@ struct psi_let_func* psi_let_exp_get_func(struct psi_let_exp* exp)
 struct psi_decl_var *psi_let_exp_get_decl_var(struct psi_let_exp *val)
 {
 	if (!val->var) {
-		const char *name = psi_let_exp_get_decl_var_name(val);
+		zend_string *name = psi_let_exp_get_decl_var_name(val);
 
 		if (name) {
 			val->var = psi_decl_var_init(name, 0, 0);
+			zend_string_release(name);
 		}
 	}
 	return val->var;
@@ -337,15 +340,22 @@ struct psi_impl_var *psi_let_exp_get_impl_var(struct psi_let_exp *val)
 	return fn ? fn->var : NULL;
 }
 
-const char* psi_let_exp_get_decl_var_name(struct psi_let_exp* val)
+zend_string *psi_let_exp_get_decl_var_name(struct psi_let_exp* val)
 {
 	struct psi_impl_var* var;
+
 	if (val->var) {
-		return val->var->name;
+		return zend_string_copy(val->var->name);
 	}
+
 	var = psi_let_exp_get_impl_var(val);
 	if (var) {
-		return &var->name[1];
+		smart_str name = {0};
+
+		smart_str_appendl_ex(&name, &var->name->val[1], var->name->len - 1, 1);
+
+		return smart_str_extract(&name);
 	}
+
 	return NULL;
 }

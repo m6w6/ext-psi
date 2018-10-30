@@ -413,15 +413,15 @@ static inline ffi_type *psi_ffi_decl_func_type(struct psi_decl *fn) {
 	}
 }
 
-static inline ffi_abi psi_ffi_abi(const char *convention) {
+static inline ffi_abi psi_ffi_abi(zend_string *convention) {
 	if (FFI_LAST_ABI - 2 != FFI_FIRST_ABI) {
 #ifdef HAVE_FFI_STDCALL
-		if (!strcasecmp(convention, "stdcall")) {
+		if (zend_string_equals_literal(convention, "stdcall")) {
 			return FFI_STDCALL;
 		}
 #endif
 #ifdef HAVE_FFI_FASTCALL
-		if (!strcasecmp(convention, "fastcall")) {
+		if (zend_string_equals_literal(convention, "fastcall")) {
 			return FFI_FASTCALL;
 		}
 #endif
@@ -785,7 +785,7 @@ static zend_function_entry *psi_ffi_compile(struct psi_context *C)
 				continue;
 			}
 
-			zf->fname = impl->func->name + (impl->func->name[0] == '\\');
+			zf->fname = impl->func->name->val + (impl->func->name->val[0] == '\\');
 			zf->handler = ((struct psi_ffi_impl_info *) impl->info)->code;
 			zf->num_args = psi_plist_count(impl->func->args);
 			zf->arg_info = psi_internal_arginfo(impl);

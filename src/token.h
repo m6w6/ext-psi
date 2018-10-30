@@ -176,20 +176,20 @@ static inline const char *psi_t_indirection(unsigned pointer_level) {
 
 struct psi_token {
 	token_t type;
-	unsigned size, line, col, flags;
-	char *text, *file;
-	char buf[1];
+	unsigned line;
+	unsigned col;
+	unsigned flags;
+	zend_string *file;
+	zend_string *text;
 };
 
 struct psi_parser;
 
 struct psi_token *psi_token_init(token_t token_typ, const char *token_txt,
-		size_t token_len, unsigned col, unsigned line, const char *file);
-size_t psi_token_alloc_size(size_t token_len, size_t fname_len);
+		size_t token_len, unsigned col, unsigned line, zend_string *file);
 struct psi_token *psi_token_copy(struct psi_token *src);
 void psi_token_copy_ctor(struct psi_token **src);
 struct psi_token *psi_token_cat(const char *sep, unsigned argc, ...);
-struct psi_token *psi_token_prepend(const char *sep, struct psi_token *T, unsigned argc, ...);
 struct psi_token *psi_token_append(const char *sep, struct psi_token *T, unsigned argc, ...);
 struct psi_token *psi_token_translit(struct psi_token *T, char *from, char *to);
 uint64_t psi_token_hash(struct psi_token *t, char *digest_buf);

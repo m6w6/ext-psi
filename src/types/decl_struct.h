@@ -34,7 +34,7 @@ struct psi_validate_scope;
 
 struct psi_decl_struct {
 	struct psi_token *token;
-	char *name;
+	zend_string *name;
 	struct psi_plist *args;
 	size_t size;
 	size_t align;
@@ -44,7 +44,7 @@ struct psi_decl_struct {
 	} engine;
 };
 
-struct psi_decl_struct *psi_decl_struct_init(const char *name, struct psi_plist *args);
+struct psi_decl_struct *psi_decl_struct_init(zend_string *name, struct psi_plist *args);
 void psi_decl_struct_free(struct psi_decl_struct **s_ptr);
 void psi_decl_struct_dump(int fd, struct psi_decl_struct *strct);
 

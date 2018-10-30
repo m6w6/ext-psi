@@ -26,13 +26,13 @@
 #include "php_psi_stdinc.h"
 #include "data.h"
 
-struct psi_set_func *psi_set_func_init(token_t type, const char *name,
+struct psi_set_func *psi_set_func_init(token_t type, zend_string *name,
 		struct psi_decl_var *var)
 {
 	struct psi_set_func *func = calloc(1, sizeof(*func));
 
 	func->type = type;
-	func->name = strdup(name);
+	func->name = zend_string_copy(name);
 	func->var = var;
 
 	return func;
@@ -44,20 +44,18 @@ void psi_set_func_free(struct psi_set_func **func_ptr)
 		struct psi_set_func *func = *func_ptr;
 
 		*func_ptr = NULL;
-		if (func->token) {
-			free(func->token);
-		}
+		psi_token_free(&func->token);
 		psi_decl_var_free(&func->var);
-		free(func->name);
+		zend_string_release(func->name);
 		free(func);
 	}
 }
 
 void psi_set_func_dump(int fd, struct psi_set_func *func, unsigned level)
 {
-	dprintf(fd, "%s(", func->name);
+	dprintf(fd, "%s(", func->name->val);
 	psi_decl_var_dump(fd, func->var);
-	dprintf(fd, "\t/* fqn=%s */", func->var->fqn);
+	dprintf(fd, "\t/* fqn=%s */", func->var->fqn->val);
 	if (func->inner && !func->recursive) {
 		size_t i = 0, count = psi_plist_count(func->inner);
 		struct psi_set_exp *inner;
@@ -133,7 +131,7 @@ static inline bool psi_set_func_validate_to_array(struct psi_data *data,
 					PSI_WARNING, "Expected to_type() cast expression");
 			return false;
 		}
-		if (strcmp(set_var->name, psi_set_exp_get_decl_var(sub_exp)->name)) {
+		if (!zend_string_equals(set_var->name, psi_set_exp_get_decl_var(sub_exp)->name)) {
 			/* no warning, because of ambiguity with a one-field-struct monstrosity */
 			goto complex;
 		}
@@ -151,13 +149,14 @@ static inline bool psi_set_func_validate_to_array(struct psi_data *data,
 					PSI_WARNING, "Expected to_type() cast expression");
 			return false;
 		}
-		if (strcmp(set_var->name, psi_set_exp_get_decl_var(sub_exp)->name)) {
+		if (!zend_string_equals(set_var->name, psi_set_exp_get_decl_var(sub_exp)->name)) {
 			data->error(data, **(struct psi_token ***) &sub_exp->data,
 					PSI_WARNING,
 					"Expected %s(%s) cast expression to reference the same"
 					" variable like the outer `set` statement, '%s'",
-					sub_exp->data.func->name,
-					psi_set_exp_get_decl_var(sub_exp)->name, set_var);
+					sub_exp->data.func->name->val,
+					psi_set_exp_get_decl_var(sub_exp)->name->val,
+					set_var->name->val);
 			return false;
 		}
 		func->handler = psi_set_to_array_counted;
@@ -173,7 +172,7 @@ static inline bool psi_set_func_validate_to_array(struct psi_data *data,
 			data->error(data, func->token, PSI_WARNING,
 					"Expected struct or union type for complex to_array()"
 					" cast expression, got '%s'",
-					set_var->arg->type->name);
+					set_var->arg->type->name->val);
 			return false;
 		}
 		func->handler = psi_set_to_array;
@@ -191,7 +190,7 @@ static inline bool psi_set_func_validate_to_recursive(struct psi_data *data,
 		data->error(data, func->token, PSI_WARNING,
 				"Expected to_array() as parent to recursion in `set` statement"
 				" of implementation '%s'",
-				impl->func->name);
+				impl->func->name->val);
 		return false;
 	}
 
@@ -210,7 +209,7 @@ bool psi_set_func_validate(struct psi_data *data, struct psi_set_func *func,
 			&& !psi_impl_get_temp_let_arg(scope->impl, func->var)) {
 		data->error(data, func->var->token, PSI_WARNING,
 				"Unknown variable '%s' in implementation %s",
-				func->var->name, scope->impl->func->name);
+				func->var->name->val, scope->impl->func->name->val);
 		return false;
 	}
 
@@ -286,7 +285,7 @@ bool psi_set_func_validate(struct psi_data *data, struct psi_set_func *func,
 	default:
 		data->error(data, func->token, PSI_WARNING,
 				"Unknown cast '%s' in `set` statement of implementation '%s'",
-				func->name, scope->impl->func->name);
+				func->name->val, scope->impl->func->name->val);
 		return false;
 	}
 

@@ -30,11 +30,11 @@
 
 struct psi_impl_type {
 	struct psi_token *token;
-	char *name;
+	zend_string *name;
 	token_t type;
 };
 
-struct psi_impl_type *psi_impl_type_init(token_t type, const char *name);
+struct psi_impl_type *psi_impl_type_init(token_t type, zend_string *name);
 void psi_impl_type_free(struct psi_impl_type **type_ptr);
 void psi_impl_type_dump(int fd, struct psi_impl_type *type);
 

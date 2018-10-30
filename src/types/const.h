@@ -34,11 +34,11 @@ struct psi_impl_def_val;
 struct psi_const {
 	struct psi_token *token;
 	struct psi_impl_type *type;
-	char *name;
+	zend_string *name;
 	struct psi_impl_def_val *val;
 };
 
-struct psi_const *psi_const_init(struct psi_impl_type *type, const char *name,
+struct psi_const *psi_const_init(struct psi_impl_type *type, zend_string *name,
 		struct psi_impl_def_val *val);
 void psi_const_free(struct psi_const **constant_ptr);
 void psi_const_dump(int fd, struct psi_const *cnst);

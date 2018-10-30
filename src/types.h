@@ -73,7 +73,7 @@ static inline impl_val *deref_impl_val(impl_val *ret_val, struct psi_decl_var *v
 	ZEND_ASSERT(!var->arg || var->arg->var != var);
 #if 0
 	fprintf(stderr, "deref: %s pl=%u:%u as=%u:%u %p\n",
-			var->name, var->pointer_level, var->arg->var->pointer_level,
+			var->name->val, var->pointer_level, var->arg->var->pointer_level,
 			var->array_size, var->arg->var->array_size, ret_val);
 #endif
 	for (i = 0; i < var->pointer_level; ++i) {
@@ -92,7 +92,7 @@ static inline impl_val *enref_impl_val(void *ptr, struct psi_decl_var *var) {
 	ZEND_ASSERT(var->arg->var == var);
 #if 0
 	fprintf(stderr, "enref: %s pl=%u:%u as=%u:%u\n",
-			var->name, var->pointer_level, var->arg->var->pointer_level,
+			var->name->val, var->pointer_level, var->arg->var->pointer_level,
 			var->array_size, var->arg->var->array_size);
 #endif
 	if (!var->pointer_level ){//&& real_decl_type(var->arg->type)->type != PSI_T_STRUCT) {
@@ -115,7 +115,7 @@ static inline impl_val *enref_impl_val(void *ptr, struct psi_decl_var *var) {
 static inline impl_val *struct_member_ref(struct psi_decl_arg *set_arg, impl_val *struct_ptr, impl_val **to_free) {
 	void *ptr = (char *) struct_ptr + set_arg->layout->pos;
 #if 0
-	fprintf(stderr, "struct member %s: %p\n", set_arg->var->name, ptr);
+	fprintf(stderr, "struct member %s: %p\n", set_arg->var->name->val, ptr);
 #endif
 	return ptr;
 }

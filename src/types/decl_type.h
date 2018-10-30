@@ -40,7 +40,7 @@ struct psi_validate_scope;
 
 struct psi_decl_type {
 	struct psi_token *token;
-	char *name;
+	zend_string *name;
 	token_t type;
 	union {
 		struct psi_decl_arg *def;
@@ -52,9 +52,9 @@ struct psi_decl_type {
 };
 
 #include <string.h>
-#define psi_decl_type_is_anon(name, type) !strncmp(name, type "@", sizeof(type))
+#define psi_decl_type_is_anon(name, type) !strncmp(name->val, type "@", sizeof(type))
 
-struct psi_decl_type *psi_decl_type_init(token_t type, const char *name);
+struct psi_decl_type *psi_decl_type_init(token_t type, zend_string *name);
 struct psi_decl_type *psi_decl_type_copy(struct psi_decl_type *src);
 void psi_decl_type_free(struct psi_decl_type **type_ptr);
 void psi_decl_type_dump(int fd, struct psi_decl_type *t, unsigned level);

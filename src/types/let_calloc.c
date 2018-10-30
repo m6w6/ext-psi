@@ -45,9 +45,7 @@ void psi_let_calloc_free(struct psi_let_calloc **alloc_ptr)
 		*alloc_ptr = NULL;
 		psi_num_exp_free(&alloc->nmemb);
 		psi_num_exp_free(&alloc->size);
-		if (alloc->token) {
-			free(alloc->token);
-		}
+		psi_token_free(&alloc->token);
 		free(alloc);
 	}
 }

@@ -46,9 +46,7 @@ void psi_set_stmt_free(struct psi_set_stmt **set_ptr)
 
 		*set_ptr = NULL;
 		psi_set_exp_free(&set->exp);
-		if (set->token) {
-			free(set->token);
-		}
+		psi_token_free(&set->token);
 		free(set);
 	}
 }
@@ -72,13 +70,13 @@ bool psi_set_stmts_validate(struct psi_data *data, struct psi_validate_scope *sc
 		if (!set->exp->var) {
 			data->error(data, set->token, PSI_WARNING,
 					"Missing variable of `set` statement of implementation '%s'",
-					scope->impl->func->name);
+					scope->impl->func->name->val);
 			return false;
 		}
 		if (!psi_impl_get_arg(scope->impl, set->exp->var)) {
 			data->error(data, set->token, PSI_WARNING,
 					"Unknown variable '%s' of `set` statement of implementation '%s'",
-					set->exp->var->name, scope->impl->func->name);
+					set->exp->var->name->val, scope->impl->func->name->val);
 			return false;
 		}
 
@@ -92,7 +90,7 @@ bool psi_set_stmts_validate(struct psi_data *data, struct psi_validate_scope *sc
 				if (!psi_impl_get_temp_let_arg(scope->impl, set->exp->data.func->var)) {
 					data->error(data, set->token, PSI_WARNING,
 							"Unknown variable '%s' of `set` statement of implementation '%s'",
-							set->exp->data.func->var->name, scope->impl->func->name);
+							set->exp->data.func->var->name->val, scope->impl->func->name->val);
 					scope->current_set = NULL;
 					return false;
 				}

@@ -36,14 +36,14 @@ struct psi_validate_scope;
 struct psi_set_func {
 	struct psi_token *token;
 	token_t type;
-	char *name;
+	zend_string *name;
 	struct psi_decl_var *var;
 	psi_marshal_set handler;
 	struct psi_plist *inner;
 	unsigned recursive:1;
 };
 
-struct psi_set_func *psi_set_func_init(token_t type, const char *name, struct psi_decl_var *var);
+struct psi_set_func *psi_set_func_init(token_t type, zend_string *name, struct psi_decl_var *var);
 void psi_set_func_free(struct psi_set_func **func_ptr);
 void psi_set_func_dump(int fd, struct psi_set_func *func, unsigned level);
 bool psi_set_func_validate(struct psi_data *data, struct psi_set_func *func,

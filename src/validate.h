@@ -59,32 +59,32 @@ static inline void psi_validate_scope_dtor(struct psi_validate_scope *scope)
 }
 
 #define psi_validate_scope_has_type(s, t) \
-	((s) ? zend_hash_str_exists(&(s)->types, (t), strlen(t)) : false)
+	((s) ? zend_hash_exists(&(s)->types, (t)) : false)
 #define psi_validate_scope_has_struct(s, t) \
-	((s) ? zend_hash_str_exists(&(s)->structs, (t), strlen(t)) : false)
+	((s) ? zend_hash_exists(&(s)->structs, (t)) : false)
 #define psi_validate_scope_has_union(s, t) \
-	((s) ? zend_hash_str_exists(&(s)->unions, (t), strlen(t)) : false)
+	((s) ? zend_hash_exists(&(s)->unions, (t)) : false)
 
 #define psi_validate_scope_add_type(s, t, p) \
-	do { if (s) zend_hash_str_add_ptr(&(s)->types, (t), strlen(t), (p)); } while(0)
+	do { if (s) zend_hash_add_ptr(&(s)->types, (t), (p)); } while(0)
 #define psi_validate_scope_add_struct(s, t, p) \
-	do { if (s) zend_hash_str_add_ptr(&(s)->structs, (t), strlen(t), (p)); } while(0)
+	do { if (s) zend_hash_add_ptr(&(s)->structs, (t), (p)); } while(0)
 #define psi_validate_scope_add_union(s, t, p) \
-	do { if (s) zend_hash_str_add_ptr(&(s)->unions, (t), strlen(t), (p)); } while(0)
+	do { if (s) zend_hash_add_ptr(&(s)->unions, (t), (p)); } while(0)
 
 #define psi_validate_scope_get_type(s, t) \
-	((s) ? zend_hash_str_find_ptr(&(s)->types, (t), strlen(t)) : NULL)
+	((s) ? zend_hash_find_ptr(&(s)->types, (t)) : NULL)
 #define psi_validate_scope_get_struct(s, t) \
-	((s) ? zend_hash_str_find_ptr(&(s)->structs, (t), strlen(t)) : NULL)
+	((s) ? zend_hash_find_ptr(&(s)->structs, (t)) : NULL)
 #define psi_validate_scope_get_union(s, t) \
-	((s) ? zend_hash_str_find_ptr(&(s)->unions, (t), strlen(t)) : NULL)
+	((s) ? zend_hash_find_ptr(&(s)->unions, (t)) : NULL)
 
 #define psi_validate_scope_del_type(s, t) \
-	do { if (s) zend_hash_str_del(&(s)->types, (t), strlen(t)); } while(0)
+	do { if (s) zend_hash_del(&(s)->types, (t)); } while(0)
 #define psi_validate_scope_del_struct(s, t) \
-	do { if (s) zend_hash_str_del(&(s)->structs, (t), strlen(t)); } while(0)
+	do { if (s) zend_hash_del(&(s)->structs, (t)); } while(0)
 #define psi_validate_scope_del_union(s, t) \
-	do { if (s) zend_hash_str_del(&(s)->unions, (t), strlen(t)); } while(0)
+	do { if (s) zend_hash_del(&(s)->unions, (t)); } while(0)
 
 
 #endif /* PSI_VALIDATE_H */

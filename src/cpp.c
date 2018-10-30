@@ -172,7 +172,8 @@ static bool psi_cpp_stage1(struct psi_cpp *cpp)
 					struct psi_token *no_ws = psi_token_copy(token);
 
 					no_ws->type = PSI_T_NO_WHITESPACE;
-					no_ws->text[0] = '\xA0';
+					zend_string_release(no_ws->text);
+					no_ws->text = zend_string_init("\xA0", 1, 1);
 					psi_cpp_tokiter_ins_cur(cpp, no_ws);
 					continue;
 				}
@@ -348,7 +349,7 @@ bool psi_cpp_defined(struct psi_cpp *cpp, struct psi_token *tok)
 	bool defined;
 
 	if (tok->type == PSI_T_NAME) {
-		defined = zend_hash_str_exists(&cpp->defs, tok->text, tok->size);
+		defined = zend_hash_exists(&cpp->defs, tok->text);
 	} else {
 		defined = false;
 	}
@@ -356,8 +357,8 @@ bool psi_cpp_defined(struct psi_cpp *cpp, struct psi_token *tok)
 #if PSI_CPP_DEBUG
 	fprintf(stderr, "PSI: CPP defined -> %s ", defined ? "true" : "false");
 	if (defined) {
-		struct psi_cpp_macro_decl *macro = zend_hash_str_find_ptr(&cpp->defs, tok->text, tok->size);
-		fprintf(stderr, " @ %s:%u ", macro->token->file, macro->token->line);
+		struct psi_cpp_macro_decl *macro = zend_hash_find_ptr(&cpp->defs, tok->text);
+		fprintf(stderr, " @ %s:%u ", macro->token->file->val, macro->token->line);
 	}
 	psi_token_dump(2, tok);
 #endif
@@ -367,13 +368,13 @@ bool psi_cpp_defined(struct psi_cpp *cpp, struct psi_token *tok)
 
 void psi_cpp_define(struct psi_cpp *cpp, struct psi_cpp_macro_decl *decl)
 {
-	struct psi_cpp_macro_decl *old = zend_hash_str_find_ptr(&cpp->defs, decl->token->text, decl->token->size);
+	struct psi_cpp_macro_decl *old = zend_hash_find_ptr(&cpp->defs, decl->token->text);
 
 	if (old && !psi_cpp_macro_decl_equal(old, decl)) {
 		cpp->parser->error(PSI_DATA(cpp->parser), decl->token, PSI_WARNING,
-				"'%s' redefined", decl->token->text);
+				"'%s' redefined", decl->token->text->val);
 		cpp->parser->error(PSI_DATA(cpp->parser), old->token, PSI_WARNING,
-				"'%s' previously defined", old->token->text);
+				"'%s' previously defined", old->token->text->val);
 	}
 #if PSI_CPP_DEBUG
 	if (decl->exp) {
@@ -384,12 +385,12 @@ void psi_cpp_define(struct psi_cpp *cpp, struct psi_cpp_macro_decl *decl)
 	psi_cpp_macro_decl_dump(2, decl);
 	fprintf(stderr, "\n");
 #endif
-	zend_hash_str_update_ptr(&cpp->defs, decl->token->text, decl->token->size, decl);
+	zend_hash_update_ptr(&cpp->defs, decl->token->text, decl);
 }
 
 bool psi_cpp_undef(struct psi_cpp *cpp, struct psi_token *tok)
 {
-	return SUCCESS == zend_hash_str_del(&cpp->defs, tok->text, tok->size);
+	return SUCCESS == zend_hash_del(&cpp->defs, tok->text);
 }
 
 bool psi_cpp_if(struct psi_cpp *cpp, struct psi_cpp_exp *exp)
@@ -445,37 +446,36 @@ static inline bool try_include(struct psi_cpp *cpp, const char *path, bool *pars
 
 static inline void include_path(const struct psi_token *file, char **path)
 {
-	if (*file->text == '/') {
-		*path = file->text;
+	if (file->text->val[0] == '/') {
+		*path = file->text->val;
 	} else {
 		char *dir;
 		size_t len;
 
-		strncpy(*path, file->file, PATH_MAX);
+		strncpy(*path, file->file->val, PATH_MAX);
 
 		dir = dirname(*path);
 		len = strlen(dir);
 
-		assert(len + file->size + 1 < PATH_MAX);
+		assert(len + file->text->len + 1 < PATH_MAX);
 
 		memmove(*path, dir, len);
 		(*path)[len] = '/';
-		memcpy(&(*path)[len + 1], file->text, file->size + 1);
+		memcpy(&(*path)[len + 1], file->text->val, file->text->len + 1);
 	}
 }
 
 bool psi_cpp_include(struct psi_cpp *cpp, const struct psi_token *file, unsigned flags)
 {
 	bool parsed = false;
-	int f_len = strlen(file->text);
 
-	if (file->type == PSI_T_QUOTED_STRING && (!(flags & PSI_CPP_INCLUDE_NEXT) || *file->text == '/')) {
+	if (file->type == PSI_T_QUOTED_STRING && (!(flags & PSI_CPP_INCLUDE_NEXT) || file->text->val[0] == '/')) {
 		/* first try as is, full or relative path */
 		char temp[PATH_MAX], *path = temp;
 
 		include_path(file, &path);
 
-		if ((flags & PSI_CPP_INCLUDE_ONCE) && zend_hash_str_exists(&cpp->once, path, f_len)) {
+		if ((flags & PSI_CPP_INCLUDE_ONCE) && zend_hash_str_exists(&cpp->once, path, strlen(path))) {
 			return true;
 		}
 		if (try_include(cpp, path, &parsed)) {
@@ -485,7 +485,7 @@ bool psi_cpp_include(struct psi_cpp *cpp, const struct psi_token *file, unsigned
 	}
 
 	/* look through search paths */
-	if (*file->text != '/') {
+	if (file->text->val[0] != '/') {
 		char path[PATH_MAX];
 		const char *sep;
 		int p_len;
@@ -509,7 +509,7 @@ bool psi_cpp_include(struct psi_cpp *cpp, const struct psi_token *file, unsigned
 			sep = strchr(cpp->search, ':');
 			d_len = sep ? sep - cpp->search : strlen(cpp->search);
 
-			if (PATH_MAX > (p_len = snprintf(path, PATH_MAX, "%.*s/%.*s", d_len, cpp->search, f_len, file->text))) {
+			if (PATH_MAX > (p_len = snprintf(path, PATH_MAX, "%.*s/%.*s", d_len, cpp->search, (int) file->text->len, file->text->val))) {
 				if ((flags & PSI_CPP_INCLUDE_ONCE) && zend_hash_str_exists(&cpp->once, path, p_len)) {
 					return true;
 				}

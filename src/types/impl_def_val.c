@@ -44,7 +44,7 @@ struct psi_impl_def_val *psi_impl_def_val_init(token_t t, void *data)
 		/* no break */
 	case PSI_T_STRING:
 		if (data) {
-			def->ival.zend.str = zend_string_init(data, strlen(data), 1);
+			def->ival.zend.str = zend_string_copy(data);
 		}
 		break;
 
@@ -65,9 +65,7 @@ void psi_impl_def_val_free(struct psi_impl_def_val **def_ptr)
 		struct psi_impl_def_val *def = *def_ptr;
 
 		*def_ptr = NULL;
-		if (def->token) {
-			free(def->token);
-		}
+		psi_token_free(&def->token);
 		switch (def->type) {
 		case PSI_T_NUMBER:
 			psi_num_exp_free(&def->data.num);
@@ -114,12 +112,14 @@ bool psi_impl_def_val_validate(struct psi_data *data,
 			case PSI_T_DOUBLE:
 				val->type = PSI_T_FLOAT;
 				type->type = PSI_T_FLOAT;
-				strcpy(type->name, "float");
+				zend_string_release(type->name);
+				type->name = zend_string_init(ZEND_STRL("float"), 1);
 				break;
 			default:
 				val->type = PSI_T_INT;
 				type->type = PSI_T_INT;
-				strcpy(type->name, "int");
+				zend_string_release(type->name);
+				type->name = zend_string_init(ZEND_STRL("int"), 1);
 				break;
 			}
 			psi_num_exp_free(&val->data.num);
@@ -160,7 +160,7 @@ bool psi_impl_def_val_validate(struct psi_data *data,
 		data->error(data, val->token, PSI_WARNING,
 				"Invalid default value type '%s', "
 				"expected one of bool, int, float, string.",
-				type->name);
+				type->name->val);
 	}
 
 	return false;

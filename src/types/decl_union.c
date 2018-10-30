@@ -28,11 +28,11 @@
 
 #include <assert.h>
 
-struct psi_decl_union* psi_decl_union_init(const char *name,
+struct psi_decl_union* psi_decl_union_init(zend_string *name,
 		struct psi_plist *args)
 {
 	struct psi_decl_union *u = calloc(1, sizeof(*u));
-	u->name = strdup(name);
+	u->name = zend_string_copy(name);
 	u->args = args;
 	return u;
 }
@@ -43,20 +43,18 @@ void psi_decl_union_free(struct psi_decl_union **u_ptr)
 		struct psi_decl_union *u = *u_ptr;
 
 		*u_ptr = NULL;
-		if (u->token) {
-			free(u->token);
-		}
+		psi_token_free(&u->token);
 		if (u->args) {
 			psi_plist_free(u->args);
 		}
-		free(u->name);
+		zend_string_release(u->name);
 		free(u);
 	}
 }
 
 void psi_decl_union_dump(int fd, struct psi_decl_union *unn)
 {
-	dprintf(fd, "union %s::(%zu, %zu)", unn->name, unn->align, unn->size);
+	dprintf(fd, "union %s::(%zu, %zu)", unn->name->val, unn->align, unn->size);
 	if (psi_plist_count(unn->args)) {
 		psi_decl_type_dump_args_with_layout(fd, unn->args, 0);
 	} else {
@@ -86,7 +84,7 @@ bool psi_decl_union_validate(struct psi_data *data, struct psi_decl_union *u,
 
 	if (!u->size && !psi_plist_count(u->args)) {
 		data->error(data, u->token, PSI_WARNING,
-				"Cannot compute size of empty union %s", u->name);
+				"Cannot compute size of empty union %s", u->name->val);
 		return false;
 	}
 
@@ -107,16 +105,16 @@ bool psi_decl_union_validate(struct psi_data *data, struct psi_decl_union *u,
 
 			if (darg->layout->pos != 0) {
 				data->error(data, darg->token, PSI_WARNING,
-						"Offset of %s.%s should be 0", u->name,
-						darg->var->name);
+						"Offset of %s.%s should be 0", u->name->val,
+						darg->var->name->val);
 				darg->layout->pos = 0;
 			}
 			if (darg->layout->len != len) {
 				data->error(data, darg->token, PSI_WARNING,
 						"Computed size %zu of %s.%s does not match"
 						" pre-defined size %zu of type '%s'",
-						len, u->name, darg->var->name, darg->layout->len,
-						darg->type->name);
+						len, u->name->val, darg->var->name->val,
+						darg->layout->len, darg->type->name->val);
 			}
 		} else {
 			pos = 0;
@@ -126,8 +124,8 @@ bool psi_decl_union_validate(struct psi_data *data, struct psi_decl_union *u,
 			if (darg->layout) {
 				if (darg->layout->pos != 0) {
 					data->error(data, darg->token, PSI_WARNING,
-							"Offset of %s.%s should be 0", u->name,
-							darg->var->name);
+							"Offset of %s.%s should be 0", u->name->val,
+							darg->var->name->val);
 					darg->layout->pos = 0;
 				}
 				darg->layout->len = len;

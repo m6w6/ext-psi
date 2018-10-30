@@ -28,11 +28,11 @@
 #include "cpp.h"
 #include "data.h"
 
-struct psi_cpp_macro_call *psi_cpp_macro_call_init(const char *name,
+struct psi_cpp_macro_call *psi_cpp_macro_call_init(zend_string *name,
 		struct psi_plist *args)
 {
 	struct psi_cpp_macro_call *call = calloc(1, sizeof(*call));
-	call->name = strdup(name);
+	call->name = zend_string_copy(name);
 	call->args = args;
 	return call;
 }
@@ -41,7 +41,7 @@ struct psi_cpp_macro_call *psi_cpp_macro_call_copy(
 		struct psi_cpp_macro_call *call)
 {
 	struct psi_cpp_macro_call *copy = calloc(1, sizeof(*copy));
-	copy->name = strdup(call->name);
+	copy->name = zend_string_copy(call->name);
 	if (call->token) {
 		copy->token = psi_token_copy(call->token);
 	}
@@ -59,13 +59,11 @@ void psi_cpp_macro_call_free(struct psi_cpp_macro_call **call_ptr)
 
 		*call_ptr = NULL;
 
-		free(call->name);
+		zend_string_release(call->name);
 		if (call->args) {
 			psi_plist_free(call->args);
 		}
-		if (call->token) {
-			free(call->token);
-		}
+		psi_token_free(&call->token);
 		free(call);
 	}
 }
@@ -75,7 +73,7 @@ void psi_cpp_macro_call_dump(int fd, struct psi_cpp_macro_call *call)
 	size_t i = 0;
 	struct psi_num_exp *num;
 
-	dprintf(fd, "%s(", call->name);
+	dprintf(fd, "%s(", call->name->val);
 	while (psi_plist_get(call->args, i++, &num)) {
 		if (i > 1) {
 			dprintf(fd, ", ");

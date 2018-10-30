@@ -27,10 +27,10 @@
 #include "data.h"
 #include "call.h"
 
-struct psi_free_exp *psi_free_exp_init(const char *func, struct psi_plist *vars)
+struct psi_free_exp *psi_free_exp_init(zend_string *func, struct psi_plist *vars)
 {
 	struct psi_free_exp *f = calloc(1, sizeof(*f));
-	f->func = strdup(func);
+	f->func = zend_string_copy(func);
 	f->vars = vars;
 	return f;
 }
@@ -41,10 +41,8 @@ void psi_free_exp_free(struct psi_free_exp **f_ptr)
 		struct psi_free_exp *f = *f_ptr;
 
 		*f_ptr = NULL;
-		if (f->token) {
-			free(f->token);
-		}
-		free(f->func);
+		psi_token_free(&f->token);
+		zend_string_release(f->func);
 		psi_plist_free(f->vars);
 		if (f->let) {
 			free(f->let);
@@ -58,7 +56,7 @@ void psi_free_exp_dump(int fd, struct psi_free_exp *call)
 	size_t l = 0, c = psi_plist_count(call->vars);
 	struct psi_decl_var *fvar;
 
-	dprintf(fd, "%s(", call->func);
+	dprintf(fd, "%s(", call->func->val);
 	while (psi_plist_get(call->vars, l++, &fvar)) {
 		psi_decl_var_dump(fd, fvar);
 		if (l < c) {
@@ -76,7 +74,7 @@ static inline struct psi_decl *locate_free_decl(struct psi_plist *decls,
 		struct psi_decl *decl;
 
 		while (psi_plist_get(decls, i++, &decl)) {
-			if (!strcmp(decl->func->var->name, f->func)) {
+			if (zend_string_equals(decl->func->var->name, f->func)) {
 				return f->decl = decl;
 			}
 		}
@@ -95,7 +93,8 @@ bool psi_free_exp_validate(struct psi_data *data, struct psi_free_exp *exp,
 	if (!locate_free_decl(data->decls, exp)) {
 		data->error(data, exp->token, PSI_WARNING,
 				"Missing declaration '%s' in `free` statement"
-				" of implementation '%s'", exp->func, scope->impl->func->name);
+				" of implementation '%s'", exp->func->val,
+				scope->impl->func->name->val);
 		return false;
 	}
 
@@ -106,7 +105,7 @@ bool psi_free_exp_validate(struct psi_data *data, struct psi_free_exp *exp,
 			data->error(data, free_var->token, PSI_WARNING,
 					"Unknown variable '%s' of `free` statement"
 					" of implementation '%s'",
-					free_var->name, scope->impl->func->name);
+					free_var->name->val, scope->impl->func->name->val);
 			return false;
 		}
 

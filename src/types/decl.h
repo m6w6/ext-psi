@@ -35,7 +35,7 @@ struct psi_decl {
 	struct psi_decl_abi *abi;
 	struct psi_decl_arg *func;
 	struct psi_plist *args;
-	char *redir;
+	zend_string *redir;
 	void *sym;
 	void *info;
 	unsigned varargs:1;

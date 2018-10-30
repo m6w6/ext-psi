@@ -36,13 +36,13 @@ struct psi_call_frame;
 
 struct psi_free_exp {
 	struct psi_token *token;
-	char *func;
+	zend_string *func;
 	struct psi_plist *vars;
 	struct psi_decl *decl;
 	struct psi_let_stmt **let;
 };
 
-struct psi_free_exp *psi_free_exp_init(const char *func, struct psi_plist *vars);
+struct psi_free_exp *psi_free_exp_init(zend_string *func, struct psi_plist *vars);
 void psi_free_exp_free(struct psi_free_exp **f_ptr);
 void psi_free_exp_dump(int fd, struct psi_free_exp *call);
 

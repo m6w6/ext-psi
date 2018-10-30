@@ -231,12 +231,12 @@ static inline jit_type_t psi_jit_decl_arg_type(struct psi_decl_arg *darg)
 	}
 }
 
-static inline jit_abi_t psi_jit_abi(const char *convention)
+static inline jit_abi_t psi_jit_abi(zend_string *convention)
 {
-	if (!strcasecmp(convention, "stdcall")) {
+	if (zend_string_equals_literal(convention, "stdcall")) {
 		return jit_abi_stdcall;
 	}
-	if (!strcasecmp(convention, "fastcall")) {
+	if (zend_string_equals_literal(convention, "fastcall")) {
 		return jit_abi_fastcall;
 	}
 	return jit_abi_cdecl;
@@ -550,7 +550,7 @@ static zend_function_entry *psi_jit_compile(struct psi_context *C)
 			continue;
 		}
 
-		zf->fname = impl->func->name + (impl->func->name[0] == '\\');
+		zf->fname = impl->func->name->val + (impl->func->name->val[0] == '\\');
 		zf->handler = ((struct psi_jit_impl_info *) impl->info)->closure;
 		zf->num_args = psi_plist_count(impl->func->args);
 		zf->arg_info = psi_internal_arginfo(impl);

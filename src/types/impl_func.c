@@ -26,12 +26,12 @@
 #include "php_psi_stdinc.h"
 #include "data.h"
 
-struct psi_impl_func *psi_impl_func_init(const char *name,
+struct psi_impl_func *psi_impl_func_init(zend_string *name,
 		struct psi_plist *args, struct psi_impl_type *type)
 {
 	struct psi_impl_func *func = calloc(1, sizeof(*func));
 
-	func->name = strdup(name);
+	func->name = zend_string_copy(name);
 	func->args = args ? : psi_plist_init((psi_plist_dtor) psi_impl_arg_free);
 
 	func->return_type = type;
@@ -45,9 +45,7 @@ void psi_impl_func_free(struct psi_impl_func **f_ptr)
 		struct psi_impl_func *f = *f_ptr;
 
 		*f_ptr = NULL;
-		if (f->token) {
-			free(f->token);
-		}
+		psi_token_free(&f->token);
 
 		psi_impl_type_free(&f->return_type);
 		psi_plist_free(f->args);
@@ -56,7 +54,7 @@ void psi_impl_func_free(struct psi_impl_func **f_ptr)
 			psi_impl_arg_free(&f->vararg);
 		}
 
-		free(f->name);
+		zend_string_release(f->name);
 		free(f);
 	}
 }
@@ -79,7 +77,7 @@ bool psi_impl_func_validate(struct psi_data *data, struct psi_impl_func *func,
 					"Non-optional argument %zu '$%s' of implementation '%s'"
 					" follows optional argument",
 					i + 1,
-					iarg->var->name, func->name);
+					iarg->var->name->val, func->name->val);
 			return false;
 		}
 	}
@@ -89,7 +87,7 @@ bool psi_impl_func_validate(struct psi_data *data, struct psi_impl_func *func,
 
 void psi_impl_func_dump(int fd, struct psi_impl_func *func)
 {
-	dprintf(fd, "function %s(", func->name);
+	dprintf(fd, "function %s(", func->name->val);
 	if (func->args) {
 		size_t i = 0;
 		struct psi_impl_arg *iarg;
@@ -107,5 +105,5 @@ void psi_impl_func_dump(int fd, struct psi_impl_func *func)
 		}
 	}
 	dprintf(fd, ") : %s%s", func->return_reference ? "&" : "",
-			func->return_type->name);
+			func->return_type->name->val);
 }

@@ -32,11 +32,11 @@ struct psi_plist;
 
 struct psi_decl_enum {
 	struct psi_token *token;
-	char *name;
+	zend_string *name;
 	struct psi_plist *items;
 };
 
-struct psi_decl_enum *psi_decl_enum_init(const char *name, struct psi_plist *l);
+struct psi_decl_enum *psi_decl_enum_init(zend_string *name, struct psi_plist *l);
 void psi_decl_enum_free(struct psi_decl_enum **e_ptr);
 void psi_decl_enum_dump(int fd, struct psi_decl_enum *e, unsigned level);
 bool psi_decl_enum_validate(struct psi_data *data, struct psi_decl_enum *e);

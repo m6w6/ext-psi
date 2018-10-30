@@ -26,10 +26,10 @@
 #include "php_psi_stdinc.h"
 #include "data.h"
 
-struct psi_decl_enum *psi_decl_enum_init(const char *name, struct psi_plist *l)
+struct psi_decl_enum *psi_decl_enum_init(zend_string *name, struct psi_plist *l)
 {
 	struct psi_decl_enum *e = calloc(1, sizeof(*e));
-	e->name = strdup(name);
+	e->name = zend_string_copy(name);
 	e->items = l;
 	return e;
 }
@@ -40,20 +40,18 @@ void psi_decl_enum_free(struct psi_decl_enum **e_ptr)
 		struct psi_decl_enum *e = *e_ptr;
 
 		*e_ptr = NULL;
-		if (e->token) {
-			free(e->token);
-		}
+		psi_token_free(&e->token);
 		if (e->items) {
 			psi_plist_free(e->items);
 		}
-		free(e->name);
+		zend_string_release(e->name);
 		free(e);
 	}
 }
 
 void psi_decl_enum_dump(int fd, struct psi_decl_enum *e, unsigned level)
 {
-	dprintf(fd, "enum %s {\n", e->name);
+	dprintf(fd, "enum %s {\n", e->name->val);
 	if (e->items) {
 		size_t i = 0;
 		struct psi_decl_enum_item *item;
@@ -75,7 +73,7 @@ bool psi_decl_enum_validate(struct psi_data *data, struct psi_decl_enum *e)
 	struct psi_decl_enum_item *i, *p = NULL;
 
 	if (!psi_plist_count(e->items)) {
-		data->error(data, e->token, PSI_WARNING, "Empty enum '%s'", e->name);
+		data->error(data, e->token, PSI_WARNING, "Empty enum '%s'", e->name->val);
 		return false;
 	}
 

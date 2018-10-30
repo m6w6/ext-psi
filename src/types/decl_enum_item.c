@@ -26,11 +26,11 @@
 #include "php_psi_stdinc.h"
 #include "data.h"
 
-struct psi_decl_enum_item *psi_decl_enum_item_init(const char *name,
+struct psi_decl_enum_item *psi_decl_enum_item_init(zend_string *name,
 		struct psi_num_exp *num)
 {
 	struct psi_decl_enum_item *i = calloc(1, sizeof(*i));
-	i->name = strdup(name);
+	i->name = zend_string_copy(name);
 	i->num = num;
 	return i;
 }
@@ -41,9 +41,7 @@ void psi_decl_enum_item_free(struct psi_decl_enum_item **i_ptr)
 		struct psi_decl_enum_item *i = *i_ptr;
 
 		*i_ptr = NULL;
-		if (i->token) {
-			free(i->token);
-		}
+		psi_token_free(&i->token);
 		if (i->num) {
 			if (i->num == &i->inc) {
 				switch (i->inc.op) {
@@ -61,14 +59,14 @@ void psi_decl_enum_item_free(struct psi_decl_enum_item **i_ptr)
 				psi_num_exp_free(&i->num);
 			}
 		}
-		free(i->name);
+		zend_string_release(i->name);
 		free(i);
 	}
 }
 
 void psi_decl_enum_item_dump(int fd, struct psi_decl_enum_item *item)
 {
-	dprintf(fd, "%s", item->name);
+	dprintf(fd, "%s", item->name->val);
 	if (item->num && item->num != &item->inc) {
 		dprintf(fd, " = ");
 		psi_num_exp_dump(fd, item->num);

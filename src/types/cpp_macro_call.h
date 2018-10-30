@@ -31,11 +31,11 @@ struct psi_plist;
 
 struct psi_cpp_macro_call {
 	struct psi_token *token;
-	char *name;
+	zend_string *name;
 	struct psi_plist *args;
 };
 
-struct psi_cpp_macro_call *psi_cpp_macro_call_init(const char *name,
+struct psi_cpp_macro_call *psi_cpp_macro_call_init(zend_string *name,
 		struct psi_plist *args);
 struct psi_cpp_macro_call *psi_cpp_macro_call_copy(
 		struct psi_cpp_macro_call *call);

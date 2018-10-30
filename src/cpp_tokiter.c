@@ -128,8 +128,8 @@ bool psi_cpp_tokiter_del_cur(struct psi_cpp *cpp, bool free_token)
 		fprintf(stderr, "NULL\n");
 	}
 #endif
-	if (cur && free_token) {
-		free(cur);
+	if (free_token) {
+		psi_token_free(&cur);
 	}
 	count = psi_plist_count(cpp->tokens);
 	if (deleted && cpp->index >= count) {
@@ -173,9 +173,7 @@ bool psi_cpp_tokiter_del_range(struct psi_cpp *cpp, size_t offset, size_t num_el
 
 		if (free_tokens) {
 			while (num_eles--) {
-				if (ptr[num_eles]) {
-					free(ptr[num_eles]);
-				}
+				psi_token_free(&ptr[num_eles]);
 			}
 			free(ptr);
 		}
@@ -260,16 +258,17 @@ static size_t psi_cpp_tokiter_expand_tokens(struct psi_cpp *cpp,
 				struct psi_token *tmp_tok, *old_tok = exp_tokens[n - 1];
 
 				tmp_tok = psi_token_init(old_tok->type, "", 0,
-						target->col, target->line, target->file?:"");
+						target->col, target->line,
+						target->file ? target->file->val : "");
 
 				new_tok = psi_token_cat(NULL, 3, tmp_tok, old_tok, tok);
-				free(old_tok);
-				free(tmp_tok);
+				psi_token_free(&old_tok);
+				psi_token_free(&tmp_tok);
 
 				exp_tokens[n - 1] = new_tok;
 			} else {
 				new_tok = psi_token_init(stringify ? PSI_T_QUOTED_STRING : tok->type,
-						tok->text, tok->size, target->col, target->line, target->file?:"");
+						tok->text->val, tok->text->len, target->col, target->line, target->file?:"");
 
 				exp_tokens[n++] = new_tok;
 			}
@@ -301,7 +300,7 @@ static void psi_cpp_tokiter_free_call_tokens(struct psi_plist **arg_tokens_list,
 				struct psi_token *tok;
 
 				while (psi_plist_pop(arg_tokens_list[i], &tok)) {
-					free(tok);
+					psi_token_free(&tok);
 				}
 			}
 			psi_plist_free(arg_tokens_list[i]);
@@ -395,11 +394,9 @@ static void psi_cpp_tokiter_expand_call_tokens(struct psi_cpp *cpp,
 			struct psi_token *arg_name;
 
 			for (s = 0; psi_plist_get(macro->sig, s, &arg_name); ++s) {
-				if (arg_name->size == tok->size) {
-					if (!memcmp(arg_name->text, tok->text, tok->size)) {
-						arg_tokens = arg_tokens_list[s];
-						break;
-					}
+				if (zend_string_equals(arg_name->text, tok->text)) {
+					arg_tokens = arg_tokens_list[s];
+					break;
 				}
 			}
 		}
@@ -443,7 +440,7 @@ static bool psi_cpp_tokiter_expand_call(struct psi_cpp *cpp,
 	/* back to where we took off */
 	psi_cpp_tokiter_seek(cpp, start);
 
-	free(target);
+	psi_token_free(&target);
 	++cpp->expanded;
 	return true;
 }
@@ -463,7 +460,7 @@ static bool psi_cpp_tokiter_expand_def(struct psi_cpp *cpp,
 	/* replace with tokens from macro */
 	psi_cpp_tokiter_expand_tokens(cpp, target, macro->tokens);
 
-	free(target);
+	psi_token_free(&target);
 	++cpp->expanded;
 	return true;
 }
@@ -476,7 +473,7 @@ static inline int psi_cpp_tokiter_expand_cmp(struct psi_token *t,
 
 		psi_plist_get(m->tokens, 0, &r);
 
-		return strcmp(r->text, t->text);
+		return !zend_string_equals(r->text, t->text);
 	}
 	return -1;
 }
@@ -487,8 +484,8 @@ bool psi_cpp_tokiter_expand(struct psi_cpp *cpp)
 		struct psi_token *current = psi_cpp_tokiter_current(cpp);
 
 		if (current) {
-			struct psi_cpp_macro_decl *macro = zend_hash_str_find_ptr(
-					&cpp->defs, current->text, current->size);
+			struct psi_cpp_macro_decl *macro = zend_hash_find_ptr(
+					&cpp->defs, current->text);
 
 			/* don't expand itself */
 			if (macro && macro->token != current) {

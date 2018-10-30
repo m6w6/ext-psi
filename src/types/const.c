@@ -26,12 +26,17 @@
 #include "php_psi_stdinc.h"
 #include "data.h"
 
-struct psi_const *psi_const_init(struct psi_impl_type *type, const char *name,
+struct psi_const *psi_const_init(struct psi_impl_type *type, zend_string *name,
 		struct psi_impl_def_val *val)
 {
 	struct psi_const *c = calloc(1, sizeof(*c));
+
+	if (name->val[0] == '\\') {
+		c->name = zend_string_init(&name->val[1], name->len-1, 1);
+	} else {
+		c->name = zend_string_copy(name);
+	}
 	c->type = type;
-	c->name = strdup(name[0] == '\\' ? &name[1] : name);
 	c->val = val;
 	return c;
 }
@@ -42,11 +47,9 @@ void psi_const_free(struct psi_const **constant_ptr)
 		struct psi_const *constant = *constant_ptr;
 
 		*constant_ptr = NULL;
-		if (constant->token) {
-			free(constant->token);
-		}
+		psi_token_free(&constant->token);
 		psi_impl_type_free(&constant->type);
-		free(constant->name);
+		zend_string_release(constant->name);
 		psi_impl_def_val_free(&constant->val);
 		free(constant);
 	}
@@ -56,7 +59,7 @@ void psi_const_dump(int fd, struct psi_const *cnst)
 {
 	dprintf(fd, "const ");
 	psi_impl_type_dump(fd, cnst->type);
-	dprintf(fd, " %s = ", cnst->name);
+	dprintf(fd, " %s = ", cnst->name->val);
 	psi_impl_def_val_dump(fd, cnst->val);
 	dprintf(fd, ";");
 }

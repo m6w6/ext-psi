@@ -28,13 +28,15 @@
 
 #include <assert.h>
 
-struct psi_decl_var *psi_decl_var_init(const char *name, unsigned pl,
+#include <Zend/zend_smart_str.h>
+
+struct psi_decl_var *psi_decl_var_init(zend_string *name, unsigned pl,
 		unsigned as)
 {
 	struct psi_decl_var *v = calloc(1, sizeof(*v));
 	if (name) {
-		v->name = strdup(name);
-		v->fqn = strdup(name);
+		v->name = zend_string_copy(name);
+		v->fqn = zend_string_copy(name);
 	}
 	v->pointer_level = pl;
 	v->array_size = as;
@@ -48,8 +50,8 @@ struct psi_decl_var *psi_decl_var_copy(struct psi_decl_var *src)
 	*dest = *src;
 
 	if (dest->name) {
-		dest->name = strdup(dest->name);
-		dest->fqn = strdup(dest->fqn);
+		dest->name = zend_string_copy(dest->name);
+		dest->fqn = zend_string_copy(dest->fqn);
 	}
 
 	if (dest->token) {
@@ -64,12 +66,10 @@ void psi_decl_var_free(struct psi_decl_var **var_ptr)
 		struct psi_decl_var *var = *var_ptr;
 
 		*var_ptr = NULL;
-		if (var->token) {
-			free(var->token);
-		}
+		psi_token_free(&var->token);
 		if (var->name) {
-			free(var->name);
-			free(var->fqn);
+			zend_string_release(var->name);
+			zend_string_release(var->fqn);
 		}
 		free(var);
 	}
@@ -79,10 +79,21 @@ void psi_decl_var_dump(int fd, struct psi_decl_var *var)
 {
 	dprintf(fd, "%s%s",
 			psi_t_indirection(var->pointer_level - !!var->array_size),
-			var->name ? var->name : "/**/");
+			var->name ? var->name->val : "/**/");
 	if (var->array_size && var->arg->type->type != PSI_T_FUNCTION) {
 		dprintf(fd, "[%u]", var->array_size);
 	}
+}
+
+static inline zend_string *psi_decl_var_name_prepend(zend_string *current, zend_string *prepend) {
+	smart_str name = {0};
+
+	smart_str_alloc(&name, prepend->len + 1 + current->len, 1);
+	smart_str_append_ex(&name, prepend, 1);
+	smart_str_appendc_ex(&name, '.', 1);
+	smart_str_append_ex(&name, current, 1);
+
+	return smart_str_extract(&name);
 }
 
 bool psi_decl_var_validate(struct psi_data *data, struct psi_decl_var *dvar,
@@ -104,13 +115,15 @@ bool psi_decl_var_validate(struct psi_data *data, struct psi_decl_var *dvar,
 
 				if (args && psi_decl_arg_get_by_var(dvar, args, NULL)) {
 					okay = true;
-				} else if (!strcmp(svar->name, dvar->name)) {
+				} else if (zend_string_equals(svar->name, dvar->name)) {
 					dvar->arg = svar->arg;
 					okay = true;
 				}
 			}
 			if (okay) {
+				zend_string *tmp = dvar->fqn;
 				dvar->fqn = psi_decl_var_name_prepend(dvar->fqn, svar->name);
+				zend_string_release(tmp);
 			}
 		}
 	} else if (scope && scope->current_set) {
@@ -127,13 +140,15 @@ bool psi_decl_var_validate(struct psi_data *data, struct psi_decl_var *dvar,
 
 				if (args && psi_decl_arg_get_by_var(dvar, args, NULL)) {
 					okay = true;
-				} else if (!strcmp(svar->name, dvar->name)) {
+				} else if (zend_string_equals(svar->name, dvar->name)) {
 					dvar->arg = svar->arg;
 					okay = true;
 				}
 			}
 			if (okay) {
+				zend_string *tmp = dvar->fqn;
 				dvar->fqn = psi_decl_var_name_prepend(dvar->fqn, svar->name);
+				zend_string_release(tmp);
 			}
 		}
 	}

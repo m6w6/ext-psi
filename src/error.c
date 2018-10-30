@@ -57,7 +57,7 @@ void psi_error_wrapper(struct psi_data *context, struct psi_token *t, int type, 
 	}
 
 	if (t) {
-		fn = t->file;
+		fn = t->file->val;
 		ln = t->line;
 	} else if (zend_is_executing()) {
 		fn = zend_get_executed_filename();

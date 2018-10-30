@@ -42,6 +42,7 @@ struct psi_plist {
 		memcpy(dest, src, list->size); \
 	} \
 } while (0)
+#define PLIST_CPY_R(list, dest, src, num) memcpy((dest), (src), (num) * (list)->size)
 /* !!! adjust list->count prior reduction */
 #define PLIST_MOV_REDUCE(l, i) PLIST_MOV_REDUCE_EX(l, i, 1)
 #define PLIST_MOV_REDUCE_EX(l, i, n) memmove(PLIST_ELE(l, i), PLIST_ELE(l, (i) + (n)), (l)->size * ((l)->count - (i)))
@@ -204,9 +205,7 @@ struct psi_plist *psi_plist_ins_r(struct psi_plist *list, size_t offset_start, s
 			size_t e;
 
 			PLIST_MOV_EXPAND_EX(list, offset_start, num_eles);
-			for (e = 0; e < num_eles; ++e) {
-				PLIST_CPY(list, PLIST_ELE(list, offset_start + e), &eles[e]);
-			}
+			PLIST_CPY_R(list, PLIST_ELE(list, offset_start), eles, num_eles);
 			list->count = new_count;
 		}
 	}

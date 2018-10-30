@@ -38,12 +38,12 @@ struct psi_call_frame;
 struct psi_let_func {
 	struct psi_token *token;
 	token_t type;
-	char *name;
+	zend_string *name;
 	struct psi_impl_var *var;
 	struct psi_plist *inner;
 };
 
-struct psi_let_func *psi_let_func_init(token_t type, const char *name, struct psi_impl_var *var);
+struct psi_let_func *psi_let_func_init(token_t type, zend_string *name, struct psi_impl_var *var);
 void psi_let_func_free(struct psi_let_func **func_ptr);
 void psi_let_func_dump(int fd, struct psi_let_func *func, unsigned level);
 

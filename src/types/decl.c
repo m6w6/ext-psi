@@ -24,11 +24,12 @@
  *******************************************************************************/
 
 #include "php_psi_stdinc.h"
-
 #include "php_psi.h"
 
 #include <dlfcn.h>
 #include <fnmatch.h>
+
+#include <Zend/zend_smart_str.h>
 
 #include "data.h"
 
@@ -58,7 +59,7 @@ void psi_decl_free(struct psi_decl **d_ptr)
 			psi_plist_free(d->args);
 		}
 		if (d->redir) {
-			free(d->redir);
+			zend_string_release(d->redir);
 		}
 		free(d);
 	}
@@ -91,7 +92,7 @@ void psi_decl_dump(int fd, struct psi_decl *decl)
 		dprintf(fd, ")[%u]", decl->func->var->array_size);
 	}
 	if (decl->redir) {
-		dprintf(fd, ") __asm__ (\"%s\");", decl->redir);
+		dprintf(fd, ") __asm__ (\"%s\");", decl->redir->val);
 	} else {
 		dprintf(fd, ");");
 	}
@@ -108,7 +109,7 @@ static inline bool psi_decl_validate_func(struct psi_data *data,
 	}
 
 	for (redir = &psi_func_redirs[0]; redir->name; ++redir) {
-		if (!strcmp(func->var->name, redir->name)) {
+		if (!strcmp(func->var->name->val, redir->name)) {
 			decl->sym = redir->func;
 		}
 	}
@@ -117,7 +118,7 @@ static inline bool psi_decl_validate_func(struct psi_data *data,
 		void *dl;
 
 		while (!decl->sym && psi_plist_get(data->file.dlopened, i++, &dl)) {
-			decl->sym = dlsym(dl, decl->redir ?: func->var->name);
+			decl->sym = dlsym(dl, decl->redir ? decl->redir->val : func->var->name->val);
 		}
 	}
 	if (!decl->sym) {
@@ -127,11 +128,12 @@ static inline bool psi_decl_validate_func(struct psi_data *data,
 #ifndef RTLD_DEFAULT
 # define RTLD_DEFAULT ((void *) 0)
 #endif
-		decl->sym = dlsym(RTLD_DEFAULT, decl->redir ?: func->var->name);
+		decl->sym = dlsym(RTLD_DEFAULT, decl->redir ? decl->redir->val : func->var->name->val);
 		if (!decl->sym) {
 			data->error(data, func->token, PSI_WARNING,
 					"Failed to locate symbol '%s(%s)': %s",
-					func->var->name, decl->redir ?: "",
+					func->var->name->val,
+					decl->redir ? decl->redir->val : "",
 					dlerror() ?: "not found");
 			return false;
 		}
@@ -156,10 +158,10 @@ bool psi_decl_validate_nodl(struct psi_data *data, struct psi_decl *decl,
 		struct psi_validate_scope *scope)
 {
 	if (!decl->abi) {
-		decl->abi = psi_decl_abi_init("default");
+		decl->abi = psi_decl_abi_init(zend_string_init(ZEND_STRL("default"), 1));
 	} else if (!psi_decl_abi_validate(data, decl->abi)) {
 		data->error(data, decl->abi->token, PSI_WARNING,
-				"Invalid calling convention: '%s'", decl->abi->token->text);
+				"Invalid calling convention: '%s'", decl->abi->token->text->val);
 		return false;
 	}
 	if (!psi_decl_arg_validate(data, decl->func, scope)) {
@@ -171,9 +173,13 @@ bool psi_decl_validate_nodl(struct psi_data *data, struct psi_decl *decl,
 
 		while (psi_plist_get(decl->args, i++, &arg)) {
 			if (!arg->var->name) {
-				arg->var->name = malloc(7);
-				snprintf(arg->var->name, 6, "arg%zu", i);
-				arg->var->fqn = strdup(arg->var->name);
+				smart_str name = {0};
+
+				smart_str_appendl_ex(&name, ZEND_STRL("arg"), 1);
+				smart_str_append_unsigned_ex(&name, i, 1);
+
+				arg->var->name = smart_str_extract(&name);
+				arg->var->fqn = zend_string_copy(arg->var->name);
 			}
 			if (!psi_decl_arg_validate(data, arg, scope)) {
 				return false;

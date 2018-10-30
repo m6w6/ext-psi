@@ -30,6 +30,8 @@
 #include <dlfcn.h>
 #include <fnmatch.h>
 
+#include <Zend/zend_smart_str.h>
+
 #include "data.h"
 
 struct psi_decl_extvar *psi_decl_extvar_init(struct psi_decl_arg *arg)
@@ -46,9 +48,7 @@ void psi_decl_extvar_free(struct psi_decl_extvar **evar_ptr)
 		struct psi_decl_extvar *evar = *evar_ptr;
 
 		*evar_ptr = NULL;
-		if (evar->token) {
-			free(evar->token);
-		}
+		psi_token_free(&evar->token);
 		psi_decl_arg_free(&evar->arg);
 		psi_decl_free(&evar->getter);
 		psi_decl_free(&evar->setter);
@@ -66,7 +66,7 @@ bool psi_decl_extvar_validate(struct psi_data *data,
 	evar->size = psi_decl_arg_get_size(evar->arg);
 	if (!evar->size) {
 		data->error(data, evar->arg->var->token, PSI_WARNING,
-				"Failed to calculate size of symbol '%s'", evar->arg->var->name);
+				"Failed to calculate size of symbol '%s'", evar->arg->var->name->val);
 		return false;
 	}
 
@@ -75,7 +75,7 @@ bool psi_decl_extvar_validate(struct psi_data *data,
 		void *dl;
 
 		while (!evar->sym && psi_plist_get(data->file.dlopened, i++, &dl)) {
-			evar->sym = dlsym(dl, evar->arg->var->name);
+			evar->sym = dlsym(dl, evar->arg->var->name->val);
 		}
 	}
 	if (!evar->sym) {
@@ -85,10 +85,10 @@ bool psi_decl_extvar_validate(struct psi_data *data,
 #ifndef RTLD_DEFAULT
 # define RTLD_DEFAULT ((void *) 0)
 #endif
-		evar->sym = dlsym(RTLD_DEFAULT, evar->arg->var->name);
+		evar->sym = dlsym(RTLD_DEFAULT, evar->arg->var->name->val);
 		if (!evar->sym) {
 			data->error(data, evar->arg->var->token, PSI_WARNING,
-					"Failed to locate symbol '%s': %s", evar->arg->var->name,
+					"Failed to locate symbol '%s': %s", evar->arg->var->name->val,
 					dlerror() ?: "not found");
 			return false;
 		}
@@ -115,7 +115,8 @@ void psi_decl_extvar_dump(int fd, struct psi_decl_extvar *evar)
 
 struct psi_decl *psi_decl_extvar_setter(struct psi_decl_extvar *evar)
 {
-	struct psi_decl_type *func_type = psi_decl_type_init(PSI_T_VOID, "void");
+	struct psi_decl_type *func_type = psi_decl_type_init(PSI_T_VOID,
+			zend_string_init(ZEND_STRS("void"), 1));
 	struct psi_decl_var *func_var = psi_decl_var_copy(evar->arg->var);
 	struct psi_decl_arg *func = psi_decl_arg_init(func_type, func_var);
 	struct psi_decl_type *arg_type = psi_decl_type_copy(evar->arg->type);
@@ -123,11 +124,15 @@ struct psi_decl *psi_decl_extvar_setter(struct psi_decl_extvar *evar)
 	struct psi_decl_arg *arg = psi_decl_arg_init(arg_type, arg_var);
 	struct psi_plist *args = psi_plist_init((psi_plist_dtor) psi_decl_arg_free);
 	struct psi_decl *decl = psi_decl_init(func, psi_plist_add(args, &arg));
+	smart_str name = {0};
 
 	func_var->pointer_level = 0;
 	func_var->array_size = 0;
-	func_var->name = realloc(func_var->name, strlen(evar->arg->var->name) + sizeof("_set"));
-	strcat(func_var->name, "_set");
+
+	smart_str_append_ex(&name, func_var->name, 1);
+	smart_str_appendl_ex(&name, ZEND_STRL("_set"), 1);
+	zend_string_release(func_var->name);
+	func_var->name = smart_str_extract(&name);
 
 	decl->extvar = 1;
 
@@ -145,9 +150,12 @@ struct psi_decl *psi_decl_extvar_getter(struct psi_decl_extvar *evar)
 	struct psi_decl_var *func_var = psi_decl_var_copy(evar->arg->var);
 	struct psi_decl_arg *func = psi_decl_arg_init(func_type, func_var);
 	struct psi_decl *decl = psi_decl_init(func, NULL);
+	smart_str name = {0};
 
-	func_var->name = realloc(func_var->name, strlen(evar->arg->var->name) + sizeof("_get"));
-	strcat(func_var->name, "_get");
+	smart_str_append_ex(&name, func_var->name, 1);
+	smart_str_appendl_ex(&name, ZEND_STRL("_set"), 1);
+	zend_string_release(func_var->name);
+	func_var->name = smart_str_extract(&name);
 
 	decl->extvar = 1;
 

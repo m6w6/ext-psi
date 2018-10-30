@@ -29,6 +29,8 @@
 #include "calc.h"
 #include "marshal.h"
 
+#include <Zend/zend_smart_str.h>
+
 struct psi_set_exp *psi_set_exp_init(enum psi_set_exp_kind kind, void *data)
 {
 	struct psi_set_exp *val = calloc(1, sizeof(*val));
@@ -131,7 +133,7 @@ void psi_set_exp_dump(int fd, struct psi_set_exp *set, unsigned level, int last)
 	if (set->var) {
 		/* parsed, or generated */
 		if (set->var->token) {
-			dprintf(fd, "%s = ", set->var->name);
+			dprintf(fd, "%s = ", set->var->name->val);
 		}
 	}
 
@@ -151,7 +153,7 @@ void psi_set_exp_dump(int fd, struct psi_set_exp *set, unsigned level, int last)
 	}
 
 	if (set->var) {
-		dprintf(fd, "\t/* fqn=%s */", set->var->fqn);
+		dprintf(fd, "\t/* fqn=%s */", set->var->fqn->val);
 	}
 }
 
@@ -169,15 +171,18 @@ struct psi_impl_var *psi_set_exp_get_impl_var(struct psi_set_exp *exp)
 {
 	if (!exp->var) {
 		struct psi_decl_var *dvar = psi_set_exp_get_decl_var(exp);
-		char *dollar_name;
+		zend_string *dollar_name;
+		smart_str name = {0};
 
 		if (!dvar) {
 			return NULL;
 		}
 
-		dollar_name = psi_impl_var_name_prepend(strdup("$"), dvar->name);
+		smart_str_appendc_ex(&name, '$', 1);
+		smart_str_append_ex(&name, dvar->name, 1);
+		dollar_name = smart_str_extract(&name);
 		exp->var = psi_impl_var_init(dollar_name, 0);
-		free(dollar_name);
+		zend_string_release(dollar_name);
 	}
 
 	return exp->var;
@@ -190,7 +195,7 @@ bool psi_set_exp_validate(struct psi_data *data, struct psi_set_exp *set,
 
 	if (ivar && !psi_impl_var_validate(data, ivar, scope)) {
 		data->error(data, ivar->token ? : **(struct psi_token ***) &set->data,
-				PSI_WARNING, "Unknown variable '%s'", ivar->name);
+				PSI_WARNING, "Unknown variable '%s'", ivar->name->val);
 		return false;
 	}
 

@@ -190,7 +190,7 @@ struct psi_decl_arg *psi_impl_get_decl_arg(struct psi_impl *impl,
 			struct psi_decl_var *arg;
 
 			while (psi_plist_get(ret->exp->args, i++, &arg)) {
-				if (!strcmp(var->name, arg->name)) {
+				if (zend_string_equals(var->name, arg->name)) {
 					return var->arg = arg->arg;
 				}
 			}
@@ -221,7 +221,7 @@ struct psi_impl_arg *psi_impl_get_arg(struct psi_impl *impl,
 	struct psi_impl_arg *iarg;
 
 	while (psi_plist_get(impl->func->args, i++, &iarg)) {
-		if (!strcmp(var->name, iarg->var->name)) {
+		if (zend_string_equals(var->name, iarg->var->name)) {
 			return var->arg = iarg;
 		}
 	}
@@ -238,7 +238,7 @@ struct psi_decl_arg *psi_impl_get_temp_let_arg(struct psi_impl *impl,
 		if (let->exp->kind != PSI_LET_TMP) {
 			continue;
 		}
-		if (strcmp(let->exp->var->name, var->name)) {
+		if (!zend_string_equals(let->exp->var->name, var->name)) {
 			continue;
 		}
 		return var->arg = let->exp->var->arg;

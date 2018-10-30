@@ -70,6 +70,6 @@ bool psi_let_exp_validate(struct psi_data *data, struct psi_let_exp *exp, struct
 struct psi_let_func *psi_let_exp_get_func(struct psi_let_exp *exp);
 struct psi_impl_var *psi_let_exp_get_impl_var(struct psi_let_exp *exp);
 struct psi_decl_var *psi_let_exp_get_decl_var(struct psi_let_exp *val);
-const char *psi_let_exp_get_decl_var_name(struct psi_let_exp *exp);
+zend_string *psi_let_exp_get_decl_var_name(struct psi_let_exp *exp);
 
 #endif

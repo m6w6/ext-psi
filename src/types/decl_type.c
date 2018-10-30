@@ -30,11 +30,11 @@
 #define PSI_STD_TYPES
 #include "php_psi_posix.h"
 
-struct psi_decl_type *psi_decl_type_init(token_t type, const char *name)
+struct psi_decl_type *psi_decl_type_init(token_t type, zend_string *name)
 {
 	struct psi_decl_type *t = calloc(1, sizeof(*t));
 	t->type = type;
-	t->name = strdup(name);
+	t->name = zend_string_copy(name);
 	return t;
 }
 
@@ -44,13 +44,11 @@ void psi_decl_type_free(struct psi_decl_type **type_ptr)
 		struct psi_decl_type *type = *type_ptr;
 
 		*type_ptr = NULL;
-		if (type->token) {
-			free(type->token);
-		}
+		psi_token_free(&type->token);
 		if (type->type == PSI_T_FUNCTION) {
 			psi_decl_free(&type->real.func);
 		}
-		free(type->name);
+		zend_string_release(type->name);
 		free(type);
 	}
 }
@@ -61,7 +59,7 @@ struct psi_decl_type *psi_decl_type_copy(struct psi_decl_type *src)
 
 	dst->type = src->type;
 	if (src->name) {
-		dst->name = strdup(src->name);
+		dst->name = zend_string_copy(src->name);
 	}
 	if (src->token) {
 		dst->token = psi_token_copy(src->token);
@@ -120,14 +118,14 @@ bool psi_decl_type_get_alias(struct psi_decl_type *type, struct psi_plist *defs)
 	}
 	if (defs) {
 		while (psi_plist_get(defs, i++, &def)) {
-			if (!strcmp(def->var->name, type->name)) {
+			if (zend_string_equals(def->var->name, type->name)) {
 				type->real.def = def;
 				return true;
 			}
 		}
 	}
 	for (stdtyp = &psi_std_types[0]; stdtyp->type_tag; ++stdtyp) {
-		if (!strcmp(type->name, stdtyp->alias ?: stdtyp->type_name)) {
+		if (!strcmp(type->name->val, stdtyp->alias ?: stdtyp->type_name)) {
 			type->type = stdtyp->type_tag;
 			return true;
 		}
@@ -146,7 +144,7 @@ bool psi_decl_type_get_struct(struct psi_decl_type *type, struct psi_plist *stru
 	}
 	if (structs) {
 		while (psi_plist_get(structs, i++, &s)) {
-			if (!strcmp(s->name, type->name)) {
+			if (zend_string_equals(s->name, type->name)) {
 				type->real.strct = s;
 				return true;
 			}
@@ -165,7 +163,7 @@ bool psi_decl_type_get_union(struct psi_decl_type *type, struct psi_plist *union
 	}
 	if (unions) {
 		while (psi_plist_get(unions, i++, &u)) {
-			if (!strcmp(u->name, type->name)) {
+			if (zend_string_equals(u->name, type->name)) {
 				type->real.unn = u;
 				return true;
 			}
@@ -184,7 +182,7 @@ bool psi_decl_type_get_enum(struct psi_decl_type *type, struct psi_plist *enums)
 	}
 	if (enums) {
 		while (psi_plist_get(enums, i++, &e)) {
-			if (!strcmp(e->name, type->name)) {
+			if (zend_string_equals(e->name, type->name)) {
 				type->real.enm = e;
 				return true;
 			}
@@ -203,7 +201,7 @@ bool psi_decl_type_get_decl(struct psi_decl_type *type, struct psi_plist *decls)
 	}
 	if (decls) {
 		while (psi_plist_get(decls, i++, &decl)) {
-			if (!strcmp(decl->func->var->name, type->name)) {
+			if (zend_string_equals(decl->func->var->name, type->name)) {
 				type->real.func = decl;
 				return true;
 			}
@@ -243,7 +241,7 @@ bool psi_decl_type_validate(struct psi_data *data, struct psi_decl_type *type,
 				return true;
 			} else {
 				data->error(data, type->token, PSI_WARNING,
-						"Unknown struct '%s'", type->name);
+						"Unknown struct '%s'", type->name->val);
 				return false;
 			}
 		}
@@ -259,7 +257,7 @@ bool psi_decl_type_validate(struct psi_data *data, struct psi_decl_type *type,
 				return true;
 			} else {
 				data->error(data, type->token, PSI_WARNING,
-						"Unknown union '%s'", type->name);
+						"Unknown union '%s'", type->name->val);
 				return false;
 			}
 		}
@@ -270,14 +268,14 @@ bool psi_decl_type_validate(struct psi_data *data, struct psi_decl_type *type,
 	case PSI_T_ENUM:
 		if (!psi_decl_type_get_enum(type, data->enums)) {
 			data->error(data, type->token, PSI_WARNING,
-					"Unknown enum '%s'", type->name);
+					"Unknown enum '%s'", type->name->val);
 			return false;
 		}
 		break;
 	case PSI_T_FUNCTION:
 		if (!psi_decl_type_get_decl(type, data->decls)) {
 			data->error(data, type->token, PSI_WARNING,
-					"Unknown decl '%s'", type->name);
+					"Unknown decl '%s'", type->name->val);
 			return false;
 		}
 		if (!psi_decl_validate_nodl(data, type->real.func, scope)) {
@@ -324,7 +322,7 @@ void psi_decl_type_dump(int fd, struct psi_decl_type *t, unsigned level)
 {
 	switch (t->type) {
 	case PSI_T_POINTER:
-		dprintf(fd, "%s *", t->name);
+		dprintf(fd, "%s *", t->name->val);
 		return;
 
 	case PSI_T_ENUM:
@@ -372,7 +370,7 @@ void psi_decl_type_dump(int fd, struct psi_decl_type *t, unsigned level)
 		break;
 	}
 
-	dprintf(fd, "%s", t->name);
+	dprintf(fd, "%s", t->name->val);
 }
 
 int psi_decl_type_is_weak(struct psi_decl_type *type)

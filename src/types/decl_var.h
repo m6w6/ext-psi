@@ -35,31 +35,16 @@ struct psi_validate_scope;
 
 struct psi_decl_var {
 	struct psi_token *token;
-	char *name, *fqn;
+	zend_string *name, *fqn;
 	unsigned pointer_level;
 	unsigned array_size;
 	struct psi_decl_arg *arg;
 };
 
-struct psi_decl_var *psi_decl_var_init(const char *name, unsigned pl, unsigned as);
+struct psi_decl_var *psi_decl_var_init(zend_string *name, unsigned pl, unsigned as);
 struct psi_decl_var *psi_decl_var_copy(struct psi_decl_var *src);
 void psi_decl_var_free(struct psi_decl_var **var_ptr);
 void psi_decl_var_dump(int fd, struct psi_decl_var *var);
-
-#include <string.h>
-
-static inline char *psi_decl_var_name_prepend(char *current, const char *prepend) {
-	size_t c_len = strlen(current);
-	size_t p_len = strlen(prepend);
-
-	current = realloc(current, p_len + 1 + c_len + 1);
-	if (current) {
-		memmove(current + p_len + 1, current, c_len + 1);
-		current[p_len] = '.';
-		memcpy(current, prepend, p_len);
-	}
-	return current;
-}
 
 bool psi_decl_var_validate(struct psi_data *data, struct psi_decl_var *dvar,
 		struct psi_validate_scope *scope);

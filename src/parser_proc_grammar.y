@@ -61,7 +61,7 @@ static inline void psi_parser_proc_deanon_typedef(struct psi_decl_arg *def)
 		return;
 	}
 	free(def->type->name);
-	def->type->name = strdup(def->var->name);
+	def->type->name = zend_string_copy(def->var->name);
 }
 static inline void psi_parser_proc_add_typedef(struct psi_parser *P, struct psi_decl_arg *def)
 {
@@ -83,7 +83,7 @@ static inline void psi_parser_proc_add_const(struct psi_parser *P, struct psi_co
 static inline void psi_parser_proc_add_decl(struct psi_parser *P, struct psi_decl *decl) {
 	assert(decl);
 	
-	if (psi_decl_is_blacklisted(decl->func->var->name)) {
+	if (psi_decl_is_blacklisted(decl->func->var->name->val)) {
 		psi_decl_free(&decl);
 		return;
 	}
@@ -456,7 +456,7 @@ block:
 	}
 }
 |	lib {
-	char *libname = strdup($lib->text);
+	char *libname = strdup($lib->text->val);
 	P->file.libnames = psi_plist_add(P->file.libnames, &libname);
 }
 |	constant {
@@ -470,7 +470,7 @@ block:
 }
 |	ignored_decl {
 	if (P->flags & PSI_DEBUG) {
-		P->error(PSI_DATA(P), $ignored_decl->func->token, PSI_NOTICE, "Ignored decl: %s", $ignored_decl->func->var->name);
+		P->error(PSI_DATA(P), $ignored_decl->func->token, PSI_NOTICE, "Ignored decl: %s", $ignored_decl->func->var->name->val);
 	}
 	psi_decl_free(&$ignored_decl);
 }
@@ -519,7 +519,7 @@ cpp_exp[exp]:
 			while (psi_plist_get($tokens, index++, &next)) {
 				struct psi_token *old = msg;
 				msg = psi_token_cat(" ", 2, msg, next);
-				free(old);
+				psi_token_free(&old);
 			}
 		}
 		psi_plist_free($tokens);
@@ -986,7 +986,7 @@ decl_int_type[type]:
 |	int_signed int_signed_types {
 	if ($2) {
 		$type = psi_token_cat(" ", 2, $1, $2);
-		free($2);
+		psi_token_free(&$2);
 	} else {
 		$type = psi_token_copy($1);
 	}
@@ -994,8 +994,8 @@ decl_int_type[type]:
 |	int_width int_width_types {
 	if ($2) {
 		$type = psi_token_cat(" ", 2, $1, $2);
-		free($1);
-		free($2);
+		psi_token_free(&$1);
+		psi_token_free(&$2);
 	} else {
 		$type = $1;
 	}
@@ -1056,7 +1056,7 @@ int_width_types[type]:
 |	int_signed int_signed_types {
 	if ($2) {
 		$type = psi_token_cat(" ", 2, $1, $2);
-		free($2);
+		psi_token_free(&$2);
 	} else {
 		$type = psi_token_copy($1);
 	}
@@ -1067,15 +1067,15 @@ decl_stmt:
 	decl decl_asm EOS {
 	$decl_stmt = $decl;
 	if ($decl_asm) {
-		$decl->redir = strdup($decl_asm->text);
-		free($decl_asm);
+		$decl->redir = zend_string_copy($decl_asm->text);
+		psi_token_free(&$decl_asm);
 	}
 }
 |	CPP_EXTENSION decl decl_asm EOS {
 	$decl_stmt = $decl;
 	if ($decl_asm) {
-		$decl->redir = strdup($decl_asm->text);
-		free($decl_asm);
+		$decl->redir = zend_string_copy($decl_asm->text);
+		psi_token_free(&$decl_asm);
 	}
 }
 ;
@@ -1095,7 +1095,7 @@ quoted_strings[strings]:
 }
 |	quoted_strings[strings_] QUOTED_STRING {
 	$strings = psi_token_cat("", 2, $strings_, $QUOTED_STRING);
-	free($strings_);
+	psi_token_free(&$strings_);
 }
 ;
 
@@ -1108,7 +1108,7 @@ decl_extvar_stmt[list]:
 		struct psi_decl_var *var;
 		
 		while (psi_plist_get($vars, i++, &var)) {
-			if (psi_decl_extvar_is_blacklisted(var->name)) {
+			if (psi_decl_extvar_is_blacklisted(var->name->val)) {
 				psi_decl_var_free(&var);
 			} else {
 				struct psi_decl_extvar *evar = psi_decl_extvar_init(
@@ -1119,7 +1119,7 @@ decl_extvar_stmt[list]:
 		free($vars);
 	}
 	
-	if (psi_decl_extvar_is_blacklisted($decl_arg->var->name)) {
+	if (psi_decl_extvar_is_blacklisted($decl_arg->var->name->val)) {
 		psi_decl_arg_free(&$decl_arg);
 	} else {
 		struct psi_decl_extvar *evar = psi_decl_extvar_init($decl_arg);
@@ -1422,7 +1422,7 @@ decl_anon_arg[arg]:
 	char digest[17];
 	struct psi_token *name;
 
-	psi_token_hash($decl->func	->token, digest);
+	psi_token_hash($decl->func->token, digest);
 	name = psi_token_append("@", psi_token_copy($decl->func->token), 2, "funct", digest);
 	
 	$arg = psi_decl_arg_init(
@@ -1721,7 +1721,7 @@ sizeof_body_notypes[sizeof]:
 	$sizeof = psi_number_init(PSI_T_INT8, &sizeof_a, 0);
 }
 |	QUOTED_STRING {
-	uint64_t len = $QUOTED_STRING->size + 1;
+	uint64_t len = $QUOTED_STRING->text->len + 1;
 	$sizeof = psi_number_init(PSI_T_UINT64, &len, 0);
 }
 ;
@@ -1785,13 +1785,13 @@ decl_layout[l]:
 	$l = NULL;
 }
 |	COLON NUMBER[width] {
-	$l = psi_layout_init(0, 0, psi_layout_init(0, atol($width->text), NULL));
+	$l = psi_layout_init(0, 0, psi_layout_init(0, atol($width->text->val), NULL));
 }
 |	COLON COLON LPAREN NUMBER[align] COMMA NUMBER[size] RPAREN {
-	$l = psi_layout_init(atol($align->text), atol($size->text), NULL);
+	$l = psi_layout_init(atol($align->text->val), atol($size->text->val), NULL);
 }
 |	COLON NUMBER[width] COLON COLON LPAREN NUMBER[align] COMMA NUMBER[size] RPAREN {
-	$l = psi_layout_init(atol($align->text), atol($size->text), psi_layout_init(0, atol($width->text), NULL));
+	$l = psi_layout_init(atol($align->text->val), atol($size->text->val), psi_layout_init(0, atol($width->text->val), NULL));
 }
 ;
 
@@ -1801,8 +1801,8 @@ align_and_size[as]:
 	$as.len = 0;
 }
 |	COLON COLON LPAREN NUMBER[align] COMMA NUMBER[size] RPAREN {
-	$as.pos = atol($align->text);
-	$as.len = atol($size->text);
+	$as.pos = atol($align->text->val);
+	$as.len = atol($size->text->val);
 }
 ;
 

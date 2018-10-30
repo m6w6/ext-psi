@@ -37,7 +37,7 @@ void psi_decl_file_dtor(struct psi_decl_file *file)
 		psi_plist_free(file->dlopened);
 	}
 	if (file->filename) {
-		free(file->filename);
+		zend_string_release(file->filename);
 	}
 	memset(file, 0, sizeof(*file));
 }
@@ -84,7 +84,7 @@ bool psi_decl_file_validate(struct psi_data *dst, struct psi_data *src)
 	}
 
 	if (src->file.filename) {
-		dst->file.filename = strdup(src->file.filename);
+		dst->file.filename = zend_string_copy(src->file.filename);
 	}
 	return true;
 }

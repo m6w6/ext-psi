@@ -43,12 +43,10 @@ void psi_assert_stmt_free(struct psi_assert_stmt **stmt_ptr)
 	if (*stmt_ptr) {
 		struct psi_assert_stmt *stmt = *stmt_ptr;
 
-		psi_num_exp_free(&stmt->exp);
-		if (stmt->token) {
-			free(stmt->token);
-		}
-		free(stmt);
 		*stmt_ptr = NULL;
+		psi_num_exp_free(&stmt->exp);
+		psi_token_free(&stmt->token);
+		free(stmt);
 	}
 }
 
