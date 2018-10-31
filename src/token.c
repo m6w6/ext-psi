@@ -91,13 +91,12 @@ struct psi_token *psi_token_cat(const char *sep, unsigned argc, ...) {
 	T->type = PSI_T_NAME;
 	T->file = zend_string_copy(T->file);
 
+	smart_str_append_ex(&text, T->text, 1);
+
 	for (i = 1; i < argc; ++i) {
 		struct psi_token *arg = va_arg(argv, struct psi_token *);
 
-		if (sep_len && text.a) {
-			smart_str_appendl_ex(&text, sep, sep_len, 1);
-		}
-
+		smart_str_appendl_ex(&text, sep, sep_len, 1);
 		smart_str_append_ex(&text, arg->text, 1);
 	}
 	va_end(argv);
