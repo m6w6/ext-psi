@@ -350,11 +350,12 @@ static void *exec_let_func_arrval(struct psi_let_exp *val,
 
 		if (frame_arg->zval_ptr) {
 			while (psi_plist_get(func->inner, i++, &inner)) {
-				darg_member = psi_decl_arg_get_by_name(darg_members,
-						psi_let_exp_get_decl_var_name(inner));
+				zend_string *var_name = psi_let_exp_get_decl_var_name(inner);
+				darg_member = psi_decl_arg_get_by_name(darg_members, var_name);
 
 				exec_let_func_arrval_inner(func, darg, darg_member, frame_arg,
 						inner, container, frame);
+				zend_string_release(var_name);
 			}
 		}
 	} else if (func->inner) {

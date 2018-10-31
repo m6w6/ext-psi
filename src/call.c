@@ -199,13 +199,15 @@ zval *psi_call_frame_sub_argument(struct psi_call_frame *frame,
 	if (!iarg) {
 		struct psi_call_frame_argument *frame_arg;
 		impl_val empty_val = {0};
+		zend_string *type_str = zend_string_init(ZEND_STRL("mixed"), 1);
 		struct psi_impl_arg *carg_spec = psi_impl_arg_init(
-				psi_impl_type_init(PSI_T_MIXED, zend_string_init(ZEND_STRL("mixed"), 1)),
+				psi_impl_type_init(PSI_T_MIXED, type_str),
 				psi_impl_var_copy(inner_var), NULL);
 
 		psi_call_frame_push_auto_ex(frame, carg_spec, (void(*)(void*)) psi_impl_arg_free);
 		frame_arg = psi_call_frame_argument_init(carg_spec, &empty_val, inner_zval, 0);
 		zend_hash_add_ptr(&frame->arguments, name, frame_arg);
+		zend_string_release(type_str);
 	}
 
 	return inner_zval;
