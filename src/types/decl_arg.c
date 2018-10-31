@@ -118,8 +118,10 @@ bool psi_decl_arg_validate(struct psi_data *data, struct psi_decl_arg *arg,
 	if (!psi_decl_type_validate(data, arg->type, NULL, scope)) {
 		 if (!arg->var->pointer_level) {
 			data->error(data, arg->type->token, PSI_WARNING,
-					"Cannot use '%s' as type for '%s'%s%s", arg->type->name,
-					arg->var->name, *data->last_error ? ": " : "", data->last_error);
+					"Cannot use '%s' as type for '%s'%s%s",
+					arg->type->name->val,
+					arg->var->name->val,
+					*data->last_error ? ": " : "", data->last_error);
 			return false;
 		 }
 	}
