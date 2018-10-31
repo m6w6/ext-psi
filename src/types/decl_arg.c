@@ -139,7 +139,8 @@ bool psi_decl_arg_validate_typedef(struct psi_data *data,
 			def->type->type = PSI_T_POINTER;
 		} else {
 			data->error(data, def->token, PSI_WARNING,
-					"Type '%s' cannot be aliased to 'void'", def->type->name->val);
+					"Type '%s' cannot be aliased to 'void'",
+					def->type->name->val);
 			return false;
 		}
 	} else if (!psi_decl_type_validate(data, def->type, def, scope)) {
@@ -160,8 +161,10 @@ bool psi_decl_arg_validate_typedef(struct psi_data *data,
 			break;
 		}
 		data->error(data, def->token, PSI_WARNING,
-				"Type '%s' cannot be aliased to '%s%s'%s%s", def->var->name, pre,
-				def->type->name->val, *data->last_error ? ": " : "", data->last_error);
+				"Type '%s' cannot be aliased to '%s%s'%s%s",
+				def->var->name->val, pre,
+				def->type->name->val,
+				*data->last_error ? ": " : "", data->last_error);
 		return false;
 	}
 
