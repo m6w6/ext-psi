@@ -60,7 +60,7 @@ bool psi_cpp_load_defaults(struct psi_cpp *cpp)
 
 	if ((predef = psi_parser_open_string(cpp->parser, psi_cpp_predef, sizeof(psi_cpp_predef) - 1))) {
 		bool parsed = psi_parser_parse(cpp->parser, predef);
-		free(predef);
+		psi_parser_input_free(&predef);
 		return parsed;
 	}
 
@@ -436,7 +436,7 @@ static inline bool try_include(struct psi_cpp *cpp, const char *path, bool *pars
 				psi_plist_free(tokens);
 			}
 		}
-		free(include);
+		psi_parser_input_free(&include);
 
 		zend_hash_str_add_empty_element(&cpp->once, path, strlen(path));
 		return true;

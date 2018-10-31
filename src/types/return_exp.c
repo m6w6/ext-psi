@@ -106,7 +106,7 @@ static inline bool psi_return_exp_validate_decl_args(struct psi_data *data,
 	if (exp->args) {
 		if (psi_plist_count(exp->args) != psi_plist_count(impl->decl->args)) {
 			data->error(data, exp->token, PSI_WARNING,
-					"Argument count of return statement of implementation '%s'"
+					"Argument count of return statement of implementation '%s' "
 					"does not match argument count of declaration '%s'",
 					impl->func->name->val, impl->decl->func->var->name->val);
 			return false;

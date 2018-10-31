@@ -264,7 +264,7 @@ struct psi_decl_arg *psi_decl_arg_get_by_var(struct psi_decl_var *var,
 		return var->arg = arg;
 	}
 
-	if (func && !zend_string_equals(var->name, func->var->name)) {
+	if (func && zend_string_equals(var->name, func->var->name)) {
 		return var->arg = func;
 	}
 

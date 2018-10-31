@@ -142,7 +142,7 @@ void psi_context_build(struct psi_context *C, const char *paths)
 				psi_parser_parse(&P, I);
 				psi_context_add(C, &P);
 				psi_parser_dtor(&P);
-				free(I);
+				psi_parser_input_free(&I);
 			}
 		}
 

@@ -259,7 +259,7 @@ static size_t psi_cpp_tokiter_expand_tokens(struct psi_cpp *cpp,
 
 				tmp_tok = psi_token_init(old_tok->type, "", 0,
 						target->col, target->line,
-						target->file ? target->file->val : "");
+						target->file ? target->file : zend_empty_string);
 
 				new_tok = psi_token_cat(NULL, 3, tmp_tok, old_tok, tok);
 				psi_token_free(&old_tok);
@@ -268,7 +268,8 @@ static size_t psi_cpp_tokiter_expand_tokens(struct psi_cpp *cpp,
 				exp_tokens[n - 1] = new_tok;
 			} else {
 				new_tok = psi_token_init(stringify ? PSI_T_QUOTED_STRING : tok->type,
-						tok->text->val, tok->text->len, target->col, target->line, target->file?:"");
+						tok->text->val, tok->text->len, target->col, target->line,
+						target->file ?: zend_empty_string);
 
 				exp_tokens[n++] = new_tok;
 			}

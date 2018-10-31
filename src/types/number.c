@@ -156,9 +156,7 @@ void psi_number_free(struct psi_number **exp_ptr)
 		struct psi_number *exp = *exp_ptr;
 
 		*exp_ptr = NULL;
-		if (exp->token) {
-			free(exp->token);
-		}
+		psi_token_free(&exp->token);
 		switch (exp->type) {
 		case PSI_T_INT8:
 		case PSI_T_UINT8:

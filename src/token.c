@@ -91,7 +91,7 @@ struct psi_token *psi_token_cat(const char *sep, unsigned argc, ...) {
 	T->type = PSI_T_NAME;
 	T->file = zend_string_copy(T->file);
 
-	for (i = 0; i < argc; ++i) {
+	for (i = 1; i < argc; ++i) {
 		struct psi_token *arg = va_arg(argv, struct psi_token *);
 
 		if (sep_len && text.a) {
@@ -173,7 +173,7 @@ static inline uint64_t psi_hash(char *digest_buf, ...)
 uint64_t psi_token_hash(struct psi_token *t, char *digest_buf) {
 	char loc_buf[48];
 
-	sprintf(digest_buf, "%u%u", t->line, t->col);
+	sprintf(loc_buf, "%u%u", t->line, t->col);
 	return psi_hash(digest_buf, t->file->val, loc_buf, (char *) NULL);
 }
 

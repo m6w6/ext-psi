@@ -158,10 +158,11 @@ bool psi_decl_validate_nodl(struct psi_data *data, struct psi_decl *decl,
 		struct psi_validate_scope *scope)
 {
 	if (!decl->abi) {
-		decl->abi = psi_decl_abi_init(zend_string_init(ZEND_STRL("default"), 1));
+		decl->abi = psi_decl_abi_init(NULL);
 	} else if (!psi_decl_abi_validate(data, decl->abi)) {
 		data->error(data, decl->abi->token, PSI_WARNING,
-				"Invalid calling convention: '%s'", decl->abi->token->text->val);
+				"Invalid calling convention: '%s'",
+				decl->abi->token->text->val);
 		return false;
 	}
 	if (!psi_decl_arg_validate(data, decl->func, scope)) {

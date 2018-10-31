@@ -115,8 +115,8 @@ void psi_decl_extvar_dump(int fd, struct psi_decl_extvar *evar)
 
 struct psi_decl *psi_decl_extvar_setter(struct psi_decl_extvar *evar)
 {
-	struct psi_decl_type *func_type = psi_decl_type_init(PSI_T_VOID,
-			zend_string_init(ZEND_STRS("void"), 1));
+	zend_string *type_str = zend_string_init(ZEND_STRS("void"), 1);
+	struct psi_decl_type *func_type = psi_decl_type_init(PSI_T_VOID, type_str);
 	struct psi_decl_var *func_var = psi_decl_var_copy(evar->arg->var);
 	struct psi_decl_arg *func = psi_decl_arg_init(func_type, func_var);
 	struct psi_decl_type *arg_type = psi_decl_type_copy(evar->arg->type);
@@ -125,6 +125,8 @@ struct psi_decl *psi_decl_extvar_setter(struct psi_decl_extvar *evar)
 	struct psi_plist *args = psi_plist_init((psi_plist_dtor) psi_decl_arg_free);
 	struct psi_decl *decl = psi_decl_init(func, psi_plist_add(args, &arg));
 	smart_str name = {0};
+
+	zend_string_release(type_str);
 
 	func_var->pointer_level = 0;
 	func_var->array_size = 0;
@@ -153,7 +155,7 @@ struct psi_decl *psi_decl_extvar_getter(struct psi_decl_extvar *evar)
 	smart_str name = {0};
 
 	smart_str_append_ex(&name, func_var->name, 1);
-	smart_str_appendl_ex(&name, ZEND_STRL("_set"), 1);
+	smart_str_appendl_ex(&name, ZEND_STRL("_get"), 1);
 	zend_string_release(func_var->name);
 	func_var->name = smart_str_extract(&name);
 

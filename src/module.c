@@ -232,7 +232,7 @@ static PHP_FUNCTION(psi_validate)
 	psi_validate_scope_dtor(&S);
 	psi_data_dtor(&D);
 	psi_parser_dtor(&P);
-	free(I);
+	psi_parser_input_free(&I);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_psi_validate_string, 0, 0, 1)
@@ -284,7 +284,7 @@ static PHP_FUNCTION(psi_validate_string)
 	psi_validate_scope_dtor(&S);
 	psi_data_dtor(&D);
 	psi_parser_dtor(&P);
-	free(I);
+	psi_parser_input_free(&I);
 }
 
 static ZEND_RESULT_CODE psi_ops_load()

@@ -164,19 +164,20 @@ void psi_parser_postprocess(struct psi_parser *P)
 				struct psi_const *cnst;
 				struct psi_num_exp *num;
 				smart_str ns_name = {0};
-				zend_string *name_str;
+				zend_string *name_str, *type_str;
 
 				smart_str_appendl_ex(&ns_name, ZEND_STRL("psi\\"), 1);
 				smart_str_append_ex(&ns_name, name, 1);
 				name_str = smart_str_extract(&ns_name);
+				type_str = zend_string_init(ZEND_STRL("<eval number>"), 1);
 
 				num = psi_num_exp_copy(scope.macro->exp);
 				def = psi_impl_def_val_init(PSI_T_NUMBER, num);
-				type = psi_impl_type_init(PSI_T_NUMBER,
-						zend_string_init(ZEND_STRL("<eval number>"), 1));
+				type = psi_impl_type_init(PSI_T_NUMBER, type_str);
 				cnst = psi_const_init(type, name_str, def);
 				P->consts = psi_plist_add(P->consts, &cnst);
 				zend_string_release(name_str);
+				zend_string_release(type_str);
 			}
 		} else {
 			if (psi_plist_count(scope.macro->tokens) == 1) {
@@ -188,18 +189,19 @@ void psi_parser_postprocess(struct psi_parser *P)
 						struct psi_impl_def_val *def;
 						struct psi_const *cnst;
 						smart_str ns_name = {0};
-						zend_string *name_str;
+						zend_string *name_str, *type_str;
 
 						smart_str_appendl_ex(&ns_name, ZEND_STRL("psi\\"), 1);
 						smart_str_append_ex(&ns_name, name, 1);
 						name_str = smart_str_extract(&ns_name);
+						type_str = zend_string_init(ZEND_STRL("string"), 1);
 
-						type = psi_impl_type_init(PSI_T_STRING,
-								zend_string_init(ZEND_STRL("string"), 1));
+						type = psi_impl_type_init(PSI_T_STRING, type_str);
 						def = psi_impl_def_val_init(PSI_T_QUOTED_STRING, t->text);
 						cnst = psi_const_init(type, name_str, def);
 						P->consts = psi_plist_add(P->consts, &cnst);
 						zend_string_release(name_str);
+						zend_string_release(type_str);
 					}
 				}
 			}

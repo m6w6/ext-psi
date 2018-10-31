@@ -73,10 +73,6 @@ void psi_cpp_exp_free(struct psi_cpp_exp **exp_ptr)
 		switch (exp->type) {
 		case PSI_T_WARNING:
 		case PSI_T_ERROR:
-			if (!exp->data.tok) {
-				break;
-			}
-			/* no break */
 		case PSI_T_UNDEF:
 		case PSI_T_IFDEF:
 		case PSI_T_IFNDEF:

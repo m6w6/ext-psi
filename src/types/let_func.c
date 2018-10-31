@@ -139,6 +139,7 @@ static inline bool validate_let_func_inner(struct psi_data *data,
 
 				if (name) {
 					sub_arg = psi_decl_arg_get_by_name(sub_args, name);
+					zend_string_release(name);
 				}
 				if (!name || !sub_arg) {
 					/* remove expr for portability with different struct members */

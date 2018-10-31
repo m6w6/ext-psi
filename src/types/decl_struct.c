@@ -177,7 +177,7 @@ bool psi_decl_struct_validate(struct psi_data *data, struct psi_decl_struct *s,
 			align = psi_decl_arg_align(darg, &pos, &len);
 
 			if (darg->layout) {
-				if (darg->layout->pos != pos) {
+				if (darg->layout->pos != pos && !darg->layout->bfw) {
 					data->error(data, darg->token, PSI_WARNING,
 							"Computed offset %zu of %s.%s does not match"
 							" pre-defined offset %zu",

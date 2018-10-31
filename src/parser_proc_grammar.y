@@ -60,7 +60,7 @@ static inline void psi_parser_proc_deanon_typedef(struct psi_decl_arg *def)
 	default:
 		return;
 	}
-	free(def->type->name);
+	zend_string_release(def->type->name);
 	def->type->name = zend_string_copy(def->var->name);
 }
 static inline void psi_parser_proc_add_typedef(struct psi_parser *P, struct psi_decl_arg *def)
