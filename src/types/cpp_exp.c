@@ -184,6 +184,8 @@ void psi_cpp_exp_exec(struct psi_cpp_exp *exp, struct psi_cpp *cpp, struct psi_d
 			exp->token->text->val, cpp->level, cpp->skip);
 
 #if PSI_CPP_DEBUG
+	fflush(stderr);
+	dprintf(2, "PSI: CPP exec -> ");
 	psi_cpp_exp_dump(2, exp);
 #endif
 

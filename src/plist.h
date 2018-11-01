@@ -47,6 +47,8 @@ bool psi_plist_del_r(struct psi_plist *list, size_t offset_start, size_t offset_
 struct psi_plist *psi_plist_ins(struct psi_plist *list, size_t index, void *ptr);
 struct psi_plist *psi_plist_ins_r(struct psi_plist *list, size_t offset_start, size_t num_eles, void **eles);
 
+bool psi_plist_unset(struct psi_plist *list, size_t index);
+
 bool psi_plist_shift(struct psi_plist *list, void *ptr);
 bool psi_plist_pop(struct psi_plist *list, void *ptr);
 bool psi_plist_top(struct psi_plist *list, void *ptr);

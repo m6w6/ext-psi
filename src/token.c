@@ -32,9 +32,9 @@
 #include "token.h"
 #include "parser.h"
 
-size_t psi_token_alloc_size(size_t token_len, size_t fname_len) {
-	return sizeof(struct psi_token) + token_len + fname_len + 2;
-}
+#ifndef PSI_DEBUG_TOKEN_ALLOC
+#	define PSI_DEBUG_TOKEN_ALLOC 0
+#endif
 
 struct psi_token *psi_token_init(token_t token_typ, const char *token_txt,
 		size_t token_len, unsigned col, unsigned line, zend_string *file)
@@ -47,14 +47,18 @@ struct psi_token *psi_token_init(token_t token_typ, const char *token_txt,
 	T->line = line;
 	T->file = zend_string_copy(file);
 	T->text = zend_string_init(token_txt, token_len, 1);
-
+#if PSI_DEBUG_TOKEN_ALLOC
+	fprintf(stderr, "PSI: token_init %p\n", T);
+#endif
 	return T;
 }
 
 void psi_token_free(struct psi_token **token_ptr) {
 	if (*token_ptr) {
 		struct psi_token *token = *token_ptr;
-
+#if PSI_DEBUG_TOKEN_ALLOC
+		fprintf(stderr, "PSI: token_free %p\n", token);
+#endif
 		*token_ptr = NULL;
 		zend_string_release(token->text);
 		zend_string_release(token->file);
@@ -66,7 +70,9 @@ struct psi_token *psi_token_copy(struct psi_token *src) {
 	struct psi_token *ptr = malloc(sizeof(*ptr));
 
 	*ptr = *src;
-
+#if PSI_DEBUG_TOKEN_ALLOC
+	fprintf(stderr, "PSI: token_copy %p <= %p\n", ptr, src);
+#endif
 	ptr->text = zend_string_copy(ptr->text);
 	ptr->file = zend_string_copy(ptr->file);
 
@@ -103,6 +109,9 @@ struct psi_token *psi_token_cat(const char *sep, unsigned argc, ...) {
 
 	T->text = smart_str_extract(&text);
 
+#if PSI_DEBUG_TOKEN_ALLOC
+	fprintf(stderr, "PSI: token_cat  %p\n", T);
+#endif
 	return T;
 }
 

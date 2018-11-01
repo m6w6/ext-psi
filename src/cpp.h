@@ -36,7 +36,10 @@ struct psi_cpp {
 	HashTable defs;
 	HashTable once;
 	struct psi_parser *parser;
-	struct psi_plist *tokens;
+	struct {
+		struct psi_plist *iter;
+		struct psi_plist *next;
+	} tokens;
 	const char *search;
 	size_t index;
 	unsigned level;
@@ -72,10 +75,14 @@ void psi_cpp_tokiter_next(struct psi_cpp *cpp);
 void psi_cpp_tokiter_prev(struct psi_cpp *cpp);
 bool psi_cpp_tokiter_valid(struct psi_cpp *cpp);
 bool psi_cpp_tokiter_del_cur(struct psi_cpp *cpp, bool free_token);
+bool psi_cpp_tokiter_del_prev(struct psi_cpp *cpp, bool free_token);
 bool psi_cpp_tokiter_del_range(struct psi_cpp *cpp, size_t offset,
 		size_t num_eles, bool free_tokens);
-bool psi_cpp_tokiter_ins_cur(struct psi_cpp *cpp, struct psi_token *tok);
-bool psi_cpp_tokiter_ins_range(struct psi_cpp *cpp, size_t offset,
+bool psi_cpp_tokiter_add(struct psi_cpp *cpp, struct psi_token *tok);
+bool psi_cpp_tokiter_add_cur(struct psi_cpp *cpp);
+bool psi_cpp_tokiter_add_range(struct psi_cpp *cpp,
+		size_t num_eles, void **eles);
+bool psi_cpp_tokiter_ins_range(struct psi_cpp *cpp,
 		size_t num_eles, void **eles);
 bool psi_cpp_tokiter_defined(struct psi_cpp *cpp);
 bool psi_cpp_tokiter_expand(struct psi_cpp *cpp);

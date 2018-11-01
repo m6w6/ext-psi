@@ -140,6 +140,14 @@ bool psi_plist_get(struct psi_plist *list, size_t index, void *ptr) {
 	return false;
 }
 
+bool psi_plist_unset(struct psi_plist *list, size_t index) {
+	if (list && list->count > index) {
+		memset(PLIST_ELE(list, index), 0, list->size);
+		return true;
+	}
+	return false;
+}
+
 bool psi_plist_del(struct psi_plist *list, size_t index, void *ptr) {
 	if (list && list->count > index) {
 		if (ptr) {
