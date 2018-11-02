@@ -71,19 +71,6 @@ psi-clean: psi-clean-objects
 psi-clean-generated:
 	-rm -f $(PHP_PSI_GENERATED)
 
-.PHONY: psi-clean-aux
-psi-clean-aux: psi-clean-aux-bin psi-clean-aux-src
-
-.PHONY: psi-clean-aux-src
-psi-clean-aux-src:
-	-rm -f $(PHP_PSI_BUILDDIR)/lempar.c $(PHP_PSI_BUILDDIR)/lemon.c
-
-.PHONY: psi-clean-aux-bin
-psi-clean-aux-bin:
-	-rm -f $(PHP_PSI_BUILDDIR)/lemon
-
-psi-clean: psi-clean-aux
-
 .PHONY: psi-clean-depend
 psi-clean-depend:
 	-rm -f $(PHP_PSI_DEPEND)

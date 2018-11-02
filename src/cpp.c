@@ -43,6 +43,9 @@ PHP_MINIT_FUNCTION(psi_cpp)
 	struct psi_parser parser;
 	struct psi_parser_input *predef;
 
+	PSI_G(search_path) = pemalloc(strlen(PSI_G(directory)) + strlen(psi_cpp_search) + 1 + 1, 1);
+	sprintf(PSI_G(search_path), "%s:%s", PSI_G(directory), psi_cpp_search);
+
 	if (!psi_parser_init(&parser, NULL, 0)) {
 		return FAILURE;
 	}

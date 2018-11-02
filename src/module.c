@@ -36,9 +36,6 @@
 #include "parser.h"
 #include "cpp.h"
 
-#define PSI_CPP_SEARCH
-#include "php_psi_cpp.h"
-
 #if HAVE_LIBJIT
 # include "libjit.h"
 # ifndef HAVE_LIBFFI
@@ -288,35 +285,11 @@ static PHP_FUNCTION(psi_validate_string)
 	psi_parser_input_free(&I);
 }
 
-static ZEND_RESULT_CODE psi_ops_load()
-{
-	struct psi_context_ops *ops = NULL;
-#ifdef HAVE_LIBJIT
-	if (!strcasecmp(PSI_G(engine), "jit")) {
-		ops = psi_libjit_ops();
-	} else
-#endif
-#ifdef HAVE_LIBFFI
-		ops = psi_libffi_ops();
-#endif
-
-	if (!ops) {
-		php_error(E_WARNING, "No PSI engine found");
-		return FAILURE;
-	}
-
-	PSI_G(ops) = ops;
-	if (ops->load) {
-		return ops->load();
-	}
-	return SUCCESS;
-}
-
 PHP_MINIT_FUNCTION(psi_cpp);
+PHP_MINIT_FUNCTION(psi_context);
 static PHP_MINIT_FUNCTION(psi)
 {
 	zend_class_entry ce = {0};
-	unsigned flags = 0;
 
 	REGISTER_INI_ENTRIES();
 
@@ -335,40 +308,18 @@ static PHP_MINIT_FUNCTION(psi)
 	if (SUCCESS != PHP_MINIT(psi_cpp)(type, module_number)) {
 		return FAILURE;
 	}
-
-	if (SUCCESS != psi_ops_load()) {
+	if (SUCCESS != PHP_MINIT(psi_context)(type, module_number)) {
 		return FAILURE;
 	}
-
-	if (psi_check_env("PSI_DEBUG")) {
-		flags |= PSI_DEBUG;
-	}
-	if (psi_check_env("PSI_SILENT")) {
-		flags |= PSI_SILENT;
-	}
-
-	PSI_G(search_path) = pemalloc(strlen(PSI_G(directory)) + strlen(psi_cpp_search) + 1 + 1, 1);
-	sprintf(PSI_G(search_path), "%s:%s", PSI_G(directory), psi_cpp_search);
-
-	PSI_G(context) = psi_context_init(NULL, PSI_G(ops), psi_error_wrapper, flags);
-	psi_context_build(PSI_G(context), PSI_G(directory));
 
 	return SUCCESS;
 }
 
 PHP_MSHUTDOWN_FUNCTION(psi_cpp);
+PHP_MSHUTDOWN_FUNCTION(psi_context);
 static PHP_MSHUTDOWN_FUNCTION(psi)
 {
-	if (psi_check_env("PSI_DUMP")) {
-		psi_context_dump(PSI_G(context), STDOUT_FILENO);
-	}
-
-	psi_context_free(&PSI_G(context));
-
-	if (PSI_G(ops)->free) {
-		PSI_G(ops)->free();
-	}
-
+	PHP_MSHUTDOWN(psi_context)(type, module_number);
 	PHP_MSHUTDOWN(psi_cpp)(type, module_number);
 
 	UNREGISTER_INI_ENTRIES();

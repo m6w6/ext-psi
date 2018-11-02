@@ -58,6 +58,58 @@
 
 #include "php_psi_posix.h"
 
+PHP_MINIT_FUNCTION(psi_context)
+{
+	unsigned flags = 0;
+	struct psi_context_ops *ops = NULL;
+
+#ifdef HAVE_LIBJIT
+	if (!strcasecmp(PSI_G(engine), "jit")) {
+		ops = psi_libjit_ops();
+	} else
+#endif
+#ifdef HAVE_LIBFFI
+		ops = psi_libffi_ops();
+#endif
+
+	if (!ops) {
+		php_error(E_WARNING, "No PSI engine found");
+		return FAILURE;
+	}
+
+	PSI_G(ops) = ops;
+	if (ops->load && SUCCESS != ops->load()) {
+		return FAILURE;
+	}
+
+	if (psi_check_env("PSI_DEBUG")) {
+		flags |= PSI_DEBUG;
+	}
+	if (psi_check_env("PSI_SILENT")) {
+		flags |= PSI_SILENT;
+	}
+
+	PSI_G(context) = psi_context_init(NULL, PSI_G(ops), psi_error_wrapper, flags);
+	psi_context_build(PSI_G(context), PSI_G(directory));
+
+	return SUCCESS;
+}
+
+PHP_MSHUTDOWN_FUNCTION(psi_context)
+{
+	if (psi_check_env("PSI_DUMP")) {
+		psi_context_dump(PSI_G(context), STDOUT_FILENO);
+	}
+
+	psi_context_free(&PSI_G(context));
+
+	if (PSI_G(ops)->free) {
+		PSI_G(ops)->free();
+	}
+
+	return SUCCESS;
+}
+
 struct psi_context *psi_context_init(struct psi_context *C, struct psi_context_ops *ops, psi_error_cb error, unsigned flags)
 {
 	if (!C) {

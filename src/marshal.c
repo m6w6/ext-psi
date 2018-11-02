@@ -732,7 +732,7 @@ void psi_set_to_array(zval *return_value, struct psi_set_exp *set, impl_val *r_v
 
 		ZVAL_NULL(&ele);
 		psi_set_exp_exec_ex(sub_exp, &ele, sym->ptr, frame);
-		add_assoc_zval(return_value, ivar->name->val + 1, &ele);
+		add_assoc_zval_ex(return_value, ivar->name->val + 1, ivar->name->len - 1, &ele);
 	}
 }
 
