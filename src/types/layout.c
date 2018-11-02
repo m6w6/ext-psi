@@ -30,7 +30,7 @@
 
 struct psi_layout *psi_layout_init(size_t pos, size_t len, struct psi_layout *bfw)
 {
-	struct psi_layout *l = calloc(1, sizeof(*l));
+	struct psi_layout *l = pecalloc(1, sizeof(*l), 1);
 
 	assert(pos + len + (intptr_t) bfw);
 

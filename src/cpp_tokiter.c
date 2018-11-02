@@ -290,7 +290,7 @@ static size_t psi_cpp_tokiter_expand_tokens(struct psi_cpp *cpp,
 	if (tokens && psi_plist_count(tokens)) {
 		size_t i = 0, n = 0;
 		bool stringify = false, paste = false;
-		struct psi_token *tok, **exp_tokens = calloc(psi_plist_count(tokens), sizeof(*exp_tokens));
+		struct psi_token *tok, **exp_tokens = pecalloc(psi_plist_count(tokens), sizeof(*exp_tokens), 1);
 
 		while (psi_plist_get(tokens, i++, &tok)) {
 			struct psi_token *new_tok;
@@ -367,7 +367,7 @@ static struct psi_plist **psi_cpp_tokiter_read_call_tokens(
 		struct psi_cpp *cpp, size_t arg_count)
 {
 	size_t arg_index = 0, lparens = 1, rparens = 0;
-	struct psi_plist **arg_tokens = calloc(arg_count, sizeof(*arg_tokens));
+	struct psi_plist **arg_tokens = pecalloc(arg_count, sizeof(*arg_tokens), 1);
 	struct psi_plist *free_tokens = psi_plist_init((psi_plist_dtor) psi_token_free);
 	struct psi_token *tok;
 

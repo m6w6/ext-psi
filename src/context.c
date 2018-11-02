@@ -113,7 +113,7 @@ PHP_MSHUTDOWN_FUNCTION(psi_context)
 struct psi_context *psi_context_init(struct psi_context *C, struct psi_context_ops *ops, psi_error_cb error, unsigned flags)
 {
 	if (!C) {
-		C = malloc(sizeof(*C));
+		C = pemalloc(sizeof(*C), 1);
 	}
 	memset(C, 0, sizeof(*C));
 
@@ -144,7 +144,7 @@ static bool psi_context_add(struct psi_context *C, struct psi_parser *P)
 	struct psi_data *D;
 	struct psi_validate_scope scope = {0};
 
-	C->data = realloc(C->data, (C->count + 1) * sizeof(*C->data));
+	C->data = safe_perealloc(C->data, (C->count + 1), sizeof(*C->data), 0, 1);
 	D = psi_data_exchange(&C->data[C->count++], PSI_DATA(P));
 
 	psi_validate_scope_ctor(&scope);

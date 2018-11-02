@@ -29,7 +29,7 @@
 struct psi_let_calloc *psi_let_calloc_init(struct psi_num_exp *nmemb,
 		struct psi_num_exp *size)
 {
-	struct psi_let_calloc *alloc = calloc(1, sizeof(*alloc));
+	struct psi_let_calloc *alloc = pecalloc(1, sizeof(*alloc), 1);
 
 	alloc->nmemb = nmemb;
 	alloc->size = size;

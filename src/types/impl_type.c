@@ -28,7 +28,7 @@
 
 struct psi_impl_type *psi_impl_type_init(token_t type, zend_string *name)
 {
-	struct psi_impl_type *t = calloc(1, sizeof(*t));
+	struct psi_impl_type *t = pecalloc(1, sizeof(*t), 1);
 
 	t->type = type;
 	t->name = zend_string_copy(name);

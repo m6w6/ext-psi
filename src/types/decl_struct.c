@@ -31,7 +31,7 @@
 struct psi_decl_struct* psi_decl_struct_init(zend_string *name,
 		struct psi_plist *args)
 {
-	struct psi_decl_struct *s = calloc(1, sizeof(*s));
+	struct psi_decl_struct *s = pecalloc(1, sizeof(*s), 1);
 	s->name = zend_string_copy(name);
 	s->args = args;
 	return s;

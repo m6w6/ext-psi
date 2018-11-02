@@ -218,7 +218,7 @@ static size_t psi_ffi_struct_type_pad(ffi_type **els, size_t padding) {
 	size_t i;
 
 	for (i = 0; i < padding; ++i) {
-		ffi_type *pad = malloc(sizeof(*pad));
+		ffi_type *pad = pemalloc(sizeof(*pad), 1);
 
 		memcpy(pad, &ffi_type_schar, sizeof(*pad));
 		*els++ = pad;
@@ -240,7 +240,7 @@ static inline void psi_ffi_struct_type_element(
 		struct psi_ffi_struct_element_storage *s, struct psi_decl_arg *darg,
 		ffi_type *darg_type) {
 
-	ffi_type *type, **tmp;
+	ffi_type *type;
 	size_t padding;
 
 	if (darg->layout->pos == s->last_arg_pos) {
@@ -249,7 +249,7 @@ static inline void psi_ffi_struct_type_element(
 	}
 	s->last_arg_pos = darg->layout->pos;
 
-	type = malloc(sizeof(*type));
+	type = pemalloc(sizeof(*type), 1);
 	*type = *darg_type;
 
 	if (type->alignment > s->max_align) {
@@ -260,13 +260,7 @@ static inline void psi_ffi_struct_type_element(
 	if ((padding = psi_offset_padding(darg->layout->pos - s->offset, type->alignment))) {
 		if (s->nels + padding + 1 > s->argc) {
 			s->argc += padding;
-			tmp = realloc(s->els, (s->argc + 1) * sizeof(*s->els));
-			if (tmp) {
-				s->els = tmp;
-			} else {
-				free(s->els);
-				abort();
-			}
+			s->els = safe_perealloc(s->els, (s->argc + 1), sizeof(*s->els), 0, 1);
 			s->els[s->argc] = NULL;
 		}
 		psi_ffi_struct_type_pad(&s->els[s->nels], padding);
@@ -281,13 +275,12 @@ static inline void psi_ffi_struct_type_element(
 
 static ffi_type **psi_ffi_struct_type_elements(struct psi_decl_struct *strct) {
 	size_t i = 0;
-	ffi_type **tmp;
 	struct psi_decl_arg *darg;
 	struct psi_ffi_struct_element_storage s = {0};
 
 	s.last_arg_pos = -1;
 	s.argc = psi_plist_count(strct->args);
-	s.els = calloc(s.argc + 1, sizeof(*s.els));
+	s.els = pecalloc(s.argc + 1, sizeof(*s.els), 1);
 
 	while (psi_plist_get(strct->args, i++, &darg)) {
 		psi_ffi_struct_type_element(&s, darg, psi_ffi_decl_arg_type(darg));
@@ -300,13 +293,7 @@ static ffi_type **psi_ffi_struct_type_elements(struct psi_decl_struct *strct) {
 	if (s.offset < strct->size) { /* WTF? */
 		size_t padding = strct->size - s.offset;
 
-		tmp = realloc(s.els, (padding + s.argc + 1) * sizeof(*s.els));
-		if (tmp) {
-			s.els = tmp;
-		} else {
-			free(s.els);
-			return NULL;
-		}
+		s.els = safe_perealloc(s.els, (padding + s.argc + 1), sizeof(*s.els), 0, 1);
 		psi_ffi_struct_type_pad(&s.els[s.nels], padding);
 		s.els[s.argc + padding] = NULL;
 	}
@@ -324,7 +311,7 @@ static inline ffi_type *psi_ffi_decl_type(struct psi_decl_type *type) {
 	switch (real->type) {
 	case PSI_T_STRUCT:
 		if (!real->real.strct->engine.type) {
-			ffi_type *strct = calloc(1, sizeof(ffi_type));
+			ffi_type *strct = pecalloc(1, sizeof(ffi_type), 1);
 
 			strct->type = FFI_TYPE_STRUCT;
 			strct->size = 0;
@@ -363,9 +350,9 @@ static inline ffi_type *psi_ffi_decl_func_array_type(struct psi_decl *fn) {
 
 	s.last_arg_pos = -1;
 	s.argc = fn->func->var->array_size;
-	s.els = calloc(s.argc + 1, sizeof(*s.els));
+	s.els = pecalloc(s.argc + 1, sizeof(*s.els), 1);
 
-	info->rv_array = calloc(1, sizeof(ffi_type));
+	info->rv_array = pecalloc(1, sizeof(ffi_type), 1);
 	info->rv_array->type = FFI_TYPE_STRUCT;
 	info->rv_array->size = 0;
 	info->rv_array->elements = s.els;
@@ -434,7 +421,7 @@ static inline struct psi_ffi_decl_info *psi_ffi_decl_init(struct psi_decl *decl)
 		int rc;
 		size_t i, c = psi_plist_count(decl->args);
 		struct psi_decl_arg *arg;
-		struct psi_ffi_decl_info *info = calloc(1, sizeof(*info) + 2 * c * sizeof(void *));
+		struct psi_ffi_decl_info *info = pecalloc(1, sizeof(*info) + 2 * c * sizeof(void *), 1);
 
 		decl->info = info;
 
@@ -507,7 +494,7 @@ static inline void psi_ffi_callback_init(struct psi_ffi_impl_info *impl_info,
 			decl_info = psi_ffi_decl_init(cb->decl);
 		}
 
-		cb_info = calloc(1, sizeof(*cb_info));
+		cb_info = pecalloc(1, sizeof(*cb_info), 1);
 		cb_info->impl_info = impl_info;
 		cb_info->let_exp = let_exp;
 		rc = psi_ffi_prep_closure(&cb_info->closure, &cb_info->code,
@@ -585,7 +572,7 @@ static inline void psi_ffi_callback_dtor(struct psi_let_exp *let_exp) {
 static inline struct psi_ffi_impl_info *psi_ffi_impl_init(struct psi_impl *impl,
 		struct psi_context *C) {
 	struct psi_ffi_context *context = C->context;
-	struct psi_ffi_impl_info *info = calloc(1, sizeof(*info));
+	struct psi_ffi_impl_info *info = pecalloc(1, sizeof(*info), 1);
 	struct psi_let_stmt *let;
 	ffi_status rc;
 	size_t l = 0;
@@ -652,7 +639,7 @@ struct psi_ffi_extvar_info {
 };
 
 static inline ffi_status psi_ffi_extvar_init(struct psi_decl_extvar *evar) {
-	struct psi_ffi_extvar_info *info = calloc(1, sizeof(*info));
+	struct psi_ffi_extvar_info *info = pecalloc(1, sizeof(*info), 1);
 	ffi_status rc;
 
 	evar->info = info;
@@ -700,7 +687,7 @@ static inline struct psi_ffi_context *psi_ffi_context_init(struct psi_ffi_contex
 	ffi_status rc;
 
 	if (!L) {
-		L = malloc(sizeof(*L));
+		L = pemalloc(sizeof(*L), 1);
 	}
 	memset(L, 0, sizeof(*L));
 
@@ -770,7 +757,7 @@ static zend_function_entry *psi_ffi_compile(struct psi_context *C)
 	}
 
 	if (C->impls) {
-		zfe = calloc(psi_plist_count(C->impls) + 1, sizeof(*zfe));
+		zfe = pecalloc(psi_plist_count(C->impls) + 1, sizeof(*zfe), 1);
 
 		while (psi_plist_get(C->impls, i++, &impl)) {
 			zend_function_entry *zf = &zfe[nf];
@@ -885,7 +872,7 @@ static ZEND_RESULT_CODE psi_ffi_load()
 #if HAVE_INT128
 	ffi_type *i128, *u128;
 
-	i128 = calloc(1, 3*sizeof(ffi_type));
+	i128 = pecalloc(1, 3*sizeof(ffi_type), 1);
 	i128->type = FFI_TYPE_STRUCT;
 	i128->size = 0;
 	i128->elements = (ffi_type **) (i128 + 1);
@@ -894,7 +881,7 @@ static ZEND_RESULT_CODE psi_ffi_load()
 
 	ffi_type_sint128 = i128;
 
-	u128 = calloc(1, 3*sizeof(ffi_type));
+	u128 = pecalloc(1, 3*sizeof(ffi_type), 1);
 	u128->type = FFI_TYPE_STRUCT;
 	u128->size = 0;
 	u128->elements = (ffi_type **) (u128 + 1);

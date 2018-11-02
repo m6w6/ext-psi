@@ -39,7 +39,7 @@
 
 struct psi_number *psi_number_init(token_t t, void *num, unsigned flags)
 {
-	struct psi_number *exp = calloc(1, sizeof(*exp));
+	struct psi_number *exp = pecalloc(1, sizeof(*exp), 1);
 
 	exp->flags = flags;
 	switch (exp->type = t) {
@@ -104,7 +104,7 @@ struct psi_number *psi_number_init(token_t t, void *num, unsigned flags)
 
 struct psi_number *psi_number_copy(struct psi_number *exp)
 {
-	struct psi_number *num = calloc(1, sizeof(*num));
+	struct psi_number *num = pecalloc(1, sizeof(*num), 1);
 
 	*num = *exp;
 

@@ -30,7 +30,7 @@
 
 struct psi_assert_stmt *psi_assert_stmt_init(enum psi_assert_kind kind, struct psi_num_exp *exp)
 {
-	struct psi_assert_stmt *stmt = calloc(1, sizeof(*stmt));
+	struct psi_assert_stmt *stmt = pecalloc(1, sizeof(*stmt), 1);
 
 	stmt->kind = kind;
 	stmt->exp = exp;
@@ -91,7 +91,7 @@ char *psi_assert_stmt_message(struct psi_assert_stmt *stmt)
 	dprintf(fd, "Failed asserting that ");
 	psi_num_exp_dump(fd, stmt->exp);
 	fstat(fd, &sb);
-	message = malloc(sb.st_size + 1);
+	message = pemalloc(sb.st_size + 1, 1);
 	lseek(fd, 0, SEEK_SET);
 	read(fd, message, sb.st_size);
 	close(fd);

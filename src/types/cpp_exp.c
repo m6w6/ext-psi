@@ -32,7 +32,7 @@
 
 struct psi_cpp_exp *psi_cpp_exp_init(token_t type, void *data)
 {
-	struct psi_cpp_exp *exp = calloc(1, sizeof(*exp));
+	struct psi_cpp_exp *exp = pecalloc(1, sizeof(*exp), 1);
 
 	switch ((exp->type = type)) {
 	case PSI_T_WARNING:

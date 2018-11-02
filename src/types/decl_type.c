@@ -32,7 +32,7 @@
 
 struct psi_decl_type *psi_decl_type_init(token_t type, zend_string *name)
 {
-	struct psi_decl_type *t = calloc(1, sizeof(*t));
+	struct psi_decl_type *t = pecalloc(1, sizeof(*t), 1);
 	t->type = type;
 	t->name = zend_string_copy(name);
 	return t;
@@ -55,7 +55,7 @@ void psi_decl_type_free(struct psi_decl_type **type_ptr)
 
 struct psi_decl_type *psi_decl_type_copy(struct psi_decl_type *src)
 {
-	struct psi_decl_type *dst = calloc(1, sizeof(*dst));
+	struct psi_decl_type *dst = pecalloc(1, sizeof(*dst), 1);
 
 	dst->type = src->type;
 	if (src->name) {

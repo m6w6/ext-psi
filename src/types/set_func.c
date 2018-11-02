@@ -29,7 +29,7 @@
 struct psi_set_func *psi_set_func_init(token_t type, zend_string *name,
 		struct psi_decl_var *var)
 {
-	struct psi_set_func *func = calloc(1, sizeof(*func));
+	struct psi_set_func *func = pecalloc(1, sizeof(*func), 1);
 
 	func->type = type;
 	func->name = zend_string_copy(name);

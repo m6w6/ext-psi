@@ -33,7 +33,7 @@
 struct psi_decl_var *psi_decl_var_init(zend_string *name, unsigned pl,
 		unsigned as)
 {
-	struct psi_decl_var *v = calloc(1, sizeof(*v));
+	struct psi_decl_var *v = pecalloc(1, sizeof(*v), 1);
 	if (name) {
 		v->name = zend_string_copy(name);
 		v->fqn = zend_string_copy(name);
@@ -45,7 +45,7 @@ struct psi_decl_var *psi_decl_var_init(zend_string *name, unsigned pl,
 
 struct psi_decl_var *psi_decl_var_copy(struct psi_decl_var *src)
 {
-	struct psi_decl_var *dest = calloc(1, sizeof(*dest));
+	struct psi_decl_var *dest = pecalloc(1, sizeof(*dest), 1);
 
 	*dest = *src;
 

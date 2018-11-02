@@ -31,7 +31,7 @@
 struct psi_cpp_macro_call *psi_cpp_macro_call_init(zend_string *name,
 		struct psi_plist *args)
 {
-	struct psi_cpp_macro_call *call = calloc(1, sizeof(*call));
+	struct psi_cpp_macro_call *call = pecalloc(1, sizeof(*call), 1);
 	call->name = zend_string_copy(name);
 	call->args = args;
 	return call;
@@ -40,7 +40,7 @@ struct psi_cpp_macro_call *psi_cpp_macro_call_init(zend_string *name,
 struct psi_cpp_macro_call *psi_cpp_macro_call_copy(
 		struct psi_cpp_macro_call *call)
 {
-	struct psi_cpp_macro_call *copy = calloc(1, sizeof(*copy));
+	struct psi_cpp_macro_call *copy = pecalloc(1, sizeof(*copy), 1);
 	copy->name = zend_string_copy(call->name);
 	if (call->token) {
 		copy->token = psi_token_copy(call->token);

@@ -33,7 +33,7 @@
 
 struct psi_set_exp *psi_set_exp_init(enum psi_set_exp_kind kind, void *data)
 {
-	struct psi_set_exp *val = calloc(1, sizeof(*val));
+	struct psi_set_exp *val = pecalloc(1, sizeof(*val), 1);
 
 	switch (val->kind = kind) {
 	case PSI_SET_FUNC:

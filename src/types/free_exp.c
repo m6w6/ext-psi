@@ -29,7 +29,7 @@
 
 struct psi_free_exp *psi_free_exp_init(zend_string *func, struct psi_plist *vars)
 {
-	struct psi_free_exp *f = calloc(1, sizeof(*f));
+	struct psi_free_exp *f = pecalloc(1, sizeof(*f), 1);
 	f->func = zend_string_copy(func);
 	f->vars = vars;
 	return f;
@@ -99,7 +99,7 @@ bool psi_free_exp_validate(struct psi_data *data, struct psi_free_exp *exp,
 	}
 
 	/* now check for known vars */
-	exp->let = calloc(psi_plist_count(exp->vars), sizeof(*exp->let));
+	exp->let = pecalloc(psi_plist_count(exp->vars), sizeof(*exp->let), 1);
 	for (i = 0; psi_plist_get(exp->vars, i, &free_var); ++i) {
 		if (!psi_impl_get_decl_arg(scope->impl, free_var)) {
 			data->error(data, free_var->token, PSI_WARNING,

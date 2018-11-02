@@ -36,7 +36,7 @@
 
 struct psi_decl_extvar *psi_decl_extvar_init(struct psi_decl_arg *arg)
 {
-	struct psi_decl_extvar *evar = calloc(1, sizeof(*evar));
+	struct psi_decl_extvar *evar = pecalloc(1, sizeof(*evar), 1);
 
 	evar->arg = arg;
 	return evar;

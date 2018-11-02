@@ -28,7 +28,7 @@
 
 struct psi_let_stmt *psi_let_stmt_init(struct psi_let_exp *exp)
 {
-	struct psi_let_stmt *let = calloc(1, sizeof(*let));
+	struct psi_let_stmt *let = pecalloc(1, sizeof(*let), 1);
 	let->exp = exp;
 
 	return let;

@@ -31,7 +31,7 @@
 struct psi_cpp_macro_decl *psi_cpp_macro_decl_init(struct psi_plist *sig,
 		struct psi_plist *tokens, struct psi_num_exp *exp)
 {
-	struct psi_cpp_macro_decl *macro = calloc(1, sizeof(*macro));
+	struct psi_cpp_macro_decl *macro = pecalloc(1, sizeof(*macro), 1);
 	macro->exp = exp;
 	macro->sig = sig;
 	macro->tokens = tokens;

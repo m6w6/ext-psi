@@ -29,7 +29,7 @@
 struct psi_decl_enum_item *psi_decl_enum_item_init(zend_string *name,
 		struct psi_num_exp *num)
 {
-	struct psi_decl_enum_item *i = calloc(1, sizeof(*i));
+	struct psi_decl_enum_item *i = pecalloc(1, sizeof(*i), 1);
 	i->name = zend_string_copy(name);
 	i->num = num;
 	return i;

@@ -29,7 +29,7 @@
 
 struct psi_set_stmt *psi_set_stmt_init(struct psi_set_exp *exp)
 {
-	struct psi_set_stmt *set = calloc(1, sizeof(*set));
+	struct psi_set_stmt *set = pecalloc(1, sizeof(*set), 1);
 	set->exp = exp;
 	return set;
 }

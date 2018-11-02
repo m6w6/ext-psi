@@ -36,7 +36,7 @@ struct psi_num_exp *psi_num_exp_init_ternary(token_t op,
 		struct psi_num_exp *cond, struct psi_num_exp *truthy,
 		struct psi_num_exp *falsy)
 {
-	struct psi_num_exp *exp = calloc(1, sizeof(*exp));
+	struct psi_num_exp *exp = pecalloc(1, sizeof(*exp), 1);
 
 	exp->op = op;
 	exp->data.t.cond = cond;
@@ -49,7 +49,7 @@ struct psi_num_exp *psi_num_exp_init_ternary(token_t op,
 struct psi_num_exp *psi_num_exp_init_binary(token_t op,
 		struct psi_num_exp *lhs, struct psi_num_exp *rhs)
 {
-	struct psi_num_exp *exp = calloc(1, sizeof(*exp));
+	struct psi_num_exp *exp = pecalloc(1, sizeof(*exp), 1);
 
 	exp->op = op;
 	exp->data.b.lhs = lhs;
@@ -61,7 +61,7 @@ struct psi_num_exp *psi_num_exp_init_binary(token_t op,
 struct psi_num_exp *psi_num_exp_init_unary(token_t op,
 		struct psi_num_exp *u)
 {
-	struct psi_num_exp *exp = calloc(1, sizeof(*exp));
+	struct psi_num_exp *exp = pecalloc(1, sizeof(*exp), 1);
 
 	exp->op = op;
 	exp->data.u = u;
@@ -71,7 +71,7 @@ struct psi_num_exp *psi_num_exp_init_unary(token_t op,
 
 struct psi_num_exp *psi_num_exp_init_num(struct psi_number *n)
 {
-	struct psi_num_exp *exp = calloc(1, sizeof(*exp));
+	struct psi_num_exp *exp = pecalloc(1, sizeof(*exp), 1);
 
 	exp->op = PSI_T_NUMBER;
 	exp->data.n = n;
@@ -82,7 +82,7 @@ struct psi_num_exp *psi_num_exp_init_num(struct psi_number *n)
 struct psi_num_exp *psi_num_exp_init_cast(struct psi_decl_type *typ,
 		struct psi_num_exp *num)
 {
-	struct psi_num_exp *exp = calloc(1, sizeof(*exp));
+	struct psi_num_exp *exp = pecalloc(1, sizeof(*exp), 1);
 
 	exp->op = PSI_T_CAST;
 	exp->data.c.typ = typ;
@@ -99,7 +99,7 @@ struct psi_num_exp *psi_num_exp_copy(struct psi_num_exp *exp)
 		return NULL;
 	}
 
-	cpy = malloc(sizeof(*cpy));
+	cpy = pemalloc(sizeof(*cpy), 1);
 	*cpy = *exp;
 
 	switch (exp->op) {

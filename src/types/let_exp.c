@@ -42,7 +42,7 @@ struct psi_let_exp *psi_let_exp_init_ex(struct psi_decl_var *var,
 
 struct psi_let_exp *psi_let_exp_init(enum psi_let_exp_kind kind, void *data)
 {
-	struct psi_let_exp *let = calloc(1, sizeof(*let));
+	struct psi_let_exp *let = pecalloc(1, sizeof(*let), 1);
 	switch (let->kind = kind) {
 	case PSI_LET_NULL:
 		assert(!data);

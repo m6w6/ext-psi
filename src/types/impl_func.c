@@ -29,7 +29,7 @@
 struct psi_impl_func *psi_impl_func_init(zend_string *name,
 		struct psi_plist *args, struct psi_impl_type *type)
 {
-	struct psi_impl_func *func = calloc(1, sizeof(*func));
+	struct psi_impl_func *func = pecalloc(1, sizeof(*func), 1);
 
 	func->name = zend_string_copy(name);
 	func->args = args ? : psi_plist_init((psi_plist_dtor) psi_impl_arg_free);

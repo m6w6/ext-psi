@@ -29,7 +29,7 @@
 struct psi_let_callback *psi_let_callback_init(struct psi_let_func *func,
 		struct psi_plist *args, struct psi_plist *cb_args)
 {
-	struct psi_let_callback *cb = calloc(1, sizeof(*cb));
+	struct psi_let_callback *cb = pecalloc(1, sizeof(*cb), 1);
 	cb->func = func;
 	cb->args = args;
 	cb->cb_args = cb_args;

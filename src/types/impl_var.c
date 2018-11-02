@@ -30,7 +30,7 @@
 
 struct psi_impl_var *psi_impl_var_init(zend_string *name, bool is_reference)
 {
-	struct psi_impl_var *var = calloc(1, sizeof(*var));
+	struct psi_impl_var *var = pecalloc(1, sizeof(*var), 1);
 
 	var->name = zend_string_copy(name);
 	var->fqn = zend_string_copy(name);
@@ -41,7 +41,7 @@ struct psi_impl_var *psi_impl_var_init(zend_string *name, bool is_reference)
 
 struct psi_impl_var *psi_impl_var_copy(struct psi_impl_var *var)
 {
-	struct psi_impl_var *cpy = malloc(sizeof(*cpy));
+	struct psi_impl_var *cpy = pemalloc(sizeof(*cpy), 1);
 
 	*cpy = *var;
 

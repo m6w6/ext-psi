@@ -29,7 +29,7 @@
 struct psi_impl_arg *psi_impl_arg_init(struct psi_impl_type *type,
 		struct psi_impl_var *var, struct psi_impl_def_val *def)
 {
-	struct psi_impl_arg *arg = calloc(1, sizeof(*arg));
+	struct psi_impl_arg *arg = pecalloc(1, sizeof(*arg), 1);
 	arg->type = type;
 	arg->var = var;
 	arg->var->arg = arg;

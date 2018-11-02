@@ -29,7 +29,7 @@
 
 struct psi_return_stmt *psi_return_stmt_init(struct psi_return_exp *exp)
 {
-	struct psi_return_stmt *ret = calloc(1, sizeof(*ret));
+	struct psi_return_stmt *ret = pecalloc(1, sizeof(*ret), 1);
 	ret->exp = exp;
 	return ret;
 }

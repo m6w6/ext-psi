@@ -31,7 +31,7 @@
 struct psi_decl_union* psi_decl_union_init(zend_string *name,
 		struct psi_plist *args)
 {
-	struct psi_decl_union *u = calloc(1, sizeof(*u));
+	struct psi_decl_union *u = pecalloc(1, sizeof(*u), 1);
 	u->name = zend_string_copy(name);
 	u->args = args;
 	return u;

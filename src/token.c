@@ -41,7 +41,7 @@ struct psi_token *psi_token_init(token_t token_typ, const char *token_txt,
 {
 	struct psi_token *T;
 
-	T = calloc(1, sizeof(*T));
+	T = pecalloc(1, sizeof(*T), 1);
 	T->type = token_typ;
 	T->col = col;
 	T->line = line;
@@ -67,7 +67,7 @@ void psi_token_free(struct psi_token **token_ptr) {
 }
 
 struct psi_token *psi_token_copy(struct psi_token *src) {
-	struct psi_token *ptr = malloc(sizeof(*ptr));
+	struct psi_token *ptr = pemalloc(sizeof(*ptr), 1);
 
 	*ptr = *src;
 #if PSI_DEBUG_TOKEN_ALLOC
@@ -88,7 +88,7 @@ struct psi_token *psi_token_cat(const char *sep, unsigned argc, ...) {
 	va_list argv;
 	unsigned i;
 	size_t sep_len = sep ? strlen(sep) : 0;
-	struct psi_token *T = malloc(sizeof(*T));
+	struct psi_token *T = pemalloc(sizeof(*T), 1);
 	smart_str text = {0};
 
 	va_start(argv, argc);

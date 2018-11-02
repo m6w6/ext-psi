@@ -96,7 +96,7 @@ zend_internal_arg_info *psi_internal_arginfo(struct psi_impl *impl)
 	zend_internal_function_info *fi;
 	struct psi_impl_arg *iarg;
 
-	aip = calloc(argc + 1 + !!impl->func->vararg, sizeof(*aip));
+	aip = pecalloc(argc + 1 + !!impl->func->vararg, sizeof(*aip), 1);
 
 	fi = (zend_internal_function_info *) &aip[0];
 #ifdef ZEND_TYPE_ENCODE

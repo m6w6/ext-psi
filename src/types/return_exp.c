@@ -30,7 +30,7 @@
 struct psi_return_exp *psi_return_exp_init(struct psi_decl_var *func,
 		struct psi_plist *args, struct psi_set_exp *set)
 {
-	struct psi_return_exp *exp = calloc(1, sizeof(*exp));
+	struct psi_return_exp *exp = pecalloc(1, sizeof(*exp), 1);
 
 	exp->func = func;
 	exp->args = args;

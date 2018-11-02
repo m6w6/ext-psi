@@ -31,7 +31,7 @@
 struct psi_impl *psi_impl_init(struct psi_impl_func *func,
 		struct psi_plist *stmts)
 {
-	struct psi_impl *impl = calloc(1, sizeof(*impl));
+	struct psi_impl *impl = pecalloc(1, sizeof(*impl), 1);
 	size_t i = 0;
 	struct psi_token **abstract_stmt;
 

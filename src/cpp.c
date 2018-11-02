@@ -98,7 +98,7 @@ static void free_cpp_def(zval *p)
 
 struct psi_cpp *psi_cpp_init(struct psi_parser *P)
 {
-	struct psi_cpp *cpp = calloc(1, sizeof(*cpp));
+	struct psi_cpp *cpp = pecalloc(1, sizeof(*cpp), 1);
 
 	cpp->parser = P;
 	zend_hash_init(&cpp->once, 0, NULL, NULL, 1);

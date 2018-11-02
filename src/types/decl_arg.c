@@ -31,7 +31,7 @@
 struct psi_decl_arg *psi_decl_arg_init(struct psi_decl_type *type,
 		struct psi_decl_var *var)
 {
-	struct psi_decl_arg *arg = calloc(1, sizeof(*arg));
+	struct psi_decl_arg *arg = pecalloc(1, sizeof(*arg), 1);
 	arg->token = var->token;
 	arg->type = type;
 	arg->var = var;

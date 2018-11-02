@@ -31,7 +31,7 @@
 
 struct psi_impl_def_val *psi_impl_def_val_init(token_t t, void *data)
 {
-	struct psi_impl_def_val *def = calloc(1, sizeof(*def));
+	struct psi_impl_def_val *def = pecalloc(1, sizeof(*def), 1);
 
 	switch ((def->type = t)) {
 	case PSI_T_TRUE:

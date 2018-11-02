@@ -35,7 +35,7 @@ struct psi_data *psi_data_ctor_with_dtors(struct psi_data *data,
 		psi_error_cb error, unsigned flags)
 {
 	if (!data) {
-		data = calloc(1, sizeof(*data));
+		data = pecalloc(1, sizeof(*data), 1);
 	}
 
 	data->error = error;
@@ -78,7 +78,7 @@ struct psi_data *psi_data_ctor(struct psi_data *data, psi_error_cb error,
 		unsigned flags)
 {
 	if (!data) {
-		data = calloc(1, sizeof(*data));
+		data = pecalloc(1, sizeof(*data), 1);
 	}
 
 	data->error = error;
@@ -121,7 +121,7 @@ struct psi_data *psi_data_ctor(struct psi_data *data, psi_error_cb error,
 struct psi_data *psi_data_exchange(struct psi_data *dest, struct psi_data *src)
 {
 	if (!dest) {
-		dest = malloc(sizeof(*dest));
+		dest = pemalloc(sizeof(*dest), 1);
 	}
 	*dest = *src;
 	memset(src, 0, sizeof(*src));

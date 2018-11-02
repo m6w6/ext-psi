@@ -29,7 +29,7 @@
 struct psi_const *psi_const_init(struct psi_impl_type *type, zend_string *name,
 		struct psi_impl_def_val *val)
 {
-	struct psi_const *c = calloc(1, sizeof(*c));
+	struct psi_const *c = pecalloc(1, sizeof(*c), 1);
 
 	if (name->val[0] == '\\') {
 		c->name = zend_string_init(&name->val[1], name->len-1, 1);

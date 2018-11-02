@@ -38,7 +38,7 @@
 
 struct psi_decl *psi_decl_init(struct psi_decl_arg *func, struct psi_plist *args)
 {
-	struct psi_decl *d = calloc(1, sizeof(*d));
+	struct psi_decl *d = pecalloc(1, sizeof(*d), 1);
 
 	d->func = func;
 	d->args = args;

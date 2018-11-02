@@ -28,7 +28,7 @@
 
 struct psi_free_stmt *psi_free_stmt_init(struct psi_plist *exps)
 {
-	struct psi_free_stmt *f = calloc(1, sizeof(*f));
+	struct psi_free_stmt *f = pecalloc(1, sizeof(*f), 1);
 	f->exps = exps;
 	return f;
 }
