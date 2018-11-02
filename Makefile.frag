@@ -36,7 +36,8 @@ psi-generated: $(PHP_PSI_GENERATED)
 PHP_PSI_DEPEND = $(patsubst $(PHP_PSI_SRCDIR)/%,$(PHP_PSI_BUILDDIR)/%,$(PHP_PSI_SOURCES:.c=.dep))
 
 $(PHP_PSI_BUILDDIR)/%.dep: $(PHP_PSI_SRCDIR)/%.c | $(PHP_PSI_GENERATED)
-	$(CC) -MM -MG -MF $@ -MT $(patsubst $(PHP_PSI_SRCDIR)/%,$(PHP_PSI_BUILDDIR)/%,$(@:.dep=.lo)) \
+	@echo Generating $@ ...
+	@$(CC) -MM -MG -MF $@ -MT $(patsubst $(PHP_PSI_SRCDIR)/%,$(PHP_PSI_BUILDDIR)/%,$(@:.dep=.lo)) \
 		$(CPPFLAGS) $(DEFS) $(INCLUDES) $< \
 			|| touch $@
 

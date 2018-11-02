@@ -113,13 +113,13 @@ bool psi_impl_def_val_validate(struct psi_data *data,
 				val->type = PSI_T_FLOAT;
 				type->type = PSI_T_FLOAT;
 				zend_string_release(type->name);
-				type->name = zend_string_init(ZEND_STRL("float"), 1);
+				type->name = zend_string_init_interned(ZEND_STRL("float"), 1);
 				break;
 			default:
 				val->type = PSI_T_INT;
 				type->type = PSI_T_INT;
 				zend_string_release(type->name);
-				type->name = zend_string_init(ZEND_STRL("int"), 1);
+				type->name = zend_string_init_interned(ZEND_STRL("int"), 1);
 				break;
 			}
 			psi_num_exp_free(&val->data.num);

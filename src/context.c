@@ -196,6 +196,9 @@ zend_function_entry *psi_context_compile(struct psi_context *C)
 			case PSI_T_STRING:
 			case PSI_T_QUOTED_STRING:
 				ZVAL_NEW_STR(&zc.value, zend_string_copy(c->val->ival.zend.str));
+				if (ZSTR_IS_INTERNED(Z_STR(zc.value))) {
+					Z_TYPE_FLAGS(zc.value) = 0;
+				}
 				break;
 			default:
 				assert(0);

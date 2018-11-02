@@ -199,7 +199,7 @@ zval *psi_call_frame_sub_argument(struct psi_call_frame *frame,
 	if (!iarg) {
 		struct psi_call_frame_argument *frame_arg;
 		impl_val empty_val = {0};
-		zend_string *type_str = zend_string_init(ZEND_STRL("mixed"), 1);
+		zend_string *type_str = zend_string_init_interned(ZEND_STRL("mixed"), 1);
 		struct psi_impl_arg *carg_spec = psi_impl_arg_init(
 				psi_impl_type_init(PSI_T_MIXED, type_str),
 				psi_impl_var_copy(inner_var), NULL);

@@ -31,7 +31,7 @@ struct psi_decl_abi *psi_decl_abi_init(zend_string *convention)
 	struct psi_decl_abi *abi = calloc(1, sizeof(*abi));
 	abi->convention = convention
 			? zend_string_copy(convention)
-			: zend_string_init(ZEND_STRL("default"), 1);
+			: zend_string_init_interned(ZEND_STRL("default"), 1);
 	return abi;
 }
 

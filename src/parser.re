@@ -100,7 +100,7 @@ struct psi_parser_input *psi_parser_open_file(struct psi_parser *P, const char *
 	}
 
 	fb->length = sb.st_size;
-	fb->file = zend_string_init(filename, strlen(filename), 1);
+	fb->file = zend_string_init_interned(filename, strlen(filename), 1);
 
 	return fb;
 }
@@ -120,7 +120,7 @@ struct psi_parser_input *psi_parser_open_string(struct psi_parser *P, const char
 	memset(sb->buffer + length, 0, YYMAXFILL);
 
 	sb->length = length;
-	sb->file = zend_string_init("<stdin>", strlen("<stdin>"), 1);
+	sb->file = zend_string_init_interned("<stdin>", strlen("<stdin>"), 1);
 
 	return sb;
 }
@@ -169,7 +169,7 @@ void psi_parser_postprocess(struct psi_parser *P)
 				smart_str_appendl_ex(&ns_name, ZEND_STRL("psi\\"), 1);
 				smart_str_append_ex(&ns_name, name, 1);
 				name_str = smart_str_extract(&ns_name);
-				type_str = zend_string_init(ZEND_STRL("<eval number>"), 1);
+				type_str = zend_string_init_interned(ZEND_STRL("<eval number>"), 1);
 
 				num = psi_num_exp_copy(scope.macro->exp);
 				def = psi_impl_def_val_init(PSI_T_NUMBER, num);
@@ -194,7 +194,7 @@ void psi_parser_postprocess(struct psi_parser *P)
 						smart_str_appendl_ex(&ns_name, ZEND_STRL("psi\\"), 1);
 						smart_str_append_ex(&ns_name, name, 1);
 						name_str = smart_str_extract(&ns_name);
-						type_str = zend_string_init(ZEND_STRL("string"), 1);
+						type_str = zend_string_init_interned(ZEND_STRL("string"), 1);
 
 						type = psi_impl_type_init(PSI_T_STRING, type_str);
 						def = psi_impl_def_val_init(PSI_T_QUOTED_STRING, t->text);
@@ -261,17 +261,17 @@ void psi_parser_free(struct psi_parser **P)
 	++I->lines
 
 #define NEWTOKEN(t) \
-	token = psi_token_init(t, tok, cur - tok, tok - eol + 1, I->lines, I->file); \
+	if (t == PSI_T_COMMENT || t == PSI_T_WHITESPACE) { \
+		token = psi_token_init(t, "", 0, tok - eol + 1, I->lines, I->file); \
+	} else { \
+		token = psi_token_init(t, tok, cur - tok, tok - eol + 1, I->lines, I->file); \
+	} \
 	tokens = psi_plist_add(tokens, &token); \
 	if (P->flags & PSI_DEBUG) { \
 		fprintf(stderr, "PSI< "); \
 		psi_token_dump(2, token); \
 	}
 
-union int_suffix {
-	char s[4];
-	uint32_t i;
-};
 
 struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input *I)
 {

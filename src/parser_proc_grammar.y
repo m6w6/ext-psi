@@ -947,7 +947,7 @@ decl_type_simple[type]:
 }
 ;
 
-decl_real_type[type]:
+decl_real_type[type]: /* allocated, so free, if set */
 	FLOAT[type_] {
 	$type = psi_token_copy($type_);
 }
@@ -964,7 +964,7 @@ int_signed[i]:
 |	UNSIGNED
 ;
 
-int_width[i]:
+int_width[i]: /* allocated, so free, if set */
 	SHORT {
 	$i = psi_token_copy($SHORT);
 }
@@ -976,7 +976,7 @@ int_width[i]:
 }
 ;
 
-decl_int_type[type]:
+decl_int_type[type]: /* allocated, so free, if set */
 	CHAR {
 	$type = psi_token_copy($CHAR);
 }
@@ -1002,7 +1002,7 @@ decl_int_type[type]:
 }
 ;
 
-int_signed_types[type]:
+int_signed_types[type]: /* allocated, so free, if set */
 	%empty {
 	$type = NULL;
 }
@@ -1046,7 +1046,7 @@ signed_long_types[type]:
 |	LONG INT
 ;
 
-int_width_types[type]:
+int_width_types[type]: /* allocated, so free, if set */
 	%empty {
 	$type = NULL;
 }

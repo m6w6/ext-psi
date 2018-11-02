@@ -115,7 +115,7 @@ void psi_decl_extvar_dump(int fd, struct psi_decl_extvar *evar)
 
 struct psi_decl *psi_decl_extvar_setter(struct psi_decl_extvar *evar)
 {
-	zend_string *type_str = zend_string_init(ZEND_STRS("void"), 1);
+	zend_string *type_str = zend_string_init_interned(ZEND_STRS("void"), 1);
 	struct psi_decl_type *func_type = psi_decl_type_init(PSI_T_VOID, type_str);
 	struct psi_decl_var *func_var = psi_decl_var_copy(evar->arg->var);
 	struct psi_decl_arg *func = psi_decl_arg_init(func_type, func_var);
