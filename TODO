@@ -2,10 +2,8 @@
 * let the various list types be hashtables where appropriate
 * check out jit-dynamic
 * fix arginfo with nullable types
-* pemalloc
 * think about a better system for EXTVARs, separate \set and \get functions are clunky
-* impl_def_val: allow num_exp
 * fix right recursion of let_exp and set_exp
 * improve varargs support, currently it's impossible to map e.g. curl_easy_setopt
-* cpp: asm aliasing/redirects
 * impl_var.name: remove leading '$'
+* really solve the array/pointer problem

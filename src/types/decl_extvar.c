@@ -134,7 +134,7 @@ struct psi_decl *psi_decl_extvar_setter(struct psi_decl_extvar *evar)
 	smart_str_append_ex(&name, func_var->name, 1);
 	smart_str_appendl_ex(&name, ZEND_STRL("_set"), 1);
 	zend_string_release(func_var->name);
-	func_var->name = smart_str_extract(&name);
+	func_var->name = zend_new_interned_string(smart_str_extract(&name));
 
 	decl->extvar = 1;
 
@@ -157,7 +157,7 @@ struct psi_decl *psi_decl_extvar_getter(struct psi_decl_extvar *evar)
 	smart_str_append_ex(&name, func_var->name, 1);
 	smart_str_appendl_ex(&name, ZEND_STRL("_get"), 1);
 	zend_string_release(func_var->name);
-	func_var->name = smart_str_extract(&name);
+	func_var->name = zend_new_interned_string(smart_str_extract(&name));
 
 	decl->extvar = 1;
 
