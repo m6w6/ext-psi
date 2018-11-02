@@ -49,7 +49,6 @@ struct psi_cpp {
 };
 
 struct psi_cpp *psi_cpp_init(struct psi_parser *parser);
-bool psi_cpp_load_defaults(struct psi_cpp *cpp);
 bool psi_cpp_process(struct psi_cpp *cpp, struct psi_plist **tokens);
 void psi_cpp_free(struct psi_cpp **cpp_ptr);
 

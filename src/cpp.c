@@ -36,10 +36,60 @@
 
 #include "php_psi.h"
 
+HashTable psi_cpp_defaults;
+
+PHP_MINIT_FUNCTION(psi_cpp)
+{
+	struct psi_parser parser;
+	struct psi_parser_input *predef;
+
+	if (!psi_parser_init(&parser, NULL, 0)) {
+		return FAILURE;
+	}
+
+	if (!(predef = psi_parser_open_string(&parser, psi_cpp_predef, sizeof(psi_cpp_predef) - 1))) {
+		psi_parser_dtor(&parser);
+		return FAILURE;
+	}
+
+	if (!psi_parser_parse(&parser, predef)) {
+		psi_parser_input_free(&predef);
+		psi_parser_dtor(&parser);
+		return FAILURE;
+	}
+	psi_parser_input_free(&predef);
+
+	zend_hash_init(&psi_cpp_defaults, 0, NULL, NULL, 1);
+	zend_hash_copy(&psi_cpp_defaults, &parser.preproc->defs, NULL);
+
+	psi_parser_dtor(&parser);
+
+	return SUCCESS;
+}
+
+PHP_MSHUTDOWN_FUNCTION(psi_cpp)
+{
+	struct psi_cpp_macro_decl *macro;
+
+	ZEND_HASH_FOREACH_PTR(&psi_cpp_defaults, macro)
+	{
+		psi_cpp_macro_decl_free(&macro);
+	}
+	ZEND_HASH_FOREACH_END();
+
+	zend_hash_destroy(&psi_cpp_defaults);
+
+	return SUCCESS;
+}
+
 static void free_cpp_def(zval *p)
 {
 	if (Z_TYPE_P(p) == IS_PTR) {
-		psi_cpp_macro_decl_free((void *) &Z_PTR_P(p));
+		struct psi_cpp_macro_decl *macro = Z_PTR_P(p);
+
+		if (!zend_hash_exists(&psi_cpp_defaults, macro->token->text)) {
+			psi_cpp_macro_decl_free(&macro);
+		}
 	}
 }
 
@@ -48,23 +98,11 @@ struct psi_cpp *psi_cpp_init(struct psi_parser *P)
 	struct psi_cpp *cpp = calloc(1, sizeof(*cpp));
 
 	cpp->parser = P;
-	zend_hash_init(&cpp->defs, 0, NULL, free_cpp_def, 1);
 	zend_hash_init(&cpp->once, 0, NULL, NULL, 1);
+	zend_hash_init(&cpp->defs, 0, NULL, free_cpp_def, 1);
+	zend_hash_copy(&cpp->defs, &psi_cpp_defaults, NULL);
 
 	return cpp;
-}
-
-bool psi_cpp_load_defaults(struct psi_cpp *cpp)
-{
-	struct psi_parser_input *predef;
-
-	if ((predef = psi_parser_open_string(cpp->parser, psi_cpp_predef, sizeof(psi_cpp_predef) - 1))) {
-		bool parsed = psi_parser_parse(cpp->parser, predef);
-		psi_parser_input_free(&predef);
-		return parsed;
-	}
-
-	return false;
 }
 
 #if PSI_CPP_DEBUG

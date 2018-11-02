@@ -34,6 +34,7 @@
 #include "php_psi.h"
 #include "token.h"
 #include "parser.h"
+#include "cpp.h"
 
 #define PSI_CPP_SEARCH
 #include "php_psi_cpp.h"
@@ -311,6 +312,7 @@ static ZEND_RESULT_CODE psi_ops_load()
 	return SUCCESS;
 }
 
+PHP_MINIT_FUNCTION(psi_cpp);
 static PHP_MINIT_FUNCTION(psi)
 {
 	zend_class_entry ce = {0};
@@ -329,6 +331,10 @@ static PHP_MINIT_FUNCTION(psi)
 	psi_object_handlers.offset = XtOffsetOf(psi_object, std);
 	psi_object_handlers.free_obj = psi_object_free;
 	psi_object_handlers.clone_obj = NULL;
+
+	if (SUCCESS != PHP_MINIT(psi_cpp)(type, module_number)) {
+		return FAILURE;
+	}
 
 	if (SUCCESS != psi_ops_load()) {
 		return FAILURE;
@@ -350,6 +356,7 @@ static PHP_MINIT_FUNCTION(psi)
 	return SUCCESS;
 }
 
+PHP_MSHUTDOWN_FUNCTION(psi_cpp);
 static PHP_MSHUTDOWN_FUNCTION(psi)
 {
 	if (psi_check_env("PSI_DUMP")) {
@@ -361,6 +368,8 @@ static PHP_MSHUTDOWN_FUNCTION(psi)
 	if (PSI_G(ops)->free) {
 		PSI_G(ops)->free();
 	}
+
+	PHP_MSHUTDOWN(psi_cpp)(type, module_number);
 
 	UNREGISTER_INI_ENTRIES();
 

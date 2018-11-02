@@ -49,8 +49,6 @@ struct psi_parser *psi_parser_init(struct psi_parser *P, psi_error_cb error, uns
 
 	P->preproc = psi_cpp_init(P);
 
-	psi_cpp_load_defaults(P->preproc);
-
 	return P;
 }
 
@@ -271,6 +269,8 @@ void psi_parser_free(struct psi_parser **P)
 		fprintf(stderr, "PSI< "); \
 		psi_token_dump(2, token); \
 	}
+
+
 
 
 struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input *I)
