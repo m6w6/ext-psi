@@ -35,13 +35,65 @@
 #define PSI_SILENT 0x2
 
 #include <stdarg.h>
+#include <dlfcn.h>
 
-#define PSI_DEBUG_PRINT(ctx, msg, ...) do { \
+#ifndef RTLD_NEXT
+# define RTLD_NEXT ((void *) -1l)
+#endif
+#ifndef RTLD_DEFAULT
+# define RTLD_DEFAULT ((void *) 0)
+#endif
+
+static inline void *psi_dlsym(struct psi_plist *dllist, const char *name, const char *redir)
+{
+	void *dl, *sym = NULL;
+	const char *test = redir ?: name;
+
+again:
+	if (dllist) {
+		size_t i = 0;
+
+		while (!sym && psi_plist_get(dllist, i++, &dl)) {
+			sym = dlsym(dl, test);
+		}
+	}
+	if (!sym) {
+		sym = dlsym(RTLD_DEFAULT, test);
+	}
+	if (!sym && test == redir) {
+		test = name;
+		goto again;
+	}
+
+	return sym;
+}
+
+#define PSI_DEBUG_PRINT(ctx, ...) do { \
 	if ((ctx) && (PSI_DATA(ctx)->flags & PSI_DEBUG)) { \
-		fprintf(stderr, msg, __VA_ARGS__); \
+		dprintf(PSI_DATA(ctx)->debug_fd, __VA_ARGS__); \
 	} \
 } while(0)
+#define PSI_DEBUG_PRINTV(ctx, msg, argv) do { \
+	if ((ctx) && (PSI_DATA(ctx)->flags & PSI_DEBUG)) { \
+		vdprintf(PSI_DATA(ctx)->debug_fd, msg, argv); \
+	} \
+} while(0)
+#define PSI_DEBUG_DUMP(ctx, dump_func, ...) do { \
+	if ((ctx) && (PSI_DATA(ctx)->flags & PSI_DEBUG)) { \
+		dump_func(PSI_DATA(ctx)->debug_fd, __VA_ARGS__); \
+	} \
+} while (0)
 
+union psi_dump_arg {
+	void *hn;
+	int fd;
+};
+typedef void (*psi_dump_cb)(union psi_dump_arg, const char *msg, ...);
+struct psi_dump {
+	union psi_dump_arg ctx;
+	psi_dump_cb fun;
+};
+#define PSI_DUMP(dump, ...) (dump)->fun((dump)->ctx, __VA_ARGS__)
 
 #define PSI_DATA(D) ((struct psi_data *) (D))
 
@@ -58,7 +110,8 @@
 	psi_error_cb error; \
 	char last_error[0x1000]; \
 	unsigned errors; \
-	unsigned flags
+	unsigned flags; \
+	int debug_fd
 
 struct psi_data {
 	PSI_DATA_MEMBERS;

@@ -37,6 +37,7 @@ struct psi_decl_extvar {
 	struct psi_decl *getter;
 	struct psi_decl *setter;
 	size_t size;
+	zend_string *redir;
 	void *sym;
 	void *info;
 };

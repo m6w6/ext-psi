@@ -63,3 +63,4 @@ tests/*/*.sh
 /php_psi_posix.h
 /types/
 /calc/
+*.bak

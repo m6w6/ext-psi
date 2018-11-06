@@ -27,9 +27,65 @@
 #include "data.h"
 
 #include "php_globals.h"
+#include "php_network.h"
 
 #include <dlfcn.h>
 #include <ctype.h>
+
+static void psi_data_ctor_internal(struct psi_data *data,
+		psi_error_cb error, unsigned flags)
+{
+	data->error = error;
+	data->flags = flags;
+
+	if (data->flags & PSI_DEBUG) {
+		char *debug = getenv("PSI_DEBUG");
+
+		if (debug) {
+			int fd = -1;
+			char *addr = strstr(debug, "://");
+
+			if (addr) {
+				addr += 3;
+			}
+			if (addr && *addr) {
+				struct sockaddr_storage sa = {0};
+				socklen_t ss = 0;
+				int rc = php_network_parse_network_address_with_port(addr,
+						strlen(addr), (struct sockaddr *) &sa, &ss);
+
+				if (SUCCESS == rc) {
+					int styp = strncmp(debug, "udp:", 4)
+							? SOCK_STREAM
+							: SOCK_DGRAM;
+					int sfam = sa.ss_family == AF_INET6
+							? ((struct sockaddr_in6 *) &sa)->sin6_family
+							: ((struct sockaddr_in *) &sa)->sin_family;
+
+					fd = socket(sfam, styp, 0);
+
+					if (fd > 0 && 0 != connect(fd, (struct sockaddr *) &sa, ss)) {
+						perror(debug);
+						close(fd);
+						fd = -1;
+					}
+				}
+			} else if (!strcmp(debug, "stdout")) {
+				fd = STDOUT_FILENO;
+			} else if (!strcmp(debug, "stderr")) {
+				fd = STDERR_FILENO;
+			} else if (!(fd = atoi(debug))) {
+				fd = open(debug, O_WRONLY|O_APPEND|O_CREAT|O_CLOEXEC, 0664);
+			}
+
+			if (fd > 0) {
+				data->debug_fd = fd;
+			} else {
+				data->debug_fd = STDERR_FILENO;
+			}
+		}
+	}
+}
 
 struct psi_data *psi_data_ctor_with_dtors(struct psi_data *data,
 		psi_error_cb error, unsigned flags)
@@ -38,8 +94,8 @@ struct psi_data *psi_data_ctor_with_dtors(struct psi_data *data,
 		data = pecalloc(1, sizeof(*data), 1);
 	}
 
-	data->error = error;
-	data->flags = flags;
+	psi_data_ctor_internal(data, error, flags);
+
 	if (!data->file.libnames) {
 		data->file.libnames = psi_plist_init((psi_plist_dtor) psi_names_free);
 	}
@@ -81,8 +137,7 @@ struct psi_data *psi_data_ctor(struct psi_data *data, psi_error_cb error,
 		data = pecalloc(1, sizeof(*data), 1);
 	}
 
-	data->error = error;
-	data->flags = flags;
+	psi_data_ctor_internal(data, error, flags);
 
 	if (!data->file.libnames) {
 		data->file.libnames = psi_plist_init(NULL);
@@ -130,6 +185,9 @@ struct psi_data *psi_data_exchange(struct psi_data *dest, struct psi_data *src)
 
 void psi_data_dtor(struct psi_data *data)
 {
+	if (data->debug_fd) {
+		close(data->debug_fd);
+	}
 	if (data->consts) {
 		psi_plist_free(data->consts);
 	}
@@ -158,27 +216,27 @@ void psi_data_dtor(struct psi_data *data)
 	psi_decl_file_dtor(&data->file);
 }
 
-void psi_data_dump(int fd, struct psi_data *D)
+void psi_data_dump(struct psi_dump *dump, struct psi_data *D)
 {
 	size_t i = 0;
 	char *libname;
 
 	if (D->file.filename) {
-		dprintf(fd, "// filename=%s (%u errors)\n", D->file.filename->val, D->errors);
+		PSI_DUMP(dump, "// filename=%s (%u errors)\n", D->file.filename->val, D->errors);
 	}
 	while (psi_plist_get(D->file.libnames, i++, &libname)) {
-		dprintf(fd, "lib \"%s\";\n", libname);
+		PSI_DUMP(dump, "lib \"%s\";\n", libname);
 	}
 	if (psi_plist_count(D->types)) {
 		size_t i = 0;
 		struct psi_decl_arg *def;
 
 		while (psi_plist_get(D->types, i++, &def)) {
-			dprintf(fd, "typedef ");
-			psi_decl_arg_dump(fd, def, 0);
-			dprintf(fd, ";\n");
+			PSI_DUMP(dump, "typedef ");
+			psi_decl_arg_dump(dump, def, 0);
+			PSI_DUMP(dump, ";\n");
 		}
-		dprintf(fd, "\n");
+		PSI_DUMP(dump, "\n");
 	}
 	if (psi_plist_count(D->unions)) {
 		size_t i = 0;
@@ -187,10 +245,10 @@ void psi_data_dump(int fd, struct psi_data *D)
 		while (psi_plist_get(D->unions, i++, &unn)) {
 			if (!psi_decl_type_is_anon(unn->name, "union")) {
 				psi_decl_union_dump(fd, unn);
-				dprintf(fd, "\n");
+				PSI_DUMP(dump, "\n");
 			}
 		}
-		dprintf(fd, "\n");
+		PSI_DUMP(dump, "\n");
 	}
 	if (psi_plist_count(D->structs)) {
 		size_t i = 0;
@@ -198,11 +256,11 @@ void psi_data_dump(int fd, struct psi_data *D)
 
 		while (psi_plist_get(D->structs, i++, &strct)) {
 			if (!psi_decl_type_is_anon(strct->name, "struct")) {
-				psi_decl_struct_dump(fd, strct);
-				dprintf(fd, "\n");
+				psi_decl_struct_dump(dump, strct);
+				PSI_DUMP(dump, "\n");
 			}
 		}
-		dprintf(fd, "\n");
+		PSI_DUMP(dump, "\n");
 	}
 	if (psi_plist_count(D->enums)) {
 		size_t i = 0;
@@ -210,21 +268,21 @@ void psi_data_dump(int fd, struct psi_data *D)
 
 		while (psi_plist_get(D->enums, i++, &enm)) {
 			if (!psi_decl_type_is_anon(enm->name, "enum")) {
-				psi_decl_enum_dump(fd, enm, 0);
-				dprintf(fd, "\n");
+				psi_decl_enum_dump(dump, enm, 0);
+				PSI_DUMP(dump, "\n");
 			}
 		}
-		dprintf(fd, "\n");
+		PSI_DUMP(dump, "\n");
 	}
 	if (psi_plist_count(D->consts)) {
 		size_t i = 0;
 		struct psi_const *c;
 
 		while (psi_plist_get(D->consts, i++, &c)) {
-			psi_const_dump(fd, c);
-			dprintf(fd, "\n");
+			psi_const_dump(dump, c);
+			PSI_DUMP(dump, "\n");
 		}
-		dprintf(fd, "\n");
+		PSI_DUMP(dump, "\n");
 	}
 	if (psi_plist_count(D->decls)) {
 		size_t i = 0;
@@ -232,33 +290,33 @@ void psi_data_dump(int fd, struct psi_data *D)
 
 		while (psi_plist_get(D->decls, i++, &decl)) {
 			if (decl->extvar) {
-				dprintf(fd, "/* extvar accessor\n");
+				PSI_DUMP(dump, "/* extvar accessor\n");
 			}
-			psi_decl_dump(fd, decl);
-			dprintf(fd, "\n");
+			psi_decl_dump(dump, decl);
+			PSI_DUMP(dump, "\n");
 			if (decl->extvar) {
-				dprintf(fd, "   extvar accessor */\n");
+				PSI_DUMP(dump, "   extvar accessor */\n");
 			}
 		}
-		dprintf(fd, "\n");
+		PSI_DUMP(dump, "\n");
 	}
 	if (psi_plist_count(D->vars)) {
 		size_t i = 0;
 		struct psi_decl_extvar *evar;
 
 		while (psi_plist_get(D->vars, i++, &evar)) {
-			psi_decl_extvar_dump(fd, evar);
+			psi_decl_extvar_dump(dump, evar);
 		}
-		dprintf(fd, "\n");
+		PSI_DUMP(dump, "\n");
 	}
 	if (psi_plist_count(D->impls)) {
 		size_t i = 0;
 		struct psi_impl *impl;
 
 		while (psi_plist_get(D->impls, i++, &impl)) {
-			psi_impl_dump(fd, impl);
-			dprintf(fd, "\n");
+			psi_impl_dump(dump, impl);
+			PSI_DUMP(dump, "\n");
 		}
-		dprintf(fd, "\n");
+		PSI_DUMP(dump, "\n");
 	}
 }

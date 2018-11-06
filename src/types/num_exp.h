@@ -75,12 +75,14 @@ struct psi_num_exp *psi_num_exp_init_cast(struct psi_decl_type *typ,
 void psi_num_exp_free(struct psi_num_exp **c_ptr);
 
 struct psi_num_exp *psi_num_exp_copy(struct psi_num_exp *exp);
+void psi_num_exp_copy_ctor(struct psi_num_exp **exp_ptr);
+
 void psi_num_exp_dump(int fd, struct psi_num_exp *exp);
 bool psi_num_exp_validate(struct psi_data *data, struct psi_num_exp *exp,
 		struct psi_validate_scope *scope);
 
 token_t psi_num_exp_exec(struct psi_num_exp *exp, impl_val *res,
-		struct psi_call_frame *frame, HashTable *defs);
+		struct psi_call_frame *frame, struct psi_cpp *cpp);
 
 struct psi_plist *psi_num_exp_tokens(struct psi_num_exp *exp,
 		struct psi_plist *list);
@@ -88,19 +90,19 @@ struct psi_plist *psi_num_exp_tokens(struct psi_num_exp *exp,
 
 #include "calc.h"
 static inline zend_long psi_num_exp_get_long(struct psi_num_exp *exp,
-		struct psi_call_frame *frame, HashTable *defs) {
+		struct psi_call_frame *frame, struct psi_cpp *cpp) {
 	impl_val res = {0};
 
-	psi_calc_cast(psi_num_exp_exec(exp, &res, frame, defs), &res,
+	psi_calc_cast(psi_num_exp_exec(exp, &res, frame, cpp), &res,
 			PSI_T_INT64, &res);
 
 	return res.i64;
 }
 static inline double psi_num_exp_get_double(struct psi_num_exp *exp,
-		struct psi_call_frame *frame, HashTable *defs) {
+		struct psi_call_frame *frame, struct psi_cpp *cpp) {
 	impl_val res = {0};
 
-	psi_calc_cast(psi_num_exp_exec(exp, &res, frame, defs), &res,
+	psi_calc_cast(psi_num_exp_exec(exp, &res, frame, cpp), &res,
 			PSI_T_DOUBLE, &res);
 
 	return res.dval;

@@ -184,9 +184,8 @@ void psi_cpp_exp_exec(struct psi_cpp_exp *exp, struct psi_cpp *cpp, struct psi_d
 			exp->token->text->val, cpp->level, cpp->skip);
 
 #if PSI_CPP_DEBUG
-	fflush(stderr);
-	dprintf(2, "PSI: CPP exec -> ");
-	psi_cpp_exp_dump(2, exp);
+	PSI_DEBUG_PRINT(cpp->parser, "PSI: CPP exec -> ");
+	PSI_DEBUG_DUMP(cpp->parser, psi_cpp_exp_dump, exp);
 #endif
 
 	switch (exp->type) {
@@ -298,21 +297,24 @@ void psi_cpp_exp_exec(struct psi_cpp_exp *exp, struct psi_cpp *cpp, struct psi_d
 	case PSI_T_INCLUDE:
 		if (!cpp->skip) {
 			if (!psi_cpp_include(cpp, exp->data.tok, PSI_CPP_INCLUDE)) {
-				D->error(D, exp->token, PSI_WARNING, "Failed to include %s", exp->data.tok->text->val);
+				D->error(D, exp->token, PSI_WARNING, "Failed to include %s: %s",
+						exp->data.tok->text->val, strerror(errno));
 			}
 		}
 		break;
 	case PSI_T_INCLUDE_NEXT:
 		if (!cpp->skip) {
 			if (!psi_cpp_include(cpp, exp->data.tok, PSI_CPP_INCLUDE_NEXT)) {
-				D->error(D, exp->token, PSI_WARNING, "Failed to include %s", exp->data.tok->text->val);
+				D->error(D, exp->token, PSI_WARNING, "Failed to include next %s: %s",
+						exp->data.tok->text->val, strerror(errno));
 			}
 		}
 		break;
 	case PSI_T_IMPORT:
 		if (!cpp->skip) {
 			if (!psi_cpp_include(cpp, exp->data.tok, PSI_CPP_INCLUDE_ONCE)) {
-				D->error(D, exp->token, PSI_WARNING, "Failed to include %s", exp->data.tok->text->val);
+				D->error(D, exp->token, PSI_WARNING, "Failed to include once %s: %s",
+						exp->data.tok->text->val, strerror(errno));
 			}
 		}
 		break;

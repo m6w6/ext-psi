@@ -47,7 +47,7 @@ struct psi_cpp_macro_call *psi_cpp_macro_call_copy(
 	}
 	if (call->args) {
 		copy->args = psi_plist_copy(call->args,
-				(void (*)(void*)) psi_token_copy_ctor);
+				(void (*)(void*)) psi_num_exp_copy_ctor);
 	}
 	return copy;
 }

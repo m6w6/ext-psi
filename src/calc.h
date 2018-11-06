@@ -30,7 +30,7 @@
 #include "types/impl_val.h"
 
 #define PRIfval ".13gF"
-#define PRIdval ".53lg"
+#define PRIdval ".53g"
 #define PRIldval ".64LgL"
 
 typedef token_t (*psi_calc)(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);

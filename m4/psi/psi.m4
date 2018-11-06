@@ -12,7 +12,7 @@ AC_DEFUN(PSI_CONFIG_INIT, [
 	AC_PROG_AWK
 	
 	AC_MSG_CHECKING(for preprocessor defaults)
-	psi_cpp_predef=`$CPP -Wp,-dM $CPPFLAGS -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 - </dev/null`
+	psi_cpp_predef=`$CPP -Wp,-dM $CPPFLAGS -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -U__BLOCKS__ - </dev/null`
 	psi_cpp_search=`$CPP -Wp,-v $CPPFLAGS -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 - </dev/null 2>&1 >/dev/null \
 		| $AWK '
 			/include.*search.*start/ { 

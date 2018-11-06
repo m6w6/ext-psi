@@ -217,7 +217,7 @@ static PHP_FUNCTION(psi_validate)
 	psi_parser_parse(&P, I);
 	psi_data_ctor(&D, P.error, P.flags);
 	psi_validate_scope_ctor(&S);
-	S.defs = &P.preproc->defs;
+	S.cpp = P.preproc;
 
 	RETVAL_BOOL(psi_validate(&S, &D, PSI_DATA(&P)));
 
@@ -269,7 +269,7 @@ static PHP_FUNCTION(psi_validate_string)
 	psi_parser_parse(&P, I);
 	psi_data_ctor(&D, P.error, P.flags);
 	psi_validate_scope_ctor(&S);
-	S.defs = &P.preproc->defs;
+	S.cpp = P.preproc;
 
 	RETVAL_BOOL(psi_validate(&S, &D, PSI_DATA(&P)));
 
@@ -286,6 +286,7 @@ static PHP_FUNCTION(psi_validate_string)
 }
 
 PHP_MINIT_FUNCTION(psi_cpp);
+PHP_MINIT_FUNCTION(psi_builtin);
 PHP_MINIT_FUNCTION(psi_context);
 static PHP_MINIT_FUNCTION(psi)
 {
@@ -305,6 +306,9 @@ static PHP_MINIT_FUNCTION(psi)
 	psi_object_handlers.free_obj = psi_object_free;
 	psi_object_handlers.clone_obj = NULL;
 
+	if (SUCCESS != PHP_MINIT(psi_builtin)(type, module_number)) {
+		return FAILURE;
+	}
 	if (SUCCESS != PHP_MINIT(psi_cpp)(type, module_number)) {
 		return FAILURE;
 	}
@@ -316,11 +320,13 @@ static PHP_MINIT_FUNCTION(psi)
 }
 
 PHP_MSHUTDOWN_FUNCTION(psi_cpp);
+PHP_MSHUTDOWN_FUNCTION(psi_builtin);
 PHP_MSHUTDOWN_FUNCTION(psi_context);
 static PHP_MSHUTDOWN_FUNCTION(psi)
 {
 	PHP_MSHUTDOWN(psi_context)(type, module_number);
 	PHP_MSHUTDOWN(psi_cpp)(type, module_number);
+	PHP_MSHUTDOWN(psi_builtin)(type, module_number);
 
 	UNREGISTER_INI_ENTRIES();
 

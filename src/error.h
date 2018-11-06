@@ -41,4 +41,9 @@ void psi_error_wrapper(struct psi_data *context, struct psi_token *t, int type, 
 void psi_error(int type, const char *fn, unsigned ln, const char *msg, ...);
 void psi_verror(int type, const char *fn, unsigned ln, const char *msg, va_list argv);
 
+union psi_debug_ctx {
+	FILE *stdio;
+	int socket;
+};
+
 #endif /* PSI_ERROR_H */

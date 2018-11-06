@@ -46,6 +46,7 @@ struct psi_number *psi_number_init(token_t t, void *num, unsigned flags)
 	case PSI_T_INT8:
 		exp->data.ival.i8 = *(int8_t *) num;
 		break;
+	case PSI_T_DEFINED:
 	case PSI_T_UINT8:
 		exp->data.ival.u8 = *(uint8_t *) num;
 		break;
@@ -84,6 +85,7 @@ struct psi_number *psi_number_init(token_t t, void *num, unsigned flags)
 	case PSI_T_NUMBER:
 	case PSI_T_NSNAME:
 	case PSI_T_DEFINE:
+	case PSI_T_CPP_HEADER:
 		exp->data.numb = zend_string_copy(num);
 		break;
 	case PSI_T_NAME:
@@ -113,6 +115,7 @@ struct psi_number *psi_number_copy(struct psi_number *exp)
 	}
 	switch (num->type) {
 	case PSI_T_INT8:
+	case PSI_T_DEFINED:
 	case PSI_T_UINT8:
 	case PSI_T_INT16:
 	case PSI_T_UINT16:
@@ -133,6 +136,7 @@ struct psi_number *psi_number_copy(struct psi_number *exp)
 	case PSI_T_NSNAME:
 	case PSI_T_DEFINE:
 	case PSI_T_QUOTED_CHAR:
+	case PSI_T_CPP_HEADER:
 		num->data.numb = zend_string_copy(num->data.numb);
 		break;
 	case PSI_T_NAME:
@@ -159,6 +163,7 @@ void psi_number_free(struct psi_number **exp_ptr)
 		psi_token_free(&exp->token);
 		switch (exp->type) {
 		case PSI_T_INT8:
+		case PSI_T_DEFINED:
 		case PSI_T_UINT8:
 		case PSI_T_INT16:
 		case PSI_T_UINT16:
@@ -182,6 +187,7 @@ void psi_number_free(struct psi_number **exp_ptr)
 		case PSI_T_NUMBER:
 		case PSI_T_DEFINE:
 		case PSI_T_QUOTED_CHAR:
+		case PSI_T_CPP_HEADER:
 			zend_string_release(exp->data.numb);
 			break;
 		case PSI_T_NAME:
@@ -201,6 +207,8 @@ struct psi_plist *psi_number_tokens(struct psi_number *exp,
 		struct psi_plist *list)
 {
 	struct psi_token *ntoken;
+	size_t i;
+
 	if (!list) {
 		list = psi_plist_init((psi_plist_dtor) psi_token_free);
 	}
@@ -247,7 +255,35 @@ struct psi_plist *psi_number_tokens(struct psi_number *exp,
 		list = psi_plist_add(list, &ntoken);
 		break;
 
+	case PSI_T_FUNCTION:
+		ntoken = psi_token_copy(exp->token);
+		list = psi_plist_add(list, &ntoken);
+		ntoken = psi_token_init(PSI_T_LPAREN, "(", 1, ntoken->col+ntoken->text->len, ntoken->line, ntoken->file);
+		list = psi_plist_add(list, &ntoken);
+		for (i = 0; i < psi_plist_count(exp->data.call->args); ++i) {
+			struct psi_num_exp *tmp_exp;
+
+			if (i) {
+				ntoken = psi_token_init(PSI_T_COMMA, ",", 1, ntoken->col+ntoken->text->len, ntoken->line, ntoken->file);
+				list = psi_plist_add(list, &ntoken);
+			}
+			if (psi_plist_get(exp->data.call->args, i, &tmp_exp)) {
+				struct psi_plist *tmp = psi_num_exp_tokens(tmp_exp, NULL);
+				list = psi_plist_add_r(list, psi_plist_count(tmp), psi_plist_eles(tmp));
+				psi_plist_top(list, &ntoken);
+				free(tmp);
+			}
+		}
+		ntoken = psi_token_init(PSI_T_RPAREN, ")", 1, ntoken->col+ntoken->text->len, ntoken->line, ntoken->file);
+		list = psi_plist_add(list, &ntoken);
+		break;
+
+	case PSI_T_DEFINED:
+		ntoken = psi_token_init(PSI_T_DEFINED, "defined", sizeof("defined")-1, exp->token->col, exp->token->line, exp->token->file);
+		list = psi_plist_add(list, &ntoken);
+		/* no break */
 	default:
+		assert(exp->token);
 		ntoken = psi_token_copy(exp->token);
 		list = psi_plist_add(list, &ntoken);
 		break;
@@ -259,59 +295,8 @@ struct psi_plist *psi_number_tokens(struct psi_number *exp,
 void psi_number_dump(int fd, struct psi_number *exp)
 {
 	switch (exp->type) {
-	case PSI_T_INT8:
-		dprintf(fd, "%" PRId8, exp->data.ival.i8);
-		break;
-	case PSI_T_UINT8:
-		dprintf(fd, "%" PRIu8, exp->data.ival.u8);
-		break;
-	case PSI_T_INT16:
-		dprintf(fd, "%" PRId16, exp->data.ival.i16);
-		break;
-	case PSI_T_UINT16:
-		dprintf(fd, "%" PRIu16, exp->data.ival.u16);
-		break;
-	case PSI_T_INT32:
-		dprintf(fd, "%" PRId32, exp->data.ival.i32);
-		break;
-	case PSI_T_UINT32:
-		dprintf(fd, "%" PRIu32, exp->data.ival.u32);
-		break;
-	case PSI_T_INT64:
-		dprintf(fd, "%" PRId64, exp->data.ival.i64);
-		break;
-	case PSI_T_UINT64:
-		dprintf(fd, "%" PRIu64, exp->data.ival.u64);
-		break;
-	case PSI_T_FLOAT:
-		if (isinf(exp->data.ival.dval)) {
-			dprintf(fd, "\\INF");
-		} else if (isnan(exp->data.ival.dval)) {
-			dprintf(fd, "\\NAN");
-		} else {
-			dprintf(fd, "%" PRIfval, exp->data.ival.dval);
-		}
-		break;
-	case PSI_T_DOUBLE:
-		if (isinf(exp->data.ival.dval)) {
-			dprintf(fd, "\\INF");
-		} else if (isnan(exp->data.ival.dval)) {
-			dprintf(fd, "\\NAN");
-		} else {
-			dprintf(fd, "%" PRIdval, exp->data.ival.dval);
-		}
-		break;
-#if HAVE_LONG_DOUBLE
-	case PSI_T_LONG_DOUBLE:
-		if (isinfl(exp->data.ival.ldval)) {
-			dprintf(fd, "\\INF");
-		} else if (isnanl(exp->data.ival.ldval)) {
-			dprintf(fd, "\\NAN");
-		} else {
-			dprintf(fd, "%" PRIldval, exp->data.ival.ldval);
-		}
-		break;
-#endif
+	case PSI_T_DEFINED:
+	CASE_IMPLVAL_NUM_PRINTF(dprintf, fd, exp->data.ival)
 	case PSI_T_NULL:
 		dprintf(fd, "NULL");
 		break;
@@ -319,6 +304,7 @@ void psi_number_dump(int fd, struct psi_number *exp)
 	case PSI_T_NSNAME:
 	case PSI_T_DEFINE:
 	case PSI_T_QUOTED_CHAR:
+	case PSI_T_CPP_HEADER:
 		dprintf(fd, "%s", exp->data.numb->val);
 		break;
 	case PSI_T_FUNCTION:
@@ -536,7 +522,12 @@ static inline bool psi_number_validate_number(struct psi_data *data, struct psi_
 			break;
 		}
 	} else {
-		switch (is_numeric_str_function(exp->data.numb, (zend_long *) &tmp, (double *) &tmp)) {
+		int type = is_numeric_string(exp->data.numb->val, exp->data.numb->len, (zend_long *) &tmp, (double *)&tmp, 0);
+		char *stop = NULL;
+		long lval;
+		unsigned long ulval;
+
+		switch (type) {
 		case IS_LONG:
 			zend_string_release(exp->data.numb);
 			exp->type = PSI_T_INT64;
@@ -548,6 +539,47 @@ static inline bool psi_number_validate_number(struct psi_data *data, struct psi_
 			exp->type = PSI_T_DOUBLE;
 			exp->data.ival.dval = tmp.dval;
 			return true;
+
+		default:
+
+			errno = 0;
+
+			stop = exp->data.numb->val + exp->data.numb->len;
+			lval = strtol(exp->data.numb->val, &stop, 0);
+			switch (lval) {
+			case 0:
+				assert(stop == exp->data.numb->val + exp->data.numb->len);
+				/* no break */
+			case LONG_MIN:
+				assert(!errno);
+				/* no break */
+			case LONG_MAX:
+				if (errno == ERANGE) {
+					errno = 0;
+
+					stop = exp->data.numb->val + exp->data.numb->len;
+					ulval = strtoul(exp->data.numb->val, &stop, 0);
+					switch (ulval) {
+					case 0:
+						assert(stop == exp->data.numb->val + exp->data.numb->len);
+					case ULONG_MAX:
+						assert(!errno);
+					default:
+						zend_string_release(exp->data.numb);
+						exp->type = PSI_T_UINT64;
+						exp->data.ival.u64 = ulval;
+						return true;
+					}
+				}
+				break;
+			default:
+				zend_string_release(exp->data.numb);
+				exp->type = PSI_T_INT64;
+				exp->data.ival.i64 = lval;
+				return true;
+			}
+
+			data->error(data, exp->token, PSI_WARNING, "Not a numeric string: '%s'", exp->data.numb->val);
 		}
 	}
 	data->error(data, exp->token, PSI_WARNING, "Expected numeric entity (parser error?)");
@@ -580,11 +612,13 @@ bool psi_number_validate(struct psi_data *data, struct psi_number *exp,
 	case PSI_T_LONG_DOUBLE:
 #endif
 	case PSI_T_ENUM:
+	case PSI_T_DEFINED:
 		return true;
 
 	case PSI_T_NAME:
-		if (scope && scope->defs && zend_hash_exists(scope->defs, exp->data.dvar->name)) {
-			return true;
+		if (scope && scope->cpp && zend_hash_exists(&scope->cpp->defs, exp->data.dvar->name)) {
+			exp->type = PSI_T_DEFINE;
+			goto define;
 		}
 		if (scope && scope->current_enum && psi_number_validate_enum(data, exp, scope)) {
 			return true;
@@ -608,13 +642,31 @@ bool psi_number_validate(struct psi_data *data, struct psi_number *exp,
 		return false;
 
 	case PSI_T_FUNCTION:
-		if (scope && scope->defs && zend_hash_exists(scope->defs, exp->data.numb)) {
+		if (scope && scope->cpp && zend_hash_exists(&scope->cpp->defs, exp->data.call->name)) {
+			size_t i, argc;
+			struct psi_cpp_macro_call *call = exp->data.call;
+
+			for (i = 0, argc = psi_plist_count(call->args); i < argc; ++i) {
+				struct psi_num_exp *arg;
+
+				if (!psi_plist_get(call->args, i, &arg)) {
+					return false;
+				}
+				if (!psi_num_exp_validate(data, arg, scope)) {
+					return false;
+				}
+			}
+			return true;
+		}
+		if (psi_builtin_exists(exp->data.call->name)) {
+			exp->data.call->builtin = psi_builtin_get(exp->data.call->name);
 			return true;
 		}
 		return false;
 
 	case PSI_T_DEFINE:
-		if (scope && scope->defs && zend_hash_exists(scope->defs, exp->data.numb)) {
+		if (scope && scope->cpp && zend_hash_exists(&scope->cpp->defs, exp->data.numb)) {
+	define: ;
 			if (!scope->macro || !zend_string_equals(scope->macro->token->text, exp->data.numb)) {
 				return true;
 			}
@@ -697,6 +749,9 @@ bool psi_number_validate(struct psi_data *data, struct psi_number *exp,
 	case PSI_T_QUOTED_CHAR:
 		return psi_number_validate_char(data, exp);
 
+	case PSI_T_CPP_HEADER:
+		return true;
+
 	default:
 		assert(0);
 	}
@@ -707,7 +762,9 @@ bool psi_number_validate(struct psi_data *data, struct psi_number *exp,
 static inline token_t psi_number_eval_constant(struct psi_number *exp,
 		impl_val *res, struct psi_call_frame *frame)
 {
-	switch (exp->data.cnst->type->type) {
+	token_t typ = exp->data.cnst->type ? exp->data.cnst->type->type : PSI_T_MIXED;
+
+	switch (typ) {
 	case PSI_T_INT:
 		res->i64 = zend_get_constant(exp->data.cnst->name)->value.lval;
 		if (frame) PSI_DEBUG_PRINT(frame->context, " %" PRIi64, res->i64);
@@ -754,28 +811,40 @@ static inline token_t psi_number_eval_decl_var(struct psi_number *exp,
 }
 
 static inline token_t psi_number_eval_define(struct psi_number *exp,
-		impl_val *res, HashTable *defs, struct psi_num_exp *rec_guard)
+		impl_val *res, struct psi_cpp *cpp, struct psi_num_exp *rec_guard)
 {
-	if (defs) {
+	if (cpp) {
 		struct psi_cpp_macro_decl *macro;
 
-		macro = zend_hash_find_ptr(defs, exp->data.numb);
+		macro = zend_hash_find_ptr(&cpp->defs, exp->data.numb);
 		if (macro && macro->exp && macro->exp != rec_guard) {
-			return psi_num_exp_exec(macro->exp, res, NULL, defs);
+			return psi_num_exp_exec(macro->exp, res, NULL, cpp);
 		}
+	}
+
+	res->u8 = 0;
+	return PSI_T_UINT8;
+}
+
+static inline token_t psi_number_eval_function(struct psi_number *exp,
+		impl_val *res, struct psi_cpp *cpp, struct psi_num_exp *rec_guard)
+{
+	if (cpp) {
+		PSI_DEBUG_PRINT(cpp->parser, "psi_number_eval(PSI_T_FUNCTION): %s\n", exp->token->text->val);
 	}
 	res->u8 = 0;
 	return PSI_T_UINT8;
 }
 
 token_t psi_number_eval(struct psi_number *exp, impl_val *res,
-		struct psi_call_frame *frame, HashTable *defs, struct psi_num_exp *rec_guard)
+		struct psi_call_frame *frame, struct psi_cpp *cpp, struct psi_num_exp *rec_guard)
 {
 	switch (exp->type) {
 	case PSI_T_INT8:
 		*res = exp->data.ival;
 		if (frame) PSI_DEBUG_PRINT(frame->context, " %" PRIi8, res->i8);
 		return PSI_T_INT8;
+	case PSI_T_DEFINED:
 	case PSI_T_UINT8:
 		*res = exp->data.ival;
 		if (frame) PSI_DEBUG_PRINT(frame->context, " %" PRIu8, res->u8);
@@ -838,9 +907,12 @@ token_t psi_number_eval(struct psi_number *exp, impl_val *res,
 		return psi_number_eval_decl_var(exp, res, frame);
 
 	case PSI_T_DEFINE:
-		return psi_number_eval_define(exp, res, defs, rec_guard);
+		return psi_number_eval_define(exp, res, cpp, rec_guard);
 
 	case PSI_T_FUNCTION:
+		return psi_number_eval_function(exp, res, cpp, rec_guard);
+
+	case PSI_T_CPP_HEADER:
 		res->u8 = 0;
 		return PSI_T_UINT8;
 

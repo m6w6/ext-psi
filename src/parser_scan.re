@@ -23,255 +23,36 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "php_psi_stdinc.h"
-#include <sys/mman.h>
-#include <assert.h>
-#include <errno.h>
-#include <stdarg.h>
-
-#include <Zend/zend_smart_str.h>
+#include <php_psi_stdinc.h>
 
 #include "parser.h"
+#include "plist.h"
 
 /*!max:re2c*/
 #ifndef YYMAXFILL
 # define YYMAXFILL 256
 #endif
 
-struct psi_parser *psi_parser_init(struct psi_parser *P, psi_error_cb error, unsigned flags)
-{
-	if (!P) {
-		P = pemalloc(sizeof(*P), 1);
-	}
-	memset(P, 0, sizeof(*P));
-
-	psi_data_ctor_with_dtors(PSI_DATA(P), error, flags);
-
-	P->preproc = psi_cpp_init(P);
-
-	return P;
-}
-
-struct psi_parser_input *psi_parser_open_file(struct psi_parser *P, const char *filename, bool report_errors)
-{
-	struct stat sb;
-	FILE *fp;
-	struct psi_parser_input *fb;
-
-	if (stat(filename, &sb)) {
-		if (report_errors) {
-			P->error(PSI_DATA(P), NULL, PSI_WARNING,
-					"Could not stat '%s': %s",
-					filename, strerror(errno));
-		}
-		return NULL;
-	}
-
-	if (!(fb = pemalloc(sizeof(*fb) + sb.st_size + YYMAXFILL, 1))) {
-		if (report_errors) {
-			P->error(PSI_DATA(P), NULL, PSI_WARNING,
-					"Could not allocate %zu bytes for reading '%s': %s",
-					sb.st_size + YYMAXFILL, filename, strerror(errno));
-		}
-		return NULL;
-	}
-
-	if (!(fp = fopen(filename, "r"))) {
-		free(fb);
-		if (report_errors) {
-			P->error(PSI_DATA(P), NULL, PSI_WARNING,
-					"Could not open '%s' for reading: %s",
-					filename, strerror(errno));
-		}
-		return NULL;
-	}
-
-	if (sb.st_size != fread(fb->buffer, 1, sb.st_size, fp)) {
-		free(fb);
-		fclose(fp);
-		if (report_errors) {
-			P->error(PSI_DATA(P), NULL, PSI_WARNING,
-					"Could not read %zu bytes from '%s': %s",
-					sb.st_size + YYMAXFILL, filename, strerror(errno));
-		}
-		return NULL;
-	}
-
-	fb->length = sb.st_size;
-	fb->file = zend_string_init_interned(filename, strlen(filename), 1);
-
-	return fb;
-}
-
-struct psi_parser_input *psi_parser_open_string(struct psi_parser *P, const char *string, size_t length)
-{
-	struct psi_parser_input *sb;
-
-	if (!(sb = pemalloc(sizeof(*sb) + length + YYMAXFILL, 1))) {
-		P->error(PSI_DATA(P), NULL, PSI_WARNING,
-				"Could not allocate %zu bytes: %s",
-				length + YYMAXFILL, strerror(errno));
-		return NULL;
-	}
-
-	memcpy(sb->buffer, string, length);
-	memset(sb->buffer + length, 0, YYMAXFILL);
-
-	sb->length = length;
-	sb->file = zend_string_init_interned("<stdin>", strlen("<stdin>"), 1);
-
-	return sb;
-}
-
-struct psi_plist *psi_parser_preprocess(struct psi_parser *P, struct psi_plist **tokens)
-{
-	if (psi_cpp_process(P->preproc, tokens)) {
-		return *tokens;
-	}
-	return NULL;
-}
-
-bool psi_parser_process(struct psi_parser *P, struct psi_plist *tokens, size_t *processed)
-{
-	if (psi_plist_count(tokens)) {
-		return 0 == psi_parser_proc_parse(P, tokens, processed);
-	}
-	return true;
-}
-
-void psi_parser_postprocess(struct psi_parser *P)
-{
-	unsigned flags;
-	zend_string *name;
-	struct psi_validate_scope scope = {0};
-
-	psi_validate_scope_ctor(&scope);
-	scope.defs = &P->preproc->defs;
-
-	flags = P->flags;
-	P->flags |= PSI_SILENT;
-
-	/* register const macros */
-	ZEND_HASH_FOREACH_STR_KEY_PTR(&P->preproc->defs, name, scope.macro)
-	{
-		if (scope.macro->sig) {
-		} else if (scope.macro->exp) {
-			if (psi_num_exp_validate(PSI_DATA(P), scope.macro->exp, &scope)) {
-				struct psi_impl_type *type;
-				struct psi_impl_def_val *def;
-				struct psi_const *cnst;
-				struct psi_num_exp *num;
-				smart_str ns_name = {0};
-				zend_string *name_str, *type_str;
-
-				smart_str_appendl_ex(&ns_name, ZEND_STRL("psi\\"), 1);
-				smart_str_append_ex(&ns_name, name, 1);
-				name_str = smart_str_extract(&ns_name);
-				type_str = zend_string_init_interned(ZEND_STRL("<eval number>"), 1);
-
-				num = psi_num_exp_copy(scope.macro->exp);
-				def = psi_impl_def_val_init(PSI_T_NUMBER, num);
-				type = psi_impl_type_init(PSI_T_NUMBER, type_str);
-				cnst = psi_const_init(type, name_str, def);
-				P->consts = psi_plist_add(P->consts, &cnst);
-				zend_string_release(name_str);
-				zend_string_release(type_str);
-			}
-		} else {
-			if (psi_plist_count(scope.macro->tokens) == 1) {
-				struct psi_token *t;
-
-				if (psi_plist_get(scope.macro->tokens, 0, &t)) {
-					if (t->type == PSI_T_QUOTED_STRING) {
-						struct psi_impl_type *type;
-						struct psi_impl_def_val *def;
-						struct psi_const *cnst;
-						smart_str ns_name = {0};
-						zend_string *name_str, *type_str;
-
-						smart_str_appendl_ex(&ns_name, ZEND_STRL("psi\\"), 1);
-						smart_str_append_ex(&ns_name, name, 1);
-						name_str = smart_str_extract(&ns_name);
-						type_str = zend_string_init_interned(ZEND_STRL("string"), 1);
-
-						type = psi_impl_type_init(PSI_T_STRING, type_str);
-						def = psi_impl_def_val_init(PSI_T_QUOTED_STRING, t->text);
-						cnst = psi_const_init(type, name_str, def);
-						P->consts = psi_plist_add(P->consts, &cnst);
-						zend_string_release(name_str);
-						zend_string_release(type_str);
-					}
-				}
-			}
-		}
-	}
-	ZEND_HASH_FOREACH_END();
-
-	P->flags = flags;
-
-	psi_validate_scope_dtor(&scope);
-}
-
-bool psi_parser_parse(struct psi_parser *P, struct psi_parser_input *I)
-{
-	struct psi_plist *scanned, *preproc;
-	size_t processed = 0;
-
-	if (!(scanned = psi_parser_scan(P, I))) {
-		return false;
-	}
-
-	if (!(preproc = psi_parser_preprocess(P, &scanned))) {
-		psi_plist_free(scanned);
-		return false;
-	}
-
-	if (!psi_parser_process(P, preproc, &processed)) {
-		psi_plist_free(preproc);
-		return false;
-	}
-
-	psi_parser_postprocess(P);
-
-	psi_plist_free(preproc);
-	return true;
-}
-
-void psi_parser_dtor(struct psi_parser *P)
-{
-	psi_cpp_free(&P->preproc);
-	psi_data_dtor(PSI_DATA(P));
-
-	memset(P, 0, sizeof(*P));
-}
-
-void psi_parser_free(struct psi_parser **P)
-{
-	if (*P) {
-		psi_parser_dtor(*P);
-		free(*P);
-		*P = NULL;
-	}
+size_t psi_parser_maxfill(void) {
+	return YYMAXFILL;
 }
 
 #define NEWLINE() \
 	eol = cur; \
 	++I->lines
 
-#define NEWTOKEN(t) \
+#define NEWTOKEN(t) do { \
 	if (t == PSI_T_COMMENT || t == PSI_T_WHITESPACE) { \
 		token = psi_token_init(t, "", 0, tok - eol + 1, I->lines, I->file); \
 	} else { \
 		token = psi_token_init(t, tok, cur - tok, tok - eol + 1, I->lines, I->file); \
 	} \
 	tokens = psi_plist_add(tokens, &token); \
-	if (P->flags & PSI_DEBUG) { \
-		fprintf(stderr, "PSI< "); \
-		psi_token_dump(2, token); \
-	}
+	PSI_DEBUG_PRINT(P, "PSI: scanned < "); \
+	PSI_DEBUG_DUMP(P, psi_token_dump, token); \
+} while(0)
 
-
-
+#define CHECKEOF() if (cur >= lim - YYMAXFILL) goto done
 
 struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input *I)
 {
@@ -285,7 +66,7 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input 
 	PSI_DEBUG_PRINT(P, "PSI: scanning %s\n", I->file->val);
 
 	tok = mrk = eol = cur = I->buffer;
-	lim = I->buffer + I->length;
+	lim = I->buffer + I->length + YYMAXFILL;
 	I->lines = 1;
 	tokens = psi_plist_init((psi_plist_dtor) psi_token_free);
 
@@ -304,7 +85,7 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input 
 		re2c:define:YYLIMIT = lim;
 		re2c:define:YYMARKER = mrk;
 		re2c:define:YYCTXMARKER = ctxmrk;
-		re2c:define:YYFILL = "if (cur >= lim) goto done;";
+		re2c:define:YYFILL = "CHECKEOF();";
 		re2c:yyfill:parameter = 0;
 
 		W = [a-zA-Z0-9_\x80-\xff];
@@ -326,18 +107,18 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input 
 		FLT_DEC_CONST = (FLT_DEC_NUM ("." [0-9]*)? 'e' [+-]? [0-9]+) | (FLT_DEC_NUM "." [0-9]*) | ("." [0-9]+);
 		FLT_CONST = (FLT_DEC_CONST | FLT_HEX_CONST);
 
-		[+-]? INT_CONST						{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_INT; goto start; }
-		[+-]? INT_CONST / 'u'				{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_INT | PSI_NUMBER_U; cur += 1; goto start; }
-		[+-]? INT_CONST / 'l'				{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_INT | PSI_NUMBER_L; cur += 1; goto start; }
-		[+-]? INT_CONST / ('lu' | 'ul')		{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_INT | PSI_NUMBER_UL; cur += 2; goto start; }
-		[+-]? INT_CONST / ('llu' | 'ull')	{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_INT | PSI_NUMBER_ULL; cur += 3; goto start; }
+		INT_CONST					{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_INT; goto start; }
+		INT_CONST / 'u'				{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_INT | PSI_NUMBER_U; cur += 1; goto start; }
+		INT_CONST / 'l'				{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_INT | PSI_NUMBER_L; cur += 1; goto start; }
+		INT_CONST / ('lu' | 'ul')	{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_INT | PSI_NUMBER_UL; cur += 2; goto start; }
+		INT_CONST / ('llu' | 'ull')	{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_INT | PSI_NUMBER_ULL; cur += 3; goto start; }
 
-		[+-]? FLT_CONST					{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_FLT; goto start; }
-		[+-]? FLT_CONST / 'f'			{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_FLT | PSI_NUMBER_F; cur += 1; goto start; }
-		[+-]? FLT_CONST / 'l'			{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_FLT | PSI_NUMBER_L; cur += 1; goto start; }
-		[+-]? FLT_CONST	/ 'df'			{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_FLT | PSI_NUMBER_DF; cur += 2; goto start; }
-		[+-]? FLT_CONST	/ 'dd'			{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_FLT | PSI_NUMBER_DD; cur += 2; goto start; }
-		[+-]? FLT_CONST	/ 'dl'			{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_FLT | PSI_NUMBER_DL; cur += 2; goto start; }
+		FLT_CONST					{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_FLT; goto start; }
+		FLT_CONST / 'f'				{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_FLT | PSI_NUMBER_F; cur += 1; goto start; }
+		FLT_CONST / 'l'				{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_FLT | PSI_NUMBER_L; cur += 1; goto start; }
+		FLT_CONST	/ 'df'			{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_FLT | PSI_NUMBER_DF; cur += 2; goto start; }
+		FLT_CONST	/ 'dd'			{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_FLT | PSI_NUMBER_DD; cur += 2; goto start; }
+		FLT_CONST	/ 'dl'			{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_FLT | PSI_NUMBER_DL; cur += 2; goto start; }
 
 		"'"				{ escaped = false; tok += 1; goto character; }
 		"\""			{ escaped = false; tok += 1; goto string; }
@@ -387,10 +168,10 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input 
 		"?"				{ NEWTOKEN(PSI_T_IIF); goto start; }
 		"pragma"		{ NEWTOKEN(PSI_T_PRAGMA); goto start; }
 		"pragma" W+ "once"	{ NEWTOKEN(PSI_T_PRAGMA_ONCE); goto start; }
-		"__inline"		{ NEWTOKEN(PSI_T_CPP_INLINE); goto start; }
+		"__"? "inline"	{ NEWTOKEN(PSI_T_CPP_INLINE); goto start; }
 		"__restrict"	{ NEWTOKEN(PSI_T_CPP_RESTRICT); goto start; }
 		"__extension__"	{ NEWTOKEN(PSI_T_CPP_EXTENSION); goto start; }
-		"__asm__"		{ NEWTOKEN(PSI_T_CPP_ASM); goto start; }
+		"__asm" ("__")?	{ NEWTOKEN(PSI_T_CPP_ASM); goto start; }
 		"volatile"		{ NEWTOKEN(PSI_T_VOLATILE); goto start; }
 		"sizeof"		{ NEWTOKEN(PSI_T_SIZEOF); goto start; }
 		"line"			{ NEWTOKEN(PSI_T_LINE); goto start; }
@@ -466,8 +247,8 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input 
 		CPP_ATTRIBUTE	{ parens = 2; goto cpp_attribute; }
 		EOL				{ NEWTOKEN(PSI_T_EOL); NEWLINE(); goto start; }
 		SP+				{ NEWTOKEN(PSI_T_WHITESPACE); goto start; }
-		[^]				{ NEWTOKEN(-2); goto error; }
-		*				{ NEWTOKEN(-1); goto error; }
+		[^]				{ CHECKEOF(); NEWTOKEN(-2); goto error; }
+		*				{ CHECKEOF(); NEWTOKEN(-1); goto error; }
 
 		*/
 
@@ -523,7 +304,7 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input 
 	comment_sl: ;
 		/*!re2c
 
-		EOL	{ NEWTOKEN(PSI_T_COMMENT); NEWLINE(); goto start; }
+		EOL	{ NEWTOKEN(PSI_T_COMMENT); tok = cur - 1; NEWTOKEN(PSI_T_EOL); NEWLINE(); goto start; }
 		*	{ goto comment_sl; }
 
 		*/
@@ -545,7 +326,7 @@ error: ;
 	psi_plist_free(tokens);
 	return NULL;
 
-done:
+done: ;
 
 	PSI_DEBUG_PRINT(P, "PSI: EOF cur=%p lim=%p\n", cur, lim);
 

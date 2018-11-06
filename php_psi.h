@@ -47,7 +47,7 @@ extern zend_module_entry psi_module_entry;
 
 static inline int psi_check_env(const char *var) {
 	char *set = getenv(var);
-	return (set && *set && '0' != *set);
+	return (set && *set && (*set != '0' || set[1]));
 }
 
 typedef struct psi_object {

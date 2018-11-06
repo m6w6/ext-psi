@@ -1,5 +1,5 @@
 /*******************************************************************************
- Copyright (c) 2016, Michael Wallner <mike@php.net>.
+ Copyright (c) 2018, Michael Wallner <mike@php.net>.
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -23,54 +23,20 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef PSI_PARSER_H
-#define PSI_PARSER_H
-
-struct psi_parser;
-
-#include "parser_proc.h"
-#undef YYDEBUG
-
-#include "data.h"
-#include "token.h"
-#include "types.h"
-#include "cpp.h"
+#ifndef PSI_BUILTIN_H
+#define PSI_BUILTIN_H
 
 struct psi_cpp;
+struct psi_plist;
+struct psi_token;
 
-struct psi_parser {
-	PSI_DATA_MEMBERS;
-
-	struct psi_cpp *preproc;
+struct psi_builtin {
+	zend_string *name;
+	bool (*func)(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args_list, struct psi_plist **res);
+	struct psi_cpp_macro_decl *decl;
 };
 
-struct psi_parser_input {
-	size_t length;
-	zend_string *file;
-	unsigned lines;
-	char buffer[1];
-};
+bool psi_builtin_exists(zend_string *name);
+struct psi_builtin *psi_builtin_get(zend_string *name);
 
-static inline void psi_parser_input_free(struct psi_parser_input **I) {
-	if (*I) {
-		struct psi_parser_input *i = *I;
-
-		*I = NULL;
-		zend_string_release(i->file);
-		free(i);
-	}
-}
-
-struct psi_parser *psi_parser_init(struct psi_parser *P, psi_error_cb error, unsigned flags);
-struct psi_parser_input *psi_parser_open_file(struct psi_parser *P, const char *filename, bool report_errors);
-struct psi_parser_input *psi_parser_open_string(struct psi_parser *P, const char *string, size_t length);
-size_t psi_parser_maxfill(void);
-struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input *I);
-struct psi_plist *psi_parser_preprocess(struct psi_parser *P, struct psi_plist **tokens);
-bool psi_parser_process(struct psi_parser *P, struct psi_plist *tokens, size_t *processed);
-bool psi_parser_parse(struct psi_parser *P, struct psi_parser_input *I);
-void psi_parser_dtor(struct psi_parser *P);
-void psi_parser_free(struct psi_parser **P);
-
-
-#endif
+#endif /* PSI_BUILTIN_H */

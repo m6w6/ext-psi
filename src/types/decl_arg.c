@@ -57,17 +57,17 @@ void psi_decl_arg_free(struct psi_decl_arg **arg_ptr)
 	}
 }
 
-void psi_decl_arg_dump(int fd, struct psi_decl_arg *arg, unsigned level)
+void psi_decl_arg_dump(struct psi_dump *dump, struct psi_decl_arg *arg, unsigned level)
 {
 	if (arg->type->type == PSI_T_FUNCTION) {
-		psi_decl_type_dump(fd, arg->type->real.func->func->type, level);
+		psi_decl_type_dump(dump, arg->type->real.func->func->type, level);
 		if (arg->type->real.func->func->type->type == PSI_T_FUNCTION) {
-			dprintf(fd, "(");
+			PSI_DUMP(dump, "(");
 		}
-		dprintf(fd, " %s(*%s)",
+		PSI_DUMP(dump, " %s(*%s)",
 				psi_t_indirection(arg->var->pointer_level - !! arg->var->array_size),
 				arg->var->name->val);
-		dprintf(fd, "(");
+		PSI_DUMP(dump, "(");
 		if (arg->type->real.func->args) {
 			size_t j = 0;
 			struct psi_decl_arg *farg;
@@ -75,40 +75,40 @@ void psi_decl_arg_dump(int fd, struct psi_decl_arg *arg, unsigned level)
 			++level;
 			while (psi_plist_get(arg->type->real.func->args, j++, &farg)) {
 				if (j > 1) {
-					dprintf(fd, ", ");
+					PSI_DUMP(dump, ", ");
 				}
-				psi_decl_arg_dump(fd, farg, level);
+				psi_decl_arg_dump(dump, farg, level);
 			}
 			--level;
 			if (arg->type->real.func->varargs) {
-				dprintf(fd, ", ...");
+				PSI_DUMP(dump, ", ...");
 			}
 		}
-		dprintf(fd, ")");
+		PSI_DUMP(dump, ")");
 		if (arg->type->real.func->func->type->type == PSI_T_FUNCTION) {
 			struct psi_decl *decl = arg->type->real.func->func->type->real.func;
 
-			dprintf(fd, "(");
+			PSI_DUMP(dump, "(");
 			if (decl->args) {
 				size_t i;
 				struct psi_decl_arg *arg;
 
 				for (i = 0; psi_plist_get(decl->args, i, &arg); ++i) {
 					if (i) {
-						dprintf(fd, ", ");
+						PSI_DUMP(dump, ", ");
 					}
-					psi_decl_arg_dump(fd, arg, 0);
+					psi_decl_arg_dump(dump, arg, 0);
 				}
 				if (decl->varargs) {
-					dprintf(fd, ", ...");
+					PSI_DUMP(dump, ", ...");
 				}
 			}
-			dprintf(fd, "))");
+			PSI_DUMP(dump, "))");
 		}
 	} else {
-		psi_decl_type_dump(fd, arg->type, level);
-		dprintf(fd, " ");
-		psi_decl_var_dump(fd, arg->var);
+		psi_decl_type_dump(dump, arg->type, level);
+		PSI_DUMP(dump, " ");
+		psi_decl_var_dump(dump, arg->var);
 	}
 }
 

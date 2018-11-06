@@ -1,4 +1,6 @@
+#ifdef linux
 lib "crypt";
+#endif
 
 #include <stdlib.h>
 
@@ -19,7 +21,7 @@ function psi\ldiv(int $numerator, int $denominator) : array {
 	let numerator = intval($numerator);
 	let denominator = intval($denominator);
 	pre_assert denominator != 0;
-	return ldiv(numerator, denominator) 
+	return ldiv(numerator, denominator)
 		as to_array(ldiv, to_int(quot), to_int(rem));
 }
 
@@ -27,14 +29,14 @@ function psi\lldiv(int $numerator, int $denominator) : array {
 	let numerator = intval($numerator);
 	let denominator = intval($denominator);
 	pre_assert denominator != 0;
-	return lldiv(numerator, denominator) 
+	return lldiv(numerator, denominator)
 		as to_array(lldiv, to_int(quot), to_int(rem));
 }
 
 function psi\strtold(string $str, string &$end = null) : float {
 	let nptr = strval($str);
 	let endptr = &NULL;
-	return strtold(nptr, endptr) 
+	return strtold(nptr, endptr)
 		as to_float(strtold);
 	set $end = to_string(*endptr);
 }
@@ -62,4 +64,4 @@ function psi\realloc(object $obj, int $size) : object {
 	let size = intval($size);
 	pre_assert size >= 0;
 	return realloc(ptr, size) as to_object(realloc);
-} 
+}

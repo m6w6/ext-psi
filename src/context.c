@@ -98,7 +98,9 @@ PHP_MINIT_FUNCTION(psi_context)
 PHP_MSHUTDOWN_FUNCTION(psi_context)
 {
 	if (psi_check_env("PSI_DUMP")) {
-		psi_context_dump(PSI_G(context), STDOUT_FILENO);
+		struct psi_dump dump = {{.hn = stdout}, (psi_dump_cb) fprintf};
+
+		psi_context_dump(&dump, PSI_G(context));
 	}
 
 	psi_context_free(&PSI_G(context));
@@ -148,7 +150,7 @@ static bool psi_context_add(struct psi_context *C, struct psi_parser *P)
 	D = psi_data_exchange(&C->data[C->count++], PSI_DATA(P));
 
 	psi_validate_scope_ctor(&scope);
-	scope.defs = &P->preproc->defs;
+	scope.cpp = P->preproc;
 	valid = psi_validate(&scope, PSI_DATA(C), D);
 	psi_validate_scope_dtor(&scope);
 
@@ -234,7 +236,7 @@ zend_function_entry *psi_context_compile(struct psi_context *C)
 
 			zc.name = zend_string_copy(c->name);
 
-			switch (c->type->type) {
+			switch (c->type ? c->type->type : c->val->type) {
 			case PSI_T_BOOL:
 				ZVAL_BOOL(&zc.value, c->val->ival.zend.bval);
 				break;
@@ -376,15 +378,21 @@ void psi_context_free(struct psi_context **C)
 	}
 }
 
-void psi_context_dump(struct psi_context *C, int fd)
+void psi_context_dump(struct psi_dump *dump, struct psi_context *C)
 {
 	size_t i;
 
-	dprintf(fd, "// psi.engine=%s\n// %lu files\n",
+	PSI_DUMP(dump, "// psi.engine=%s\n// %lu files\n",
 			(char *) C->ops->query(C, PSI_CONTEXT_QUERY_SELF, NULL),
 			C->count);
 
-	for (i = 0; i < C->count; ++i) {
-		psi_data_dump(fd, &C->data[i]);
+	psi_data_dump(dump, PSI_DATA(C));
+
+#if 0
+	if (C->flags & PSI_DEBUG) {
+		for (i = 0; i < C->count; ++i) {
+			psi_data_dump(fd, &C->data[i]);
+		}
 	}
+#endif
 }

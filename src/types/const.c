@@ -58,7 +58,9 @@ void psi_const_free(struct psi_const **constant_ptr)
 void psi_const_dump(int fd, struct psi_const *cnst)
 {
 	dprintf(fd, "const ");
-	psi_impl_type_dump(fd, cnst->type);
+	if (cnst->type) {
+		psi_impl_type_dump(fd, cnst->type);
+	}
 	dprintf(fd, " %s = ", cnst->name->val);
 	psi_impl_def_val_dump(fd, cnst->val);
 	dprintf(fd, ";");

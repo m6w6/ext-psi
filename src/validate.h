@@ -29,7 +29,7 @@
 struct psi_data;
 
 struct psi_validate_scope {
-	HashTable *defs;
+	struct psi_cpp *cpp;
 	HashTable types;
 	HashTable structs;
 	HashTable unions;
@@ -57,6 +57,9 @@ static inline void psi_validate_scope_dtor(struct psi_validate_scope *scope)
 	zend_hash_destroy(&scope->structs);
 	zend_hash_destroy(&scope->unions);
 }
+
+bool psi_validate_scope_has_builtin(struct psi_validate_scope *scope,
+		zend_string *builtin);
 
 #define psi_validate_scope_has_type(s, t) \
 	((s) ? zend_hash_exists(&(s)->types, (t)) : false)

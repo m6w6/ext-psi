@@ -39,37 +39,12 @@ static inline void psi_parser_proc_add_enum(struct psi_parser *P, struct psi_dec
 	}
 	P->enums = psi_plist_add(P->enums, &e);
 }
-static inline void psi_parser_proc_deanon_typedef(struct psi_decl_arg *def)
-{
-	switch (def->type->type) {
-	case PSI_T_STRUCT:
-		if (!psi_decl_type_is_anon(def->type->name, "struct")) {
-			return;
-		}
-		break;
-	case PSI_T_UNION:
-		if (!psi_decl_type_is_anon(def->type->name, "union")) {
-			return;
-		}
-		break;
-	case PSI_T_ENUM:
-		if (!psi_decl_type_is_anon(def->type->name, "enum")) {
-			return;
-		}
-		break;
-	default:
-		return;
-	}
-	zend_string_release(def->type->name);
-	def->type->name = zend_string_copy(def->var->name);
-}
 static inline void psi_parser_proc_add_typedef(struct psi_parser *P, struct psi_decl_arg *def)
 {
 	assert(def);
 	if (!P->types) {
 		P->types = psi_plist_init((psi_plist_dtor) psi_decl_arg_free);
 	}
-	//psi_parser_proc_deanon_typedef(def);
 	P->types = psi_plist_add(P->types, &def);
 }
 static inline void psi_parser_proc_add_const(struct psi_parser *P, struct psi_const *cnst) {
@@ -82,7 +57,7 @@ static inline void psi_parser_proc_add_const(struct psi_parser *P, struct psi_co
 }
 static inline void psi_parser_proc_add_decl(struct psi_parser *P, struct psi_decl *decl) {
 	assert(decl);
-	
+
 	if (psi_decl_is_blacklisted(decl->func->var->name->val)) {
 		psi_decl_free(&decl);
 		return;
@@ -348,7 +323,7 @@ struct psi_parser;
 %type		<struct psi_decl *>					decl_stmt decl decl_body decl_func_body decl_functor_body decl_anon_functor_body ignored_decl
 %destructor	{psi_decl_free(&$$);}				decl_stmt decl decl_body decl_func_body decl_functor_body decl_anon_functor_body ignored_decl
 %type		<struct psi_decl_arg *>				decl_typedef decl_func decl_functor decl_anon_functor decl_arg decl_anon_arg typedef typedef_decl typedef_anon typedef_anon_decl
-%destructor	{psi_decl_arg_free(&$$);}			decl_typedef decl_func decl_functor decl_anon_functor decl_arg decl_anon_arg typedef typedef_decl typedef_anon typedef_anon_decl	
+%destructor	{psi_decl_arg_free(&$$);}			decl_typedef decl_func decl_functor decl_anon_functor decl_arg decl_anon_arg typedef typedef_decl typedef_anon typedef_anon_decl
 %type		<struct psi_decl_var *>				decl_var
 %destructor	{psi_decl_var_free(&$$);}			decl_var
 %type		<struct psi_decl_struct *>			decl_struct
@@ -407,7 +382,7 @@ struct psi_parser;
 %destructor	{psi_free_stmt_free(&$$);}			free_stmt
 %type		<struct psi_free_exp *>				free_exp
 %destructor	{psi_free_exp_free(&$$);}			free_exp
-	
+
 %type		<struct psi_token **>				impl_stmt
 %destructor	{psi_impl_stmt_free(&$$);}			impl_stmt
 %type		<struct psi_token *>				impl_type_token impl_type_restricted_token impl_type_extended_token callback_rval let_func_token set_func_token assert_stmt_token
@@ -430,9 +405,9 @@ struct psi_parser;
 /* rules */
 
 
-binary_op_token: PIPE | CARET | AMPERSAND | LSHIFT | RSHIFT | PLUS | MINUS | ASTERISK | SLASH | MODULO | RCHEVR | LCHEVR | CMP_GE | CMP_LE | OR | AND | CMP_EQ | CMP_NE ; 
+binary_op_token: PIPE | CARET | AMPERSAND | LSHIFT | RSHIFT | PLUS | MINUS | ASTERISK | SLASH | MODULO | RCHEVR | LCHEVR | CMP_GE | CMP_LE | OR | AND | CMP_EQ | CMP_NE ;
 unary_op_token: TILDE | NOT | PLUS | MINUS ;
-name_token: NAME | FUNCTION | TEMP | FREE | SET | LET | CALLOC | CALLBACK | LIB | BOOL | STRING | ERROR | WARNING | LINE | PRAGMA_ONCE | PRAGMA | AS | let_func_token | set_func_token;
+name_token: NAME | FUNCTION | TEMP | FREE | SET | LET | CALLOC | CALLBACK | LIB | BOOL | STRING | MIXED | ARRAY | OBJECT | ERROR | WARNING | LINE | PRAGMA_ONCE | PRAGMA | AS | let_func_token | set_func_token;
 any_noeol_token: BOOL | CHAR | SHORT | INT | SIGNED | UNSIGNED | LONG | FLOAT | DOUBLE | STRING | MIXED | ARRAY | OBJECT | CALLABLE | VOID | ZVAL | NULL | TRUE | FALSE | NAME | NSNAME | DOLLAR_NAME | NUMBER | QUOTED_STRING | QUOTED_CHAR | EOF | EOS | LPAREN | RPAREN | COMMA | COLON | LBRACE | RBRACE | LBRACKET | RBRACKET | EQUALS | HASH | PIPE | CARET | AMPERSAND | LSHIFT | RSHIFT | PLUS | MINUS | ASTERISK | SLASH | MODULO | LCHEVR | RCHEVR | CMP_GE | CMP_LE | OR | AND | CMP_EQ | CMP_NE | TILDE | NOT | PERIOD | BACKSLASH | ELLIPSIS | ERROR | WARNING | LINE | PRAGMA | PRAGMA_ONCE | IIF | IF | IFDEF | IFNDEF | ELSE | ELIF | ENDIF | DEFINE | DEFINED | UNDEF | INCLUDE | TYPEDEF | STRUCT | UNION | ENUM | CONST | LIB | STATIC | CALLBACK | FUNCTION | LET | SET | TEMP | FREE | RETURN | PRE_ASSERT | POST_ASSERT | BOOLVAL | INTVAL | STRVAL | PATHVAL | STRLEN | FLOATVAL | ARRVAL | OBJVAL | COUNT | CALLOC | TO_BOOL | TO_INT | TO_STRING | TO_FLOAT | TO_ARRAY | TO_OBJECT | COMMENT | CPP_HEADER | CPP_PASTE | CPP_INLINE | CPP_RESTRICT | CPP_EXTENSION | CPP_ASM | SIZEOF | VOLATILE | AS;
 any_nobrace_token: BOOL | CHAR | SHORT | INT | SIGNED | UNSIGNED | LONG | FLOAT | DOUBLE | STRING | MIXED | ARRAY | OBJECT | CALLABLE | VOID | ZVAL | NULL | TRUE | FALSE | NAME | NSNAME | DOLLAR_NAME | NUMBER | QUOTED_STRING | QUOTED_CHAR | EOF | EOS | LPAREN | RPAREN | COMMA | COLON | LBRACKET | RBRACKET | EQUALS | HASH | PIPE | CARET | AMPERSAND | LSHIFT | RSHIFT | PLUS | MINUS | ASTERISK | SLASH | MODULO | LCHEVR | RCHEVR | CMP_GE | CMP_LE | OR | AND | CMP_EQ | CMP_NE | TILDE | NOT | PERIOD | BACKSLASH | ELLIPSIS | ERROR | WARNING | LINE | PRAGMA | PRAGMA_ONCE | IIF | IF | IFDEF | IFNDEF | ELSE | ELIF | ENDIF | DEFINE | DEFINED | UNDEF | INCLUDE | TYPEDEF | STRUCT | UNION | ENUM | CONST | LIB | STATIC | CALLBACK | FUNCTION | LET | SET | TEMP | FREE | RETURN | PRE_ASSERT | POST_ASSERT | BOOLVAL | INTVAL | STRVAL | PATHVAL | STRLEN | FLOATVAL | ARRVAL | OBJVAL | COUNT | CALLOC | TO_BOOL | TO_INT | TO_STRING | TO_FLOAT | TO_ARRAY | TO_OBJECT | COMMENT | CPP_HEADER | CPP_PASTE | CPP_INLINE | CPP_RESTRICT | CPP_EXTENSION | CPP_ASM | SIZEOF | VOLATILE | AS;
 
@@ -510,12 +485,12 @@ cpp_exp[exp]:
 	cpp_message_token cpp_macro_decl_tokens[tokens] {
 	if ($tokens) {
 		struct psi_token *msg = NULL;
-		
+
 		if (psi_plist_get($tokens, 0, &msg)) {
 			size_t index = 1;
 			struct psi_token *next;
 
-			msg = psi_token_copy(msg);			
+			msg = psi_token_copy(msg);
 			while (psi_plist_get($tokens, index++, &next)) {
 				struct psi_token *old = msg;
 				msg = psi_token_cat(" ", 2, msg, next);
@@ -523,7 +498,7 @@ cpp_exp[exp]:
 			}
 		}
 		psi_plist_free($tokens);
-		
+
 		$exp = psi_cpp_exp_init($cpp_message_token->type, msg);
 	} else {
 		$exp = psi_cpp_exp_init($cpp_message_token->type, NULL);
@@ -566,7 +541,7 @@ cpp_ignored_token:
 |	PRAGMA
 ;
 
-cpp_message_token: 
+cpp_message_token:
 	ERROR
 |	WARNING
 ;
@@ -593,7 +568,7 @@ cpp_name_arg_token:
 |	UNDEF
 ;
 
-cpp_exp_arg_token: 
+cpp_exp_arg_token:
 	IF
 |	ELIF
 ;
@@ -690,7 +665,7 @@ cpp_macro_exp[exp]:
 
 		$name_token->type = PSI_T_NAME;
 		exists = psi_cpp_defined(P->preproc, $name_token);
-		$exp = psi_num_exp_init_num(psi_number_init(PSI_T_UINT8, &exists, 0));
+		$exp = psi_num_exp_init_num(psi_number_init(PSI_T_DEFINED, &exists, 0));
 		$exp->token = psi_token_copy($DEFINED);
 		$exp->data.n->token = psi_token_copy($name_token);
 	}
@@ -701,7 +676,7 @@ cpp_macro_exp[exp]:
 
 		$name_token->type = PSI_T_NAME;
 		exists = psi_cpp_defined(P->preproc, $name_token);
-		$exp = psi_num_exp_init_num(psi_number_init(PSI_T_UINT8, &exists, 0));
+		$exp = psi_num_exp_init_num(psi_number_init(PSI_T_DEFINED, &exists, 0));
 		$exp->token = psi_token_copy($DEFINED);
 		$exp->data.n->token = psi_token_copy($name_token);
 	}
@@ -732,6 +707,7 @@ cpp_macro_exp[exp]:
 		psi_cpp_macro_call_init($name_token->text, $cpp_macro_call_args), 0));
 	$exp->token = psi_token_copy($name_token);
 	$exp->data.n->token = psi_token_copy($name_token);
+	$exp->data.n->data.call->token = psi_token_copy($name_token);
 }
 ;
 
@@ -743,8 +719,16 @@ cpp_macro_call_args[args]:
 ;
 
 cpp_macro_call_arg_list[args]:
-	cpp_macro_exp {
-	$args = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_num_exp_free), 
+	CPP_HEADER {
+	/* TODO: clang include test macros */
+	uint8_t no = 1;
+	struct psi_num_exp *exp = psi_num_exp_init_num(psi_number_init(PSI_T_UINT8, &no, 0));
+	exp->token = psi_token_copy($CPP_HEADER);
+	exp->data.n->token = psi_token_copy($CPP_HEADER);
+	$args = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_num_exp_free), &exp);
+}
+|	cpp_macro_exp {
+	$args = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_num_exp_free),
 		&$cpp_macro_exp);
 }
 |	cpp_macro_call_arg_list[args_] COMMA cpp_macro_exp {
@@ -755,6 +739,10 @@ cpp_macro_call_arg_list[args]:
 constant[const]:
 	CONST impl_type_restricted[type] NSNAME EQUALS impl_def_val EOS {
 	$const = psi_const_init($type, $NSNAME->text, $impl_def_val);
+	$const->token = psi_token_copy($NSNAME);
+}
+|	CONST NSNAME EQUALS impl_def_val EOS {
+	$const = psi_const_init(NULL, $NSNAME->text, $impl_def_val);
 	$const->token = psi_token_copy($NSNAME);
 }
 ;
@@ -1100,13 +1088,13 @@ quoted_strings[strings]:
 ;
 
 decl_extvar_stmt[list]:
-	NAME decl_arg decl_extvar_list[vars] EOS {
+	NAME decl_arg decl_extvar_list[vars] decl_asm EOS {
 	struct psi_plist *list = psi_plist_init((psi_plist_dtor) psi_decl_extvar_free);
-	
+
 	if ($vars) {
 		size_t i = 0;
 		struct psi_decl_var *var;
-		
+
 		while (psi_plist_get($vars, i++, &var)) {
 			if (psi_decl_extvar_is_blacklisted(var->name->val)) {
 				psi_decl_var_free(&var);
@@ -1118,14 +1106,19 @@ decl_extvar_stmt[list]:
 		}
 		free($vars);
 	}
-	
+
 	if (psi_decl_extvar_is_blacklisted($decl_arg->var->name->val)) {
 		psi_decl_arg_free(&$decl_arg);
 	} else {
 		struct psi_decl_extvar *evar = psi_decl_extvar_init($decl_arg);
+
+		if ($decl_asm) {
+			evar->redir = zend_string_copy($decl_asm->text);
+			psi_token_free(&$decl_asm);
+		}
 		list = psi_plist_add(list, &evar);
 	}
-	
+
 	$list = list;
 }
 ;
@@ -1227,51 +1220,51 @@ decl_functor_body[decl]:
 |	qualified_decl_type[rval_type] indirection[i] LPAREN indirection[unused1] name_token[NAME] LPAREN decl_args[args] RPAREN RPAREN LPAREN decl_args[rval_args] RPAREN array_size[as] {
 	(void) $unused1;
 	$NAME->type = PSI_T_NAME;
-	
+
 	struct psi_token *type_token = psi_token_append("@", psi_token_copy($NAME), 1, "rval");
 	struct psi_decl_arg *rval_func = psi_decl_arg_init($rval_type, psi_decl_var_init(type_token->text, $i, 0));
 	struct psi_decl *rval_decl = psi_decl_init(rval_func, $rval_args);
-	
+
 	rval_func->var->token = psi_token_copy(type_token);
 	rval_func->token = psi_token_copy(type_token);
 	if ($as) {
 		rval_func->var->pointer_level += 1;
 		rval_func->var->array_size = $as;
 	}
-	
+
 	struct psi_decl_type *type = psi_decl_type_init(PSI_T_FUNCTION, type_token->text);
 	struct psi_decl_arg *func = psi_decl_arg_init(type, psi_decl_var_init($NAME->text, 1, 0));
-	
+
 	type->real.func = rval_decl;
 	func->var->token = psi_token_copy($NAME);
 	func->token = psi_token_copy($NAME);
-	
+
 	$decl = psi_decl_init(func, $args);
 }
 |	qualified_decl_type[rval_type] indirection[i] LPAREN indirection[unused1] LPAREN indirection[unused2] name_token[NAME] RPAREN LPAREN decl_args[args] RPAREN RPAREN LPAREN decl_args[rval_args] RPAREN array_size[as] {
 	(void) $unused1;
 	(void) $unused2;
 	$NAME->type = PSI_T_NAME;
-	
+
 	struct psi_token *type_token = psi_token_append("@", psi_token_copy($NAME), 1, "rval");
 	struct psi_decl_arg *rval_func = psi_decl_arg_init($rval_type, psi_decl_var_init(type_token->text, $i, 0));
 	struct psi_decl *rval_decl = psi_decl_init(rval_func, $rval_args);
-	
+
 	rval_func->var->token = psi_token_copy(type_token);
 	rval_func->token = psi_token_copy(type_token);
 	if ($as) {
 		rval_func->var->pointer_level += 1;
 		rval_func->var->array_size = $as;
 	}
-	
+
 	struct psi_decl_type *type = psi_decl_type_init(PSI_T_FUNCTION, type_token->text);
 	struct psi_decl_arg *func = psi_decl_arg_init(type, psi_decl_var_init($NAME->text, 1, 0));
-	
+
 	type->real.func = rval_decl;
 	func->var->token = psi_token_copy($NAME);
 	func->token = psi_token_copy($NAME);
 	type->token = type_token;
-	
+
 	$decl = psi_decl_init(func, $args);
 }
 ;
@@ -1424,7 +1417,7 @@ decl_anon_arg[arg]:
 
 	psi_token_hash($decl->func->token, digest);
 	name = psi_token_append("@", psi_token_copy($decl->func->token), 2, "funct", digest);
-	
+
 	$arg = psi_decl_arg_init(
 		psi_decl_type_init(PSI_T_FUNCTION, name->text),
 		psi_decl_var_copy($decl->func->var)
@@ -1436,10 +1429,10 @@ decl_anon_arg[arg]:
 |	decl_arg %dprec 2 {
 	$arg = $decl_arg;
 }
-|	qualified_decl_type[type] indirection %dprec 1 {
+|	qualified_decl_type[type] indirection array_size[as] %dprec 1 {
 	$arg = psi_decl_arg_init(
-		$type, 
-		psi_decl_var_init(NULL, $indirection, 0)
+		$type,
+		psi_decl_var_init(NULL, $indirection, $as)
 	);
 }
 /*
@@ -1553,7 +1546,7 @@ struct_args[args]:
 	if ($vars) {
 		size_t i = 0;
 		struct psi_decl_arg *arg;
-		
+
 		while (psi_plist_get($vars, i++, &arg)) {
 			arg->type = psi_decl_type_copy($arg->type);
 			$args = psi_plist_add($args, &arg);
@@ -1567,7 +1560,7 @@ struct_args[args]:
 	if ($vars) {
 		size_t i = 0;
 		struct psi_decl_arg *arg;
-		
+
 		while (psi_plist_get($vars, i++, &arg)) {
 			arg->type = psi_decl_type_copy($arg->type);
 			$args = psi_plist_add($args, &arg);
@@ -1597,6 +1590,22 @@ decl_vars_with_layout[vars]:
 |	decl_vars_with_layout[vars_] COMMA decl_var[var] decl_layout[layout] {
 	{
 		struct psi_decl_arg *arg = psi_decl_arg_init(NULL, $var);
+		arg->layout = $layout;
+		$vars = psi_plist_add($vars_, &arg);
+	}
+}
+|	decl_layout[layout] {
+	{
+		struct psi_decl_var *var = psi_decl_var_init(NULL, 0, 0);
+		struct psi_decl_arg *arg = psi_decl_arg_init(NULL, var);
+		arg->layout = $layout;
+		$vars = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_decl_arg_free), &arg);
+	}
+}
+|	decl_vars_with_layout[vars_] COMMA decl_layout[layout] {
+	{
+		struct psi_decl_var *var = psi_decl_var_init(NULL, 0, 0);
+		struct psi_decl_arg *arg = psi_decl_arg_init(NULL, var);
 		arg->layout = $layout;
 		$vars = psi_plist_add($vars_, &arg);
 	}
@@ -1816,9 +1825,9 @@ array_size[as]:
 |	LBRACKET num_exp RBRACKET {
 	struct psi_validate_scope scope = {0};
 	psi_validate_scope_ctor(&scope);
-	scope.defs = &P->preproc->defs;
+	scope.cpp = P->preproc;
 	if (psi_num_exp_validate(PSI_DATA(P), $num_exp, &scope)) {
-		$as = psi_num_exp_get_long($num_exp, NULL, &P->preproc->defs);
+		$as = psi_num_exp_get_long($num_exp, NULL, P->preproc);
 	} else {
 		$as = 0;
 	}
@@ -1950,15 +1959,15 @@ impl_type_token:
 ;
 
 impl_type_restricted_token:
-	BOOL 
+	BOOL
 |	INT
 |	FLOAT
 |	STRING
+|	MIXED
 ;
 
 impl_type_extended_token:
 	VOID
-|	MIXED
 |	ARRAY
 |	OBJECT
 |	CALLABLE
@@ -2037,7 +2046,7 @@ let_exp_byref[exp]:
 }
 ;
 
-let_exp_assign[exp]: 
+let_exp_assign[exp]:
 	decl_var[var] EQUALS let_exp_byref[exp_] {
 	$exp = $exp_;
 	$exp->var = $var;
@@ -2078,16 +2087,16 @@ let_func[func]:
 ;
 
 let_func_token:
-	ZVAL 
-|	OBJVAL 
-|	ARRVAL 
-|	PATHVAL 
-|	STRLEN 
-|	STRVAL 
-|	FLOATVAL 
-|	INTVAL 
-|	BOOLVAL 
-|	COUNT 
+	ZVAL
+|	OBJVAL
+|	ARRVAL
+|	PATHVAL
+|	STRLEN
+|	STRVAL
+|	FLOATVAL
+|	INTVAL
+|	BOOLVAL
+|	COUNT
 ;
 
 let_func_exps[exps]:
@@ -2276,20 +2285,24 @@ byref:
 
 /* epilogue */
 
+#define PSI_DEBUG_LEX 0
 static int psi_parser_proc_lex(YYSTYPE *lvalp, struct psi_parser *P, struct psi_plist *tokens, size_t *index)
 {
 	struct psi_token *token;
-
+#if PSI_DEBUG_LEX
+	PSI_DEBUG_PRINT(P, "PSI: LEX index %4zu ", *index);
+#endif
 	if (psi_plist_get(tokens, (*index)++, &token)) {
-		if (P->flags & PSI_DEBUG) {
-			psi_token_dump(2, token);
-		}
-
+#if PSI_DEBUG_LEX	
+		PSI_DEBUG_DUMP(P, psi_token_dump, token);
+#endif
 		*((struct psi_token **)lvalp) = token;
 		return token->type;
 	} else {
+#if PSI_DEBUG_LEX
+		PSI_DEBUG_PRINT(P, "EOF\n");
+#endif
 		(*index)--;
-		PSI_DEBUG_PRINT(P, "EOF(%d)\n", PSI_T_EOF);
 	}
 
 	return PSI_T_EOF;
@@ -2299,13 +2312,13 @@ static void psi_parser_proc_error(struct psi_parser *P, struct psi_plist *tokens
 {
 	struct psi_token *T = NULL;
 	size_t last;
-	
+
 	if (*index == 0) {
 		last = 0;
-	} else { 
+	} else {
 		last = --(*index);
 	}
-	
+
 	psi_plist_get(tokens, last, &T);
 	if (T) {
 		P->error(PSI_DATA(P), T, PSI_WARNING, "PSI %s at col %u", msg, T->col);

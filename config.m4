@@ -55,12 +55,13 @@ if test "$PHP_PSI" != no; then
 	AC_MSG_RESULT([$PHP_PSI_SRCDIR])
 	AC_MSG_CHECKING([psi build dir])
 	AC_MSG_RESULT([$PHP_PSI_BUILDDIR])
-	
+
 	PSI_CHECK_LIBJIT
 	PSI_CHECK_LIBFFI
 
 	AC_FUNC_FNMATCH
 	AC_FUNC_MMAP
+	AC_CHECK_FUNCS([mknodat eaccess])
 
 	PSI_CONFIG_INIT
 	PSI_CHECK_STD_TYPES
@@ -83,15 +84,15 @@ if test "$PHP_PSI" != no; then
 		src/calc/unary.h src/calc/cmp.h src/calc/oper.h \
 		`(cd $PHP_PSI_SRCDIR/src && ls *.h types/*.h)` \
 	"
-	# parser* should come first
+	# parser_* should come first
 	PHP_PSI_SOURCES=" \
-		src/parser_proc.c src/parser.c \
+		src/parser_proc.c src/parser_scan.c \
 		`(cd $PHP_PSI_SRCDIR && ls src/*.c src/types/*.c \
-			| $EGREP -v '^src/parser' \
+			| $EGREP -v '^src/parser_' \
 		)` \
 	"
 	PHP_PSI_GENERATED=" \
-		src/parser_proc.c src/parser.c \
+		src/parser_proc.c src/parser_scan.c \
 		src/calc/basic.h src/calc/bin.h src/calc/bool.h src/calc/cast.h \
 		src/calc/unary.h src/calc/cmp.h src/calc/oper.h \
 	"

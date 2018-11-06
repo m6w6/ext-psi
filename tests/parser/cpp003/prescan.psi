@@ -1,0 +1,11 @@
+#define AFTERX(x) X_ ## x
+#define XAFTERX(x) AFTERX(x)
+#define TABLESIZE 1024
+#define BUFSIZE TABLESIZE
+
+#define X_BUFSIZE 111110 + 1
+const int \CPP_TEST1 = AFTERX(BUFSIZE); // expands to X_BUFSIZE
+
+#define X_1024    222221 + 1
+const int \CPP_TEST2 = XAFTERX(BUFSIZE); // expands to X_1024
+

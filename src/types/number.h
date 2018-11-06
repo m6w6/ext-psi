@@ -26,9 +26,9 @@
 #ifndef PSI_TYPES_NUMBER_H
 #define PSI_TYPES_NUMBER_H
 
-
 struct psi_data;
 struct psi_token;
+struct psi_cpp;
 struct psi_impl;
 struct psi_const;
 struct psi_decl_enum_item;
@@ -82,7 +82,7 @@ bool psi_number_validate(struct psi_data *data, struct psi_number *exp,
 		struct psi_validate_scope *scope);
 
 token_t psi_number_eval(struct psi_number *exp, impl_val *res,
-		struct psi_call_frame *frame, HashTable *defs,
+		struct psi_call_frame *frame, struct psi_cpp *cpp,
 		struct psi_num_exp *rec_guard);
 
 struct psi_plist *psi_number_tokens(struct psi_number *exp,

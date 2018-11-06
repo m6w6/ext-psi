@@ -29,10 +29,13 @@
 struct psi_token;
 struct psi_plist;
 
+#include "builtin.h"
+
 struct psi_cpp_macro_call {
 	struct psi_token *token;
 	zend_string *name;
 	struct psi_plist *args;
+	struct psi_builtin *builtin;
 };
 
 struct psi_cpp_macro_call *psi_cpp_macro_call_init(zend_string *name,

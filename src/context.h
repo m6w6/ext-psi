@@ -75,7 +75,7 @@ struct psi_context *psi_context_init(struct psi_context *C, struct psi_context_o
 void psi_context_build(struct psi_context *C, const char *path);
 zend_function_entry *psi_context_compile(struct psi_context *C);
 ZEND_RESULT_CODE psi_context_call(struct psi_context *C, zend_execute_data *execute_data, zval *return_value, struct psi_impl *impl);
-void psi_context_dump(struct psi_context *C, int fd);
+void psi_context_dump(struct psi_dump *dump, struct psi_context *C);
 void psi_context_dtor(struct psi_context *C);
 void psi_context_free(struct psi_context **C);
 

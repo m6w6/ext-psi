@@ -7,3 +7,14 @@
 * improve varargs support, currently it's impossible to map e.g. curl_easy_setopt
 * impl_var.name: remove leading '$'
 * really solve the array/pointer problem
+
+* variadic macros
+* predefined macros
+   * __COUNTER__		counter starting from 0, incremented each time expanded
+   * __BASE_FILE__		current PSI file
+   * __INCLUDE_LEVEL__	include level
+   * __TIMESTAMP__		lmod of current source file
+* builtins
+* int128
+* very small real numbers
+* cache tokens of files and copy tokens if used for further processing

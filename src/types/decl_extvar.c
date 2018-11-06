@@ -27,9 +27,7 @@
 
 #include "php_psi.h"
 
-#include <dlfcn.h>
 #include <fnmatch.h>
-
 #include <Zend/zend_smart_str.h>
 
 #include "data.h"
@@ -71,27 +69,14 @@ bool psi_decl_extvar_validate(struct psi_data *data,
 	}
 
 	if (!evar->sym) {
-		size_t i = 0;
-		void *dl;
-
-		while (!evar->sym && psi_plist_get(data->file.dlopened, i++, &dl)) {
-			evar->sym = dlsym(dl, evar->arg->var->name->val);
-		}
+		evar->sym = psi_dlsym(data->file.dlopened, evar->arg->var->name->val,
+			evar->redir ? evar->redir->val : NULL);
 	}
 	if (!evar->sym) {
-#ifndef RTLD_NEXT
-# define RTLD_NEXT ((void *) -1l)
-#endif
-#ifndef RTLD_DEFAULT
-# define RTLD_DEFAULT ((void *) 0)
-#endif
-		evar->sym = dlsym(RTLD_DEFAULT, evar->arg->var->name->val);
-		if (!evar->sym) {
-			data->error(data, evar->arg->var->token, PSI_WARNING,
-					"Failed to locate symbol '%s': %s", evar->arg->var->name->val,
-					dlerror() ?: "not found");
-			return false;
-		}
+		data->error(data, evar->arg->var->token, PSI_WARNING,
+				"Failed to locate symbol '%s': %s", evar->arg->var->name->val,
+				dlerror() ?: "not found");
+		return false;
 	}
 
 	evar->getter = psi_decl_extvar_getter(evar);
@@ -182,4 +167,3 @@ bool psi_decl_extvar_is_blacklisted(const char *name)
 	}
 	return false;
 }
-

@@ -64,4 +64,68 @@ typedef union impl_val {
 #endif
 } impl_val;
 
+#ifndef linux
+#	define isinfl isinf
+#	define isnanl isnan
+#endif
+#if HAVE_LONG_DOUBLE
+#	define CASE_IMPLVAL_LD_PRINTF(fun, to, ival) \
+	case PSI_T_LONG_DOUBLE: \
+		if (isinfl(ival.ldval)) { \
+			fun(to, "\\INF"); \
+		} else if (isnanl(ival.ldval)) { \
+			fun(to, "\\NAN"); \
+		} else { \
+			fun(to, "%" PRIldval "L", ival.ldval); \
+		} \
+		break;
+#else
+#	define CASE_IMPLVAL_LD_PRINTF(fun, to, ival)
+#endif
+
+#define CASE_IMPLVAL_NUM_PRINTF(fun, to, ival) \
+	case PSI_T_INT8: \
+		fun(to, "%" PRId8, ival.i8); \
+		break; \
+	case PSI_T_UINT8: \
+		fun(to, "%" PRIu8, ival.u8); \
+		break; \
+	case PSI_T_INT16: \
+		fun(to, "%" PRId16, ival.i16); \
+		break; \
+	case PSI_T_UINT16: \
+		fun(to, "%" PRIu16, ival.u16); \
+		break; \
+	case PSI_T_INT32: \
+		fun(to, "%" PRId32, ival.i32); \
+		break; \
+	case PSI_T_UINT32: \
+		fun(to, "%" PRIu32 "U", ival.u32); \
+		break; \
+	case PSI_T_INT64: \
+		fun(to, "%" PRId64 "L", ival.i64); \
+		break; \
+	case PSI_T_UINT64: \
+		fun(to, "%" PRIu64 "UL", ival.u64); \
+		break; \
+	case PSI_T_FLOAT: \
+		if (isinf(ival.dval)) { \
+			fun(to, "\\INF"); \
+		} else if (isnan(ival.dval)) { \
+			fun(to, "\\NAN"); \
+		} else { \
+			fun(to, "%" PRIfval "F", ival.dval); \
+		} \
+		break; \
+	case PSI_T_DOUBLE: \
+		if (isinf(ival.dval)) { \
+			fun(to, "\\INF"); \
+		} else if (isnan(ival.dval)) { \
+			fun(to, "\\NAN"); \
+		} else { \
+			fun(to, "%" PRIdval, ival.dval); \
+		} \
+		break; \
+	CASE_IMPLVAL_LD_PRINTF(fun, to, ival)
+
 #endif

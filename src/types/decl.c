@@ -111,32 +111,20 @@ static inline bool psi_decl_validate_func(struct psi_data *data,
 	for (redir = &psi_func_redirs[0]; redir->name; ++redir) {
 		if (!strcmp(func->var->name->val, redir->name)) {
 			decl->sym = redir->func;
+			break;
 		}
 	}
 	if (!decl->sym) {
-		size_t i = 0;
-		void *dl;
-
-		while (!decl->sym && psi_plist_get(data->file.dlopened, i++, &dl)) {
-			decl->sym = dlsym(dl, decl->redir ? decl->redir->val : func->var->name->val);
-		}
+		decl->sym = psi_dlsym(data->file.dlopened, func->var->name->val,
+			decl->redir ? decl->redir->val : NULL);
 	}
 	if (!decl->sym) {
-#ifndef RTLD_NEXT
-# define RTLD_NEXT ((void *) -1l)
-#endif
-#ifndef RTLD_DEFAULT
-# define RTLD_DEFAULT ((void *) 0)
-#endif
-		decl->sym = dlsym(RTLD_DEFAULT, decl->redir ? decl->redir->val : func->var->name->val);
-		if (!decl->sym) {
-			data->error(data, func->token, PSI_WARNING,
-					"Failed to locate symbol '%s(%s)': %s",
-					func->var->name->val,
-					decl->redir ? decl->redir->val : "",
-					dlerror() ?: "not found");
-			return false;
-		}
+		data->error(data, func->token, PSI_WARNING,
+				"Failed to locate symbol '%s(%s)': %s",
+				func->var->name->val,
+				decl->redir ? decl->redir->val : "",
+				dlerror() ?: "not found");
+		return false;
 	}
 	return true;
 }
@@ -218,4 +206,3 @@ struct psi_decl_arg *psi_decl_get_arg(struct psi_decl *decl, struct psi_decl_var
 
 	return psi_decl_arg_get_by_var(var, decl->args, decl->func);
 }
-

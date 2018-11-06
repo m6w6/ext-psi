@@ -39,8 +39,8 @@ before_install:
  - touch src/parser_proc_grammar.y
  - touch src/parser_proc.c
  - touch src/parser_proc.h
- - touch src/parser.re
- - touch src/parser.c
+ - touch src/parser_scan.re
+ - touch src/parser_scan.c
  - touch src/parser.h
 
 install:

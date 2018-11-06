@@ -159,6 +159,11 @@ struct psi_num_exp *psi_num_exp_copy(struct psi_num_exp *exp)
 	return cpy;
 }
 
+void psi_num_exp_copy_ctor(struct psi_num_exp **exp_ptr)
+{
+	*exp_ptr = psi_num_exp_copy(*exp_ptr);
+}
+
 void psi_num_exp_free(struct psi_num_exp **c_ptr)
 {
 	if (*c_ptr) {
@@ -289,6 +294,7 @@ struct psi_plist *psi_num_exp_tokens(struct psi_num_exp *exp,
 		struct psi_plist *list)
 {
 	struct psi_token *ntoken;
+
 	if (!list) {
 		list = psi_plist_init((psi_plist_dtor) psi_token_free);
 	}
@@ -626,7 +632,7 @@ static inline void psi_num_exp_verify_result(token_t t, impl_val *res, struct ps
 }
 
 static void psi_num_exp_reduce(struct psi_num_exp *exp, struct psi_plist **output_ptr,
-		struct psi_plist **input_ptr, struct psi_call_frame *frame, HashTable *defs)
+		struct psi_plist **input_ptr, struct psi_call_frame *frame, struct psi_cpp *cpp)
 {
 	struct psi_plist *output = *output_ptr, *input = *input_ptr;
 	struct element {
@@ -640,14 +646,14 @@ static void psi_num_exp_reduce(struct psi_num_exp *exp, struct psi_plist **outpu
 
 	switch (exp->op) {
 	case PSI_T_NUMBER:
-		entry.type = psi_number_eval(exp->data.n, &entry.data.value, frame, defs, exp);
+		entry.type = psi_number_eval(exp->data.n, &entry.data.value, frame, cpp, exp);
 		output = psi_plist_add(output, &entry);
 		break;
 
 	case PSI_T_LPAREN:
 		entry.type = exp->op;
 		input = psi_plist_add(input, &entry);
-		psi_num_exp_reduce(exp->data.u, &output, &input, frame, defs);
+		psi_num_exp_reduce(exp->data.u, &output, &input, frame, cpp);
 		while (psi_plist_pop(input, &entry)) {
 			if (entry.type == PSI_T_LPAREN) {
 				break;
@@ -670,7 +676,7 @@ static void psi_num_exp_reduce(struct psi_num_exp *exp, struct psi_plist **outpu
 		entry.type = exp->op;
 		entry.data.cast = exp->data.c.typ;
 		input = psi_plist_add(input, &entry);
-		psi_num_exp_reduce(exp->data.c.num, &output, &input, frame, defs);
+		psi_num_exp_reduce(exp->data.c.num, &output, &input, frame, cpp);
 		break;
 
 	case PSI_T_NOT:
@@ -687,19 +693,19 @@ static void psi_num_exp_reduce(struct psi_num_exp *exp, struct psi_plist **outpu
 		entry.type = exp->op;
 		entry.data.calc = exp->calc;
 		input = psi_plist_add(input, &entry);
-		psi_num_exp_reduce(exp->data.u, &output, &input, frame, defs);
+		psi_num_exp_reduce(exp->data.u, &output, &input, frame, cpp);
 		break;
 
 	case PSI_T_IIF:
 		{
 			impl_val cond_val = {0};
-			token_t cond_typ = psi_num_exp_exec(exp->data.t.cond, &cond_val, frame, defs);
+			token_t cond_typ = psi_num_exp_exec(exp->data.t.cond, &cond_val, frame, cpp);
 
 			psi_calc_bool_not(cond_typ, &cond_val, 0, NULL, &cond_val);
 			if (cond_val.u8) {
-				psi_num_exp_reduce(exp->data.t.falsy, &output, &input, frame, defs);
+				psi_num_exp_reduce(exp->data.t.falsy, &output, &input, frame, cpp);
 			} else {
-				psi_num_exp_reduce(exp->data.t.truthy, &output, &input, frame, defs);
+				psi_num_exp_reduce(exp->data.t.truthy, &output, &input, frame, cpp);
 			}
 		}
 		break;
@@ -708,7 +714,7 @@ static void psi_num_exp_reduce(struct psi_num_exp *exp, struct psi_plist **outpu
 	case PSI_T_PLUS:
 		/* unary */
 		if (!exp->data.b.rhs) {
-			entry.type = psi_num_exp_exec(exp->data.b.lhs, &entry.data.value, frame, defs);
+			entry.type = psi_num_exp_exec(exp->data.b.lhs, &entry.data.value, frame, cpp);
 
 			if (exp->calc) {
 				entry.type = exp->calc(entry.type, &entry.data.value, 0, NULL, &entry.data.value);
@@ -718,7 +724,7 @@ static void psi_num_exp_reduce(struct psi_num_exp *exp, struct psi_plist **outpu
 		}
 		/* no break */
 	default:
-		psi_num_exp_reduce(exp->data.b.lhs, &output, &input, frame, defs);
+		psi_num_exp_reduce(exp->data.b.lhs, &output, &input, frame, cpp);
 		while (psi_plist_top(input, &entry)) {
 			/* bail out if exp->op > entry.type */
 			if (psi_calc_oper(exp->op, entry.type) == -1) {
@@ -731,7 +737,7 @@ static void psi_num_exp_reduce(struct psi_num_exp *exp, struct psi_plist **outpu
 		entry.type = exp->op;
 		entry.data.calc = exp->calc;
 		input = psi_plist_add(input, &entry);
-		psi_num_exp_reduce(exp->data.b.rhs, &output, &input, frame, defs);
+		psi_num_exp_reduce(exp->data.b.rhs, &output, &input, frame, cpp);
 		break;
 	}
 
@@ -740,7 +746,7 @@ static void psi_num_exp_reduce(struct psi_num_exp *exp, struct psi_plist **outpu
 }
 
 token_t psi_num_exp_exec(struct psi_num_exp *exp, impl_val *res,
-		struct psi_call_frame *frame, HashTable *defs)
+		struct psi_call_frame *frame, struct psi_cpp *cpp)
 {
 	struct psi_plist *output, *input;
 	struct element {
@@ -755,7 +761,7 @@ token_t psi_num_exp_exec(struct psi_num_exp *exp, impl_val *res,
 	output = psi_plist_init_ex(sizeof(entry), NULL);
 	input = psi_plist_init_ex(sizeof(entry), NULL);
 
-	psi_num_exp_reduce(exp, &output, &input, frame, defs);
+	psi_num_exp_reduce(exp, &output, &input, frame, cpp);
 
 	while (psi_plist_pop(input, &entry)) {
 		if (frame) PSI_DEBUG_PRINT(frame->context, " %s", psi_num_exp_op_tok(entry.type));

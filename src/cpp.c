@@ -46,7 +46,7 @@ PHP_MINIT_FUNCTION(psi_cpp)
 	PSI_G(search_path) = pemalloc(strlen(PSI_G(directory)) + strlen(psi_cpp_search) + 1 + 1, 1);
 	sprintf(PSI_G(search_path), "%s:%s", PSI_G(directory), psi_cpp_search);
 
-	if (!psi_parser_init(&parser, NULL, 0)) {
+	if (!psi_parser_init(&parser, psi_error_wrapper, PSI_SILENT)) {
 		return FAILURE;
 	}
 
@@ -108,13 +108,18 @@ struct psi_cpp *psi_cpp_init(struct psi_parser *P)
 	return cpp;
 }
 
-#if PSI_CPP_DEBUG
+static char *include_flavor[] = {
+		"include",
+		"include next",
+		"include once"
+};
+
+#if PSI_CPP_DEBUG > 1
 static int dump_def(zval *p)
 {
 	struct psi_cpp_macro_decl *decl = Z_PTR_P(p);
 
 	if (decl) {
-		fflush(stderr);
 		dprintf(2, "PSI: CPP decl -> #define ");
 		psi_cpp_macro_decl_dump(2, decl);
 		dprintf(2, "\n");
@@ -128,7 +133,7 @@ void psi_cpp_free(struct psi_cpp **cpp_ptr)
 	if (*cpp_ptr) {
 		struct psi_cpp *cpp = *cpp_ptr;
 
-#if PSI_CPP_DEBUG
+#if PSI_CPP_DEBUG > 1
 		zend_hash_apply(&cpp->defs, dump_def);
 #endif
 		*cpp_ptr = NULL;
@@ -251,7 +256,7 @@ static bool psi_cpp_stage2(struct psi_cpp *cpp)
 			}
 		} else if (current->type == PSI_T_EOL) {
 #if PSI_CPP_DEBUG
-			fprintf(stderr, "PSI: CPP do_expansion=true, PSI_T_EOL\n");
+			PSI_DEBUG_PRINT(cpp->parser, "PSI: CPP do_expansion=true, PSI_T_EOL\n");
 #endif
 			is_eol = true;
 			skip_all = false;
@@ -267,7 +272,7 @@ static bool psi_cpp_stage2(struct psi_cpp *cpp)
 				switch (current->type) {
 				case PSI_T_DEFINE:
 #if PSI_CPP_DEBUG
-					fprintf(stderr, "PSI: CPP do_expansion=false, PSI_T_DEFINE, skip_all\n");
+					PSI_DEBUG_PRINT(cpp->parser, "PSI: CPP do_expansion=false, PSI_T_DEFINE, skip_all\n");
 #endif
 					do_expansion = false;
 					skip_all = true;
@@ -279,7 +284,7 @@ static bool psi_cpp_stage2(struct psi_cpp *cpp)
 				case PSI_T_IFNDEF:
 				case PSI_T_UNDEF:
 #if PSI_CPP_DEBUG
-					fprintf(stderr, "PSI: CPP do_expansion=false, PSI_T_{IF{,N},UN}DEF\n");
+					PSI_DEBUG_PRINT(cpp->parser, "PSI: CPP do_expansion=false, PSI_T_{IF{,N},UN}DEF\n");
 #endif
 					do_expansion = false;
 					break;
@@ -291,7 +296,7 @@ static bool psi_cpp_stage2(struct psi_cpp *cpp)
 						} else {
 							do_expansion = true;
 #if PSI_CPP_DEBUG
-							fprintf(stderr, "PSI: CPP do_expansion=true, PSI_T_LPAREN, !skip_all, !skip_paren\n");
+							PSI_DEBUG_PRINT(cpp->parser, "PSI: CPP do_expansion=true, PSI_T_LPAREN, !skip_all, !skip_paren\n");
 #endif
 						}
 					}
@@ -301,7 +306,7 @@ static bool psi_cpp_stage2(struct psi_cpp *cpp)
 				default:
 					do_expansion = !skip_all;
 #if PSI_CPP_DEBUG
-					fprintf(stderr, "PSI: CPP do_expansion=%s, <- !skip_all\n", do_expansion?"true":"false");
+					PSI_DEBUG_PRINT(cpp->parser, "PSI: CPP do_expansion=%s, <- !skip_all\n", do_expansion?"true":"false");
 #endif
 				}
 			}
@@ -310,8 +315,8 @@ static bool psi_cpp_stage2(struct psi_cpp *cpp)
 		if (cpp->skip) {
 			if (!do_cpp) {
 #if PSI_CPP_DEBUG
-				fprintf(stderr, "PSI: CPP skip ");
-				psi_token_dump(2, current);
+				PSI_DEBUG_PRINT(cpp->parser, "PSI: CPP skip ");
+				PSI_DEBUG_DUMP(cpp->parser, psi_token_dump, current);
 #endif
 				psi_cpp_tokiter_del_cur(cpp, true);
 				continue;
@@ -352,7 +357,7 @@ static bool psi_cpp_stage2(struct psi_cpp *cpp)
 			}
 
 #if PSI_CPP_DEBUG > 1
-			psi_cpp_tokiter_dump(2, cpp);
+			PSI_DEBUG_DUMP(cpp->parser, psi_cpp_tokiter_dump, cpp);
 #endif
 
 			continue;
@@ -370,7 +375,7 @@ static bool psi_cpp_stage2(struct psi_cpp *cpp)
 bool psi_cpp_process(struct psi_cpp *cpp, struct psi_plist **tokens)
 {
 	bool parsed = false;
-	struct psi_cpp temp = *cpp;
+	struct psi_cpp temp = *cpp;	cpp->level = temp.level;
 
 	cpp->tokens.iter = *tokens;
 	cpp->tokens.next = NULL;
@@ -390,8 +395,11 @@ bool psi_cpp_process(struct psi_cpp *cpp, struct psi_plist **tokens)
 	if (temp.tokens.iter) {
 		cpp->tokens.iter = temp.tokens.iter;
 		cpp->tokens.next = temp.tokens.next;
-		cpp->index = temp.index;
 	}
+	cpp->index = temp.index;
+	cpp->skip = temp.skip;
+	cpp->level = temp.level;
+	cpp->seen = temp.seen;
 
 	return parsed;
 }
@@ -401,18 +409,21 @@ bool psi_cpp_defined(struct psi_cpp *cpp, struct psi_token *tok)
 	bool defined;
 
 	if (tok->type == PSI_T_NAME) {
-		defined = zend_hash_exists(&cpp->defs, tok->text);
+		defined = zend_hash_exists(&cpp->defs, tok->text)
+				|| psi_builtin_exists(tok->text);
 	} else {
 		defined = false;
 	}
 
 #if PSI_CPP_DEBUG
-	fprintf(stderr, "PSI: CPP defined -> %s ", defined ? "true" : "false");
+	PSI_DEBUG_PRINT(cpp->parser, "PSI: CPP defined -> %s ", defined ? "true" : "false");
 	if (defined) {
 		struct psi_cpp_macro_decl *macro = zend_hash_find_ptr(&cpp->defs, tok->text);
-		fprintf(stderr, " @ %s:%u ", macro->token->file->val, macro->token->line);
+		if (macro) {
+			PSI_DEBUG_PRINT(cpp->parser, " @ %s:%u ", macro->token->file->val, macro->token->line);
+		}
 	}
-	psi_token_dump(2, tok);
+	PSI_DEBUG_DUMP(cpp->parser, psi_token_dump, tok);
 #endif
 
 	return defined;
@@ -430,12 +441,12 @@ void psi_cpp_define(struct psi_cpp *cpp, struct psi_cpp_macro_decl *decl)
 	}
 #if PSI_CPP_DEBUG
 	if (decl->exp) {
-		fprintf(stderr, "PSI: CPP MACRO num_exp -> %s ", decl->token->text->val);
+		PSI_DEBUG_PRINT(cpp->parser, "PSI: CPP MACRO num_exp -> ");
 	} else {
-		fprintf(stderr, "PSI: CPP MACRO decl    -> %s ", decl->token->text->val);
+		PSI_DEBUG_PRINT(cpp->parser, "PSI: CPP MACRO decl    -> ");
 	}
-	psi_cpp_macro_decl_dump(2, decl);
-	fprintf(stderr, "\n");
+	PSI_DEBUG_DUMP(cpp->parser, psi_cpp_macro_decl_dump, decl);
+	PSI_DEBUG_PRINT(cpp->parser, "\n");
 #endif
 	zend_hash_update_ptr(&cpp->defs, decl->token->text, decl);
 }
@@ -449,93 +460,105 @@ bool psi_cpp_if(struct psi_cpp *cpp, struct psi_cpp_exp *exp)
 {
 	struct psi_validate_scope scope = {0};
 
-	scope.defs = &cpp->defs;
+	scope.cpp = cpp;
 	if (!psi_num_exp_validate(PSI_DATA(cpp->parser), exp->data.num, &scope)) {
 		return false;
 	}
-	if (!psi_num_exp_get_long(exp->data.num, NULL, &cpp->defs)) {
+	if (!psi_num_exp_get_long(exp->data.num, NULL, cpp)) {
 		return false;
 	}
 	return true;
 }
 
-static inline bool try_include(struct psi_cpp *cpp, const char *path, bool *parsed)
-{
-	struct psi_parser_input *include;
-
-	PSI_DEBUG_PRINT(cpp->parser, "PSI: CPP include trying %s\n", path);
-
-	include = psi_parser_open_file(cpp->parser, path, false);
-	if (include) {
-		struct psi_plist *tokens;
-
-		PSI_DEBUG_PRINT(cpp->parser, "PSI: CPP include scanning %s\n", path);
-
-		tokens = psi_parser_scan(cpp->parser, include);
-		if (tokens) {
-			*parsed = psi_cpp_process(cpp, &tokens);
-
-			if (*parsed) {
-				size_t num_tokens = psi_plist_count(tokens);
-
-				++cpp->expanded;
-				psi_cpp_tokiter_add_range(cpp, num_tokens, psi_plist_eles(tokens));
-				free(tokens);
-			} else {
-				psi_plist_free(tokens);
-			}
-		}
-		psi_parser_input_free(&include);
-
-		zend_hash_str_add_empty_element(&cpp->once, path, strlen(path));
-		return true;
-	}
-	return false;
-}
-
-static inline void include_path(const struct psi_token *file, char **path)
-{
-	if (file->text->val[0] == '/') {
-		*path = file->text->val;
-	} else {
-		char *dir;
-		size_t len;
-
-		strncpy(*path, file->file->val, PATH_MAX);
-
-		dir = dirname(*path);
-		len = strlen(dir);
-
-		assert(len + file->text->len + 1 < PATH_MAX);
-
-		memmove(*path, dir, len);
-		(*path)[len] = '/';
-		memcpy(&(*path)[len + 1], file->text->val, file->text->len + 1);
-	}
-}
-
 bool psi_cpp_include(struct psi_cpp *cpp, const struct psi_token *file, unsigned flags)
 {
 	bool parsed = false;
+	char path[PATH_MAX];
+	struct psi_plist *tokens;
+	struct psi_parser_input *include;
+
+	if (!psi_cpp_has_include(cpp, file, flags, path)) {
+		return false;
+	}
+
+	if (flags & PSI_CPP_INCLUDE_ONCE) {
+		if (zend_hash_str_exists(&cpp->once, path, strlen(path))) {
+			return true;
+		}
+	}
+
+	PSI_DEBUG_PRINT(cpp->parser, "PSI: CPP %s opening %s\n",
+			include_flavor[flags], path);
+
+	include = psi_parser_open_file(cpp->parser, path, false);
+	if (!include) {
+		return false;
+	}
+
+	zend_hash_str_add_empty_element(&cpp->once, path, strlen(path));
+
+	PSI_DEBUG_PRINT(cpp->parser, "PSI: CPP include scanning %s\n", path);
+
+	tokens = psi_parser_scan(cpp->parser, include);
+	psi_parser_input_free(&include);
+
+	if (!tokens) {
+		return false;
+	}
+
+	parsed = psi_cpp_process(cpp, &tokens);
+	if (!parsed) {
+		psi_plist_free(tokens);
+		return false;
+	}
+
+	psi_cpp_tokiter_add_range(cpp, psi_plist_count(tokens), psi_plist_eles(tokens));
+	free(tokens);
+
+	++cpp->expanded;
+	return true;
+}
+
+#ifndef HAVE_EACCESS
+#	define eaccess access
+#endif
+bool psi_cpp_has_include(struct psi_cpp *cpp, const struct psi_token *file, unsigned flags, char *path)
+{
+	char temp[PATH_MAX];
+
+	if (!path) {
+		path = temp;
+	}
 
 	if (file->type == PSI_T_QUOTED_STRING && (!(flags & PSI_CPP_INCLUDE_NEXT) || file->text->val[0] == '/')) {
 		/* first try as is, full or relative path */
-		char temp[PATH_MAX], *path = temp;
+		if (file->text->val[0] == '/') {
+			path = file->text->val;
+		} else {
+			char *dir;
+			size_t len;
 
-		include_path(file, &path);
+			strncpy(path, file->file->val, PATH_MAX);
 
-		if ((flags & PSI_CPP_INCLUDE_ONCE) && zend_hash_str_exists(&cpp->once, path, strlen(path))) {
-			return true;
+			dir = dirname(path);
+			len = strlen(dir);
+
+			assert(len + file->text->len + 1 < PATH_MAX);
+
+			memmove(path, dir, len);
+			path[len] = '/';
+			memcpy(&(path)[len + 1], file->text->val, file->text->len + 1);
 		}
-		if (try_include(cpp, path, &parsed)) {
-			/* found */
-			return parsed;
+
+		PSI_DEBUG_PRINT(cpp->parser, "PSI: CPP %s trying %s\n",
+				include_flavor[flags], path);
+		if (0 == eaccess(path, R_OK)) {
+			return true;
 		}
 	}
 
 	/* look through search paths */
 	if (file->text->val[0] != '/') {
-		char path[PATH_MAX];
 		const char *sep;
 		int p_len;
 
@@ -559,12 +582,11 @@ bool psi_cpp_include(struct psi_cpp *cpp, const struct psi_token *file, unsigned
 			d_len = sep ? sep - cpp->search : strlen(cpp->search);
 
 			if (PATH_MAX > (p_len = snprintf(path, PATH_MAX, "%.*s/%.*s", d_len, cpp->search, (int) file->text->len, file->text->val))) {
-				if ((flags & PSI_CPP_INCLUDE_ONCE) && zend_hash_str_exists(&cpp->once, path, p_len)) {
-					return true;
-				}
-				if (try_include(cpp, path, &parsed)) {
-					break;
-				}
+				PSI_DEBUG_PRINT(cpp->parser, "PSI: CPP %s trying %s\n",
+						include_flavor[flags], path);
+				if (0 == eaccess(path, R_OK)) {
+					 return true;
+				 }
 			}
 
 			if (sep) {
@@ -573,5 +595,5 @@ bool psi_cpp_include(struct psi_cpp *cpp, const struct psi_token *file, unsigned
 		} while (sep);
 	}
 
-	return parsed;
+	return false;
 }

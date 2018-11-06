@@ -61,7 +61,9 @@ static struct psi_func_redir {
 	{"fstatat", (psi_func_ptr) fstatat},
 	{"lstat", (psi_func_ptr) lstat},
 	{"mknod", (psi_func_ptr) mknod},
+#ifdef HAVE_MKNODAT
 	{"mknodat", (psi_func_ptr) mknodat},
+#endif
 	{"stat", (psi_func_ptr) stat},
 	{0}
 };

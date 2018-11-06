@@ -18,9 +18,9 @@ $(PHP_PSI_SRCDIR)/src/parser_proc.c: $(PHP_PSI_SRCDIR)/src/parser_proc_grammar.y
 	# trickery needed for relative #line directives
 	cd $(PHP_PSI_SRCDIR) && bison -Wall -v -d -o $(patsubst $(PHP_PSI_SRCDIR)/%,%,$@) $(patsubst $(PHP_PSI_SRCDIR)/%,%,$<)
 
-$(PHP_PSI_SRCDIR)/src/parser.re: $(PHP_PSI_SRCDIR)/src/parser_proc.h
+$(PHP_PSI_SRCDIR)/src/parser_scan.re: $(PHP_PSI_SRCDIR)/src/parser_proc.h
 	touch $@
-$(PHP_PSI_SRCDIR)/src/parser.c: $(PHP_PSI_SRCDIR)/src/parser.re
+$(PHP_PSI_SRCDIR)/src/parser_scan.c: $(PHP_PSI_SRCDIR)/src/parser_scan.re
 	# trickery needed for relative #line directives
 	cd $(PHP_PSI_SRCDIR) && $(RE2C) -o $(patsubst $(PHP_PSI_SRCDIR)/%,%,$@) $(patsubst $(PHP_PSI_SRCDIR)/%,%,$<)
 
@@ -31,7 +31,7 @@ $(PHP_PSI_SRCDIR)/src/calc.h: | $(PHP_PSI_SRCDIR)/src/calc/basic.h $(PHP_PSI_SRC
 
 .PHONY: psi-generated
 psi-generated: $(PHP_PSI_GENERATED)
-	
+
 
 PHP_PSI_DEPEND = $(patsubst $(PHP_PSI_SRCDIR)/%,$(PHP_PSI_BUILDDIR)/%,$(PHP_PSI_SOURCES:.c=.dep))
 
@@ -82,7 +82,7 @@ psi-watch:
 	-while inotifywait -q -e modify -r $(PHP_PSI_SRCDIR); do $(MAKE); done
 
 install-headers: psi-build-headers
-clean: psi-clean-headers psi-clean-aux
+clean: psi-clean-headers
 ifneq ($(PSI_DEPS),)
 clean: psi-clean-depend
 endif
