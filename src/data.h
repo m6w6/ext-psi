@@ -95,7 +95,15 @@ struct psi_dump {
 	union psi_dump_arg ctx;
 	psi_dump_cb fun;
 };
-#define PSI_DUMP(dump, ...) (dump)->fun((dump)->ctx, __VA_ARGS__)
+#define PSI_DUMP(dump, ...) do { \
+	struct psi_dump _dump_tmp, *_dump_ptr = dump; \
+	if (!_dump_ptr) { \
+		_dump_ptr = &_dump_tmp; \
+		_dump_tmp.ctx.fd = STDOUT_FILENO; \
+		_dump_tmp.fun = (psi_dump_cb) dprintf; \
+	} \
+	_dump_ptr->fun(_dump_ptr->ctx, __VA_ARGS__); \
+} while(0)
 
 #define PSI_DATA(D) ((struct psi_data *) (D))
 

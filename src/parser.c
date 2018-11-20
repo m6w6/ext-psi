@@ -147,14 +147,9 @@ static inline zend_string *macro_to_constant(struct psi_parser *parser,
 
 	smart_str_append_printf(&str, "const psi\\%s = ", name->val);
 	if (scope->macro->exp) {
-		impl_val res = {0};
-		token_t typ = psi_num_exp_exec(scope->macro->exp, &res, NULL, scope->cpp);
+		struct psi_dump dump = {{.hn = &str}, .fun = (psi_dump_cb) smart_str_append_printf};
 
-		switch (typ) {
-		CASE_IMPLVAL_NUM_PRINTF(smart_str_append_printf, &str, res, true);
-		default:
-			assert(0);
-		}
+		psi_num_exp_dump(&dump, scope->macro->exp);
 	} else while (psi_plist_get(scope->macro->tokens, i++, &tok)) {
 		if (tok->type == PSI_T_QUOTED_STRING) {
 			smart_str_appendc(&str, '"');
