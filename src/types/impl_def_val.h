@@ -48,5 +48,5 @@ void psi_impl_def_val_free(struct psi_impl_def_val **def_ptr);
 void psi_impl_def_val_dump(struct psi_dump *dump, struct psi_impl_def_val *val);
 bool psi_impl_def_val_validate(struct psi_data *data, struct psi_impl_def_val *def,
 		struct psi_impl_type *cmp, struct psi_validate_scope *scope);
-token_t psi_impl_def_val_get_zend(struct psi_impl_def_val *val, impl_val *res);
+void psi_impl_def_val_get_zval(struct psi_impl_def_val *val, token_t typ, zval *z);
 #endif

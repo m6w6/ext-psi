@@ -69,22 +69,6 @@ void psi_const_dump(struct psi_dump *dump, struct psi_const *cnst)
 bool psi_const_validate(struct psi_data *data, struct psi_const *c,
 		struct psi_validate_scope *scope)
 {
-	if (c->type) {
-		switch (c->type->type) {
-		case PSI_T_BOOL:
-		case PSI_T_INT:
-		case PSI_T_FLOAT:
-		case PSI_T_DOUBLE:
-		case PSI_T_STRING:
-			break;
-		default:
-			data->error(data, val->token, PSI_WARNING,
-					"Invalid default value type '%s', "
-					"expected one of bool, int, float/double or string.",
-					type->name->val);
-		return false;
-		}
-	}
 	if (!psi_impl_def_val_validate(data, c->val, c->type, scope)) {
 		return false;
 	}

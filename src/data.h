@@ -31,8 +31,6 @@
 #include "plist.h"
 #include "validate.h"
 
-#include "php_network.h"
-
 #include <stdarg.h>
 #include <dlfcn.h>
 

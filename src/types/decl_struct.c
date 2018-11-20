@@ -60,7 +60,7 @@ void psi_decl_struct_dump(struct psi_dump *dump, struct psi_decl_struct *strct)
 	PSI_DUMP(dump, "struct %s::(%zu, %zu)", strct->name->val, strct->align,
 			strct->size);
 	if (psi_plist_count(strct->args)) {
-		psi_decl_type_dump_args_with_layout(fd, strct->args, 0);
+		psi_decl_type_dump_args_with_layout(dump, strct->args, 0);
 	} else {
 		PSI_DUMP(dump, ";");
 	}

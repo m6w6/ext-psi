@@ -80,7 +80,7 @@ typedef union impl_val {
 		} \
 		break;
 #else
-#	define CASE_IMPLVAL_LD_PRINTF(fun, to, ival)
+#	define CASE_IMPLVAL_LD_PRINTF(fun, to, ival, with_suffix)
 #endif
 
 #define CASE_IMPLVAL_FLOAT_PRINTF(fun, to, ival, with_suffix) \

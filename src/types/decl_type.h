@@ -69,7 +69,7 @@ int psi_decl_type_is_weak(struct psi_decl_type *type);
 struct psi_decl_type *psi_decl_type_get_real(struct psi_decl_type *type);
 
 struct psi_plist *psi_decl_type_get_args(struct psi_decl_type *dtyp, struct psi_decl_type **real_typ_ptr);
-void psi_decl_type_dump_args_with_layout(int fd, struct psi_plist *args, unsigned level);
+void psi_decl_type_dump_args_with_layout(struct psi_dump *dump, struct psi_plist *args, unsigned level);
 size_t psi_decl_type_get_args_align(struct psi_plist *args);
 
 

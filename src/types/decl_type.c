@@ -289,7 +289,7 @@ bool psi_decl_type_validate(struct psi_data *data, struct psi_decl_type *type,
 	return true;
 }
 
-void psi_decl_type_dump_args_with_layout(int fd, struct psi_plist *args,
+void psi_decl_type_dump_args_with_layout(struct psi_dump *dump, struct psi_plist *args,
 		unsigned level)
 {
 	size_t i = 0;
@@ -349,7 +349,7 @@ void psi_decl_type_dump(struct psi_dump *dump, struct psi_decl_type *t, unsigned
 	case PSI_T_STRUCT:
 		PSI_DUMP(dump, "struct ");
 		if (psi_decl_type_is_anon(t->name, "struct")) {
-			psi_decl_type_dump_args_with_layout(fd, t->real.strct->args, level);
+			psi_decl_type_dump_args_with_layout(dump, t->real.strct->args, level);
 			return;
 		}
 		break;
@@ -357,7 +357,7 @@ void psi_decl_type_dump(struct psi_dump *dump, struct psi_decl_type *t, unsigned
 	case PSI_T_UNION:
 		PSI_DUMP(dump, "union ");
 		if (psi_decl_type_is_anon(t->name, "union")) {
-			psi_decl_type_dump_args_with_layout(fd, t->real.unn->args, level);
+			psi_decl_type_dump_args_with_layout(dump, t->real.unn->args, level);
 			return;
 		}
 		break;

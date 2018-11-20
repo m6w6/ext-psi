@@ -56,7 +56,7 @@ void psi_decl_union_dump(struct psi_dump *dump, struct psi_decl_union *unn)
 {
 	PSI_DUMP(dump, "union %s::(%zu, %zu)", unn->name->val, unn->align, unn->size);
 	if (psi_plist_count(unn->args)) {
-		psi_decl_type_dump_args_with_layout(fd, unn->args, 0);
+		psi_decl_type_dump_args_with_layout(dump, unn->args, 0);
 	} else {
 		PSI_DUMP(dump, ";");
 	}

@@ -89,7 +89,6 @@ void psi_assert_stmt_throw(struct psi_assert_stmt *stmt)
 {
 	struct psi_dump dump;
 	smart_str str = {0};
-	zend_string *message;
 
 	dump.ctx.hn = &str;
 	dump.fun = (psi_dump_cb) smart_str_append_printf;

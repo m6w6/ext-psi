@@ -151,7 +151,7 @@ static inline zend_string *macro_to_constant(struct psi_parser *parser,
 		token_t typ = psi_num_exp_exec(scope->macro->exp, &res, NULL, scope->cpp);
 
 		switch (typ) {
-		CASE_IMPLVAL_NUM_PRINTF(smart_str_append_printf, &str, res);
+		CASE_IMPLVAL_NUM_PRINTF(smart_str_append_printf, &str, res, true);
 		default:
 			assert(0);
 		}

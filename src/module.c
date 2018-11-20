@@ -166,7 +166,7 @@ static PHP_FUNCTION(psi_dump)
 {
 	php_stream *s;
 	zval *r = NULL;
-	struct psi_dump dump = {.fun = php_stream_printf};
+	struct psi_dump dump = {.fun = (psi_dump_cb) php_stream_printf};
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "|r!", &r)) {
 		return;

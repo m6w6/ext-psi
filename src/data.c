@@ -24,6 +24,7 @@
  *******************************************************************************/
 
 #include "php_psi_stdinc.h"
+#include "php_psi.h"
 #include "data.h"
 
 #include "php_globals.h"

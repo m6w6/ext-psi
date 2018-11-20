@@ -235,7 +235,7 @@ zend_function_entry *psi_context_compile(struct psi_context *C)
 			}
 
 			zc.name = zend_string_copy(c->name);
-			psi_impl_def_val_get_zval(c->val, c->type ? c->type->type : PSI_T_MIXED , &zc.value);
+			psi_impl_def_val_get_zval(c->val, c->type ? c->type->type : PSI_T_MIXED, &zc.value);
 
 			zend_register_constant(&zc);
 		}

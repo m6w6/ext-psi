@@ -72,9 +72,19 @@ static inline char *psi_i128_to_buf(char *buf, __int128 i128)
 		} else if (V >= -(1L<<52) && V <= (1L<<53)) { \
 			ZVAL_DOUBLE(z, V); \
 		} else if (V < ZEND_LONG_MIN || V > ZEND_LONG_MAX) { \
-			ZVAL_STRING(z, psi_i128_to_buf(&buf[sizeof(buf) - 1], V)); \
+			char *str = psi_i128_to_buf(&buf[sizeof(buf) - 1], V); \
+			if (persistent) { \
+				ZVAL_PSTRING(z, str); \
+			} else { \
+				ZVAL_STRING(z, str); \
+			} \
 		} else { \
-			ZVAL_STRING(z, zend_print_long_to_buf(&buf[sizeof(buf) - 1], V)); \
+			char *str = zend_print_long_to_buf(&buf[sizeof(buf) - 1], V); \
+			if (persistent) { \
+				ZVAL_PSTRING(z, str); \
+			} else { \
+				ZVAL_STRING(z, str); \
+			} \
 		} \
 	} else { \
 		if (V <= ZEND_LONG_MAX) { \
@@ -82,9 +92,19 @@ static inline char *psi_i128_to_buf(char *buf, __int128 i128)
 		} else if (V <= (1L<<53)) { \
 			ZVAL_DOUBLE(z, V); \
 		} else if (V > ZEND_ULONG_MAX) { \
-			ZVAL_STRING(z, psi_u128_to_buf(&buf[sizeof(buf) - 1], V)); \
+			char *str = psi_u128_to_buf(&buf[sizeof(buf) - 1], V); \
+			if (persistent) { \
+				ZVAL_PSTRING(z, str); \
+			} else { \
+				ZVAL_STRING(z, str); \
+			} \
 		} else { \
-			ZVAL_STRING(z, zend_print_ulong_to_buf(&buf[sizeof(buf) - 1], V)); \
+			char *str = zend_print_ulong_to_buf(&buf[sizeof(buf) - 1], V); \
+			if (persistent) { \
+				ZVAL_PSTRING(z, str); \
+			} else { \
+				ZVAL_STRING(z, str); \
+			} \
 		} \
 	} \
 } while (0)
