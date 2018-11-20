@@ -65,36 +65,36 @@ void psi_decl_free(struct psi_decl **d_ptr)
 	}
 }
 
-void psi_decl_dump(int fd, struct psi_decl *decl)
+void psi_decl_dump(struct psi_dump *dump, struct psi_decl *decl)
 {
 	if (decl->abi) {
-		psi_decl_abi_dump(fd, decl->abi);
+		psi_decl_abi_dump(dump, decl->abi);
 	}
-	dprintf(fd, " ");
+	PSI_DUMP(dump, " ");
 	/* FIXME: functions returning arrays */
-	psi_decl_arg_dump(fd, decl->func, 0);
-	dprintf(fd, "(");
+	psi_decl_arg_dump(dump, decl->func, 0);
+	PSI_DUMP(dump, "(");
 	if (decl->args) {
 		size_t i;
 		struct psi_decl_arg *arg;
 
 		for (i = 0; psi_plist_get(decl->args, i, &arg); ++i) {
 			if (i) {
-				dprintf(fd, ", ");
+				PSI_DUMP(dump, ", ");
 			}
-			psi_decl_arg_dump(fd, arg, 0);
+			psi_decl_arg_dump(dump, arg, 0);
 		}
 		if (decl->varargs) {
-			dprintf(fd, ", ...");
+			PSI_DUMP(dump, ", ...");
 		}
 	}
 	if (decl->func->var->array_size) {
-		dprintf(fd, ")[%u]", decl->func->var->array_size);
+		PSI_DUMP(dump, ")[%u]", decl->func->var->array_size);
 	}
 	if (decl->redir) {
-		dprintf(fd, ") __asm__ (\"%s\");", decl->redir->val);
+		PSI_DUMP(dump, ") __asm__ (\"%s\");", decl->redir->val);
 	} else {
-		dprintf(fd, ");");
+		PSI_DUMP(dump, ");");
 	}
 }
 

@@ -57,7 +57,7 @@ struct psi_decl_type {
 struct psi_decl_type *psi_decl_type_init(token_t type, zend_string *name);
 struct psi_decl_type *psi_decl_type_copy(struct psi_decl_type *src);
 void psi_decl_type_free(struct psi_decl_type **type_ptr);
-void psi_decl_type_dump(int fd, struct psi_decl_type *t, unsigned level);
+void psi_decl_type_dump(struct psi_dump *dump, struct psi_decl_type *t, unsigned level);
 bool psi_decl_type_validate(struct psi_data *data, struct psi_decl_type *type,
 		struct psi_decl_arg *def, struct psi_validate_scope *scope);
 

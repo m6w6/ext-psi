@@ -38,7 +38,7 @@ struct psi_decl_enum {
 
 struct psi_decl_enum *psi_decl_enum_init(zend_string *name, struct psi_plist *l);
 void psi_decl_enum_free(struct psi_decl_enum **e_ptr);
-void psi_decl_enum_dump(int fd, struct psi_decl_enum *e, unsigned level);
+void psi_decl_enum_dump(struct psi_dump *dump, struct psi_decl_enum *e, unsigned level);
 bool psi_decl_enum_validate(struct psi_data *data, struct psi_decl_enum *e);
 
 #endif

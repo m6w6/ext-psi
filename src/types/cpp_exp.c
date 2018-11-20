@@ -101,9 +101,9 @@ void psi_cpp_exp_free(struct psi_cpp_exp **exp_ptr)
 	}
 }
 
-void psi_cpp_exp_dump(int fd, struct psi_cpp_exp *exp)
+void psi_cpp_exp_dump(struct psi_dump *dump, struct psi_cpp_exp *exp)
 {
-	dprintf(fd, "#%s ", exp->token->text->val);
+	PSI_DUMP(dump, "#%s ", exp->token->text->val);
 	switch (exp->type) {
 	case PSI_T_WARNING:
 	case PSI_T_ERROR:
@@ -114,23 +114,23 @@ void psi_cpp_exp_dump(int fd, struct psi_cpp_exp *exp)
 	case PSI_T_UNDEF:
 	case PSI_T_IFDEF:
 	case PSI_T_IFNDEF:
-		dprintf(fd, "%s", exp->data.tok->text->val);
+		PSI_DUMP(dump, "%s", exp->data.tok->text->val);
 		break;
 	case PSI_T_IMPORT:
 	case PSI_T_INCLUDE:
 	case PSI_T_INCLUDE_NEXT:
 		if (exp->data.tok->type == PSI_T_CPP_HEADER) {
-			dprintf(fd, "<%s>", exp->data.tok->text->val);
+			PSI_DUMP(dump, "<%s>", exp->data.tok->text->val);
 		} else {
-			dprintf(fd, "\"%s\"", exp->data.tok->text->val);
+			PSI_DUMP(dump, "\"%s\"", exp->data.tok->text->val);
 		}
 		break;
 	case PSI_T_DEFINE:
-		psi_cpp_macro_decl_dump(fd, exp->data.decl);
+		psi_cpp_macro_decl_dump(dump, exp->data.decl);
 		break;
 	case PSI_T_IF:
 	case PSI_T_ELIF:
-		psi_num_exp_dump(fd, exp->data.num);
+		psi_num_exp_dump(dump, exp->data.num);
 		break;
 	case PSI_T_ENDIF:
 	case PSI_T_ELSE:
@@ -140,7 +140,7 @@ void psi_cpp_exp_dump(int fd, struct psi_cpp_exp *exp)
 		assert(0);
 		break;
 	}
-	dprintf(fd, "\n");
+	PSI_DUMP(dump, "\n");
 }
 
 

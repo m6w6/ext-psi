@@ -44,7 +44,7 @@ struct psi_decl_var {
 struct psi_decl_var *psi_decl_var_init(zend_string *name, unsigned pl, unsigned as);
 struct psi_decl_var *psi_decl_var_copy(struct psi_decl_var *src);
 void psi_decl_var_free(struct psi_decl_var **var_ptr);
-void psi_decl_var_dump(int fd, struct psi_decl_var *var);
+void psi_decl_var_dump(struct psi_dump *dump, struct psi_decl_var *var);
 
 bool psi_decl_var_validate(struct psi_data *data, struct psi_decl_var *dvar,
 		struct psi_validate_scope *scope);

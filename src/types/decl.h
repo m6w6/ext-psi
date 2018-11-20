@@ -44,7 +44,7 @@ struct psi_decl {
 
 struct psi_decl *psi_decl_init(struct psi_decl_arg *func, struct psi_plist *args);
 void psi_decl_free(struct psi_decl **d_ptr);
-void psi_decl_dump(int fd, struct psi_decl *decl);
+void psi_decl_dump(struct psi_dump *dump, struct psi_decl *decl);
 
 bool psi_decl_validate(struct psi_data *data, struct psi_decl *decl, struct psi_validate_scope *scope);
 bool psi_decl_validate_nodl(struct psi_data *data, struct psi_decl *decl, struct psi_validate_scope *scope);

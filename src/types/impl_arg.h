@@ -40,6 +40,6 @@ struct psi_impl_arg {
 
 struct psi_impl_arg *psi_impl_arg_init(struct psi_impl_type *type, struct psi_impl_var *var, struct psi_impl_def_val *def);
 void psi_impl_arg_free(struct psi_impl_arg **arg_ptr);
-void psi_impl_arg_dump(int fd, struct psi_impl_arg *iarg, bool vararg);
+void psi_impl_arg_dump(struct psi_dump *dump, struct psi_impl_arg *iarg, bool vararg);
 
 #endif

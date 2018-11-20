@@ -45,7 +45,7 @@ struct psi_cpp_exp {
 
 struct psi_cpp_exp *psi_cpp_exp_init(token_t type, void *data);
 void psi_cpp_exp_free(struct psi_cpp_exp **exp_ptr);
-void psi_cpp_exp_dump(int fd, struct psi_cpp_exp *exp);
+void psi_cpp_exp_dump(struct psi_dump *dump, struct psi_cpp_exp *exp);
 void psi_cpp_exp_exec(struct psi_cpp_exp *exp, struct psi_cpp *cpp, struct psi_data *D);
 
 #endif

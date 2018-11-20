@@ -50,6 +50,51 @@ static inline int psi_check_env(const char *var) {
 	return (set && *set && (*set != '0' || set[1]));
 }
 
+#include "php_network.h"
+
+static inline int psi_fdopen(const char *desc)
+{
+	int fd = -1;
+
+	if (desc) {
+		char *addr = strstr(desc, "://");
+
+		if (addr) {
+			addr += 3;
+		}
+		if (addr && *addr) {
+			struct sockaddr_storage sa = {0};
+			socklen_t ss = 0;
+			int rc = php_network_parse_network_address_with_port(addr,
+					strlen(addr), (struct sockaddr *) &sa, &ss);
+
+			if (SUCCESS == rc) {
+				int styp = strncmp(desc, "udp:", 4)
+						? SOCK_STREAM
+						: SOCK_DGRAM;
+				int sfam = sa.ss_family == AF_INET6
+						? ((struct sockaddr_in6 *) &sa)->sin6_family
+						: ((struct sockaddr_in *) &sa)->sin_family;
+
+				fd = socket(sfam, styp, 0);
+
+				if (fd > 0 && 0 != connect(fd, (struct sockaddr *) &sa, ss)) {
+					perror(desc);
+					close(fd);
+					fd = -1;
+				}
+			}
+		} else if (!strcmp(desc, "stdout")) {
+			fd = STDOUT_FILENO;
+		} else if (!strcmp(desc, "stderr")) {
+			fd = STDERR_FILENO;
+		} else if (!(fd = atoi(desc)) || -1 == fcntl(fd, F_GETFD)) {
+			fd = open(desc, O_WRONLY|O_APPEND|O_CREAT|O_CLOEXEC, 0664);
+		}
+	}
+	return fd;
+}
+
 typedef struct psi_object {
 	void *data;
 	void (*dtor)(void *data);

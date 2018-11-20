@@ -45,7 +45,7 @@ struct psi_let_func {
 
 struct psi_let_func *psi_let_func_init(token_t type, zend_string *name, struct psi_impl_var *var);
 void psi_let_func_free(struct psi_let_func **func_ptr);
-void psi_let_func_dump(int fd, struct psi_let_func *func, unsigned level);
+void psi_let_func_dump(struct psi_dump *dump, struct psi_let_func *func, unsigned level);
 
 void *psi_let_func_exec(struct psi_let_exp *func_val, struct psi_let_func *func, struct psi_decl_arg *darg, struct psi_call_frame *frame);
 bool psi_let_func_validate(struct psi_data *data, struct psi_let_func *func, struct psi_validate_scope *scope);

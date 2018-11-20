@@ -48,11 +48,11 @@ void psi_let_stmt_free(struct psi_let_stmt **stmt_ptr)
 	}
 }
 
-void psi_let_stmt_dump(int fd, struct psi_let_stmt *let)
+void psi_let_stmt_dump(struct psi_dump *dump, struct psi_let_stmt *let)
 {
-	dprintf(fd, "\t%s ", let->exp->kind == PSI_LET_TMP ? "temp" : "let");
-	psi_let_exp_dump(fd, let->exp, 1, 1);
-	dprintf(fd, "\n");
+	PSI_DUMP(dump, "\t%s ", let->exp->kind == PSI_LET_TMP ? "temp" : "let");
+	psi_let_exp_dump(dump, let->exp, 1, 1);
+	PSI_DUMP(dump, "\n");
 }
 
 bool psi_let_stmts_validate(struct psi_data *data, struct psi_validate_scope *scope)

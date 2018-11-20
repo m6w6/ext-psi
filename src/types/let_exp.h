@@ -62,7 +62,7 @@ struct psi_let_exp {
 struct psi_let_exp *psi_let_exp_init(enum psi_let_exp_kind kind, void *data);
 struct psi_let_exp *psi_let_exp_init_ex(struct psi_decl_var *var, enum psi_let_exp_kind kind, void *data);
 void psi_let_exp_free(struct psi_let_exp **let_ptr);
-void psi_let_exp_dump(int fd, struct psi_let_exp *exp, unsigned level, int last);
+void psi_let_exp_dump(struct psi_dump *dump, struct psi_let_exp *exp, unsigned level, int last);
 
 void *psi_let_exp_exec(struct psi_let_exp *exp, struct psi_decl_arg *darg, void *actual_location, size_t actual_size, struct psi_call_frame *frame);
 bool psi_let_exp_validate(struct psi_data *data, struct psi_let_exp *exp, struct psi_validate_scope *scope);

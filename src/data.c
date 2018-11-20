@@ -27,7 +27,6 @@
 #include "data.h"
 
 #include "php_globals.h"
-#include "php_network.h"
 
 #include <dlfcn.h>
 #include <ctype.h>
@@ -39,50 +38,12 @@ static void psi_data_ctor_internal(struct psi_data *data,
 	data->flags = flags;
 
 	if (data->flags & PSI_DEBUG) {
-		char *debug = getenv("PSI_DEBUG");
+		int fd = psi_fdopen(getenv("PSI_DEBUG"));
 
-		if (debug) {
-			int fd = -1;
-			char *addr = strstr(debug, "://");
-
-			if (addr) {
-				addr += 3;
-			}
-			if (addr && *addr) {
-				struct sockaddr_storage sa = {0};
-				socklen_t ss = 0;
-				int rc = php_network_parse_network_address_with_port(addr,
-						strlen(addr), (struct sockaddr *) &sa, &ss);
-
-				if (SUCCESS == rc) {
-					int styp = strncmp(debug, "udp:", 4)
-							? SOCK_STREAM
-							: SOCK_DGRAM;
-					int sfam = sa.ss_family == AF_INET6
-							? ((struct sockaddr_in6 *) &sa)->sin6_family
-							: ((struct sockaddr_in *) &sa)->sin_family;
-
-					fd = socket(sfam, styp, 0);
-
-					if (fd > 0 && 0 != connect(fd, (struct sockaddr *) &sa, ss)) {
-						perror(debug);
-						close(fd);
-						fd = -1;
-					}
-				}
-			} else if (!strcmp(debug, "stdout")) {
-				fd = STDOUT_FILENO;
-			} else if (!strcmp(debug, "stderr")) {
-				fd = STDERR_FILENO;
-			} else if (!(fd = atoi(debug))) {
-				fd = open(debug, O_WRONLY|O_APPEND|O_CREAT|O_CLOEXEC, 0664);
-			}
-
-			if (fd > 0) {
-				data->debug_fd = fd;
-			} else {
-				data->debug_fd = STDERR_FILENO;
-			}
+		if (fd > 0) {
+			data->debug_fd = fd;
+		} else {
+			data->debug_fd = STDERR_FILENO;
 		}
 	}
 }
@@ -244,7 +205,7 @@ void psi_data_dump(struct psi_dump *dump, struct psi_data *D)
 
 		while (psi_plist_get(D->unions, i++, &unn)) {
 			if (!psi_decl_type_is_anon(unn->name, "union")) {
-				psi_decl_union_dump(fd, unn);
+				psi_decl_union_dump(dump, unn);
 				PSI_DUMP(dump, "\n");
 			}
 		}

@@ -46,7 +46,7 @@ struct psi_impl_func {
 struct psi_impl_func *psi_impl_func_init(zend_string *name,
 		struct psi_plist *args, struct psi_impl_type *return_type);
 void psi_impl_func_free(struct psi_impl_func **f_ptr);
-void psi_impl_func_dump(int fd, struct psi_impl_func *func);
+void psi_impl_func_dump(struct psi_dump *dump, struct psi_impl_func *func);
 bool psi_impl_func_validate(struct psi_data *data, struct psi_impl_func *func,
 		struct psi_validate_scope *scope);
 

@@ -226,52 +226,6 @@ impl_val *psi_let_boolval(impl_val *tmp, struct psi_decl_arg *spec, token_t impl
 	return psi_val_boolval(tmp, real_type, boolval);
 }
 
-#if HAVE_INT128
-static inline char *psi_u128_to_buf(char *buf, unsigned __int128 u128)
-{
-	for (*buf = 0; u128 > 0; u128 /= 10) {
-		*--buf = ((u128 % 10) + '0') & 0xff;
-	}
-	return buf;
-}
-
-static inline char *psi_i128_to_buf(char *buf, __int128 i128)
-{
-	if (i128 < 0) {
-		char *res = psi_u128_to_buf(buf, ~((unsigned __int128) i128) + 1);
-
-		*--res = '-';
-		return res;
-	}
-	return psi_u128_to_buf(buf, i128);
-}
-
-# define RETVAL_LONG_STR(V, s) do {\
-		char buf[0x30] = {0}; \
-		if (s && V >= ZEND_LONG_MIN && V <= ZEND_LONG_MAX) { \
-			RETVAL_LONG(V); \
-		} else if (!s && V <= ZEND_LONG_MAX) { \
-			RETVAL_LONG(V); \
-		} else if (!s && V <= ZEND_ULONG_MAX) { \
-			RETVAL_STRING(zend_print_ulong_to_buf(&buf[sizeof(buf) - 1], V)); \
-		} else if (s && V >= INT128_MIN && V <= INT128_MAX) { \
-			RETVAL_STRING(psi_i128_to_buf(&buf[sizeof(buf) - 1], V)); \
-		} else { \
-			RETVAL_STRING(psi_u128_to_buf(&buf[sizeof(buf) - 1], V)); \
-		} \
-	} while (0)
-#else
-# define RETVAL_LONG_STR(V, s) do {\
-		char buf[0x20] = {0}; \
-		if (s && V >= ZEND_LONG_MIN && V <= ZEND_LONG_MAX) { \
-			RETVAL_LONG(V); \
-		} else if (!s && V <= ZEND_LONG_MAX) { \
-			RETVAL_LONG(V); \
-		} else { \
-			RETVAL_STRING(zend_print_ulong_to_buf(&buf[sizeof(buf) - 1], V)); \
-		} \
-	} while (0)
-#endif
 /*
  * set $ivar = to_int(*dvar)
  */
@@ -290,10 +244,10 @@ void psi_set_to_int(zval *return_value, struct psi_set_exp *set, impl_val *ret_v
 	case PSI_T_INT32:		RETVAL_LONG(v->i32);				break;
 	case PSI_T_UINT32:		RETVAL_LONG(v->u32);				break;
 	case PSI_T_INT64:		RETVAL_LONG(v->i64);				break;
-	case PSI_T_UINT64:		RETVAL_LONG_STR(v->u64, 0);			break;
+	case PSI_T_UINT64:		RETVAL_LONG_DOUBLE_STR(v->u64,);	break;
 #ifdef HAVE_INT128
-	case PSI_T_INT128:		RETVAL_LONG_STR(v->i128, 1);		break;
-	case PSI_T_UINT128:		RETVAL_LONG_STR(v->u128, 0);		break;
+	case PSI_T_INT128:		RETVAL_LONG_DOUBLE_STR(v->i128, is_signed=true);	break;
+	case PSI_T_UINT128:		RETVAL_LONG_DOUBLE_STR(v->u128,);	break;
 #endif
 	case PSI_T_FLOAT:
 		RETVAL_DOUBLE((double) v->fval);

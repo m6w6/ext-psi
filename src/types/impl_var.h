@@ -41,7 +41,7 @@ struct psi_impl_var {
 struct psi_impl_var *psi_impl_var_init(zend_string *name, bool is_reference);
 struct psi_impl_var *psi_impl_var_copy(struct psi_impl_var *var);
 void psi_impl_var_free(struct psi_impl_var **var_ptr);
-void psi_impl_var_dump(int fd, struct psi_impl_var *var, bool vararg);
+void psi_impl_var_dump(struct psi_dump *dump, struct psi_impl_var *var, bool vararg);
 
 bool psi_impl_var_validate(struct psi_data *data, struct psi_impl_var *ivar,
 		struct psi_validate_scope *scope);

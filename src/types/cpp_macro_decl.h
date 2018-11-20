@@ -40,7 +40,7 @@ struct psi_cpp_macro_decl {
 struct psi_cpp_macro_decl *psi_cpp_macro_decl_init(struct psi_plist *sig,
 		struct psi_plist *tokens, struct psi_num_exp *exp);
 void psi_cpp_macro_decl_free(struct psi_cpp_macro_decl **macro_ptr);
-void psi_cpp_macro_decl_dump(int fd, struct psi_cpp_macro_decl *decl);
+void psi_cpp_macro_decl_dump(struct psi_dump *dump, struct psi_cpp_macro_decl *decl);
 bool psi_cpp_macro_decl_equal(struct psi_cpp_macro_decl *d1, struct psi_cpp_macro_decl *d2);
 
 #endif

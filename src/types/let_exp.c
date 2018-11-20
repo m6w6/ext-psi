@@ -102,42 +102,42 @@ void psi_let_exp_free(struct psi_let_exp **let_ptr)
 	}
 }
 
-void psi_let_exp_dump(int fd, struct psi_let_exp *val, unsigned level, int last)
+void psi_let_exp_dump(struct psi_dump *dump, struct psi_let_exp *val, unsigned level, int last)
 {
 	if (level > 1) {
 		/* only if not directly after `set ...` */
-		dprintf(fd, "%s", psi_t_indent(level));
+		PSI_DUMP(dump, "%s", psi_t_indent(level));
 	}
 
 	if (val->var) {
 		if (val->var->token) {
-			psi_decl_var_dump(fd, val->var);
-			dprintf(fd, " = ");
+			psi_decl_var_dump(dump, val->var);
+			PSI_DUMP(dump, " = ");
 		}
 	}
 	if (val->is_reference) {
-		dprintf(fd, "&");
+		PSI_DUMP(dump, "&");
 	}
 
 	switch (val->kind) {
 	case PSI_LET_NULL:
-		dprintf(fd, "NULL");
+		PSI_DUMP(dump, "NULL");
 		break;
 	case PSI_LET_TMP:
-		psi_decl_var_dump(fd, val->data.var);
-		dprintf(fd, "\t/* fqn=%s */", val->data.var->fqn->val);
+		psi_decl_var_dump(dump, val->data.var);
+		PSI_DUMP(dump, "\t/* fqn=%s */", val->data.var->fqn->val);
 		break;
 	case PSI_LET_CALLOC:
-		psi_let_calloc_dump(fd, val->data.alloc);
+		psi_let_calloc_dump(dump, val->data.alloc);
 		break;
 	case PSI_LET_CALLBACK:
-		psi_let_callback_dump(fd, val->data.callback, level);
+		psi_let_callback_dump(dump, val->data.callback, level);
 		break;
 	case PSI_LET_FUNC:
-		psi_let_func_dump(fd, val->data.func, level);
+		psi_let_func_dump(dump, val->data.func, level);
 		break;
 	case PSI_LET_NUMEXP:
-		psi_num_exp_dump(fd, val->data.num);
+		psi_num_exp_dump(dump, val->data.num);
 		break;
 
 	default:
@@ -145,15 +145,15 @@ void psi_let_exp_dump(int fd, struct psi_let_exp *val, unsigned level, int last)
 	}
 
 	if (val->var) {
-		dprintf(fd, "\t/* fqn=%s */", val->var->fqn->val);
+		PSI_DUMP(dump, "\t/* fqn=%s */", val->var->fqn->val);
 	}
 
 	if (level > 1) {
 		if (!last) {
-			dprintf(fd, ",");
+			PSI_DUMP(dump, ",");
 		}
 	} else {
-		dprintf(fd, ";");
+		PSI_DUMP(dump, ";");
 	}
 }
 

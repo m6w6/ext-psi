@@ -43,7 +43,7 @@ struct psi_decl_arg {
 
 struct psi_decl_arg *psi_decl_arg_init(struct psi_decl_type *type, struct psi_decl_var *var);
 void psi_decl_arg_free(struct psi_decl_arg **arg_ptr);
-void psi_decl_arg_dump(int fd, struct psi_decl_arg *arg, unsigned level);
+void psi_decl_arg_dump(struct psi_dump *dump, struct psi_decl_arg *arg, unsigned level);
 
 bool psi_decl_arg_validate(struct psi_data *data, struct psi_decl_arg *arg, struct psi_validate_scope *scope);
 bool psi_decl_arg_validate_typedef(struct psi_data *data, struct psi_decl_arg *def, struct psi_validate_scope *scope);

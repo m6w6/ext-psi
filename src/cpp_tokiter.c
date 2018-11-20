@@ -28,7 +28,7 @@
 #include "cpp.h"
 #include "parser.h"
 
-void psi_cpp_tokiter_dump(int fd, struct psi_cpp *cpp)
+void psi_cpp_tokiter_dump(struct psi_dump *dump, struct psi_cpp *cpp)
 {
 	size_t i = cpp->index;
 	struct psi_token *T;
@@ -39,14 +39,14 @@ void psi_cpp_tokiter_dump(int fd, struct psi_cpp *cpp)
 		i = 0;
 	}
 	while (psi_plist_get(cpp->tokens.iter, i, &T)) {
-		dprintf(fd, "PSI: CPP tokens %5zu %c ", i, cpp->index == i ? '*' : ' ');
+		PSI_DUMP(dump, "PSI: CPP tokens %5zu %c ", i, cpp->index == i ? '*' : ' ');
 		if (T) {
-			psi_token_dump(fd, T);
+			psi_token_dump(dump, T);
 		} else {
-			dprintf(fd, "TOKEN deleted\n");
+			PSI_DUMP(dump, "TOKEN deleted\n");
 		}
 		if (i >= cpp->index + 40) {
-			dprintf(fd, "PSI: CPP tokens .....\n");
+			PSI_DUMP(dump, "PSI: CPP tokens .....\n");
 			break;
 		}
 		++i;

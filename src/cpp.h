@@ -29,7 +29,7 @@
 #include "data.h"
 
 #ifndef PSI_CPP_DEBUG
-# define PSI_CPP_DEBUG 1
+# define PSI_CPP_DEBUG 0
 #endif
 
 struct psi_cpp {
@@ -68,7 +68,7 @@ bool psi_cpp_include(struct psi_cpp *cpp, const struct psi_token *file, unsigned
 void psi_cpp_tokiter_reset(struct psi_cpp *cpp);
 bool psi_cpp_tokiter_seek(struct psi_cpp *cpp, size_t index);
 #if PSI_CPP_DEBUG > 1
-void psi_cpp_tokiter_dump(int fd, struct psi_cpp *cpp);
+void psi_cpp_tokiter_dump(struct psi_dump *dump, struct psi_cpp *cpp);
 #endif
 struct psi_token *psi_cpp_tokiter_current(struct psi_cpp *cpp);
 size_t psi_cpp_tokiter_index(struct psi_cpp *cpp);

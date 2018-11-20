@@ -85,25 +85,25 @@ bool psi_impl_func_validate(struct psi_data *data, struct psi_impl_func *func,
 	return true;
 }
 
-void psi_impl_func_dump(int fd, struct psi_impl_func *func)
+void psi_impl_func_dump(struct psi_dump *dump, struct psi_impl_func *func)
 {
-	dprintf(fd, "function %s(", func->name->val);
+	PSI_DUMP(dump, "function %s(", func->name->val);
 	if (func->args) {
 		size_t i = 0;
 		struct psi_impl_arg *iarg;
 
 		while (psi_plist_get(func->args, i++, &iarg)) {
 			if (i > 1) {
-				dprintf(fd, ", ");
+				PSI_DUMP(dump, ", ");
 			}
-			psi_impl_arg_dump(fd, iarg, false);
+			psi_impl_arg_dump(dump, iarg, false);
 		}
 
 		if (func->vararg) {
-			dprintf(fd, ", ");
-			psi_impl_arg_dump(fd, func->vararg, true);
+			PSI_DUMP(dump, ", ");
+			psi_impl_arg_dump(dump, func->vararg, true);
 		}
 	}
-	dprintf(fd, ") : %s%s", func->return_reference ? "&" : "",
+	PSI_DUMP(dump, ") : %s%s", func->return_reference ? "&" : "",
 			func->return_type->name->val);
 }

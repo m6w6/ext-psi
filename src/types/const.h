@@ -41,7 +41,7 @@ struct psi_const {
 struct psi_const *psi_const_init(struct psi_impl_type *type, zend_string *name,
 		struct psi_impl_def_val *val);
 void psi_const_free(struct psi_const **constant_ptr);
-void psi_const_dump(int fd, struct psi_const *cnst);
+void psi_const_dump(struct psi_dump *dump, struct psi_const *cnst);
 bool psi_const_validate(struct psi_data *data, struct psi_const *c,
 		struct psi_validate_scope *scope);
 

@@ -114,28 +114,11 @@ static char *include_flavor[] = {
 		"include once"
 };
 
-#if PSI_CPP_DEBUG > 1
-static int dump_def(zval *p)
-{
-	struct psi_cpp_macro_decl *decl = Z_PTR_P(p);
-
-	if (decl) {
-		dprintf(2, "PSI: CPP decl -> #define ");
-		psi_cpp_macro_decl_dump(2, decl);
-		dprintf(2, "\n");
-	}
-	return ZEND_HASH_APPLY_KEEP;
-}
-#endif
-
 void psi_cpp_free(struct psi_cpp **cpp_ptr)
 {
 	if (*cpp_ptr) {
 		struct psi_cpp *cpp = *cpp_ptr;
 
-#if PSI_CPP_DEBUG > 1
-		zend_hash_apply(&cpp->defs, dump_def);
-#endif
 		*cpp_ptr = NULL;
 		zend_hash_destroy(&cpp->defs);
 		zend_hash_destroy(&cpp->once);

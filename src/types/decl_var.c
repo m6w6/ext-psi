@@ -75,13 +75,13 @@ void psi_decl_var_free(struct psi_decl_var **var_ptr)
 	}
 }
 
-void psi_decl_var_dump(int fd, struct psi_decl_var *var)
+void psi_decl_var_dump(struct psi_dump *dump, struct psi_decl_var *var)
 {
-	dprintf(fd, "%s%s",
+	PSI_DUMP(dump, "%s%s",
 			psi_t_indirection(var->pointer_level - !!var->array_size),
 			var->name ? var->name->val : "/**/");
 	if (var->array_size && var->arg->type->type != PSI_T_FUNCTION) {
-		dprintf(fd, "[%u]", var->array_size);
+		PSI_DUMP(dump, "[%u]", var->array_size);
 	}
 }
 

@@ -44,7 +44,7 @@ struct psi_free_exp {
 
 struct psi_free_exp *psi_free_exp_init(zend_string *func, struct psi_plist *vars);
 void psi_free_exp_free(struct psi_free_exp **f_ptr);
-void psi_free_exp_dump(int fd, struct psi_free_exp *call);
+void psi_free_exp_dump(struct psi_dump *dump, struct psi_free_exp *call);
 
 bool psi_free_exp_validate(struct psi_data *data, struct psi_free_exp *fc, struct psi_validate_scope *scope);
 

@@ -58,24 +58,24 @@ void psi_cpp_macro_decl_free(struct psi_cpp_macro_decl **macro_ptr)
 	}
 }
 
-void psi_cpp_macro_decl_dump(int fd, struct psi_cpp_macro_decl *macro)
+void psi_cpp_macro_decl_dump(struct psi_dump *dump, struct psi_cpp_macro_decl *macro)
 {
-	dprintf(fd, "%s", macro->token->text->val);
+	PSI_DUMP(dump, "%s", macro->token->text->val);
 
 	if (macro->sig) {
 		size_t i = 0;
 		struct psi_token *tok;
 
-		dprintf(fd, "(");
+		PSI_DUMP(dump, "(");
 		while (psi_plist_get(macro->sig, i++, &tok)) {
-			dprintf(fd, "%s%s", i>1?",":"", tok->text->val);
+			PSI_DUMP(dump, "%s%s", i>1?",":"", tok->text->val);
 		}
-		dprintf(fd, ")");
+		PSI_DUMP(dump, ")");
 	}
 
 	if (macro->exp) {
-		dprintf(fd, " ");
-		psi_num_exp_dump(fd, macro->exp);
+		PSI_DUMP(dump, " ");
+		psi_num_exp_dump(dump, macro->exp);
 
 		assert(macro->tokens);
 
@@ -86,13 +86,13 @@ void psi_cpp_macro_decl_dump(int fd, struct psi_cpp_macro_decl *macro)
 		while (psi_plist_get(macro->tokens, i++, &tok)) {
 			switch (tok->type) {
 			case PSI_T_QUOTED_STRING:
-				dprintf(fd, " \"%s\"", tok->text->val);
+				PSI_DUMP(dump, " \"%s\"", tok->text->val);
 				break;
 			case PSI_T_QUOTED_CHAR:
-				dprintf(fd, " '%s'", tok->text->val);
+				PSI_DUMP(dump, " '%s'", tok->text->val);
 				break;
 			default:
-				dprintf(fd, " %s", tok->text->val);
+				PSI_DUMP(dump, " %s", tok->text->val);
 			}
 		}
 	}

@@ -26,6 +26,8 @@
 #include "php_psi_stdinc.h"
 #include "data.h"
 
+#include "zend_smart_str.h"
+
 #include <assert.h>
 #include <math.h>
 
@@ -37,7 +39,11 @@ struct psi_impl_def_val *psi_impl_def_val_init(token_t t, void *data)
 
 	switch ((def->type = t)) {
 	case PSI_T_TRUE:
+		def->ival.zend.bval = 1;
+		/* no break */
 	case PSI_T_FALSE:
+		def->ityp = PSI_T_UINT8;
+		/* no break */
 	case PSI_T_NULL:
 		break;
 	case PSI_T_QUOTED_STRING:
@@ -85,25 +91,271 @@ void psi_impl_def_val_free(struct psi_impl_def_val **def_ptr)
 	}
 }
 
+void psi_impl_def_val_get_zval(struct psi_impl_def_val *val, token_t typ, zval *zv)
+{
+	impl_val tmp = val->ival;
+
+	/* c->val has already been forced to the type of the containing constant or impl_arg */
+	switch (typ) {
+	case PSI_T_BOOL:
+		ZVAL_BOOL(zv, tmp.zend.bval);
+		break;
+	case PSI_T_INT:
+		ZVAL_LONG(zv, tmp.zend.lval);
+		break;
+	case PSI_T_FLOAT:
+	case PSI_T_DOUBLE:
+	is_double: ;
+		ZVAL_DOUBLE(zv, tmp.dval);
+		break;
+	case PSI_T_STRING:
+	is_string: ;
+		ZVAL_NEW_STR(zv, zend_string_copy(tmp.zend.str));
+		if (ZSTR_IS_INTERNED(Z_STR_P(zv))) {
+			Z_TYPE_FLAGS_P(zv) = 0;
+		}
+		break;
+	case PSI_T_MIXED:
+		switch (val->type) {
+		case PSI_T_NULL:
+			ZVAL_NULL(zv);
+			break;
+		case PSI_T_TRUE:
+			ZVAL_TRUE(zv);
+			break;
+		case PSI_T_FALSE:
+			ZVAL_FALSE(zv);
+			break;
+		case PSI_T_STRING:
+			goto is_string;
+			break;
+		case PSI_T_NUMBER:
+			switch (val->ityp) {
+			case PSI_T_INT8:
+			case PSI_T_UINT8:
+			case PSI_T_INT16:
+			case PSI_T_UINT16:
+			case PSI_T_INT32:
+			case PSI_T_UINT32:
+				psi_calc_cast(val->ityp, &tmp, PSI_T_INT64, &tmp);
+				/* no break */
+			case PSI_T_INT64:
+				ZVAL_LONG(zv, tmp.i64);
+				break;
+			case PSI_T_UINT64:
+				ZVAL_LONG_DOUBLE_STR(zv, tmp.u64, is_signed=false;persistent=true);
+				break;
+#if HAVE_INT128
+			case PSI_T_INT128:
+				ZVAL_LONG_DOUBLE_STR(zv, tmp.i128, is_signed=true;persistent=true);
+				break;
+			case PSI_T_UINT128:
+				ZVAL_LONG_DOUBLE_STR(zv, tmp.u128, is_signed=false;persistent=true);
+#endif
+				break;
+			case PSI_T_FLOAT:
+				ZVAL_DOUBLE(zv, tmp.fval);
+				break;
+			case PSI_T_DOUBLE:
+				goto is_double;
+				break;
+#if HAVE_LONG_DOUBLE
+			case PSI_T_LONG_DOUBLE:
+				ZVAL_DOUBLE(zv, tmp.ldval);
+				break;
+#endif
+			default:
+				assert(0);
+			}
+			break;
+		default:
+			assert(0);
+			break;
+		}
+		break;
+	default:
+		assert(0);
+		break;
+	}
+
+}
+/*
+token_t psi_impl_def_val_get_zend(struct psi_impl_def_val *val, impl_val *res)
+{
+	switch (val->type) {
+	case PSI_T_NULL:
+		return PSI_T_NULL;
+	case PSI_T_TRUE:
+	case PSI_T_FALSE:
+		res->zend.bval = val->ival.zend.bval;
+		return PSI_T_BOOL;
+	case PSI_T_STRING:
+		res->zend.str = val->ival.zend.str
+			? zend_string_copy(val->ival.zend.str)
+			: zend_empty_string;
+		return PSI_T_STRING;
+	case PSI_T_NUMBER:
+		switch (val->ityp) {
+		case PSI_T_FLOAT:
+			res->dval = val->ival.fval;
+			return PSI_T_DOUBLE;
+		case PSI_T_DOUBLE:
+			res->dval = val->ival.dval;
+			return PSI_T_DOUBLE;
+#if HAVE_LONG_DOUBLE
+		case PSI_T_LONG_DOUBLE:
+			res->dval = val->ival.ldval;
+			return PSI_T_DOUBLE;
+#endif
+		default:
+			psi_calc_cast(val->ityp, &val->ival, PSI_T_INT64, res);
+			return PSI_T_INT;
+		}
+		break;
+	default:
+		assert(0);
+		return 0;
+	}
+}
+*/
+
+static inline bool psi_impl_def_val_validate_impl_type(struct psi_data *data,
+		struct psi_impl_def_val *val, struct psi_impl_type *type,
+		struct psi_validate_scope *scope)
+{
+	switch (type->type) {
+	case PSI_T_BOOL:
+		switch (val->type) {
+		case PSI_T_TRUE:
+		case PSI_T_FALSE:
+			return true;
+		case PSI_T_STRING:
+			if (val->ival.zend.str
+					&& *val->ival.zend.str->val
+					&& *val->ival.zend.str->val != '0') {
+				zend_string_release(val->ival.zend.str);
+				val->ival.zend.bval = 1;
+			} else {
+				if (val->ival.zend.str) {
+					zend_string_release(val->ival.zend.str);
+				}
+				val->ival.zend.bval = 0;
+			}
+			val->ityp = PSI_T_UINT8;
+			return true;
+		default:
+			assert(0);
+			break;
+		}
+		break;
+	case PSI_T_INT:
+		if (val->type == PSI_T_STRING) {
+			zend_string *str = val->ival.zend.str;
+			switch (is_numeric_str_function(str, &val->ival.zend.lval, &val->ival.dval)) {
+			case IS_DOUBLE:
+				val->ival.zend.lval = zend_dval_to_lval_cap(val->ival.dval);
+				/* no break */
+			case IS_LONG:
+				break;
+			default:
+				val->ival.zend.lval = 0;
+			}
+			zend_string_release(str);
+			val->ityp = PSI_T_INT64;
+			return true;
+		}
+		psi_calc_cast(val->ityp, &val->ival, PSI_T_INT64, &val->ival);
+		val->type = val->ityp = PSI_T_INT64;
+		return true;
+	case PSI_T_FLOAT:
+	case PSI_T_DOUBLE:
+		if (val->type == PSI_T_STRING) {
+			zend_string *str = val->ival.zend.str;
+			switch (is_numeric_str_function(str, &val->ival.zend.lval, &val->ival.dval)) {
+			case IS_LONG:
+				val->ival.dval = val->ival.zend.lval;
+				/* no break */
+			case IS_DOUBLE:
+				break;
+			default:
+				val->ival.dval = 0;
+			}
+			zend_string_release(str);
+			val->type = val->ityp = PSI_T_DOUBLE;
+			return true;
+		}
+		psi_calc_cast(val->ityp, &val->ival, PSI_T_DOUBLE, &val->ival);
+		val->ityp = PSI_T_DOUBLE;
+		return true;
+	case PSI_T_STRING:
+		if (val->type == PSI_T_STRING) {
+			return true;
+		} else {
+			smart_str str = {0};
+
+			switch (val->ityp) {
+			CASE_IMPLVAL_NUM_PRINTF(smart_str_append_printf, &str, val->ival, false);
+			default:
+				assert(0);
+			}
+			val->ival.zend.str = smart_str_extract(&str);
+			val->type = PSI_T_STRING;
+			return true;
+		}
+		break;
+	default:
+		data->error(data, val->token, PSI_WARNING,
+				"Invalid default value type '%s', "
+				"expected one of bool, int, float/double or string.",
+				type->name->val);
+
+	}
+	return false;
+}
+
 bool psi_impl_def_val_validate(struct psi_data *data,
 		struct psi_impl_def_val *val, struct psi_impl_type *type,
 		struct psi_validate_scope *scope)
 {
+	/* NULL can be anything */
 	if (val->type == PSI_T_NULL) {
 		return true;
-	} else if (val->type == PSI_T_NUMBER) {
+	}
+
+	/* a number can be anything */
+	if (val->type == PSI_T_NUMBER) {
 		if (!psi_num_exp_validate(data, val->data.num, scope)) {
 			return false;
 		}
+		val->ityp = psi_num_exp_exec(val->data.num, &val->ival, NULL, scope->cpp);
 	}
 
+	/* forced type, like `const <type> foo`, or function param `<type> $xyz` */
+	if (type) {
+		return psi_impl_def_val_validate_impl_type(data, val, type, scope);
+	}
+
+	switch (val->type) {
+	case PSI_T_NUMBER:
+	case PSI_T_NULL:
+	case PSI_T_TRUE:
+	case PSI_T_FALSE:
+	case PSI_T_STRING:
+		return true;
+	default:
+		assert(0);
+		break;
+	}
+
+	return false;
+/*
 	switch (type ? type->type : PSI_T_MIXED) {
 	case PSI_T_BOOL:
 		val->ival.zend.bval = val->type == PSI_T_TRUE ? 1 : 0;
 		return true;
 		break;
 
-	/* macros */
+	// macros
 	case PSI_T_NUMBER:
 		if (val->type == PSI_T_NUMBER) {
 			token_t typ = psi_num_exp_exec(val->data.num, &val->ival, NULL, scope->cpp);
@@ -111,7 +363,7 @@ bool psi_impl_def_val_validate(struct psi_data *data,
 			switch (typ) {
 			case PSI_T_FLOAT:
 				val->ival.dval = val->ival.fval;
-				/* no break */
+				// no break
 			case PSI_T_DOUBLE:
 				val->type = PSI_T_FLOAT;
 				type->type = PSI_T_FLOAT;
@@ -125,7 +377,7 @@ bool psi_impl_def_val_validate(struct psi_data *data,
 							val->ival.u64);
 				}
 			default:
-				/* FIXME big integers */
+				// FIXME big integers
 				val->type = PSI_T_INT;
 				type->type = PSI_T_INT;
 				zend_string_release(type->name);
@@ -172,105 +424,58 @@ bool psi_impl_def_val_validate(struct psi_data *data,
 
 	case PSI_T_STRING:
 		if (val->type == PSI_T_STRING) {
-			return true;
+			return true;		data->error(data, val->token, PSI_WARNING,
+					"Invalid default value type '%s', "
+					"expected one of bool, int, float, string.",
+					type ? type->name->val : "mixed");
+
 		}
 		break;
 
 	case PSI_T_MIXED:
-		switch (val->type) {
-		case PSI_T_TRUE:
-		case PSI_T_FALSE:
-		case PSI_T_NULL:
-		case PSI_T_STRING:
-		case PSI_T_FLOAT:
-		case PSI_T_DOUBLE:
-		case PSI_T_INT:
-			return true;
-		default:
-			break;
+
 		}
-		if (val->type == PSI_T_NUMBER) {
-			token_t typ = psi_num_exp_exec(val->data.num, &val->ival, NULL, scope->cpp);
-
-			switch (typ) {
-			case PSI_T_FLOAT:
-#if HAVE_LONG_DOUBLE
-			case PSI_T_LONG_DOUBLE:
-#endif
-			promote_double: ;
-				psi_calc_cast(typ, &val->ival, PSI_T_DOUBLE, &val->ival);
-				/* no break */
-			case PSI_T_DOUBLE:
-				val->type = PSI_T_DOUBLE;
-				return true;
-			case PSI_T_UINT64:
-				if (val->ival.u64 > (uint64_t) ZEND_LONG_MAX) {
-					if (val->ival.u64 > (1LU<<53)) {
-						char buf[0x20];
-
-						/* convert to string */
-						char *res = zend_print_ulong_to_buf(buf + sizeof(buf) - 1, val->ival.u64);
-						val->type = PSI_T_STRING;
-						val->ival.zend.str = zend_string_init(res, buf + sizeof(buf) - 1 - res, 1);
-
-						return true;
-					}
-					goto promote_double;
-				}
-				/* no break */
-			default:
-				psi_calc_cast(typ, &val->ival, PSI_T_INT64, &val->ival);
-				/* no break */
-			case PSI_T_INT64:
-				val->type = PSI_T_INT;
-				return true;
-			}
-		}
-		/* no break */
+		// no break
 	default:
-		data->error(data, val->token, PSI_WARNING,
-				"Invalid default value type '%s', "
-				"expected one of bool, int, float, string.",
-				type ? type->name->val : "mixed");
 	}
-
-	return false;
+*/
 }
 
-void psi_impl_def_val_dump(int fd, struct psi_impl_def_val *val) {
+void psi_impl_def_val_dump(struct psi_dump *dump, struct psi_impl_def_val *val) {
 	switch (val->type) {
 	case PSI_T_NULL:
-		dprintf(fd, "NULL");
+		PSI_DUMP(dump, "NULL");
 		break;
 	case PSI_T_TRUE:
-		dprintf(fd, "true");
+		PSI_DUMP(dump, "true");
 		break;
 	case PSI_T_FALSE:
-		dprintf(fd, "false");
+		PSI_DUMP(dump, "false");
 		break;
 	case PSI_T_BOOL:
-		dprintf(fd, "%s", val->ival.zend.bval ? "true" : "false");
+		PSI_DUMP(dump, "%s", val->ival.zend.bval ? "true" : "false");
 		break;
 	case PSI_T_INT:
-		dprintf(fd, ZEND_LONG_FMT, val->ival.zend.lval);
+		PSI_DUMP(dump, ZEND_LONG_FMT, val->ival.zend.lval);
 		break;
 	case PSI_T_FLOAT:
 	case PSI_T_DOUBLE:
 		if (isinf(val->ival.dval)) {
-			dprintf(fd, "\\INF");
+			PSI_DUMP(dump, "\\INF");
 		} else if (isnan(val->ival.dval)) {
-			dprintf(fd, "\\NAN");
+			PSI_DUMP(dump, "\\NAN");
 		} else {
-			dprintf(fd, "%" PRIdval, val->ival.dval);
+			PSI_DUMP(dump, "%" PRIdval, val->ival.dval);
 		}
 		break;
 	case PSI_T_STRING:
-		dprintf(fd, "\"%s\"", val->ival.zend.str->val);
+		PSI_DUMP(dump, "\"%s\"", val->ival.zend.str->val);
 		break;
 	case PSI_T_NUMBER:
-		psi_num_exp_dump(fd, val->data.num);
+		psi_num_exp_dump(dump, val->data.num);
 		break;
 	default:
 		assert(0);
 	}
+	PSI_DUMP(dump, "\t/* t=%d */ ", val->type);
 }

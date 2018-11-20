@@ -60,30 +60,30 @@ void psi_return_exp_free(struct psi_return_exp **exp_ptr)
 	}
 }
 
-void psi_return_exp_dump(int fd, struct psi_return_exp *exp)
+void psi_return_exp_dump(struct psi_dump *dump, struct psi_return_exp *exp)
 {
 	if (exp->func) {
-		psi_decl_var_dump(fd, exp->func);
-		dprintf(fd, "(");
+		psi_decl_var_dump(dump, exp->func);
+		PSI_DUMP(dump, "(");
 		if (exp->args) {
 			size_t i = 0;
 			struct psi_decl_var *arg;
 
 			while (psi_plist_get(exp->args, i++, &arg)) {
 				if (i > 1) {
-					dprintf(fd, ", ");
+					PSI_DUMP(dump, ", ");
 				}
-				psi_decl_var_dump(fd, arg);
+				psi_decl_var_dump(dump, arg);
 			}
 		}
-		dprintf(fd, ")");
+		PSI_DUMP(dump, ")");
 	}
 	if (exp->set) {
 		if (exp->func) {
-			dprintf(fd, " as ");
+			PSI_DUMP(dump, " as ");
 		}
 
-		psi_set_exp_dump(fd, exp->set, 1, 1);
+		psi_set_exp_dump(dump, exp->set, 1, 1);
 	}
 }
 

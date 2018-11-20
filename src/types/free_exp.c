@@ -51,19 +51,19 @@ void psi_free_exp_free(struct psi_free_exp **f_ptr)
 	}
 }
 
-void psi_free_exp_dump(int fd, struct psi_free_exp *call)
+void psi_free_exp_dump(struct psi_dump *dump, struct psi_free_exp *call)
 {
 	size_t l = 0, c = psi_plist_count(call->vars);
 	struct psi_decl_var *fvar;
 
-	dprintf(fd, "%s(", call->func->val);
+	PSI_DUMP(dump, "%s(", call->func->val);
 	while (psi_plist_get(call->vars, l++, &fvar)) {
-		psi_decl_var_dump(fd, fvar);
+		psi_decl_var_dump(dump, fvar);
 		if (l < c) {
-			dprintf(fd, ", ");
+			PSI_DUMP(dump, ", ");
 		}
 	}
-	dprintf(fd, ")");
+	PSI_DUMP(dump, ")");
 }
 
 static inline struct psi_decl *locate_free_decl(struct psi_plist *decls,

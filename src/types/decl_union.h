@@ -41,7 +41,7 @@ struct psi_decl_union {
 
 struct psi_decl_union *psi_decl_union_init(zend_string *name, struct psi_plist *args);
 void psi_decl_union_free(struct psi_decl_union **u_ptr);
-void psi_decl_union_dump(int fd, struct psi_decl_union *unn);
+void psi_decl_union_dump(struct psi_dump *dump, struct psi_decl_union *unn);
 
 bool psi_decl_union_validate(struct psi_data *data, struct psi_decl_union *u, struct psi_validate_scope *scope);
 

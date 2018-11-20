@@ -294,60 +294,60 @@ void psi_decl_type_dump_args_with_layout(int fd, struct psi_plist *args,
 {
 	size_t i = 0;
 
-	dprintf(fd, " {\n");
+	PSI_DUMP(dump, " {\n");
 	if (args) {
 		struct psi_decl_arg *sarg;
 
 		++level;
 		while (psi_plist_get(args, i++, &sarg)) {
-			dprintf(fd, "%s", psi_t_indent(level));
-			psi_decl_arg_dump(fd, sarg, level);
+			PSI_DUMP(dump, "%s", psi_t_indent(level));
+			psi_decl_arg_dump(dump, sarg, level);
 			if (sarg->layout) {
 				if (sarg->layout->bfw) {
-					dprintf(fd, ":%zu", sarg->layout->bfw->len);
+					PSI_DUMP(dump, ":%zu", sarg->layout->bfw->len);
 				}
-				dprintf(fd, "::(%zu, %zu);\n", sarg->layout->pos,
+				PSI_DUMP(dump, "::(%zu, %zu);\n", sarg->layout->pos,
 						sarg->layout->len);
 			} else {
-				dprintf(fd, ";\n");
+				PSI_DUMP(dump, ";\n");
 			}
 		}
 		--level;
 	}
-	dprintf(fd, "%s", psi_t_indent(level));
-	dprintf(fd, "}");
+	PSI_DUMP(dump, "%s", psi_t_indent(level));
+	PSI_DUMP(dump, "}");
 }
 
-void psi_decl_type_dump(int fd, struct psi_decl_type *t, unsigned level)
+void psi_decl_type_dump(struct psi_dump *dump, struct psi_decl_type *t, unsigned level)
 {
 	switch (t->type) {
 	case PSI_T_POINTER:
-		dprintf(fd, "%s *", t->name->val);
+		PSI_DUMP(dump, "%s *", t->name->val);
 		return;
 
 	case PSI_T_ENUM:
-		dprintf(fd, "enum ");
+		PSI_DUMP(dump, "enum ");
 		if (psi_decl_type_is_anon(t->name, "enum")) {
 			size_t i = 0, c = psi_plist_count(t->real.enm->items);
 			struct psi_decl_enum_item *item;
 
-			dprintf(fd, "{\n");
+			PSI_DUMP(dump, "{\n");
 			++level;
 			while (psi_plist_get(t->real.enm->items, i++, &item)) {
-				dprintf(fd, "%s", psi_t_indent(level));
-				psi_decl_enum_item_dump(fd, item);
+				PSI_DUMP(dump, "%s", psi_t_indent(level));
+				psi_decl_enum_item_dump(dump, item);
 				if (i < c) {
-					dprintf(fd, "%s\n", i < c ? "," : "");
+					PSI_DUMP(dump, "%s\n", i < c ? "," : "");
 				}
 			}
 			--level;
-			dprintf(fd, "%s\n} ", psi_t_indent(level));
+			PSI_DUMP(dump, "%s\n} ", psi_t_indent(level));
 			return;
 		}
 		break;
 
 	case PSI_T_STRUCT:
-		dprintf(fd, "struct ");
+		PSI_DUMP(dump, "struct ");
 		if (psi_decl_type_is_anon(t->name, "struct")) {
 			psi_decl_type_dump_args_with_layout(fd, t->real.strct->args, level);
 			return;
@@ -355,7 +355,7 @@ void psi_decl_type_dump(int fd, struct psi_decl_type *t, unsigned level)
 		break;
 
 	case PSI_T_UNION:
-		dprintf(fd, "union ");
+		PSI_DUMP(dump, "union ");
 		if (psi_decl_type_is_anon(t->name, "union")) {
 			psi_decl_type_dump_args_with_layout(fd, t->real.unn->args, level);
 			return;
@@ -363,14 +363,14 @@ void psi_decl_type_dump(int fd, struct psi_decl_type *t, unsigned level)
 		break;
 
 	case PSI_T_FUNCTION:
-		psi_decl_type_dump(fd, t->real.func->func->type, level);
+		psi_decl_type_dump(dump, t->real.func->func->type, level);
 		return;
 
 	default:
 		break;
 	}
 
-	dprintf(fd, "%s", t->name->val);
+	PSI_DUMP(dump, "%s", t->name->val);
 }
 
 int psi_decl_type_is_weak(struct psi_decl_type *type)

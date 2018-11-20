@@ -36,6 +36,60 @@ struct psi_call_frame;
 struct psi_impl;
 struct psi_impl_type;
 
+#if HAVE_INT128
+static inline char *psi_u128_to_buf(char *buf, unsigned __int128 u128)
+{
+	for (*buf = 0; u128 > 0; u128 /= 10) {
+		*--buf = ((u128 % 10) + '0') & 0xff;
+	}
+	return buf;
+}
+
+static inline char *psi_i128_to_buf(char *buf, __int128 i128)
+{
+	if (i128 < 0) {
+		char *res = psi_u128_to_buf(buf, ~((unsigned __int128) i128) + 1);
+
+		*--res = '-';
+		return res;
+	}
+	return psi_u128_to_buf(buf, i128);
+}
+#else
+# define psi_u128_to_buf(b,u) zend_print_ulong_to_buf(b,u)
+# define psi_i128_to_buf(b,i) zend_print_long_to_buf(b,i)
+#endif
+
+
+#define RETVAL_LONG_DOUBLE_STR(V, flags) ZVAL_LONG_DOUBLE_STR(return_value, V, flags)
+# define ZVAL_LONG_DOUBLE_STR(z, V, flags) do { \
+	char buf[0x20] = {0}; \
+	bool is_signed = false, persistent = false; \
+	flags; \
+	if (is_signed) { \
+		if (V >= ZEND_LONG_MIN && V <= ZEND_LONG_MAX) { \
+			ZVAL_LONG(z, V); \
+		} else if (V >= -(1L<<52) && V <= (1L<<53)) { \
+			ZVAL_DOUBLE(z, V); \
+		} else if (V < ZEND_LONG_MIN || V > ZEND_LONG_MAX) { \
+			ZVAL_STRING(z, psi_i128_to_buf(&buf[sizeof(buf) - 1], V)); \
+		} else { \
+			ZVAL_STRING(z, zend_print_long_to_buf(&buf[sizeof(buf) - 1], V)); \
+		} \
+	} else { \
+		if (V <= ZEND_LONG_MAX) { \
+			ZVAL_LONG(z, V); \
+		} else if (V <= (1L<<53)) { \
+			ZVAL_DOUBLE(z, V); \
+		} else if (V > ZEND_ULONG_MAX) { \
+			ZVAL_STRING(z, psi_u128_to_buf(&buf[sizeof(buf) - 1], V)); \
+		} else { \
+			ZVAL_STRING(z, zend_print_ulong_to_buf(&buf[sizeof(buf) - 1], V)); \
+		} \
+	} \
+} while (0)
+
+
 zend_long psi_zval_count(zval *zvalue);
 zend_internal_arg_info *psi_internal_arginfo(struct psi_impl *impl);
 int psi_internal_type(struct psi_impl_type *type);

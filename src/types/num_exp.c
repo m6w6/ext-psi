@@ -380,30 +380,30 @@ struct psi_plist *psi_num_exp_tokens(struct psi_num_exp *exp,
 	return list;
 }
 
-void psi_num_exp_dump(int fd, struct psi_num_exp *exp)
+void psi_num_exp_dump(struct psi_dump *dump, struct psi_num_exp *exp)
 {
 	switch (exp->op) {
 	case PSI_T_NUMBER:
-		psi_number_dump(fd, exp->data.n);
+		psi_number_dump(dump, exp->data.n);
 		break;
 
 	case PSI_T_CAST:
-		dprintf(fd, "(");
+		PSI_DUMP(dump, "(");
 		psi_decl_type_dump(1, exp->data.c.typ, 0);
-		dprintf(fd, ")");
+		PSI_DUMP(dump, ")");
 		break;
 
 	case PSI_T_NOT:
 	case PSI_T_TILDE:
 	unary:
-		dprintf(fd, "%s", psi_num_exp_op_tok(exp->op));
-		psi_num_exp_dump(fd, exp->data.u);
+		PSI_DUMP(dump, "%s", psi_num_exp_op_tok(exp->op));
+		psi_num_exp_dump(dump, exp->data.u);
 		break;
 
 	case PSI_T_LPAREN:
-		dprintf(fd, "(");
-		psi_num_exp_dump(fd, exp->data.u);
-		dprintf(fd, ")");
+		PSI_DUMP(dump, "(");
+		psi_num_exp_dump(dump, exp->data.u);
+		PSI_DUMP(dump, ")");
 		break;
 
 	case PSI_T_PLUS:
@@ -429,17 +429,17 @@ void psi_num_exp_dump(int fd, struct psi_num_exp *exp)
 	case PSI_T_CMP_GE:
 	case PSI_T_RCHEVR:
 	case PSI_T_LCHEVR:
-		psi_num_exp_dump(fd, exp->data.b.lhs);
-		dprintf(fd, " %s ", psi_num_exp_op_tok(exp->op));
-		psi_num_exp_dump(fd, exp->data.b.rhs);
+		psi_num_exp_dump(dump, exp->data.b.lhs);
+		PSI_DUMP(dump, " %s ", psi_num_exp_op_tok(exp->op));
+		psi_num_exp_dump(dump, exp->data.b.rhs);
 		break;
 
 	case PSI_T_IIF:
-		psi_num_exp_dump(fd, exp->data.t.cond);
-		dprintf(fd, " ? ");
-		psi_num_exp_dump(fd, exp->data.t.truthy);
-		dprintf(fd, " : ");
-		psi_num_exp_dump(fd, exp->data.t.falsy);
+		psi_num_exp_dump(dump, exp->data.t.cond);
+		PSI_DUMP(dump, " ? ");
+		psi_num_exp_dump(dump, exp->data.t.truthy);
+		PSI_DUMP(dump, " : ");
+		psi_num_exp_dump(dump, exp->data.t.falsy);
 		break;
 
 	default:

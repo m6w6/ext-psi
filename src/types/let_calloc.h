@@ -38,6 +38,6 @@ struct psi_let_calloc {
 
 struct psi_let_calloc *psi_let_calloc_init(struct psi_num_exp *nmemb, struct psi_num_exp *size);
 void psi_let_calloc_free(struct psi_let_calloc **alloc_ptr);
-void psi_let_calloc_dump(int fd, struct psi_let_calloc *alloc);
+void psi_let_calloc_dump(struct psi_dump *dump, struct psi_let_calloc *alloc);
 
 #endif

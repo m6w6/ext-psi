@@ -50,11 +50,11 @@ void psi_let_calloc_free(struct psi_let_calloc **alloc_ptr)
 	}
 }
 
-void psi_let_calloc_dump(int fd, struct psi_let_calloc *alloc)
+void psi_let_calloc_dump(struct psi_dump *dump, struct psi_let_calloc *alloc)
 {
-	dprintf(fd, "calloc(");
-	psi_num_exp_dump(fd, alloc->nmemb);
-	dprintf(fd, ", ");
-	psi_num_exp_dump(fd, alloc->size);
-	dprintf(fd, ")");
+	PSI_DUMP(dump, "calloc(");
+	psi_num_exp_dump(dump, alloc->nmemb);
+	PSI_DUMP(dump, ", ");
+	psi_num_exp_dump(dump, alloc->size);
+	PSI_DUMP(dump, ")");
 }

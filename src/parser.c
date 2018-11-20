@@ -145,7 +145,7 @@ static inline zend_string *macro_to_constant(struct psi_parser *parser,
 	size_t i = 0;
 	struct psi_token *tok;
 
-	smart_str_append_printf(&str, "\nconst psi\\%s = ", name->val);
+	smart_str_append_printf(&str, "const psi\\%s = ", name->val);
 	if (scope->macro->exp) {
 		impl_val res = {0};
 		token_t typ = psi_num_exp_exec(scope->macro->exp, &res, NULL, scope->cpp);
@@ -179,7 +179,7 @@ void psi_parser_postprocess(struct psi_parser *P)
 	scope.cpp = P->preproc;
 
 	flags = P->flags;
-	//P->flags |= PSI_SILENT;
+	P->flags |= PSI_SILENT;
 
 	ZEND_HASH_FOREACH_STR_KEY_PTR(&P->preproc->defs, name, scope.macro)
 	{

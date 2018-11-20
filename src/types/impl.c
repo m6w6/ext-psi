@@ -87,7 +87,7 @@ void psi_impl_free(struct psi_impl **impl_ptr)
 	}
 }
 
-void psi_impl_dump(int fd, struct psi_impl *impl)
+void psi_impl_dump(struct psi_dump *dump, struct psi_impl *impl)
 {
 	size_t i;
 	struct psi_return_stmt *ret;
@@ -96,24 +96,24 @@ void psi_impl_dump(int fd, struct psi_impl *impl)
 	struct psi_free_stmt *fre;
 	struct psi_assert_stmt *ass;
 
-	psi_impl_func_dump(fd, impl->func);
-	dprintf(fd, " {\n");
+	psi_impl_func_dump(dump, impl->func);
+	PSI_DUMP(dump, " {\n");
 	for (i = 0; psi_plist_get(impl->stmts.let, i, &let); ++i) {
-		psi_let_stmt_dump(fd, let);
+		psi_let_stmt_dump(dump, let);
 	}
 	for (i = 0; psi_plist_get(impl->stmts.ass, i, &ass); ++i) {
-		psi_assert_stmt_dump(fd, ass);
+		psi_assert_stmt_dump(dump, ass);
 	}
 	for (i = 0; psi_plist_get(impl->stmts.ret, i, &ret); ++i) {
-		psi_return_stmt_dump(fd, ret);
+		psi_return_stmt_dump(dump, ret);
 	}
 	for (i = 0; psi_plist_get(impl->stmts.set, i, &set); ++i) {
-		psi_set_stmt_dump(fd, set);
+		psi_set_stmt_dump(dump, set);
 	}
 	for (i = 0; psi_plist_get(impl->stmts.fre, i, &fre); ++i) {
-		psi_free_stmt_dump(fd, fre);
+		psi_free_stmt_dump(dump, fre);
 	}
-	dprintf(fd, "}\n");
+	PSI_DUMP(dump, "}\n");
 }
 
 bool psi_impl_validate(struct psi_data *data, struct psi_impl *impl,

@@ -49,22 +49,22 @@ void psi_decl_enum_free(struct psi_decl_enum **e_ptr)
 	}
 }
 
-void psi_decl_enum_dump(int fd, struct psi_decl_enum *e, unsigned level)
+void psi_decl_enum_dump(struct psi_dump *dump, struct psi_decl_enum *e, unsigned level)
 {
-	dprintf(fd, "enum %s {\n", e->name->val);
+	PSI_DUMP(dump, "enum %s {\n", e->name->val);
 	if (e->items) {
 		size_t i = 0;
 		struct psi_decl_enum_item *item;
 
 		while (psi_plist_get(e->items, i++, &item)) {
 			if (i > 1) {
-				dprintf(fd, ",\n");
+				PSI_DUMP(dump, ",\n");
 			}
-			dprintf(fd, "%s", psi_t_indent(level + 1));
-			psi_decl_enum_item_dump(fd, item);
+			PSI_DUMP(dump, "%s", psi_t_indent(level + 1));
+			psi_decl_enum_item_dump(dump, item);
 		}
 	}
-	dprintf(fd, "\n}");
+	PSI_DUMP(dump, "\n}");
 }
 
 bool psi_decl_enum_validate(struct psi_data *data, struct psi_decl_enum *e)

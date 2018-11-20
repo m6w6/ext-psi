@@ -45,19 +45,19 @@ void psi_free_stmt_free(struct psi_free_stmt **f_ptr)
 	}
 }
 
-void psi_free_stmt_dump(int fd, struct psi_free_stmt *fre)
+void psi_free_stmt_dump(struct psi_dump *dump, struct psi_free_stmt *fre)
 {
 	size_t i;
 	struct psi_free_exp *exp;
 
-	dprintf(fd, "\tfree ");
+	PSI_DUMP(dump, "\tfree ");
 	for (i = 0; psi_plist_get(fre->exps, i, &exp); ++i) {
 		if (i) {
-			dprintf(fd, ", ");
+			PSI_DUMP(dump, ", ");
 		}
-		psi_free_exp_dump(fd, exp);
+		psi_free_exp_dump(dump, exp);
 	}
-	dprintf(fd, ";\n");
+	PSI_DUMP(dump, ";\n");
 }
 
 bool psi_free_stmts_validate(struct psi_data *data, struct psi_validate_scope *scope)

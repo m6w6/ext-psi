@@ -55,14 +55,14 @@ void psi_decl_struct_free(struct psi_decl_struct **s_ptr)
 	}
 }
 
-void psi_decl_struct_dump(int fd, struct psi_decl_struct *strct)
+void psi_decl_struct_dump(struct psi_dump *dump, struct psi_decl_struct *strct)
 {
-	dprintf(fd, "struct %s::(%zu, %zu)", strct->name->val, strct->align,
+	PSI_DUMP(dump, "struct %s::(%zu, %zu)", strct->name->val, strct->align,
 			strct->size);
 	if (psi_plist_count(strct->args)) {
 		psi_decl_type_dump_args_with_layout(fd, strct->args, 0);
 	} else {
-		dprintf(fd, ";");
+		PSI_DUMP(dump, ";");
 	}
 }
 

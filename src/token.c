@@ -48,7 +48,7 @@ struct psi_token *psi_token_init(token_t token_typ, const char *token_txt,
 	T->file = zend_string_copy(file);
 	T->text = zend_string_init_interned(token_txt, token_len, 1);
 #if PSI_DEBUG_TOKEN_ALLOC
-	fprintf(stderr, "PSI: token_init %p\n", T);
+	PSI_DEBUG_PRINT(cpp->parser, "PSI: token_init %p\n", T);
 #endif
 	return T;
 }
@@ -57,7 +57,7 @@ void psi_token_free(struct psi_token **token_ptr) {
 	if (*token_ptr) {
 		struct psi_token *token = *token_ptr;
 #if PSI_DEBUG_TOKEN_ALLOC
-		fprintf(stderr, "PSI: token_free %p\n", token);
+		PSI_DEBUG_PRINT(cpp->parser, "PSI: token_free %p\n", token);
 #endif
 		*token_ptr = NULL;
 		zend_string_release(token->text);
@@ -71,7 +71,7 @@ struct psi_token *psi_token_copy(struct psi_token *src) {
 
 	*ptr = *src;
 #if PSI_DEBUG_TOKEN_ALLOC
-	fprintf(stderr, "PSI: token_copy %p <= %p\n", ptr, src);
+	PSI_DEBUG_PRINT(cpp->parser, "PSI: token_copy %p <= %p\n", ptr, src);
 #endif
 	ptr->text = zend_string_copy(ptr->text);
 	ptr->file = zend_string_copy(ptr->file);
@@ -110,7 +110,7 @@ struct psi_token *psi_token_cat(const char *sep, unsigned argc, ...) {
 	T->text = smart_str_extract(&text);
 
 #if PSI_DEBUG_TOKEN_ALLOC
-	fprintf(stderr, "PSI: token_cat  %p\n", T);
+	PSI_DEBUG_PRINT(cpp->parser, "PSI: token_cat  %p\n", T);
 #endif
 	return T;
 }
@@ -185,54 +185,54 @@ uint64_t psi_token_hash(struct psi_token *t, char *digest_buf) {
 	return psi_hash(digest_buf, t->file->val, loc_buf, (char *) NULL);
 }
 
-void psi_token_dump(int fd, struct psi_token *t)
+void psi_token_dump(struct psi_dump *dump, struct psi_token *t)
 {
 	size_t i;
 
-	dprintf(fd, "TOKEN %p (%u) ", t, t->type);
+	PSI_DUMP(dump, "TOKEN %p (%u) ", t, t->type);
 	if (t->type == PSI_T_EOF) {
-		dprintf(fd, "EOF");
+		PSI_DUMP(dump, "EOF");
 	} else {
-		dprintf(fd, "\"");
+		PSI_DUMP(dump, "\"");
 		for (i = 0; i < t->text->len; ++i) {
 			switch (t->text->val[i]) {
 			case '\0':
-				dprintf(fd, "\\0");
+				PSI_DUMP(dump, "\\0");
 				break;
 			case '\a':
-				dprintf(fd, "\\a");
+				PSI_DUMP(dump, "\\a");
 				break;
 			case '\b':
-				dprintf(fd, "\\b");
+				PSI_DUMP(dump, "\\b");
 				break;
 			case '\f':
-				dprintf(fd, "\\f");
+				PSI_DUMP(dump, "\\f");
 				break;
 			case '\n':
-				dprintf(fd, "\\n");
+				PSI_DUMP(dump, "\\n");
 				break;
 			case '\r':
-				dprintf(fd, "\\r");
+				PSI_DUMP(dump, "\\r");
 				break;
 			case '\t':
-				dprintf(fd, "\\t");
+				PSI_DUMP(dump, "\\t");
 				break;
 			case '\v':
-				dprintf(fd, "\\v");
+				PSI_DUMP(dump, "\\v");
 				break;
 			case '"':
-				dprintf(fd, "\\\"");
+				PSI_DUMP(dump, "\\\"");
 				break;
 			default:
 				if (isprint(t->text->val[i])) {
-					dprintf(fd, "%c", t->text->val[i]);
+					PSI_DUMP(dump, "%c", t->text->val[i]);
 				} else {
-					dprintf(fd, "\\x%02hhX", t->text->val[i]);
+					PSI_DUMP(dump, "\\x%02hhX", t->text->val[i]);
 				}
 				break;
 			}
 		}
-		dprintf(fd, "\"");
+		PSI_DUMP(dump, "\"");
 	}
-	dprintf(fd, " at col %u in %s on line %u\n", t->col, t->file->val, t->line);
+	PSI_DUMP(dump, " at col %u in %s on line %u\n", t->col, t->file->val, t->line);
 }

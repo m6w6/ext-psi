@@ -28,6 +28,10 @@
 #include "data.h"
 #include "calc.h"
 
+#include "zend_smart_str.h"
+#include "zend_exceptions.h"
+#include "ext/spl/spl_exceptions.h"
+
 struct psi_assert_stmt *psi_assert_stmt_init(enum psi_assert_kind kind, struct psi_num_exp *exp)
 {
 	struct psi_assert_stmt *stmt = pecalloc(1, sizeof(*stmt), 1);
@@ -50,11 +54,11 @@ void psi_assert_stmt_free(struct psi_assert_stmt **stmt_ptr)
 	}
 }
 
-void psi_assert_stmt_dump(int fd, struct psi_assert_stmt *stmt)
+void psi_assert_stmt_dump(struct psi_dump *dump, struct psi_assert_stmt *stmt)
 {
-	dprintf(fd, "\t%s_assert ", stmt->kind == PSI_ASSERT_PRE ? "pre" : "post");
-	psi_num_exp_dump(fd, stmt->exp);
-	dprintf(fd, ";\n");
+	PSI_DUMP(dump, "\t%s_assert ", stmt->kind == PSI_ASSERT_PRE ? "pre" : "post");
+	psi_num_exp_dump(dump, stmt->exp);
+	PSI_DUMP(dump, ";\n");
 }
 
 bool psi_assert_stmt_exec(struct psi_assert_stmt *stmt, struct psi_call_frame *frame)
@@ -81,20 +85,20 @@ bool psi_assert_stmts_validate(struct psi_data *data, struct psi_validate_scope 
 	return true;
 }
 
-char *psi_assert_stmt_message(struct psi_assert_stmt *stmt)
+void psi_assert_stmt_throw(struct psi_assert_stmt *stmt)
 {
-	/* FIXME */
-	struct stat sb;
-	char *message, template[] = "psi.assert.XXXXXX";
-	int fd = mkstemp(template);
+	struct psi_dump dump;
+	smart_str str = {0};
+	zend_string *message;
 
-	dprintf(fd, "Failed asserting that ");
-	psi_num_exp_dump(fd, stmt->exp);
-	fstat(fd, &sb);
-	message = pemalloc(sb.st_size + 1, 1);
-	lseek(fd, 0, SEEK_SET);
-	read(fd, message, sb.st_size);
-	close(fd);
-	message[sb.st_size] = '\0';
-	return message;
+	dump.ctx.hn = &str;
+	dump.fun = (psi_dump_cb) smart_str_append_printf;
+
+	PSI_DUMP(&dump, "Failed asserting that ");
+	psi_num_exp_dump(&dump, stmt->exp);
+	smart_str_0(&str);
+	zend_throw_exception(stmt->kind == PSI_ASSERT_PRE
+			? spl_ce_InvalidArgumentException
+			: spl_ce_UnexpectedValueException, str.s->val, 0);
+	smart_str_free(&str);
 }

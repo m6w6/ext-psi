@@ -58,26 +58,26 @@ void psi_let_func_free(struct psi_let_func **func_ptr)
 	}
 }
 
-void psi_let_func_dump(int fd, struct psi_let_func *func, unsigned level)
+void psi_let_func_dump(struct psi_dump *dump, struct psi_let_func *func, unsigned level)
 {
-	dprintf(fd, "%s(%s\t/* fqn=%s */", func->name->val, func->var->name->val,
+	PSI_DUMP(dump, "%s(%s\t/* fqn=%s */", func->name->val, func->var->name->val,
 			func->var->fqn->val);
 
 	if (func->inner) {
 		size_t i = 0, count = psi_plist_count(func->inner);
 		struct psi_let_exp *inner;
 
-		dprintf(fd, ",");
+		PSI_DUMP(dump, ",");
 		++level;
 		while (psi_plist_get(func->inner, i++, &inner)) {
-			dprintf(fd, "\n");
-			psi_let_exp_dump(fd, inner, level, i == count);
+			PSI_DUMP(dump, "\n");
+			psi_let_exp_dump(dump, inner, level, i == count);
 		}
 		--level;
-		dprintf(fd, "\n");
-		dprintf(fd, "%s", psi_t_indent(level));
+		PSI_DUMP(dump, "\n");
+		PSI_DUMP(dump, "%s", psi_t_indent(level));
 	}
-	dprintf(fd, ")");
+	PSI_DUMP(dump, ")");
 }
 
 static inline int validate_let_func_type(struct psi_data *data,

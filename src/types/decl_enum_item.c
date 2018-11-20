@@ -64,12 +64,12 @@ void psi_decl_enum_item_free(struct psi_decl_enum_item **i_ptr)
 	}
 }
 
-void psi_decl_enum_item_dump(int fd, struct psi_decl_enum_item *item)
+void psi_decl_enum_item_dump(struct psi_dump *dump, struct psi_decl_enum_item *item)
 {
-	dprintf(fd, "%s", item->name->val);
+	PSI_DUMP(dump, "%s", item->name->val);
 	if (item->num && item->num != &item->inc) {
-		dprintf(fd, " = ");
-		psi_num_exp_dump(fd, item->num);
+		PSI_DUMP(dump, " = ");
+		psi_num_exp_dump(dump, item->num);
 	}
 }
 

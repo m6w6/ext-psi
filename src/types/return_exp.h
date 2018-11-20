@@ -36,7 +36,7 @@ struct psi_return_exp {
 struct psi_return_exp *psi_return_exp_init(struct psi_decl_var *func,
 		struct psi_plist *args, struct psi_set_exp *set);
 void psi_return_exp_free(struct psi_return_exp **exp_ptr);
-void psi_return_exp_dump(int fd, struct psi_return_exp *exp);
+void psi_return_exp_dump(struct psi_dump *dump, struct psi_return_exp *exp);
 void psi_return_exp_exec(struct psi_return_exp *exp, zval *return_value,
 		struct psi_call_frame *frame);
 bool psi_return_exp_validate(struct psi_data *data, struct psi_return_exp *exp,

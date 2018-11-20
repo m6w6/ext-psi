@@ -46,11 +46,11 @@ struct psi_assert_stmt {
 struct psi_assert_stmt *psi_assert_stmt_init(enum psi_assert_kind kind, struct psi_num_exp *exp);
 bool psi_assert_stmt_exec(struct psi_assert_stmt *stmt, struct psi_call_frame *frame);
 
-void psi_assert_stmt_dump(int fd, struct psi_assert_stmt *stmt);
+void psi_assert_stmt_dump(struct psi_dump *dump, struct psi_assert_stmt *stmt);
 void psi_assert_stmt_free(struct psi_assert_stmt **stmt);
 
 bool psi_assert_stmts_validate(struct psi_data *data, struct psi_validate_scope *scope);
 
-char *psi_assert_stmt_message(struct psi_assert_stmt *stmt);
+void psi_assert_stmt_throw(struct psi_assert_stmt *stmt);
 
 #endif

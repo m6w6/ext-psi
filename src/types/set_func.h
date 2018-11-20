@@ -45,7 +45,7 @@ struct psi_set_func {
 
 struct psi_set_func *psi_set_func_init(token_t type, zend_string *name, struct psi_decl_var *var);
 void psi_set_func_free(struct psi_set_func **func_ptr);
-void psi_set_func_dump(int fd, struct psi_set_func *func, unsigned level);
+void psi_set_func_dump(struct psi_dump *dump, struct psi_set_func *func, unsigned level);
 bool psi_set_func_validate(struct psi_data *data, struct psi_set_func *func,
 		struct psi_validate_scope *scope);
 

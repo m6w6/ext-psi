@@ -235,29 +235,7 @@ zend_function_entry *psi_context_compile(struct psi_context *C)
 			}
 
 			zc.name = zend_string_copy(c->name);
-
-			switch (c->type ? c->type->type : c->val->type) {
-			case PSI_T_BOOL:
-				ZVAL_BOOL(&zc.value, c->val->ival.zend.bval);
-				break;
-			case PSI_T_INT:
-				ZVAL_LONG(&zc.value, c->val->ival.zend.lval);
-				break;
-			case PSI_T_FLOAT:
-			case PSI_T_DOUBLE:
-				ZVAL_DOUBLE(&zc.value, c->val->ival.dval);
-				break;
-			case PSI_T_STRING:
-			case PSI_T_QUOTED_STRING:
-				ZVAL_NEW_STR(&zc.value, zend_string_copy(c->val->ival.zend.str));
-				if (ZSTR_IS_INTERNED(Z_STR(zc.value))) {
-					Z_TYPE_FLAGS(zc.value) = 0;
-				}
-				break;
-			default:
-				assert(0);
-				break;
-			}
+			psi_impl_def_val_get_zval(c->val, c->type ? c->type->type : PSI_T_MIXED , &zc.value);
 
 			zend_register_constant(&zc);
 		}
@@ -380,8 +358,6 @@ void psi_context_free(struct psi_context **C)
 
 void psi_context_dump(struct psi_dump *dump, struct psi_context *C)
 {
-	size_t i;
-
 	PSI_DUMP(dump, "// psi.engine=%s\n// %lu files\n",
 			(char *) C->ops->query(C, PSI_CONTEXT_QUERY_SELF, NULL),
 			C->count);
@@ -390,8 +366,10 @@ void psi_context_dump(struct psi_dump *dump, struct psi_context *C)
 
 #if 0
 	if (C->flags & PSI_DEBUG) {
+		size_t i;
+
 		for (i = 0; i < C->count; ++i) {
-			psi_data_dump(fd, &C->data[i]);
+			psi_data_dump(dump, &C->data[i]);
 		}
 	}
 #endif

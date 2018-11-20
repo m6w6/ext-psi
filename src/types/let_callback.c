@@ -125,22 +125,22 @@ bool psi_let_callback_validate(struct psi_data *data, struct psi_let_callback *c
 	return true;
 }
 
-void psi_let_callback_dump(int fd, struct psi_let_callback *callback,
+void psi_let_callback_dump(struct psi_dump *dump, struct psi_let_callback *callback,
 		unsigned level)
 {
-	dprintf(fd, "callback(");
+	PSI_DUMP(dump, "callback(");
 	if (callback->cb_args) {
 		size_t i = 0;
 		struct psi_decl_var *cb_arg;
 
 		while (psi_plist_get(callback->cb_args, i++, &cb_arg)) {
 			if (i > 1) {
-				dprintf(fd, ", ");
+				PSI_DUMP(dump, ", ");
 			}
-			psi_decl_var_dump(fd, cb_arg);
+			psi_decl_var_dump(dump, cb_arg);
 		}
 	}
-	dprintf(fd, ") as %s(%s(",
+	PSI_DUMP(dump, ") as %s(%s(",
 			callback->func->name->val,
 			callback->func->var->name->val);
 
@@ -148,14 +148,14 @@ void psi_let_callback_dump(int fd, struct psi_let_callback *callback,
 		size_t i = 0, last = psi_plist_count(callback->args);
 		struct psi_set_exp *set;
 
-		dprintf(fd, "\n");
+		PSI_DUMP(dump, "\n");
 		++level;
 		while (psi_plist_get(callback->args, i++, &set)) {
-			psi_set_exp_dump(fd, set, level, i == last);
-			dprintf(fd, "\n");
+			psi_set_exp_dump(dump, set, level, i == last);
+			PSI_DUMP(dump, "\n");
 		}
 		--level;
-		dprintf(fd, "%s", psi_t_indent(level));
+		PSI_DUMP(dump, "%s", psi_t_indent(level));
 	}
-	dprintf(fd, "))");
+	PSI_DUMP(dump, "))");
 }

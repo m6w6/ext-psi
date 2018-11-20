@@ -77,7 +77,7 @@ void psi_num_exp_free(struct psi_num_exp **c_ptr);
 struct psi_num_exp *psi_num_exp_copy(struct psi_num_exp *exp);
 void psi_num_exp_copy_ctor(struct psi_num_exp **exp_ptr);
 
-void psi_num_exp_dump(int fd, struct psi_num_exp *exp);
+void psi_num_exp_dump(struct psi_dump *dump, struct psi_num_exp *exp);
 bool psi_num_exp_validate(struct psi_data *data, struct psi_num_exp *exp,
 		struct psi_validate_scope *scope);
 

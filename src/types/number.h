@@ -76,7 +76,7 @@ struct psi_number {
 struct psi_number *psi_number_init(token_t t, void *num, unsigned flags);
 struct psi_number *psi_number_copy(struct psi_number *exp);
 void psi_number_free(struct psi_number **exp_ptr);
-void psi_number_dump(int fd, struct psi_number *exp);
+void psi_number_dump(struct psi_dump *dump, struct psi_number *exp);
 
 bool psi_number_validate(struct psi_data *data, struct psi_number *exp,
 		struct psi_validate_scope *scope);

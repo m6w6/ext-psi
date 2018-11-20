@@ -123,37 +123,37 @@ void psi_set_exp_free(struct psi_set_exp **exp_ptr)
 	}
 }
 
-void psi_set_exp_dump(int fd, struct psi_set_exp *set, unsigned level, int last)
+void psi_set_exp_dump(struct psi_dump *dump, struct psi_set_exp *set, unsigned level, int last)
 {
 	if (level > 1) {
 		/* only if not directly after `set ...` */
-		dprintf(fd, "%s", psi_t_indent(level));
+		PSI_DUMP(dump, "%s", psi_t_indent(level));
 	}
 
 	if (set->var) {
 		/* parsed, or generated */
 		if (set->var->token) {
-			dprintf(fd, "%s = ", set->var->name->val);
+			PSI_DUMP(dump, "%s = ", set->var->name->val);
 		}
 	}
 
 	switch (set->kind) {
 	case PSI_SET_FUNC:
-		psi_set_func_dump(fd, set->data.func, level);
+		psi_set_func_dump(dump, set->data.func, level);
 		break;
 	case PSI_SET_NUMEXP:
-		psi_num_exp_dump(fd, set->data.num);
+		psi_num_exp_dump(dump, set->data.num);
 		break;
 	default:
 		assert(0);
 	}
 
 	if (!last) {
-		dprintf(fd, ",");
+		PSI_DUMP(dump, ",");
 	}
 
 	if (set->var) {
-		dprintf(fd, "\t/* fqn=%s */", set->var->fqn->val);
+		PSI_DUMP(dump, "\t/* fqn=%s */", set->var->fqn->val);
 	}
 }
 

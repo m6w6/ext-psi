@@ -39,7 +39,7 @@ struct psi_let_stmt {
 
 struct psi_let_stmt *psi_let_stmt_init(struct psi_let_exp *exp);
 void psi_let_stmt_free(struct psi_let_stmt **stmt_ptr);
-void psi_let_stmt_dump(int fd, struct psi_let_stmt *stmt);
+void psi_let_stmt_dump(struct psi_dump *dump, struct psi_let_stmt *stmt);
 
 void *psi_let_stmt_exec(struct psi_let_stmt *stmt, struct psi_call_frame *frame);
 bool psi_let_stmts_validate(struct psi_data *data, struct psi_validate_scope *scope);

@@ -174,6 +174,8 @@ static inline const char *psi_t_indirection(unsigned pointer_level) {
 	return &indir[32 - MIN(32, pointer_level)];
 }
 
+struct psi_dump;
+
 struct psi_token {
 	token_t type;
 	unsigned line;
@@ -193,7 +195,7 @@ struct psi_token *psi_token_cat(const char *sep, unsigned argc, ...);
 struct psi_token *psi_token_append(const char *sep, struct psi_token *T, unsigned argc, ...);
 struct psi_token *psi_token_translit(struct psi_token *T, char *from, char *to);
 uint64_t psi_token_hash(struct psi_token *t, char *digest_buf);
-void psi_token_dump(int fd, struct psi_token *t);
+void psi_token_dump(struct psi_dump *dump, struct psi_token *t);
 void psi_token_free(struct psi_token **token);
 
 #endif

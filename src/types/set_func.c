@@ -51,30 +51,30 @@ void psi_set_func_free(struct psi_set_func **func_ptr)
 	}
 }
 
-void psi_set_func_dump(int fd, struct psi_set_func *func, unsigned level)
+void psi_set_func_dump(struct psi_dump *dump, struct psi_set_func *func, unsigned level)
 {
-	dprintf(fd, "%s(", func->name->val);
-	psi_decl_var_dump(fd, func->var);
-	dprintf(fd, "\t/* fqn=%s */", func->var->fqn->val);
+	PSI_DUMP(dump, "%s(", func->name->val);
+	psi_decl_var_dump(dump, func->var);
+	PSI_DUMP(dump, "\t/* fqn=%s */", func->var->fqn->val);
 	if (func->inner && !func->recursive) {
 		size_t i = 0, count = psi_plist_count(func->inner);
 		struct psi_set_exp *inner;
 
-		dprintf(fd, ",");
+		PSI_DUMP(dump, ",");
 		++level;
 		while (psi_plist_get(func->inner, i++, &inner)) {
-			dprintf(fd, "\n");
-			psi_set_exp_dump(fd, inner, level, i == count);
+			PSI_DUMP(dump, "\n");
+			psi_set_exp_dump(dump, inner, level, i == count);
 		}
 		--level;
 	}
 	if (func->recursive) {
-		dprintf(fd, ", ...");
+		PSI_DUMP(dump, ", ...");
 	}
 	if (func->inner && !func->recursive) {
-		dprintf(fd, "\n%s", psi_t_indent(level));
+		PSI_DUMP(dump, "\n%s", psi_t_indent(level));
 	}
-	dprintf(fd, ")");
+	PSI_DUMP(dump, ")");
 }
 
 static inline bool psi_set_func_validate_to_string(struct psi_data *data,

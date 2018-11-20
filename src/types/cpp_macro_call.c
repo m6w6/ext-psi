@@ -68,17 +68,17 @@ void psi_cpp_macro_call_free(struct psi_cpp_macro_call **call_ptr)
 	}
 }
 
-void psi_cpp_macro_call_dump(int fd, struct psi_cpp_macro_call *call)
+void psi_cpp_macro_call_dump(struct psi_dump *dump, struct psi_cpp_macro_call *call)
 {
 	size_t i = 0;
 	struct psi_num_exp *num;
 
-	dprintf(fd, "%s(", call->name->val);
+	PSI_DUMP(dump, "%s(", call->name->val);
 	while (psi_plist_get(call->args, i++, &num)) {
 		if (i > 1) {
-			dprintf(fd, ", ");
+			PSI_DUMP(dump, ", ");
 		}
-		psi_num_exp_dump(fd, num);
+		psi_num_exp_dump(dump, num);
 	}
-	dprintf(fd, ")");
+	PSI_DUMP(dump, ")");
 }

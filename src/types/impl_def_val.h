@@ -31,6 +31,7 @@
 
 struct psi_data;
 struct psi_impl_type;
+struct psi_dump;
 
 struct psi_impl_def_val {
 	struct psi_token *token;
@@ -38,13 +39,14 @@ struct psi_impl_def_val {
 	union {
 		struct psi_num_exp *num;
 	} data;
+	token_t ityp;
 	impl_val ival;
 };
 
 struct psi_impl_def_val *psi_impl_def_val_init(token_t t, void *data);
 void psi_impl_def_val_free(struct psi_impl_def_val **def_ptr);
-void psi_impl_def_val_dump(int fd, struct psi_impl_def_val *val);
+void psi_impl_def_val_dump(struct psi_dump *dump, struct psi_impl_def_val *val);
 bool psi_impl_def_val_validate(struct psi_data *data, struct psi_impl_def_val *def,
 		struct psi_impl_type *cmp, struct psi_validate_scope *scope);
-
+token_t psi_impl_def_val_get_zend(struct psi_impl_def_val *val, impl_val *res);
 #endif

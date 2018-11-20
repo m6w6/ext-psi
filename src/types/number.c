@@ -292,37 +292,37 @@ struct psi_plist *psi_number_tokens(struct psi_number *exp,
 	return list;
 }
 
-void psi_number_dump(int fd, struct psi_number *exp)
+void psi_number_dump(struct psi_dump *dump, struct psi_number *exp)
 {
 	switch (exp->type) {
 	case PSI_T_DEFINED:
-	CASE_IMPLVAL_NUM_PRINTF(dprintf, fd, exp->data.ival)
+	CASE_IMPLVAL_NUM_PRINTF(dump->fun, dump->ctx, exp->data.ival, 1);
 	case PSI_T_NULL:
-		dprintf(fd, "NULL");
+		PSI_DUMP(dump, "NULL");
 		break;
 	case PSI_T_NUMBER:
 	case PSI_T_NSNAME:
 	case PSI_T_DEFINE:
 	case PSI_T_QUOTED_CHAR:
 	case PSI_T_CPP_HEADER:
-		dprintf(fd, "%s", exp->data.numb->val);
+		PSI_DUMP(dump, "%s", exp->data.numb->val);
 		break;
 	case PSI_T_FUNCTION:
-		psi_cpp_macro_call_dump(fd, exp->data.call);
+		psi_cpp_macro_call_dump(dump, exp->data.call);
 		break;
 	case PSI_T_CONST:
-		dprintf(fd, "%s", exp->data.cnst->name->val);
+		PSI_DUMP(dump, "%s", exp->data.cnst->name->val);
 		break;
 	case PSI_T_ENUM:
-		dprintf(fd, "%s", exp->data.enm->name->val);
+		PSI_DUMP(dump, "%s", exp->data.enm->name->val);
 		break;
 	case PSI_T_NAME:
-		psi_decl_var_dump(fd, exp->data.dvar);
+		psi_decl_var_dump(dump, exp->data.dvar);
 		break;
 	case PSI_T_SIZEOF:
-		dprintf(fd, "sizeof(");
-		psi_decl_type_dump(fd, exp->data.dtyp, 0);
-		dprintf(fd, ")");
+		PSI_DUMP(dump, "sizeof(");
+		psi_decl_type_dump(dump, exp->data.dtyp, 0);
+		PSI_DUMP(dump, ")");
 		break;
 	default:
 		assert(0);
@@ -493,7 +493,6 @@ static inline bool psi_number_validate_number(struct psi_data *data, struct psi_
 		case PSI_NUMBER_FLT:
 			switch (exp->flags & 0x0ff00) {
 			case PSI_NUMBER_F:
-			case PSI_NUMBER_DF:
 				tmp.fval = strtof(exp->data.numb->val, NULL);
 				zend_string_release(exp->data.numb);
 				exp->type = PSI_T_FLOAT;
@@ -510,6 +509,7 @@ static inline bool psi_number_validate_number(struct psi_data *data, struct psi_
 #endif
 			case PSI_NUMBER_DD:
 			default:
+			case PSI_NUMBER_DF:
 				tmp.dval = strtod(exp->data.numb->val, NULL);
 				zend_string_release(exp->data.numb);
 				exp->type = PSI_T_DOUBLE;
@@ -606,6 +606,10 @@ bool psi_number_validate(struct psi_data *data, struct psi_number *exp,
 	case PSI_T_UINT32:
 	case PSI_T_INT64:
 	case PSI_T_UINT64:
+#if HAVE_INT128
+	case PSI_T_INT128:
+	case PSI_T_UINT128:
+#endif
 	case PSI_T_FLOAT:
 	case PSI_T_DOUBLE:
 #if HAVE_LONG_DOUBLE
@@ -873,7 +877,16 @@ token_t psi_number_eval(struct psi_number *exp, impl_val *res,
 		*res = exp->data.ival;
 		if (frame) PSI_DEBUG_PRINT(frame->context, " %" PRIu64, res->u64);
 		return PSI_T_UINT64;
-
+#if HAVE_INT128
+	case PSI_T_INT128:
+		*res = exp->data.ival;
+		//if (frame) PSI_DEBUG_PRINT(frame->context, " %" PRIi128, res->i128);
+		return PSI_T_INT128;
+	case PSI_T_UINT128:
+		*res = exp->data.ival;
+		//if (frame) PSI_DEBUG_PRINT(frame->context, " %" PRIu128, res->u128);
+		return PSI_T_UINT128;
+#endif
 	case PSI_T_FLOAT:
 		*res = exp->data.ival;
 		if (frame) PSI_DEBUG_PRINT(frame->context, " %" PRIfval, res->fval);

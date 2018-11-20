@@ -31,11 +31,13 @@
 #include "plist.h"
 #include "validate.h"
 
-#define PSI_DEBUG 0x1
-#define PSI_SILENT 0x2
+#include "php_network.h"
 
 #include <stdarg.h>
 #include <dlfcn.h>
+
+#define PSI_DEBUG 0x1
+#define PSI_SILENT 0x2
 
 #ifndef RTLD_NEXT
 # define RTLD_NEXT ((void *) -1l)
@@ -80,7 +82,9 @@ again:
 } while(0)
 #define PSI_DEBUG_DUMP(ctx, dump_func, ...) do { \
 	if ((ctx) && (PSI_DATA(ctx)->flags & PSI_DEBUG)) { \
-		dump_func(PSI_DATA(ctx)->debug_fd, __VA_ARGS__); \
+		struct psi_dump dump_ = {{ .fd = PSI_DATA(ctx)->debug_fd}, \
+				.fun = (psi_dump_cb) dprintf}; \
+		dump_func(&dump_, __VA_ARGS__); \
 	} \
 } while (0)
 
@@ -121,6 +125,6 @@ struct psi_data *psi_data_ctor(struct psi_data *data, psi_error_cb error, unsign
 struct psi_data *psi_data_ctor_with_dtors(struct psi_data *data, psi_error_cb error, unsigned flags);
 struct psi_data *psi_data_exchange(struct psi_data *dest, struct psi_data *src);
 void psi_data_dtor(struct psi_data *data);
-void psi_data_dump(int fd, struct psi_data *data);
+void psi_data_dump(struct psi_dump *dump, struct psi_data *data);
 
 #endif

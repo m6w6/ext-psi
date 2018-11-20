@@ -67,9 +67,9 @@ void psi_impl_var_free(struct psi_impl_var **var_ptr)
 	}
 }
 
-void psi_impl_var_dump(int fd, struct psi_impl_var *var, bool vararg)
+void psi_impl_var_dump(struct psi_dump *dump, struct psi_impl_var *var, bool vararg)
 {
-	dprintf(fd, "%s%s%s",
+	PSI_DUMP(dump, "%s%s%s",
 		var->reference ? "&" : "",
 		vararg ? "..." : "",
 		var->name->val);

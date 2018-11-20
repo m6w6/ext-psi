@@ -69,21 +69,42 @@ typedef union impl_val {
 #	define isnanl isnan
 #endif
 #if HAVE_LONG_DOUBLE
-#	define CASE_IMPLVAL_LD_PRINTF(fun, to, ival) \
+#	define CASE_IMPLVAL_LD_PRINTF(fun, to, ival, with_suffix) \
 	case PSI_T_LONG_DOUBLE: \
 		if (isinfl(ival.ldval)) { \
 			fun(to, "\\INF"); \
 		} else if (isnanl(ival.ldval)) { \
 			fun(to, "\\NAN"); \
 		} else { \
-			fun(to, "%" PRIldval "L", ival.ldval); \
+			fun(to, "%" PRIldval "%s", ival.ldval, (with_suffix) ? "L" : ""); \
 		} \
 		break;
 #else
 #	define CASE_IMPLVAL_LD_PRINTF(fun, to, ival)
 #endif
 
-#define CASE_IMPLVAL_NUM_PRINTF(fun, to, ival) \
+#define CASE_IMPLVAL_FLOAT_PRINTF(fun, to, ival, with_suffix) \
+	CASE_IMPLVAL_LD_PRINTF(fun, to, ival, with_suffix); \
+	case PSI_T_FLOAT: \
+		if (isinf(ival.dval)) { \
+			fun(to, "\\INF"); \
+		} else if (isnan(ival.dval)) { \
+			fun(to, "\\NAN"); \
+		} else { \
+			fun(to, "%" PRIfval "%s", ival.dval, (with_suffix) ? "F" : ""); \
+		} \
+		break; \
+	case PSI_T_DOUBLE: \
+		if (isinf(ival.dval)) { \
+			fun(to, "\\INF"); \
+		} else if (isnan(ival.dval)) { \
+			fun(to, "\\NAN"); \
+		} else { \
+			fun(to, "%" PRIdval, ival.dval); \
+		} \
+		break
+
+#define CASE_IMPLVAL_INT_PRINTF(fun, to, ival, with_suffix) \
 	case PSI_T_INT8: \
 		fun(to, "%" PRId8, ival.i8); \
 		break; \
@@ -100,32 +121,17 @@ typedef union impl_val {
 		fun(to, "%" PRId32, ival.i32); \
 		break; \
 	case PSI_T_UINT32: \
-		fun(to, "%" PRIu32 "U", ival.u32); \
+		fun(to, "%" PRIu32 "%s", ival.u32, (with_suffix) ? "U" : ""); \
 		break; \
 	case PSI_T_INT64: \
-		fun(to, "%" PRId64 "L", ival.i64); \
+		fun(to, "%" PRId64 "%s", ival.i64, (with_suffix) ? "L" : ""); \
 		break; \
 	case PSI_T_UINT64: \
-		fun(to, "%" PRIu64 "UL", ival.u64); \
-		break; \
-	case PSI_T_FLOAT: \
-		if (isinf(ival.dval)) { \
-			fun(to, "\\INF"); \
-		} else if (isnan(ival.dval)) { \
-			fun(to, "\\NAN"); \
-		} else { \
-			fun(to, "%" PRIfval "F", ival.dval); \
-		} \
-		break; \
-	case PSI_T_DOUBLE: \
-		if (isinf(ival.dval)) { \
-			fun(to, "\\INF"); \
-		} else if (isnan(ival.dval)) { \
-			fun(to, "\\NAN"); \
-		} else { \
-			fun(to, "%" PRIdval, ival.dval); \
-		} \
-		break; \
-	CASE_IMPLVAL_LD_PRINTF(fun, to, ival)
+		fun(to, "%" PRIu64 "%s", ival.u64, (with_suffix) ? "UL" : ""); \
+		break
+
+#define CASE_IMPLVAL_NUM_PRINTF(fun, to, ival, with_suffix) \
+	CASE_IMPLVAL_INT_PRINTF(fun, to, ival, with_suffix); \
+	CASE_IMPLVAL_FLOAT_PRINTF(fun, to, ival, with_suffix)
 
 #endif

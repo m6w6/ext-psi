@@ -36,9 +36,9 @@ struct psi_impl_type *psi_impl_type_init(token_t type, zend_string *name)
 	return t;
 }
 
-void psi_impl_type_dump(int fd, struct psi_impl_type *type)
+void psi_impl_type_dump(struct psi_dump *dump, struct psi_impl_type *type)
 {
-	dprintf(fd, "%s", type->name->val);
+	PSI_DUMP(dump, "%s", type->name->val);
 }
 
 void psi_impl_type_free(struct psi_impl_type **type_ptr)

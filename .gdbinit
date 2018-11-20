@@ -40,7 +40,7 @@ define psi_decl_type_dump
 end
 define psi_decl_type_dump_args_with_layout
 	call psi_decl_type_dump_args_with_layout(1, $arg0, 0)
-	 echo \n
+	echo \n
 end
 define psi_decl_union_dump
 	call psi_decl_union_dump(1, $arg0)

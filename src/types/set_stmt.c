@@ -51,11 +51,11 @@ void psi_set_stmt_free(struct psi_set_stmt **set_ptr)
 	}
 }
 
-void psi_set_stmt_dump(int fd, struct psi_set_stmt *set)
+void psi_set_stmt_dump(struct psi_dump *dump, struct psi_set_stmt *set)
 {
-	dprintf(fd, "\tset ");
-	psi_set_exp_dump(fd, set->exp, 1, 1);
-	dprintf(fd, ";\n");
+	PSI_DUMP(dump, "\tset ");
+	psi_set_exp_dump(dump, set->exp, 1, 1);
+	PSI_DUMP(dump, ";\n");
 }
 
 

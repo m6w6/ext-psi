@@ -52,13 +52,13 @@ void psi_decl_union_free(struct psi_decl_union **u_ptr)
 	}
 }
 
-void psi_decl_union_dump(int fd, struct psi_decl_union *unn)
+void psi_decl_union_dump(struct psi_dump *dump, struct psi_decl_union *unn)
 {
-	dprintf(fd, "union %s::(%zu, %zu)", unn->name->val, unn->align, unn->size);
+	PSI_DUMP(dump, "union %s::(%zu, %zu)", unn->name->val, unn->align, unn->size);
 	if (psi_plist_count(unn->args)) {
 		psi_decl_type_dump_args_with_layout(fd, unn->args, 0);
 	} else {
-		dprintf(fd, ";");
+		PSI_DUMP(dump, ";");
 	}
 }
 

@@ -91,11 +91,11 @@ bool psi_decl_extvar_validate(struct psi_data *data,
 	return true;
 }
 
-void psi_decl_extvar_dump(int fd, struct psi_decl_extvar *evar)
+void psi_decl_extvar_dump(struct psi_dump *dump, struct psi_decl_extvar *evar)
 {
-	dprintf(fd, "extern ");
-	psi_decl_arg_dump(fd, evar->arg, 0);
-	dprintf(fd, ";\n");
+	PSI_DUMP(dump, "extern ");
+	psi_decl_arg_dump(dump, evar->arg, 0);
+	PSI_DUMP(dump, ";\n");
 }
 
 struct psi_decl *psi_decl_extvar_setter(struct psi_decl_extvar *evar)

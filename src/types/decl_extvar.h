@@ -46,7 +46,7 @@ struct psi_decl_extvar *psi_decl_extvar_init(struct psi_decl_arg *arg);
 void psi_decl_extvar_free(struct psi_decl_extvar **evar);
 bool psi_decl_extvar_validate(struct psi_data *data, struct psi_decl_extvar *evar,
 		struct psi_validate_scope *scope);
-void psi_decl_extvar_dump(int fd, struct psi_decl_extvar *evar);
+void psi_decl_extvar_dump(struct psi_dump *dump, struct psi_decl_extvar *evar);
 
 bool psi_decl_extvar_is_blacklisted(const char *name);
 

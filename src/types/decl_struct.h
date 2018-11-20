@@ -46,7 +46,7 @@ struct psi_decl_struct {
 
 struct psi_decl_struct *psi_decl_struct_init(zend_string *name, struct psi_plist *args);
 void psi_decl_struct_free(struct psi_decl_struct **s_ptr);
-void psi_decl_struct_dump(int fd, struct psi_decl_struct *strct);
+void psi_decl_struct_dump(struct psi_dump *dump, struct psi_decl_struct *strct);
 
 bool psi_decl_struct_validate(struct psi_data *data, struct psi_decl_struct *s, struct psi_validate_scope *scope);
 

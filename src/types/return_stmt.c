@@ -52,11 +52,11 @@ void psi_return_stmt_free(struct psi_return_stmt **ret_ptr)
 	}
 }
 
-void psi_return_stmt_dump(int fd, struct psi_return_stmt *ret)
+void psi_return_stmt_dump(struct psi_dump *dump, struct psi_return_stmt *ret)
 {
-	dprintf(fd, "\treturn ");
-	psi_return_exp_dump(fd, ret->exp);
-	dprintf(fd, ";\n");
+	PSI_DUMP(dump, "\treturn ");
+	psi_return_exp_dump(dump, ret->exp);
+	PSI_DUMP(dump, ";\n");
 }
 
 bool psi_return_stmt_validate(struct psi_data *data,

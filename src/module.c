@@ -166,19 +166,18 @@ static PHP_FUNCTION(psi_dump)
 {
 	php_stream *s;
 	zval *r = NULL;
-	int fd = STDOUT_FILENO;
+	struct psi_dump dump = {.fun = php_stream_printf};
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "|r!", &r)) {
 		return;
 	}
 	if (r) {
 		php_stream_from_zval(s, r);
-
-		if (SUCCESS != php_stream_cast(s, PHP_STREAM_AS_FD | PHP_STREAM_CAST_INTERNAL, (void **)&fd, 1)) {
-			RETURN_FALSE;
-		}
+		dump.ctx.hn = s;
+	} else {
+		dump.ctx.hn = php_stream_open_wrapper("php://output", "w", REPORT_ERRORS, NULL);
 	}
-	psi_context_dump(PSI_G(context), fd);
+	psi_context_dump(&dump, PSI_G(context));
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_psi_validate, 0, 0, 1)

@@ -42,7 +42,7 @@ struct psi_decl_enum_item {
 
 struct psi_decl_enum_item *psi_decl_enum_item_init(zend_string *name, struct psi_num_exp *num);
 void psi_decl_enum_item_free(struct psi_decl_enum_item **i_ptr);
-void psi_decl_enum_item_dump(int fd, struct psi_decl_enum_item *item);
+void psi_decl_enum_item_dump(struct psi_dump *dump, struct psi_decl_enum_item *item);
 bool psi_decl_enum_item_validate(struct psi_data *data, struct psi_decl_enum *enm, struct psi_decl_enum_item *item, size_t seq);
 
 #endif

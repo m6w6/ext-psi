@@ -43,6 +43,6 @@ struct psi_cpp_macro_call *psi_cpp_macro_call_init(zend_string *name,
 struct psi_cpp_macro_call *psi_cpp_macro_call_copy(
 		struct psi_cpp_macro_call *call);
 void psi_cpp_macro_call_free(struct psi_cpp_macro_call **call_ptr);
-void psi_cpp_macro_call_dump(int fd, struct psi_cpp_macro_call *call);
+void psi_cpp_macro_call_dump(struct psi_dump *dump, struct psi_cpp_macro_call *call);
 
 #endif

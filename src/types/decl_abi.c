@@ -47,9 +47,9 @@ void psi_decl_abi_free(struct psi_decl_abi **abi_ptr)
 	}
 }
 
-void psi_decl_abi_dump(int fd, struct psi_decl_abi *abi)
+void psi_decl_abi_dump(struct psi_dump *dump, struct psi_decl_abi *abi)
 {
-	dprintf(fd, "%s", abi->convention->val);
+	PSI_DUMP(dump, "%s", abi->convention->val);
 }
 
 static const char * const abi_ccs[] = {
