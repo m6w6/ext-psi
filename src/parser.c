@@ -33,7 +33,8 @@
 
 #include "parser.h"
 
-struct psi_parser *psi_parser_init(struct psi_parser *P, psi_error_cb error, unsigned flags)
+struct psi_parser *psi_parser_init(struct psi_parser *P, psi_error_cb error,
+		unsigned flags)
 {
 	if (!P) {
 		P = pemalloc(sizeof(*P), 1);
@@ -47,7 +48,8 @@ struct psi_parser *psi_parser_init(struct psi_parser *P, psi_error_cb error, uns
 	return P;
 }
 
-struct psi_parser_input *psi_parser_open_file(struct psi_parser *P, const char *filename, bool report_errors)
+struct psi_parser_input *psi_parser_open_file(struct psi_parser *P,
+		const char *filename, bool report_errors)
 {
 	struct stat sb;
 	FILE *fp;
@@ -101,7 +103,8 @@ struct psi_parser_input *psi_parser_open_file(struct psi_parser *P, const char *
 	return fb;
 }
 
-struct psi_parser_input *psi_parser_open_string(struct psi_parser *P, const char *string, size_t length)
+struct psi_parser_input *psi_parser_open_string(struct psi_parser *P,
+		const char *string, size_t length)
 {
 	struct psi_parser_input *sb;
 
@@ -121,7 +124,8 @@ struct psi_parser_input *psi_parser_open_string(struct psi_parser *P, const char
 	return sb;
 }
 
-struct psi_plist *psi_parser_preprocess(struct psi_parser *P, struct psi_plist **tokens)
+struct psi_plist *psi_parser_preprocess(struct psi_parser *P,
+		struct psi_plist **tokens)
 {
 	if (psi_cpp_process(P->preproc, tokens)) {
 		return *tokens;
@@ -129,7 +133,8 @@ struct psi_plist *psi_parser_preprocess(struct psi_parser *P, struct psi_plist *
 	return NULL;
 }
 
-bool psi_parser_process(struct psi_parser *P, struct psi_plist *tokens, size_t *processed)
+bool psi_parser_process(struct psi_parser *P, struct psi_plist *tokens,
+		size_t *processed)
 {
 	if (psi_plist_count(tokens)) {
 		return 0 == psi_parser_proc_parse(P, tokens, processed);
@@ -147,7 +152,8 @@ static inline zend_string *macro_to_constant(struct psi_parser *parser,
 
 	smart_str_append_printf(&str, "const psi\\%s = ", name->val);
 	if (scope->macro->exp) {
-		struct psi_dump dump = {{.hn = &str}, .fun = (psi_dump_cb) smart_str_append_printf};
+		struct psi_dump dump = {{.hn = &str},
+				.fun = (psi_dump_cb) smart_str_append_printf};
 
 		psi_num_exp_dump(&dump, scope->macro->exp);
 	} else while (psi_plist_get(scope->macro->tokens, i++, &tok)) {
@@ -203,7 +209,7 @@ void psi_parser_postprocess(struct psi_parser *P)
 		if (!cnst) {
 			continue;
 		}
-
+//fprintf(stderr, "PARSE: %s", ZSTR_VAL(cnst));
 		I = psi_parser_open_string(P, ZSTR_VAL(cnst), ZSTR_LEN(cnst));
 		zend_string_release(cnst);
 

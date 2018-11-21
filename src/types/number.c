@@ -296,16 +296,18 @@ void psi_number_dump(struct psi_dump *dump, struct psi_number *exp)
 {
 	switch (exp->type) {
 	case PSI_T_DEFINED:
-	CASE_IMPLVAL_NUM_PRINTF(dump->fun, dump->ctx, exp->data.ival, 1);
+	CASE_IMPLVAL_NUM_DUMP(dump, exp->data.ival, true);
 	case PSI_T_NULL:
 		PSI_DUMP(dump, "NULL");
 		break;
 	case PSI_T_NUMBER:
 	case PSI_T_NSNAME:
-	case PSI_T_DEFINE:
 	case PSI_T_QUOTED_CHAR:
 	case PSI_T_CPP_HEADER:
 		PSI_DUMP(dump, "%s", exp->data.numb->val);
+		break;
+	case PSI_T_DEFINE:
+		PSI_DUMP(dump, "%s /* DEFINE */", exp->data.numb->val);
 		break;
 	case PSI_T_FUNCTION:
 		psi_cpp_macro_call_dump(dump, exp->data.call);
@@ -314,7 +316,7 @@ void psi_number_dump(struct psi_dump *dump, struct psi_number *exp)
 		PSI_DUMP(dump, "%s", exp->data.cnst->name->val);
 		break;
 	case PSI_T_ENUM:
-		PSI_DUMP(dump, "%s", exp->data.enm->name->val);
+		PSI_DUMP(dump, "%s /* ENUM */ ", exp->data.enm->name->val);
 		break;
 	case PSI_T_NAME:
 		psi_decl_var_dump(dump, exp->data.dvar);
@@ -327,6 +329,9 @@ void psi_number_dump(struct psi_dump *dump, struct psi_number *exp)
 	default:
 		assert(0);
 	}
+#if 0
+	PSI_DUMP(dump, "\t/* number.type=%d */ ", exp->type);
+#endif
 }
 
 static inline bool psi_number_validate_enum(struct psi_data *data,
@@ -620,10 +625,10 @@ bool psi_number_validate(struct psi_data *data, struct psi_number *exp,
 		return true;
 
 	case PSI_T_NAME:
-		if (scope && scope->cpp && zend_hash_exists(&scope->cpp->defs, exp->data.dvar->name)) {
-			exp->type = PSI_T_DEFINE;
-			goto define;
-		}
+		//if (scope && scope->cpp && zend_hash_exists(&scope->cpp->defs, exp->data.dvar->name)) {
+		//	exp->type = PSI_T_DEFINE;
+		//	goto define;
+		//}
 		if (scope && scope->current_enum && psi_number_validate_enum(data, exp, scope)) {
 			return true;
 		}

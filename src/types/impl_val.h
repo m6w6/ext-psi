@@ -69,69 +69,72 @@ typedef union impl_val {
 #	define isnanl isnan
 #endif
 #if HAVE_LONG_DOUBLE
-#	define CASE_IMPLVAL_LD_PRINTF(fun, to, ival, with_suffix) \
+#	define CASE_IMPLVAL_LD_DUMP(dump, ival, with_suffix) \
 	case PSI_T_LONG_DOUBLE: \
 		if (isinfl(ival.ldval)) { \
-			fun(to, "\\INF"); \
+			PSI_DUMP(dump, "\\INF"); \
 		} else if (isnanl(ival.ldval)) { \
-			fun(to, "\\NAN"); \
+			PSI_DUMP(dump, "\\NAN"); \
 		} else { \
-			fun(to, "%" PRIldval "%s", ival.ldval, (with_suffix) ? "L" : ""); \
+			/* bug in long double formatting of xbuf_fmt_conv? */ \
+			char buf[0x100] = {0}; \
+			snprintf(buf, sizeof(buf) - 1, "%" PRIldval, ival.ldval); \
+			PSI_DUMP(dump, "%s%s", buf, (with_suffix) ? "L" : ""); \
 		} \
-		break;
+		break
 #else
-#	define CASE_IMPLVAL_LD_PRINTF(fun, to, ival, with_suffix)
+#	define CASE_IMPLVAL_LD_DUMP(dump, ival, with_suffix)
 #endif
 
-#define CASE_IMPLVAL_FLOAT_PRINTF(fun, to, ival, with_suffix) \
-	CASE_IMPLVAL_LD_PRINTF(fun, to, ival, with_suffix); \
+#define CASE_IMPLVAL_FLOAT_DUMP(dump, ival, with_suffix) \
+	CASE_IMPLVAL_LD_DUMP(dump, ival, with_suffix); \
 	case PSI_T_FLOAT: \
 		if (isinf(ival.dval)) { \
-			fun(to, "\\INF"); \
+			PSI_DUMP(dump, "\\INF"); \
 		} else if (isnan(ival.dval)) { \
-			fun(to, "\\NAN"); \
+			PSI_DUMP(dump, "\\NAN"); \
 		} else { \
-			fun(to, "%" PRIfval "%s", ival.dval, (with_suffix) ? "F" : ""); \
+			PSI_DUMP(dump, "%" PRIfval "%s", ival.fval, (with_suffix) ? "F" : ""); \
 		} \
 		break; \
 	case PSI_T_DOUBLE: \
 		if (isinf(ival.dval)) { \
-			fun(to, "\\INF"); \
+			PSI_DUMP(dump, "\\INF"); \
 		} else if (isnan(ival.dval)) { \
-			fun(to, "\\NAN"); \
+			PSI_DUMP(dump, "\\NAN"); \
 		} else { \
-			fun(to, "%" PRIdval, ival.dval); \
+			PSI_DUMP(dump, "%" PRIdval, ival.dval); \
 		} \
 		break
 
-#define CASE_IMPLVAL_INT_PRINTF(fun, to, ival, with_suffix) \
+#define CASE_IMPLVAL_INT_DUMP(dump, ival, with_suffix) \
 	case PSI_T_INT8: \
-		fun(to, "%" PRId8, ival.i8); \
+		PSI_DUMP(dump, "%" PRId8, ival.i8); \
 		break; \
 	case PSI_T_UINT8: \
-		fun(to, "%" PRIu8, ival.u8); \
+		PSI_DUMP(dump, "%" PRIu8, ival.u8); \
 		break; \
 	case PSI_T_INT16: \
-		fun(to, "%" PRId16, ival.i16); \
+		PSI_DUMP(dump, "%" PRId16, ival.i16); \
 		break; \
 	case PSI_T_UINT16: \
-		fun(to, "%" PRIu16, ival.u16); \
+		PSI_DUMP(dump, "%" PRIu16, ival.u16); \
 		break; \
 	case PSI_T_INT32: \
-		fun(to, "%" PRId32, ival.i32); \
+		PSI_DUMP(dump, "%" PRId32, ival.i32); \
 		break; \
 	case PSI_T_UINT32: \
-		fun(to, "%" PRIu32 "%s", ival.u32, (with_suffix) ? "U" : ""); \
+		PSI_DUMP(dump, "%" PRIu32 "%s", ival.u32, (with_suffix) ? "U" : ""); \
 		break; \
 	case PSI_T_INT64: \
-		fun(to, "%" PRId64 "%s", ival.i64, (with_suffix) ? "L" : ""); \
+		PSI_DUMP(dump, "%" PRId64 "%s", ival.i64, (with_suffix) ? "L" : ""); \
 		break; \
 	case PSI_T_UINT64: \
-		fun(to, "%" PRIu64 "%s", ival.u64, (with_suffix) ? "UL" : ""); \
+		PSI_DUMP(dump, "%" PRIu64 "%s", ival.u64, (with_suffix) ? "UL" : ""); \
 		break
 
-#define CASE_IMPLVAL_NUM_PRINTF(fun, to, ival, with_suffix) \
-	CASE_IMPLVAL_INT_PRINTF(fun, to, ival, with_suffix); \
-	CASE_IMPLVAL_FLOAT_PRINTF(fun, to, ival, with_suffix)
+#define CASE_IMPLVAL_NUM_DUMP(dump, ival, with_suffix) \
+	CASE_IMPLVAL_INT_DUMP(dump, ival, with_suffix); \
+	CASE_IMPLVAL_FLOAT_DUMP(dump, ival, with_suffix)
 
 #endif

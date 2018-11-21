@@ -229,7 +229,7 @@ void psi_data_dump(struct psi_dump *dump, struct psi_data *D)
 		struct psi_decl_enum *enm;
 
 		while (psi_plist_get(D->enums, i++, &enm)) {
-			if (!psi_decl_type_is_anon(enm->name, "enum")) {
+			if (true || !psi_decl_type_is_anon(enm->name, "enum")) {
 				psi_decl_enum_dump(dump, enm, 0);
 				PSI_DUMP(dump, "\n");
 			}

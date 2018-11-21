@@ -17,7 +17,7 @@ fclose($fd);
 var_dump(file_exists($fn));
 var_dump(psi_validate($fn, 0, $e), $e);
 
-@unlink(__DIR__."/dump001.psi");
+#@unlink(__DIR__."/dump001.psi");
 
 ?>
 ===DONE===
@@ -29,5 +29,5 @@ int(%d)
 ===DONE===
 --CLEAN--
 <?php
-@unlink(__DIR__."/dump001.psi");
+#@unlink(__DIR__."/dump001.psi");
 ?>

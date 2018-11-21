@@ -29,9 +29,15 @@
 #include "token.h"
 #include "types/impl_val.h"
 
-#define PRIfval ".6g"
-#define PRIdval ".16g"
-#define PRIldval ".29Lg"
+#include <float.h>
+
+#define PRIfmt_digits(digits) #digits
+#define PRIfmt(digits, fmt) "." PRIfmt_digits(digits) fmt
+#define PRIfval PRIfmt(FLT_DECIMAL_DIG, "g")
+#define PRIdval PRIfmt(DBL_DECIMAL_DIG, "g")
+#if HAVE_LONG_DOUBLE
+# define PRIldval PRIfmt(LDBL_DECIMAL_DIG, "Lg")
+#endif
 
 typedef token_t (*psi_calc)(token_t t1, impl_val *v1, token_t t2, impl_val *v2, impl_val *res);
 

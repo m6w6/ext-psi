@@ -391,6 +391,7 @@ void psi_num_exp_dump(struct psi_dump *dump, struct psi_num_exp *exp)
 		PSI_DUMP(dump, "(");
 		psi_decl_type_dump(dump, exp->data.c.typ, 0);
 		PSI_DUMP(dump, ")");
+		psi_num_exp_dump(dump, exp->data.c.num);
 		break;
 
 	case PSI_T_NOT:

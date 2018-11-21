@@ -179,45 +179,6 @@ void psi_impl_def_val_get_zval(struct psi_impl_def_val *val, token_t typ, zval *
 	}
 
 }
-/*
-token_t psi_impl_def_val_get_zend(struct psi_impl_def_val *val, impl_val *res)
-{
-	switch (val->type) {
-	case PSI_T_NULL:
-		return PSI_T_NULL;
-	case PSI_T_TRUE:
-	case PSI_T_FALSE:
-		res->zend.bval = val->ival.zend.bval;
-		return PSI_T_BOOL;
-	case PSI_T_STRING:
-		res->zend.str = val->ival.zend.str
-			? zend_string_copy(val->ival.zend.str)
-			: zend_empty_string;
-		return PSI_T_STRING;
-	case PSI_T_NUMBER:
-		switch (val->ityp) {
-		case PSI_T_FLOAT:
-			res->dval = val->ival.fval;
-			return PSI_T_DOUBLE;
-		case PSI_T_DOUBLE:
-			res->dval = val->ival.dval;
-			return PSI_T_DOUBLE;
-#if HAVE_LONG_DOUBLE
-		case PSI_T_LONG_DOUBLE:
-			res->dval = val->ival.ldval;
-			return PSI_T_DOUBLE;
-#endif
-		default:
-			psi_calc_cast(val->ityp, &val->ival, PSI_T_INT64, res);
-			return PSI_T_INT;
-		}
-		break;
-	default:
-		assert(0);
-		return 0;
-	}
-}
-*/
 
 static inline bool psi_impl_def_val_validate_impl_type(struct psi_data *data,
 		struct psi_impl_def_val *val, struct psi_impl_type *type,
@@ -230,18 +191,14 @@ static inline bool psi_impl_def_val_validate_impl_type(struct psi_data *data,
 		case PSI_T_FALSE:
 			return true;
 		case PSI_T_STRING:
-			if (val->ival.zend.str
-					&& *val->ival.zend.str->val
-					&& *val->ival.zend.str->val != '0') {
-				zend_string_release(val->ival.zend.str);
-				val->ival.zend.bval = 1;
-			} else {
-				if (val->ival.zend.str) {
-					zend_string_release(val->ival.zend.str);
-				}
-				val->ival.zend.bval = 0;
+			if (val->ival.zend.str) {
+				zend_string *tmp = val->ival.zend.str;
+
+				val->ival.zend.bval = (*tmp->val && *tmp->val != '0');
+				zend_string_release(tmp);
 			}
 			val->ityp = PSI_T_UINT8;
+			val->type = PSI_T_BOOL;
 			return true;
 		default:
 			assert(0);
@@ -265,7 +222,8 @@ static inline bool psi_impl_def_val_validate_impl_type(struct psi_data *data,
 			return true;
 		}
 		psi_calc_cast(val->ityp, &val->ival, PSI_T_INT64, &val->ival);
-		val->type = val->ityp = PSI_T_INT64;
+		val->type = PSI_T_INT;
+		val->ityp = PSI_T_INT64;
 		return true;
 	case PSI_T_FLOAT:
 	case PSI_T_DOUBLE:
@@ -292,9 +250,11 @@ static inline bool psi_impl_def_val_validate_impl_type(struct psi_data *data,
 			return true;
 		} else {
 			smart_str str = {0};
+			struct psi_dump dump = {{.hn = &str},
+					.fun = (psi_dump_cb) smart_str_append_printf};
 
 			switch (val->ityp) {
-			CASE_IMPLVAL_NUM_PRINTF(smart_str_append_printf, &str, val->ival, false);
+			CASE_IMPLVAL_NUM_DUMP(&dump, val->ival, false);
 			default:
 				assert(0);
 			}
@@ -348,97 +308,6 @@ bool psi_impl_def_val_validate(struct psi_data *data,
 	}
 
 	return false;
-/*
-	switch (type ? type->type : PSI_T_MIXED) {
-	case PSI_T_BOOL:
-		val->ival.zend.bval = val->type == PSI_T_TRUE ? 1 : 0;
-		return true;
-		break;
-
-	// macros
-	case PSI_T_NUMBER:
-		if (val->type == PSI_T_NUMBER) {
-			token_t typ = psi_num_exp_exec(val->data.num, &val->ival, NULL, scope->cpp);
-
-			switch (typ) {
-			case PSI_T_FLOAT:
-				val->ival.dval = val->ival.fval;
-				// no break
-			case PSI_T_DOUBLE:
-				val->type = PSI_T_FLOAT;
-				type->type = PSI_T_FLOAT;
-				zend_string_release(type->name);
-				type->name = zend_string_init_interned(ZEND_STRL("float"), 1);
-				break;
-			case PSI_T_UINT64:
-				if (val->ival.u64 > ZEND_LONG_MAX) {
-					data->error(data, val->token, PSI_WARNING,
-							"Integer too big for signed representation: '%" PRIu64 "'",
-							val->ival.u64);
-				}
-			default:
-				// FIXME big integers
-				val->type = PSI_T_INT;
-				type->type = PSI_T_INT;
-				zend_string_release(type->name);
-				type->name = zend_string_init_interned(ZEND_STRL("int"), 1);
-				break;
-			}
-			psi_num_exp_free(&val->data.num);
-			return true;
-		}
-		break;
-
-	case PSI_T_INT:
-		if (val->type == PSI_T_NUMBER) {
-			val->type = PSI_T_INT;
-			val->ival.zend.lval = psi_num_exp_get_long(val->data.num, NULL, scope->cpp);
-#if PSI_IMPL_DEF_VAL_DEBUG
-			PSI_DEBUG_PRINT(data, "PSI: NUMBER (long) %" PRIi64 " from ", val->ival.zend.lval);
-			PSI_DEBUG_DUMP(data, psi_num_exp_dump, val->data.num);
-			PSI_DEBUG_PRINT(data, "\n");
-#endif
-			psi_num_exp_free(&val->data.num);
-		}
-		if (val->type == PSI_T_INT) {
-			return true;
-		}
-		break;
-
-	case PSI_T_FLOAT:
-	case PSI_T_DOUBLE:
-		if (val->type == PSI_T_NUMBER) {
-			val->type = PSI_T_DOUBLE;
-			val->ival.dval = psi_num_exp_get_double(val->data.num, NULL, scope->cpp);
-#if PSI_IMPL_DEF_VAL_DEBUG
-			PSI_DEBUG_PRINT(data, "PSI: NUMBER (double) %" PRIdval " from ", val->ival.dval);
-			PSI_DEBUG_DUMP(data, psi_num_exp_dump, val->data.num);
-			PSI_DEBUG_PRINT(data, "\n");
-#endif
-			psi_num_exp_free(&val->data.num);
-		}
-		if (val->type == PSI_T_DOUBLE) {
-			return true;
-		}
-		break;
-
-	case PSI_T_STRING:
-		if (val->type == PSI_T_STRING) {
-			return true;		data->error(data, val->token, PSI_WARNING,
-					"Invalid default value type '%s', "
-					"expected one of bool, int, float, string.",
-					type ? type->name->val : "mixed");
-
-		}
-		break;
-
-	case PSI_T_MIXED:
-
-		}
-		// no break
-	default:
-	}
-*/
 }
 
 void psi_impl_def_val_dump(struct psi_dump *dump, struct psi_impl_def_val *val) {
@@ -477,5 +346,7 @@ void psi_impl_def_val_dump(struct psi_dump *dump, struct psi_impl_def_val *val) 
 	default:
 		assert(0);
 	}
-	PSI_DUMP(dump, "\t/* t=%d */ ", val->type);
+#if 0
+	PSI_DUMP(dump, "\t/* impl_def_val.type=%d */ ", val->type);
+#endif
 }
