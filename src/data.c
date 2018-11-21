@@ -252,13 +252,13 @@ void psi_data_dump(struct psi_dump *dump, struct psi_data *D)
 
 		while (psi_plist_get(D->decls, i++, &decl)) {
 			if (decl->extvar) {
-				PSI_DUMP(dump, "/* extvar accessor\n");
+				PSI_DUMP(dump, "/* extvar accessor \n");
 			}
 			psi_decl_dump(dump, decl);
-			PSI_DUMP(dump, "\n");
 			if (decl->extvar) {
-				PSI_DUMP(dump, "   extvar accessor */\n");
+				PSI_DUMP(dump, " */");
 			}
+			PSI_DUMP(dump, "\n");
 		}
 		PSI_DUMP(dump, "\n");
 	}
