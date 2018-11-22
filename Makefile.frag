@@ -94,7 +94,7 @@ psi-paranoid-backups:
 		echo "Usage: make psi-paranoid-backups REPO=<repo to push to>"; \
 		echo; \
 	else \
-		echo "Watching $(PHP_PSI_SRCDIR) for changes to flush and push to $(REPO)"; \
+		echo "Watching $(PHP_PSI_SRCDIR) for changes to flush and push to $(REPO) ..."; \
 		while inotifywait -q -e modify -r $(PHP_PSI_SRCDIR); do \
 			git ci -am flush; \
 			git push $(REPO); \
