@@ -1,4 +1,6 @@
+#ifdef linux
 lib "anl";
+#endif
 
 #include <netdb.h>
 

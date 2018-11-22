@@ -56,6 +56,24 @@ static struct psi_func_redir {
 	const char *name;
 	psi_func_ptr func;
 } psi_func_redirs[] = {
+	/* inline byte swapping */
+#ifdef __APPLE__
+	{"_OSSwapInt16", psi_swap16},
+	{"_OSSwapInt32", psi_swap32},
+	{"_OSSwapInt64", psi_swap64}
+#elif defined(__FreeBSD__)
+	{"bswap16", psi_swap16}
+	{"bswap32", psi_swap32}
+	{"bswap64", psi_swap64}
+#elif defined(__OpenBSD__)
+	{"swap16", psi_swap16}
+	{"swap32", psi_swap32}
+	{"swap64", psi_swap64}
+#elif defined(__NetBSD__)
+	{"bswap16", psi_swap16}
+	{"bswap32", psi_swap32}
+	{"bswap64", psi_swap64}
+#endif
 	/* needed from libc_nonshared.a */
 	{"fstat", (psi_func_ptr) fstat},
 	{"fstatat", (psi_func_ptr) fstatat},

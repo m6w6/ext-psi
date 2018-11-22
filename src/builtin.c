@@ -178,3 +178,43 @@ static bool COUNTER__(struct psi_cpp *cpp, struct psi_token *target,
 
 	return true;
 }
+
+#ifdef __APPLE__
+#include <libkern/OSByteOrder.h>
+# define bswap_16(u) _OSSwapInt16(u)
+# define bswap_32(u) _OSSwapInt32(u)
+# define bswap_64(u) _OSSwapInt64(u)
+#elif defined(__FreeBSD__)
+# include <sys/endian.h>
+# define bswap_16(u) bswap16(u)
+# define bswap_32(u) bswap32(u)
+# define bswap_64(u) bswap64(u)
+#elif defined(__OpenBSD__)
+# include <sys/types.h>
+# define bswap_16(u) swap16(u)
+# define bswap_32(u) swap32(u)
+# define bswap_64(u) swap64(u)
+#elif defined(__NetBSD__)
+# include <sys/types.h>
+# include <machine/bswap.h>
+# define bswap_16(u) bswap16(u)
+# define bswap_32(u) bswap32(u)
+# define bswap_64(u) bswap64(u)
+#else
+# include <byteswap.h>
+#endif
+
+uint16_t psi_swap16(uint16_t u)
+{
+	return bswap_16(u);
+}
+
+uint32_t psi_swap32(uint32_t u)
+{
+	return bswap_32(u);
+}
+
+uint64_t psi_swap64(uint64_t u)
+{
+	return bswap_64(u);
+}

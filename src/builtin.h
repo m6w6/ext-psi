@@ -39,4 +39,8 @@ struct psi_builtin {
 bool psi_builtin_exists(zend_string *name);
 struct psi_builtin *psi_builtin_get(zend_string *name);
 
+uint16_t psi_swap16(uint16_t u);
+uint32_t psi_swap32(uint32_t u);
+uint64_t psi_swap64(uint64_t u);
+
 #endif /* PSI_BUILTIN_H */

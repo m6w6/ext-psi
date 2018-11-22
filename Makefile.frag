@@ -86,3 +86,13 @@ clean: psi-clean-headers
 ifneq ($(PSI_DEPS),)
 clean: psi-clean-depend
 endif
+
+.PHONY: psi-paranoid-backups
+psi-paranoid-backups:
+	-if test -z "$((DEST))"; then \
+		echo "Usage: make psi-paranoid-backups DEST=<repo to push to>"; \
+	else \
+		git ci -am flush; \
+		git push $DEST; \
+	fi
+
