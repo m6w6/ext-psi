@@ -89,10 +89,15 @@ endif
 
 .PHONY: psi-paranoid-backups
 psi-paranoid-backups:
-	-if test -z "$((DEST))"; then \
-		echo "Usage: make psi-paranoid-backups DEST=<repo to push to>"; \
+	@-if test -z "$(REPO)"; then \
+		echo; \
+		echo "Usage: make psi-paranoid-backups REPO=<repo to push to>"; \
+		echo; \
 	else \
-		git ci -am flush; \
-		git push $DEST; \
+		echo "Watching $(PHP_PSI_SRCDIR) for changes to flush and push to $(REPO)"; \
+		while inotifywait -q -e modify -r $(PHP_PSI_SRCDIR); do \
+			git ci -am flush; \
+			git push $(REPO); \
+		done; \
 	fi
 
