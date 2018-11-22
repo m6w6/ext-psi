@@ -81,12 +81,6 @@ psi-clean: psi-clean-depend
 psi-watch:
 	-while inotifywait -q -e modify -r $(PHP_PSI_SRCDIR); do $(MAKE); done
 
-install-headers: psi-build-headers
-clean: psi-clean-headers
-ifneq ($(PSI_DEPS),)
-clean: psi-clean-depend
-endif
-
 .PHONY: psi-paranoid-backups
 psi-paranoid-backups:
 	@-if test -z "$(REPO)"; then \
@@ -100,4 +94,10 @@ psi-paranoid-backups:
 			git push $(REPO); \
 		done; \
 	fi
+
+install-headers: psi-build-headers
+clean: psi-clean-headers
+ifneq ($(PSI_DEPS),)
+clean: psi-clean-depend
+endif
 
