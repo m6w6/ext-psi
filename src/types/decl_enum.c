@@ -51,13 +51,15 @@ void psi_decl_enum_free(struct psi_decl_enum **e_ptr)
 
 void psi_decl_enum_dump(struct psi_dump *dump, struct psi_decl_enum *e, unsigned level)
 {
-	bool is_anon = psi_decl_type_is_anon(e->name, "enum");
-	PSI_DUMP(dump, "enum %s%s%s {\n",
-			is_anon ? "/* ":"", e->name->val, is_anon ? " */":"");
-	if (e->items) {
-		size_t i = 0;
-		struct psi_decl_enum_item *item;
+	size_t i = 0;
+	struct psi_decl_enum_item *item;
 
+	PSI_DUMP(dump, "enum ");
+	if (!psi_decl_type_is_anon(e->name, "enum")) {
+		PSI_DUMP(dump, "%s ", e->name->val);
+	}
+	if (e->items) {
+		PSI_DUMP(dump, "{\n");
 		while (psi_plist_get(e->items, i++, &item)) {
 			if (i > 1) {
 				PSI_DUMP(dump, ",\n");
@@ -65,8 +67,8 @@ void psi_decl_enum_dump(struct psi_dump *dump, struct psi_decl_enum *e, unsigned
 			PSI_DUMP(dump, "%s", psi_t_indent(level + 1));
 			psi_decl_enum_item_dump(dump, item);
 		}
+		PSI_DUMP(dump, "%s\n} ", psi_t_indent(level));
 	}
-	PSI_DUMP(dump, "\n}");
 }
 
 bool psi_decl_enum_validate(struct psi_data *data, struct psi_decl_enum *e)

@@ -326,24 +326,11 @@ void psi_decl_type_dump(struct psi_dump *dump, struct psi_decl_type *t, unsigned
 		return;
 
 	case PSI_T_ENUM:
-		PSI_DUMP(dump, "enum ");
 		if (psi_decl_type_is_anon(t->name, "enum")) {
-			size_t i = 0, c = psi_plist_count(t->real.enm->items);
-			struct psi_decl_enum_item *item;
-
-			PSI_DUMP(dump, "{\n");
-			++level;
-			while (psi_plist_get(t->real.enm->items, i++, &item)) {
-				PSI_DUMP(dump, "%s", psi_t_indent(level));
-				psi_decl_enum_item_dump(dump, item);
-				if (i < c) {
-					PSI_DUMP(dump, "%s\n", i < c ? "," : "");
-				}
-			}
-			--level;
-			PSI_DUMP(dump, "%s\n} ", psi_t_indent(level));
+			psi_decl_enum_dump(dump, t->real.enm, level);
 			return;
 		}
+		PSI_DUMP(dump, "enum ");
 		break;
 
 	case PSI_T_STRUCT:
