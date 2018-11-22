@@ -211,11 +211,33 @@ void psi_context_build(struct psi_context *C, const char *paths)
 	} while (sep);
 
 
-	if (psi_context_compile(C) && SUCCESS != zend_register_functions(NULL, C->closures, NULL, MODULE_PERSISTENT)) {
-		C->error(PSI_DATA(C), NULL, PSI_WARNING, "Failed to register functions!");
+	if (psi_context_compile(C)) {
+		/* zend_register_functions depends on EG(current_module) pointing into module */
+		EG(current_module) = zend_hash_str_find_ptr(&module_registry, "psi", sizeof("psi") - 1);
+		if (SUCCESS != zend_register_functions(NULL, C->closures, NULL, MODULE_PERSISTENT)) {
+			C->error(PSI_DATA(C), NULL, PSI_WARNING, "Failed to register functions!");
+		}
+		EG(current_module) = NULL;
 	}
 
 	free(cpy);
+}
+
+#include <ctype.h>
+static inline bool prefix_match(zend_string *a, zend_string *b)
+{
+	size_t i;
+
+	for (i = 0; i < a->len && i < b->len; ++i) {
+		if (tolower(a->val[i]) != tolower(b->val[i])) {
+			return false;
+		}
+		if (i && a->val[i] == '_') {
+			break;
+		}
+	}
+
+	return true;
 }
 
 zend_function_entry *psi_context_compile(struct psi_context *C)
@@ -252,9 +274,11 @@ zend_function_entry *psi_context_compile(struct psi_context *C)
 			while (psi_plist_get(e->items, j++, &item)) {
 				zend_string *name;
 
-				if (psi_decl_type_is_anon(e->name, "enum")) {
+				if (psi_decl_type_is_anon(e->name, "enum")
+						|| prefix_match(e->name, item->name)) {
 					name = strpprintf(0, "psi\\%s", item->name->val);
 				} else {
+
 					name = strpprintf(0, "psi\\%s\\%s", e->name->val, item->name->val);
 				}
 
