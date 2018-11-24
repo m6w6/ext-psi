@@ -2321,7 +2321,16 @@ static void psi_parser_proc_error(struct psi_parser *P, struct psi_plist *tokens
 
 	psi_plist_get(tokens, last, &T);
 	if (T) {
+		int i = (last >= 5) ? last - 5 : 0; 
+		
 		P->error(PSI_DATA(P), T, PSI_WARNING, "PSI %s at col %u", msg, T->col);
+		while (i <= last || T->type != PSI_T_EOS) {
+			if (!psi_plist_get(tokens, i++, &T)) {
+				break;
+			}
+			P->error(PSI_DATA(P), T, PSI_WARNING, "PSI %s token '%s' at col %u", 
+					i<last+1?"preceding":i>last+1?"following":"offending", T->text->val, T->col);
+		}
 	} else {
 		P->error(PSI_DATA(P), NULL, PSI_WARNING, "PSI %s", msg);
 	}

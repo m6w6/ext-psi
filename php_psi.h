@@ -50,6 +50,7 @@ static inline int psi_check_env(const char *var) {
 	return (set && *set && (*set != '0' || set[1]));
 }
 
+#include <fcntl.h>
 #include "php_network.h"
 
 static inline int psi_fdopen(const char *desc)
