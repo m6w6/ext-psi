@@ -47,9 +47,6 @@ void psi_decl_struct_free(struct psi_decl_struct **s_ptr)
 		if (s->args) {
 			psi_plist_free(s->args);
 		}
-		if (s->engine.type && s->engine.dtor) {
-			s->engine.dtor(s->engine.type);
-		}
 		zend_string_release(s->name);
 		free(s);
 	}

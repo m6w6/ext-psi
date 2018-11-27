@@ -39,6 +39,10 @@ struct psi_decl_arg {
 	struct psi_decl_type *type;
 	struct psi_decl_var *var;
 	struct psi_layout *layout;
+	struct {
+		void *info;
+		void *type;
+	} engine;
 };
 
 struct psi_decl_arg *psi_decl_arg_init(struct psi_decl_type *type, struct psi_decl_var *var);

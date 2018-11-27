@@ -78,7 +78,7 @@ PHP_MINIT_FUNCTION(psi_context)
 	}
 
 	PSI_G(ops) = ops;
-	if (ops->load && SUCCESS != ops->load()) {
+	if (ops->load && !ops->load()) {
 		return FAILURE;
 	}
 
@@ -122,12 +122,9 @@ struct psi_context *psi_context_init(struct psi_context *C, struct psi_context_o
 	psi_data_ctor(PSI_DATA(C), error, flags);
 	C->ops = ops;
 
-	if (ops->init) {
-		ops->init(C);
+	if (ops->init && !ops->init(C)) {
+		return NULL;
 	}
-
-	assert(ops->call != NULL);
-	assert(ops->compile != NULL);
 
 	return C;
 }
@@ -210,17 +207,9 @@ void psi_context_build(struct psi_context *C, const char *paths)
 		ptr = sep + 1;
 	} while (sep);
 
-
-	if (psi_context_compile(C)) {
-		/* zend_register_functions depends on EG(current_module) pointing into module */
-		EG(current_module) = zend_hash_str_find_ptr(&module_registry, "psi", sizeof("psi") - 1);
-		if (SUCCESS != zend_register_functions(NULL, C->closures, NULL, MODULE_PERSISTENT)) {
-			C->error(PSI_DATA(C), NULL, PSI_WARNING, "Failed to register functions!");
-		}
-		EG(current_module) = NULL;
-	}
-
 	free(cpy);
+
+	psi_context_compile(C);
 }
 
 #include <ctype.h>
@@ -240,7 +229,7 @@ static inline bool prefix_match(zend_string *a, zend_string *b)
 	return true;
 }
 
-zend_function_entry *psi_context_compile(struct psi_context *C)
+static inline void psi_context_consts_init(struct psi_context *C)
 {
 	zend_constant zc;
 
@@ -262,7 +251,6 @@ zend_function_entry *psi_context_compile(struct psi_context *C)
 			zend_register_constant(&zc);
 		}
 	}
-
 	if (C->enums) {
 		size_t i = 0;
 		struct psi_decl_enum *e;
@@ -294,10 +282,327 @@ zend_function_entry *psi_context_compile(struct psi_context *C)
 			}
 		}
 	}
-
-	return C->closures = C->ops->compile(C);
 }
 
+static inline void psi_context_extvars_init(struct psi_context *C)
+{
+	if (C->vars) {
+		size_t v = 0;
+		struct psi_decl_extvar *evar;
+
+		while (psi_plist_get(C->vars, v++, &evar)) {
+			C->ops->extvar_init(C, evar);
+		}
+	}
+}
+
+static inline void psi_context_callback_init(struct psi_context *C,
+		struct psi_let_exp *let_exp, struct psi_impl *impl)
+{
+	struct psi_let_func *fn = let_exp->data.func;
+
+	switch (let_exp->kind) {
+	case PSI_LET_CALLBACK:
+		C->ops->cb_init(C, let_exp, impl);
+		/* override fn */
+		fn = let_exp->data.callback->func;
+		/* no break */
+	case PSI_LET_FUNC:
+		if (fn->inner) {
+			size_t i = 0;
+			struct psi_let_exp *inner_let;
+
+			while (psi_plist_get(fn->inner, i++, &inner_let)) {
+				psi_context_callback_init(C, inner_let, impl);
+			}
+		}
+		break;
+	default:
+		break;
+	}
+}
+
+static inline void psi_context_callback_dtor(struct psi_context *C,
+		struct psi_let_exp *let_exp, struct psi_impl *impl)
+{
+	struct psi_let_func *fn = let_exp->data.func;
+
+	switch (let_exp->kind) {
+	case PSI_LET_CALLBACK:
+		C->ops->cb_dtor(C, let_exp, impl);
+		/* override func */
+		fn = let_exp->data.callback->func;
+		/* no break */
+	case PSI_LET_FUNC:
+		if (fn->inner) {
+			size_t i = 0;
+			struct psi_let_exp *cb;
+
+			while (psi_plist_get(fn->inner, i++, &cb)) {
+				psi_context_callback_dtor(C, cb, impl);
+			}
+		}
+		break;
+	default:
+		break;
+	}
+}
+
+static inline void psi_context_impls_init(struct psi_context *C)
+{
+	size_t nf = 0;
+	zend_function_entry *zfe = NULL;
+
+	if (C->impls) {
+		size_t i = 0;
+		struct psi_impl *impl;
+
+		zfe = pecalloc(psi_plist_count(C->impls) + 1, sizeof(*zfe), 1);
+
+		while (psi_plist_get(C->impls, i++, &impl)) {
+			zend_function_entry *zf = &zfe[nf];
+			struct psi_let_stmt *let;
+			size_t l = 0;
+
+			if (!impl->decl) {
+				continue;
+			}
+			if (!C->ops->decl_init(C, impl->decl)) {
+				continue;
+			}
+			if (!C->ops->impl_init(C, impl, &zf->handler)) {
+				continue;
+			}
+			while (psi_plist_get(impl->stmts.let, l++, &let)) {
+				psi_context_callback_init(C, let->exp, impl);
+			}
+
+			zf->fname = impl->func->name->val + (impl->func->name->val[0] == '\\');
+			zf->num_args = psi_plist_count(impl->func->args);
+			zf->arg_info = psi_internal_arginfo(impl);
+			++nf;
+		}
+	}
+
+	C->closures = zfe;
+}
+
+static inline void psi_context_decls_init(struct psi_context *C)
+{
+	if (C->decls) {
+		size_t d = 0;
+		struct psi_decl *decl;
+
+		while (psi_plist_get(C->decls, d++, &decl)) {
+			if (!decl->info) {
+				C->ops->decl_init(C, decl);
+			}
+		}
+	}
+}
+
+struct psi_struct_type_data {
+	struct psi_plist *els;
+	size_t offset;
+	size_t max_align;
+};
+
+static inline void psi_struct_type_pad(struct psi_context *C,
+		struct psi_struct_type_data *data, size_t padding)
+{
+	void *ele = C->ops->typeof_decl(C, PSI_T_INT8);
+
+	while (padding--) {
+		void *pad = C->ops->copyof_type(C, ele);
+		data->els = psi_plist_add(data->els, &pad);
+	}
+}
+
+static inline void psi_struct_type_element(struct psi_context *C,
+		struct psi_struct_type_data *data, struct psi_decl_arg *darg)
+{
+	void *type, *copy;
+	size_t i;
+	struct psi_layout type_layout;
+
+	if (darg->layout->pos) {
+		assert(data->offset <= darg->layout->pos);
+		psi_struct_type_pad(C, data, darg->layout->pos - data->offset);
+		data->offset = darg->layout->pos;
+	}
+
+	type = psi_context_decl_arg_full_type(C, darg);
+	C->ops->layoutof_type(C, type, &type_layout);
+
+	if (type_layout.pos > data->max_align) {
+		data->max_align = type_layout.pos;
+	}
+
+	assert(type_layout.len <= darg->layout->len);
+
+	for (i = 0; i < (darg->var->array_size ?: 1); ++i) {
+		copy = C->ops->copyof_type(C, type);
+		data->els = psi_plist_add(data->els, &copy);
+	}
+	assert(darg->layout->len == type_layout.len * (darg->var->array_size ?: 1));
+	data->offset += darg->layout->len;
+}
+
+static inline void psi_context_decl_struct_type_elements(struct psi_context *C,
+		struct psi_decl_struct *strct, struct psi_plist **els)
+{
+	size_t i = 0;
+	struct psi_decl_arg *darg, *prev = NULL;
+	struct psi_struct_type_data data = {0};
+
+	data.els = *els;
+	while (psi_plist_get(strct->args, i++, &darg)) {
+		if (prev && prev->layout->pos == darg->layout->pos) {
+			/* skip bit fields */
+			continue;
+		}
+		psi_struct_type_element(C, &data, darg);
+	}
+
+	data.offset = (data.offset + data.max_align - 1) & ~(data.max_align - 1);
+	assert(data.offset <= strct->size);
+	psi_struct_type_pad(C, &data, strct->size - data.offset);
+
+	*els = data.els;
+}
+
+static inline void *psi_context_decl_arg_type(struct psi_context *C,
+		struct psi_decl_arg *darg)
+{
+	struct psi_decl_type *real = psi_decl_type_get_real(darg->type);
+
+	if (real != darg->type && darg->type->real.def->var->pointer_level) {
+		return C->ops->typeof_decl(C, PSI_T_POINTER);
+	}
+
+	if (real->type == PSI_T_UNION) {
+		struct psi_decl_arg *arg;
+		psi_plist_get(real->real.unn->args, 0, &arg);
+		return psi_context_decl_arg_full_type(C, arg);
+	}
+
+	if (real->type == PSI_T_STRUCT) {
+		C->ops->composite_init(C, darg);
+		return darg->engine.type;
+	}
+
+	return C->ops->typeof_decl(C, real->type);
+}
+
+void *psi_context_decl_arg_call_type(struct psi_context *C,
+		struct psi_decl_arg *darg)
+{
+	if (darg->var->pointer_level) {
+		return C->ops->typeof_decl(C, PSI_T_POINTER);
+	}
+
+	return psi_context_decl_arg_type(C, darg);
+}
+
+void *psi_context_decl_arg_full_type(struct psi_context *C,
+		struct psi_decl_arg *darg)
+{
+	if (darg->var->array_size) {
+		C->ops->composite_init(C, darg);
+		return darg->engine.type;
+	}
+	if (darg->var->pointer_level) {
+		return C->ops->typeof_decl(C, PSI_T_POINTER);
+	}
+
+	return psi_context_decl_arg_type(C, darg);
+}
+
+void **psi_context_composite_type_elements(struct psi_context *C,
+		struct psi_decl_arg *darg, struct psi_plist **eles)
+{
+	struct psi_decl_type *dtype;
+	struct psi_decl_arg *tmp;
+	void *type, *copy;
+
+	dtype = psi_decl_type_get_real(darg->type);
+
+	switch (dtype->type) {
+	case PSI_T_STRUCT:
+		psi_context_decl_struct_type_elements(C, dtype->real.strct, eles);
+		break;
+	case PSI_T_UNION:
+		if (psi_plist_bottom(dtype->real.unn->args, &tmp)) {
+			type = psi_context_decl_arg_full_type(C, tmp);
+			copy = C->ops->copyof_type(C, type);
+			*eles = psi_plist_add(*eles, &copy);
+		}
+		break;
+	default:
+		type = psi_context_decl_arg_type(C, darg);
+		for (size_t i = 0; i < darg->var->array_size; ++i) {
+			copy = C->ops->copyof_type(C, type);
+			*eles = psi_plist_add(*eles, &copy);
+		}
+	}
+
+	return psi_plist_eles(*eles);
+}
+
+/*
+void psi_context_decl_func_array_elements(struct psi_context *C,
+		struct psi_decl *fn, struct psi_plist **els)
+{
+	void *type;
+	size_t i;
+
+	if (fn->func->var->pointer_level > 1) {
+		type = C->ops->typeof_decl(C, PSI_T_POINTER);
+	} else {
+		type = psi_context_decl_type(C, fn->func->type);
+	}
+
+	for (i = 0; i < fn->func->var->array_size; ++i) {
+		void *copy = C->ops->copyof_type(C, type);
+		*els = psi_plist_add(*els, &copy);
+	}
+}
+
+void *psi_context_decl_func_type(struct psi_context *C, struct psi_decl *fn)
+{
+	struct psi_decl_arg *darg = fn->func;
+
+	if (darg->engine.type) {
+		return darg->engine.type;
+	}
+
+	if (darg->var->pointer_level) {
+		if (!darg->var->array_size) {
+			return C->ops->typeof_decl(C, PSI_T_POINTER);
+		} else {
+			C->ops->composite_init(C, darg);
+			return darg->engine.type;
+		}
+	}
+
+	return psi_context_decl_type(C, darg->type);
+}
+*/
+
+void psi_context_compile(struct psi_context *C)
+{
+	psi_context_consts_init(C);
+	psi_context_extvars_init(C);
+	psi_context_impls_init(C);
+	psi_context_decls_init(C);
+
+	/* zend_register_functions depends on EG(current_module) pointing into module */
+	EG(current_module) = zend_hash_str_find_ptr(&module_registry, "psi", sizeof("psi") - 1);
+	if (SUCCESS != zend_register_functions(NULL, C->closures, NULL, MODULE_PERSISTENT)) {
+		C->error(PSI_DATA(C), NULL, PSI_WARNING, "Failed to register functions!");
+	}
+	EG(current_module) = NULL;
+}
 
 ZEND_RESULT_CODE psi_context_call(struct psi_context *C, zend_execute_data *execute_data, zval *return_value, struct psi_impl *impl)
 {
@@ -327,7 +632,11 @@ ZEND_RESULT_CODE psi_context_call(struct psi_context *C, zend_execute_data *exec
 		return FAILURE;
 	}
 
-	C->ops->call(frame);
+	if (psi_call_frame_num_var_args(frame)) {
+		C->ops->call_va(frame);
+	} else {
+		C->ops->call(frame);
+	}
 
 	if (SUCCESS != psi_call_frame_do_assert(frame, PSI_ASSERT_POST)) {
 		psi_call_frame_do_return(frame, return_value);
@@ -350,6 +659,48 @@ void psi_context_dtor(struct psi_context *C)
 	size_t i;
 	zend_function_entry *zfe;
 
+	if (C->decls) {
+		size_t i = 0;
+		struct psi_decl *decl;
+
+		while (psi_plist_get(C->decls, i++, &decl)) {
+			size_t j = 0;
+			struct psi_decl_arg *darg;
+
+			while (psi_plist_get(decl->args, j++, &darg)) {
+				C->ops->composite_dtor(C, darg);
+			}
+			C->ops->composite_dtor(C, decl->func);
+			C->ops->decl_dtor(C, decl);
+		}
+
+	}
+	if (C->vars) {
+		size_t i = 0;
+		struct psi_decl_extvar *evar;
+
+		while (psi_plist_get(C->vars, i++, &evar)) {
+			C->ops->composite_dtor(C, evar->getter->func);
+			C->ops->composite_dtor(C, evar->arg);
+			C->ops->extvar_dtor(C, evar);
+		}
+	}
+	if (C->impls) {
+		size_t i = 0;
+		struct psi_impl *impl;
+
+		while (psi_plist_get(C->impls, i++, &impl)) {
+			struct psi_let_stmt *let;
+			size_t j = 0;
+
+			while (psi_plist_get(impl->stmts.let, j++, &let)) {
+				psi_context_callback_dtor(C, let->exp, impl);
+			}
+
+			C->ops->impl_dtor(C, impl);
+		}
+	}
+
 	if (C->ops->dtor) {
 		C->ops->dtor(C);
 	}
@@ -365,9 +716,9 @@ void psi_context_dtor(struct psi_context *C)
 
 	if (C->closures) {
 		for (zfe = C->closures; zfe->fname; ++zfe) {
-			free((void *) zfe->arg_info);
+			pefree((void *) zfe->arg_info, 1);
 		}
-		free(C->closures);
+		pefree(C->closures, 1);
 	}
 }
 
@@ -383,8 +734,7 @@ void psi_context_free(struct psi_context **C)
 void psi_context_dump(struct psi_dump *dump, struct psi_context *C)
 {
 	PSI_DUMP(dump, "// psi.engine=%s\n// %lu files\n",
-			(char *) C->ops->query(C, PSI_CONTEXT_QUERY_SELF, NULL),
-			C->count);
+			C->ops->name, C->count);
 
 	psi_data_dump(dump, PSI_DATA(C));
 

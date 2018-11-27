@@ -336,6 +336,7 @@ void psi_decl_type_dump(struct psi_dump *dump, struct psi_decl_type *t, unsigned
 	case PSI_T_STRUCT:
 		PSI_DUMP(dump, "struct ");
 		if (psi_decl_type_is_anon(t->name, "struct")) {
+			PSI_DUMP(dump, "/*::(%zu, %zu)*/", t->real.strct->align, t->real.strct->size);
 			psi_decl_type_dump_args_with_layout(dump, t->real.strct->args, level);
 			return;
 		}

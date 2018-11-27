@@ -38,10 +38,6 @@ struct psi_decl_struct {
 	struct psi_plist *args;
 	size_t size;
 	size_t align;
-	struct {
-		void *type;
-		void (*dtor)(void *type);
-	} engine;
 };
 
 struct psi_decl_struct *psi_decl_struct_init(zend_string *name, struct psi_plist *args);

@@ -18,3 +18,5 @@
 * int128
 * very small real numbers
 * cache tokens of files and copy tokens if used for further processing
+
+* optimized inlines like htonl

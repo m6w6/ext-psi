@@ -37,7 +37,47 @@ static jit_type_t jit_type_llong;
 static jit_type_t jit_type_ullong;
 #endif
 
-static inline jit_type_t psi_jit_decl_arg_type(struct psi_decl_arg *darg);
+struct psi_jit_context {
+	jit_context_t jit;
+	jit_type_t signature;
+};
+
+struct psi_jit_callback_info {
+	struct psi_jit_impl_info *impl_info;
+	struct psi_let_exp *let_exp;
+
+	void *closure;
+};
+
+struct psi_jit_decl_info {
+	jit_type_t signature;
+	struct psi_jit_struct_info *rv_array;
+	void *params[1];
+};
+
+struct psi_jit_extvar_info {
+	struct {
+		jit_type_t signature;
+		void *closure;
+	} get;
+	struct {
+		jit_type_t signature;
+		jit_type_t params[1];
+		void *closure;
+	} set;
+};
+
+struct psi_jit_impl_info {
+	struct psi_context *context;
+	struct psi_call_frame *frame;
+
+	void *closure;
+};
+
+struct psi_jit_struct_info {
+	jit_type_t strct;
+	struct psi_plist *eles;
+};
 
 static inline jit_type_t psi_jit_token_type(token_t t)
 {
@@ -98,137 +138,14 @@ static inline jit_type_t psi_jit_impl_type(token_t impl_type)
 	case PSI_T_FLOAT:
 	case PSI_T_DOUBLE:
 		return jit_type_sys_double;
-	EMPTY_SWITCH_DEFAULT_CASE()
-		;
+	EMPTY_SWITCH_DEFAULT_CASE();
 	}
 	return NULL;
 }
 
-struct psi_jit_struct_type {
-	jit_type_t strct;
-	jit_type_t *fields;
-};
-
-static void psi_jit_struct_type_dtor(void *ptr)
+static void psi_jit_type_free(jit_type_t *typ_ptr)
 {
-	struct psi_jit_struct_type *type = ptr;
-	unsigned i, n = jit_type_num_fields(type->strct);
-
-	for (i = 0; i < n; ++i) {
-		jit_type_free(jit_type_get_field(type->strct, i));
-	}
-	jit_type_free(type->strct);
-	free(type->fields);
-	free(type);
-}
-
-static size_t psi_jit_struct_type_pad(jit_type_t *els, size_t padding)
-{
-	size_t i;
-
-	for (i = 0; i < padding; ++i) {
-		*els++ = jit_type_copy(jit_type_sys_char);
-	}
-
-	return padding;
-}
-
-static unsigned psi_jit_struct_type_elements(struct psi_decl_struct *strct,
-		jit_type_t **fields)
-{
-	size_t i = 0, argc = psi_plist_count(strct->args), nels = 0, offset = 0,
-			maxalign = 0, last_arg_pos = -1;
-	struct psi_decl_arg *darg;
-	jit_type_t *tmp;
-
-	*fields = calloc(argc + 1, sizeof(*fields));
-
-	while (psi_plist_get(strct->args, i++, &darg)) {
-		jit_type_t type;
-		size_t padding, alignment;
-
-		if (darg->layout->pos == last_arg_pos) {
-			/* skip bit fields */
-			continue;
-		}
-		last_arg_pos = darg->layout->pos;
-
-		type = jit_type_copy(psi_jit_decl_arg_type(darg));
-
-		if ((alignment = jit_type_get_alignment(type)) > maxalign) {
-			maxalign = alignment;
-		}
-
-		assert(jit_type_get_size(type) <= darg->layout->len);
-		if ((padding = psi_offset_padding(darg->layout->pos - offset, alignment))) {
-			if (nels + padding > argc) {
-				argc += padding;
-				tmp = realloc(*fields, (argc + 1) * sizeof(*fields));
-				if (tmp) {
-					*fields = tmp;
-				} else {
-					free(*fields);
-					return 0;
-				}
-			}
-			psi_jit_struct_type_pad(&(*fields)[nels], padding);
-			nels += padding;
-			offset += padding;
-		}
-		assert(offset == darg->layout->pos);
-
-		offset = (offset + darg->layout->len + alignment - 1)
-				& ~(alignment - 1);
-		(*fields)[nels++] = type;
-	}
-
-	/* apply struct alignment padding */
-	offset = (offset + maxalign - 1) & ~(maxalign - 1);
-
-	assert(offset <= strct->size);
-	if (offset < strct->size) {
-		nels += psi_jit_struct_type_pad(&(*fields)[nels], strct->size - offset);
-	}
-
-	return nels;
-}
-static inline jit_type_t psi_jit_decl_type(struct psi_decl_type *type)
-{
-	struct psi_decl_type *real = psi_decl_type_get_real(type);
-
-	switch (real->type) {
-	case PSI_T_STRUCT:
-		if (!real->real.strct->engine.type) {
-			unsigned count;
-			struct psi_jit_struct_type *type = calloc(1, sizeof(*type));
-
-			count = psi_jit_struct_type_elements(real->real.strct, &type->fields);
-			type->strct = jit_type_create_struct(type->fields, count, 0);
-
-			real->real.strct->engine.type = type;
-			real->real.strct->engine.dtor = psi_jit_struct_type_dtor;
-		}
-
-		return ((struct psi_jit_struct_type *) real->real.strct->engine.type)->strct;
-
-	case PSI_T_UNION:
-		{
-			struct psi_decl_arg *arg;
-			psi_plist_get(real->real.unn->args, 0, &arg);
-			return psi_jit_decl_arg_type(arg);
-		}
-
-	default:
-		return psi_jit_token_type(real->type);
-	}
-}
-static inline jit_type_t psi_jit_decl_arg_type(struct psi_decl_arg *darg)
-{
-	if (darg->var->pointer_level) {
-		return jit_type_void_ptr;
-	} else {
-		return psi_jit_decl_type(darg->type);
-	}
+	jit_type_free(*typ_ptr);
 }
 
 static inline jit_abi_t psi_jit_abi(zend_string *convention)
@@ -240,67 +157,6 @@ static inline jit_abi_t psi_jit_abi(zend_string *convention)
 		return jit_abi_fastcall;
 	}
 	return jit_abi_cdecl;
-}
-
-struct psi_jit_context {
-	jit_context_t jit;
-	jit_type_t signature;
-};
-
-struct psi_jit_impl_info {
-	struct psi_context *context;
-	struct psi_call_frame *frame;
-
-	void *closure;
-};
-
-struct psi_jit_callback_info {
-	struct psi_jit_impl_info *impl_info;
-	struct psi_let_exp *let_exp;
-
-	void *closure;
-};
-
-struct psi_jit_decl_info {
-	jit_type_t signature;
-	void *params[1];
-};
-
-static inline struct psi_jit_decl_info *psi_jit_decl_init(struct psi_decl *decl) {
-	if (!decl->info) {
-		size_t i, c = psi_plist_count(decl->args);
-		struct psi_decl_arg *arg;
-		struct psi_jit_decl_info *info = calloc(1, sizeof(*info) + 2 * c * sizeof(void *));
-
-		for (i = 0; psi_plist_get(decl->args, i, &arg); ++i) {
-			info->params[i] = psi_jit_decl_arg_type(arg);
-		}
-		info->params[c] = NULL;
-
-		info->signature = jit_type_create_signature(
-				psi_jit_abi(decl->abi->convention),
-				psi_jit_decl_arg_type(decl->func),
-				(jit_type_t *) info->params,
-				c, 1);
-
-		if (!info->signature) {
-			free(info);
-		} else {
-			decl->info = info;
-		}
-	}
-
-	return decl->info;
-}
-
-static inline void psi_jit_decl_dtor(struct psi_decl *decl) {
-	if (decl->info) {
-		struct psi_jit_decl_info *info = decl->info;
-
-		jit_type_free(info->signature);
-		free(info);
-		decl->info = NULL;
-	}
 }
 
 static void psi_jit_handler(jit_type_t sig, void *result, void **args, void *data)
@@ -326,251 +182,307 @@ static void psi_jit_callback(jit_type_t sig, void *result, void **args, void *da
 	psi_call_frame_do_callback(cb_info->impl_info->frame, &cb_data);
 }
 
-static inline void psi_jit_callback_init(struct psi_jit_impl_info *impl_info,
-		struct psi_let_exp *let_exp)
+static bool psi_jit_load(void)
 {
-	struct psi_jit_context *context = impl_info->context->context;
-	struct psi_jit_callback_info *cb_info;
-	struct psi_jit_decl_info *decl_info;
-	struct psi_let_callback *cb;
-	struct psi_let_func *fn = NULL;
+#if HAVE_INT128
+	jit_type_t ll_fields[2], ull_fields[2];
 
-	switch (let_exp->kind) {
-	case PSI_LET_CALLBACK:
-		cb = let_exp->data.callback;
-		if (cb->decl->info) {
-			decl_info = cb->decl->info;
-		} else {
-			decl_info = psi_jit_decl_init(cb->decl);
-		}
+	ll_fields[0] = ll_fields[1] = jit_type_long;
+	jit_type_llong = jit_type_create_struct(ll_fields, 2, 1);
 
-		cb_info = calloc(1, sizeof(*cb_info));
-		cb_info->impl_info = impl_info;
-		cb_info->let_exp = let_exp;
-		cb_info->closure = jit_closure_create(context->jit, decl_info->signature,
-				&psi_jit_callback, cb_info);
-
-		if (!cb_info->closure) {
-			free(cb_info);
-			break;
-		}
-		cb->info = cb_info;
-
-		assert(!cb->decl->sym);
-		cb->decl->sym = cb_info->closure;
-		fn = cb->func;
-		/* no break */
-
-	case PSI_LET_FUNC:
-		if (!fn) {
-			fn = let_exp->data.func;
-		}
-		if (fn->inner) {
-			size_t i = 0;
-			struct psi_let_exp *inner_let;
-
-			while (psi_plist_get(fn->inner, i++, &inner_let)) {
-				psi_jit_callback_init(impl_info, inner_let);
-			}
-		}
-		break;
-	default:
-		break;
-	}
+	ull_fields[0] = ull_fields[1] = jit_type_ulong;
+	jit_type_ullong = jit_type_create_struct(ull_fields, 2, 1);
+#endif
+	return true;
 }
 
-static inline void psi_jit_callback_dtor(struct psi_let_exp *let_exp) {
-	struct psi_let_callback *cb;
-	struct psi_let_func *fn = NULL;
-
-	switch (let_exp->kind) {
-	case PSI_LET_CALLBACK:
-		cb = let_exp->data.callback;
-
-		psi_jit_decl_dtor(cb->decl);
-
-		if (cb->info) {
-			struct psi_jit_callback_info *info = cb->info;
-
-			if (info->closure) {
-				/* The memory for the closure will be reclaimed when the context is destroyed.
-				free(info->closure); */
-			}
-			free(info);
-			cb->info = NULL;
-		}
-		fn = cb->func;
-		/* no break */
-	case PSI_LET_FUNC:
-		if (!fn) {
-			fn = let_exp->data.func;
-		}
-
-		if (fn->inner) {
-			size_t i = 0;
-			struct psi_let_exp *cb;
-
-			while (psi_plist_get(fn->inner, i++, &cb)) {
-				psi_jit_callback_dtor(cb);
-			}
-		}
-		break;
-	default:
-		break;
-	}
-}
-
-static inline struct psi_jit_impl_info *psi_jit_impl_init(struct psi_impl * impl,
-		struct psi_context *C)
+static void psi_jit_free(void)
 {
-	struct psi_jit_context *context = C->context;
-	struct psi_jit_impl_info *info = calloc(1, sizeof(*info));
-	struct psi_let_stmt *let;
-	size_t l = 0;
-
-	info->context = C;
-	info->closure = jit_closure_create(context->jit, context->signature,
-			&psi_jit_handler, impl);
-
-	if (!info->closure) {
-		free(info);
-		return NULL;
-	}
-
-	while (psi_plist_get(impl->stmts.let, l++, &let)) {
-		psi_jit_callback_init(info, let->exp);
-	}
-
-	return impl->info = info;
+#if HAVE_INT128
+	jit_type_free(jit_type_llong);
+	jit_type_free(jit_type_ullong);
+#endif
 }
 
-
-static inline void psi_jit_impl_dtor(struct psi_impl *impl) {
-	struct psi_jit_impl_info *info = impl->info;
-	struct psi_let_stmt *let;
-	size_t j = 0;
-
-	while (psi_plist_get(impl->stmts.let, j++, &let)) {
-		psi_jit_callback_dtor(let->exp);
-	}
-
-	if (info) {
-		if (info->closure) {
-			/* The memory for the closure will be reclaimed when the context is destroyed.
-			free(info->closure); */
-		}
-		free(info);
-		impl->info = NULL;
-	}
-}
-
-static inline struct psi_jit_context *psi_jit_context_init(
-		struct psi_jit_context *L)
+static bool psi_jit_init(struct psi_context *C)
 {
+	struct psi_jit_context *context = pecalloc(1, sizeof(*context), 1);
 	jit_type_t params[] = {jit_type_void_ptr, jit_type_void_ptr};
 
-	if (!L) {
-		L = malloc(sizeof(*L));
+	context->jit = jit_context_create();
+	if (!context->jit) {
+		pefree(context, 1);
+		return false;
 	}
-	memset(L, 0, sizeof(*L));
 
-	L->jit = jit_context_create();
-	L->signature = jit_type_create_signature(jit_abi_cdecl, jit_type_void,
+	context->signature = jit_type_create_signature(jit_abi_cdecl, jit_type_void,
 			params, 2, 1);
-
-	return L;
-}
-
-static inline void psi_jit_context_dtor(struct psi_jit_context *L)
-{
-	jit_type_free(L->signature);
-	jit_context_destroy(L->jit);
-}
-
-static inline void psi_jit_context_free(struct psi_jit_context **L)
-{
-	if (*L) {
-		psi_jit_context_dtor(*L);
-		free(*L);
-		*L = NULL;
+	if (!context->signature) {
+		jit_context_destroy(context->jit);
+		pefree(context, 1);
+		return false;
 	}
-}
 
-static void psi_jit_init(struct psi_context *C)
-{
-	C->context = psi_jit_context_init(NULL);
+	C->context = context;
+	return true;
 }
 
 static void psi_jit_dtor(struct psi_context *C)
 {
-	if (C->decls) {
-		size_t i = 0;
-		struct psi_decl *decl;
+	if (C->context) {
+		struct psi_jit_context *context = C->context;
 
-		while (psi_plist_get(C->decls, i++, &decl)) {
-			psi_jit_decl_dtor(decl);
-		}
-	}
-	if (C->impls) {
-		size_t i = 0;
-		struct psi_impl *impl;
+		jit_type_free(context->signature);
+		jit_context_destroy(context->jit);
 
-		while (psi_plist_get(C->impls, i++, &impl)) {
-			psi_jit_impl_dtor(impl);
-		}
+		pefree(C->context, 1);
+		C->context = NULL;
 	}
-	psi_jit_context_free((void *) &C->context);
 }
 
-static zend_function_entry *psi_jit_compile(struct psi_context *C)
-{
-	size_t i = 0, d = 0, nf = 0;
-	struct psi_impl *impl;
-	struct psi_decl *decl;
-	zend_function_entry *zfe;
-	struct psi_jit_context *ctx = C->context;
 
-	if (!C->impls) {
-		return NULL;
+static bool psi_jit_composite_init(struct psi_context *C,
+		struct psi_decl_arg *darg)
+{
+	struct psi_jit_struct_info *info;
+
+	if (darg->engine.type) {
+		return true;
 	}
 
-	zfe = calloc(psi_plist_count(C->impls) + 1, sizeof(*zfe));
+	info = pecalloc(1, sizeof(*info), 1);
+	info->eles = psi_plist_init((psi_plist_dtor) psi_jit_type_free);
+	info->strct = jit_type_create_struct((jit_type_t *)
+			psi_context_composite_type_elements(C, darg, &info->eles),
+			psi_plist_count(info->eles), 0);
+
+	darg->engine.info = info;
+	darg->engine.type = info->strct;
+
+	return true;
+}
+
+static void psi_jit_composite_dtor(struct psi_context *C,
+		struct psi_decl_arg *darg)
+{
+	struct psi_jit_struct_info *info = darg->engine.info;
+
+	if (info) {
+		darg->engine.info = NULL;
+		darg->engine.type = NULL;
+
+		jit_type_free(info->strct);
+		psi_plist_free(info->eles);
+		pefree(info, 1);
+	}
+}
+
+static void psi_jit_extvar_get(jit_type_t sig, void *result, void **args, void *data)
+{
+	struct psi_decl_extvar *evar = data;
+
+	psi_decl_extvar_get(evar, result);
+}
+
+static void psi_jit_extvar_set(jit_type_t sig, void *result, void **args, void *data)
+{
+	struct psi_decl_extvar *evar = data;
+
+	psi_decl_extvar_set(evar, args[0]);
+}
+
+static bool psi_jit_decl_init(struct psi_context *, struct psi_decl *);
+
+static bool psi_jit_extvar_init(struct psi_context *C,
+		struct psi_decl_extvar *evar)
+{
+	struct psi_jit_context *ctx = C->context;
+	struct psi_jit_extvar_info *info = pecalloc(1, sizeof(*info), 1);
+
+	evar->info = info;
+
+	psi_jit_decl_init(C, evar->getter);
+	psi_jit_decl_init(C, evar->setter);
+
 	jit_context_build_start(ctx->jit);
 
-	while (psi_plist_get(C->impls, i++, &impl)) {
-		zend_function_entry *zf = &zfe[nf];
-
-		if (!impl->decl) {
-			continue;
-		}
-		if (!psi_jit_decl_init(impl->decl)) {
-			continue;
-		}
-		if (!psi_jit_impl_init(impl, C)) {
-			continue;
-		}
-
-		zf->fname = impl->func->name->val + (impl->func->name->val[0] == '\\');
-		zf->handler = ((struct psi_jit_impl_info *) impl->info)->closure;
-		zf->num_args = psi_plist_count(impl->func->args);
-		zf->arg_info = psi_internal_arginfo(impl);
-		++nf;
+	info->get.signature = jit_type_create_signature(jit_abi_cdecl,
+			psi_context_decl_arg_full_type(C, evar->getter->func), NULL, 0, 1);
+	if (!info->get.signature) {
+		goto failure;
+	}
+	info->get.closure = jit_closure_create(ctx->jit, info->get.signature,
+			psi_jit_extvar_get, evar);
+	if (!info->get.closure) {
+		goto failure;
 	}
 
-	while (psi_plist_get(C->decls, d++, &decl)) {
-		if (decl->info) {
-			continue;
-		}
-
-		psi_jit_decl_init(decl);
+	info->set.params[0] = psi_context_decl_arg_call_type(C, evar->arg);
+	info->set.signature = jit_type_create_signature(jit_abi_cdecl,
+			psi_context_decl_arg_full_type(C, evar->setter->func),
+			info->set.params, 1, 1);
+	if (!info->set.signature) {
+		goto failure;
 	}
+	info->set.closure = jit_closure_create(ctx->jit, info->set.signature,
+			psi_jit_extvar_set, evar);
+	if (!info->set.closure) {
+		goto failure;
+	}
+
+	evar->getter->sym = info->get.closure;
+	evar->setter->sym = info->set.closure;
 
 	jit_context_build_end(ctx->jit);
-
-	return zfe;
+	return true;
+failure: ;
+	jit_context_build_end(ctx->jit);
+	return false;
 }
 
-static inline void psi_jit_call_ex(struct psi_call_frame *frame) {
+static void psi_jit_extvar_dtor(struct psi_context *C,
+		struct psi_decl_extvar *evar) {
+	if (evar->info) {
+		pefree(evar->info, 1);
+		evar->info = NULL;
+	}
+}
+
+static bool psi_jit_decl_init(struct psi_context *C, struct psi_decl *decl)
+{
+	if (!decl->info) {
+		struct psi_jit_context *ctx = C->context;
+		size_t i, c = psi_plist_count(decl->args);
+		struct psi_decl_arg *arg;
+		struct psi_jit_decl_info *info = pecalloc(1,
+				sizeof(*info) + 2 * c * sizeof(void *), 1);
+
+		decl->info = info;
+
+		jit_context_build_start(ctx->jit);
+
+		for (i = 0; psi_plist_get(decl->args, i, &arg); ++i) {
+			info->params[i] = psi_context_decl_arg_call_type(C, arg);
+		}
+		info->params[c] = NULL;
+
+		info->signature = jit_type_create_signature(
+				psi_jit_abi(decl->abi->convention),
+				psi_context_decl_arg_full_type(C, decl->func),
+				(jit_type_t *) info->params, c, 1);
+
+		jit_context_build_end(ctx->jit);
+
+		if (!info->signature) {
+			pefree(info, 1);
+			decl->info = NULL;
+			return false;
+		}
+	}
+
+	return true;
+}
+
+static void psi_jit_decl_dtor(struct psi_context *C, struct psi_decl *decl) {
+	if (decl->info) {
+		struct psi_jit_decl_info *info = decl->info;
+
+		jit_type_free(info->signature);
+		pefree(info, 1);
+		decl->info = NULL;
+	}
+}
+
+static bool psi_jit_impl_init(struct psi_context *C,
+		struct psi_impl *impl, zif_handler *zh)
+{
+	struct psi_jit_context *context = C->context;
+	struct psi_jit_impl_info *info = calloc(1, sizeof(*info));
+
+	impl->info = info;
+	info->context = C;
+
+	info->closure = jit_closure_create(context->jit, context->signature,
+			&psi_jit_handler, impl);
+
+	if (!info->closure) {
+		goto failure;
+	}
+
+	*zh = info->closure;
+	return true;
+
+failure: ;
+	impl->info = NULL;
+	pefree(info, 1);
+	return false;
+}
+
+
+static void psi_jit_impl_dtor(struct psi_context *C, struct psi_impl *impl) {
+	struct psi_jit_impl_info *info = impl->info;
+
+	if (info) {
+		/* The memory for the closure will be reclaimed
+		 * when the context is destroyed.
+		 */
+		pefree(info, 1);
+		impl->info = NULL;
+	}
+}
+
+static bool psi_jit_cb_init(struct psi_context *C,
+		struct psi_let_exp *exp, struct psi_impl *impl)
+{
+	struct psi_jit_context *context = C->context;
+	struct psi_jit_callback_info *cb_info;
+	struct psi_jit_decl_info *decl_info;
+
+	assert(exp->kind == PSI_LET_CALLBACK);
+
+	if (!psi_jit_decl_init(C, exp->data.callback->decl)) {
+		return false;
+	}
+
+	cb_info = pecalloc(1, sizeof(*cb_info), 1);
+	cb_info->impl_info = impl->info;
+	cb_info->let_exp = exp;
+
+	decl_info = exp->data.callback->decl->info;
+	cb_info->closure = jit_closure_create(context->jit, decl_info->signature,
+			&psi_jit_callback, cb_info);
+
+	if (!cb_info->closure) {
+		free(cb_info);
+		return false;
+	}
+
+	assert(!exp->data.callback->decl->sym);
+	exp->data.callback->info = cb_info;
+	exp->data.callback->decl->sym = cb_info->closure;
+
+	return true;
+}
+
+static void psi_jit_cb_dtor(struct psi_context *C,
+		struct psi_let_exp *let_exp, struct psi_impl *impl)
+{
+	assert(let_exp->kind == PSI_LET_CALLBACK);
+
+	psi_jit_decl_dtor(C, let_exp->data.callback->decl);
+
+	if (let_exp->data.callback->info) {
+		struct psi_jit_callback_info *info = let_exp->data.callback->info;
+
+		/* The memory for the closure will be reclaimed
+		 * when the context is destroyed.
+		 */
+		pefree(info, 1);
+		let_exp->data.callback->info = NULL;
+	}
+}
+
+static void psi_jit_call(struct psi_call_frame *frame) {
 	struct psi_decl *decl = psi_call_frame_get_decl(frame);
 	struct psi_impl *impl = psi_call_frame_get_impl(frame);
 	struct psi_jit_decl_info *decl_info = decl->info;
@@ -590,7 +502,7 @@ static inline void psi_jit_call_ex(struct psi_call_frame *frame) {
 	}
 }
 
-static inline void psi_jit_call_va(struct psi_call_frame *frame) {
+static void psi_jit_call_va(struct psi_call_frame *frame) {
 	jit_type_t signature;
 	struct psi_call_frame *prev;
 	struct psi_decl *decl = psi_call_frame_get_decl(frame);
@@ -613,8 +525,7 @@ static inline void psi_jit_call_va(struct psi_call_frame *frame) {
 
 	signature = jit_type_create_signature(jit_abi_vararg,
 			jit_type_get_return(decl_info->signature),
-			param_types, argc + va_count,
-			1);
+			param_types, argc + va_count, 1);
 	assert(signature);
 
 	if (impl) {
@@ -634,56 +545,50 @@ static inline void psi_jit_call_va(struct psi_call_frame *frame) {
 	efree(param_types);
 }
 
-static void psi_jit_call(struct psi_call_frame *frame) {
-	if (psi_call_frame_num_var_args(frame)) {
-		psi_jit_call_va(frame);
-	} else {
-		psi_jit_call_ex(frame);
-	}
+static void *psi_jit_typeof_impl(struct psi_context *C, token_t impl_type)
+{
+	return psi_jit_impl_type(impl_type);
 }
 
-static void *psi_jit_query(struct psi_context *C, enum psi_context_query q,
-		void *arg)
+static void *psi_jit_typeof_decl(struct psi_context *C, token_t decl_type)
 {
-	switch (q) {
-	case PSI_CONTEXT_QUERY_SELF:
-		return "jit";
-	case PSI_CONTEXT_QUERY_TYPE:
-		return psi_jit_impl_type(*(token_t *) arg);
-	}
-	return NULL;
+	return psi_jit_token_type(decl_type);
 }
 
-static ZEND_RESULT_CODE psi_jit_load(void)
+static void *psi_jit_copyof_type(struct psi_context *C, void *orig_type)
 {
-#if HAVE_INT128
-	jit_type_t ll_fields[2], ull_fields[2];
-
-	ll_fields[0] = ll_fields[1] = jit_type_long;
-	jit_type_llong = jit_type_create_struct(ll_fields, 2, 1);
-
-	ull_fields[0] = ull_fields[1] = jit_type_ulong;
-	jit_type_ullong = jit_type_create_struct(ull_fields, 2, 1);
-#endif
-	return SUCCESS;
+	return jit_type_copy(orig_type);
 }
 
-static void psi_jit_free(void)
+static void psi_jit_layoutof_type(struct psi_context *C, void *orig_type,
+		struct psi_layout *l)
 {
-#if HAVE_INT128
-	jit_type_free(jit_type_llong);
-	jit_type_free(jit_type_ullong);
-#endif
+	l->pos = jit_type_get_alignment(orig_type);
+	l->len = jit_type_get_size(orig_type);
 }
 
 static struct psi_context_ops ops = {
+	"libjit",
 	psi_jit_load,
 	psi_jit_free,
 	psi_jit_init,
 	psi_jit_dtor,
-	psi_jit_compile,
+	psi_jit_composite_init,
+	psi_jit_composite_dtor,
+	psi_jit_extvar_init,
+	psi_jit_extvar_dtor,
+	psi_jit_decl_init,
+	psi_jit_decl_dtor,
+	psi_jit_impl_init,
+	psi_jit_impl_dtor,
+	psi_jit_cb_init,
+	psi_jit_cb_dtor,
 	psi_jit_call,
-	psi_jit_query
+	psi_jit_call_va,
+	psi_jit_typeof_impl,
+	psi_jit_typeof_decl,
+	psi_jit_copyof_type,
+	psi_jit_layoutof_type,
 };
 
 struct psi_context_ops *psi_libjit_ops(void)

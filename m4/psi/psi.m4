@@ -50,6 +50,7 @@ AC_DEFUN(PSI_CONFIG_INIT, [
 	if test "$PHP_PSI_MAINTAINER_MODE" = "yes"; then
 		PSI_DEPS=true
 		PHP_SUBST(PSI_DEPS)
+		EXTRA_CFLAGS="-Wall -Wextra $EXTRA_CFLAGS"
 	else
 		PSI_DEPS=false
 	fi

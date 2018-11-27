@@ -38,6 +38,7 @@ struct psi_decl {
 	zend_string *redir;
 	void *sym;
 	void *info;
+	void *type;
 	unsigned varargs:1;
 	unsigned extvar:1;
 };
