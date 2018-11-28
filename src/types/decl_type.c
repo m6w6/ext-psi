@@ -345,6 +345,7 @@ void psi_decl_type_dump(struct psi_dump *dump, struct psi_decl_type *t, unsigned
 	case PSI_T_UNION:
 		PSI_DUMP(dump, "union ");
 		if (psi_decl_type_is_anon(t->name, "union")) {
+			PSI_DUMP(dump, "/*::(%zu, %zu)*/", t->real.unn->align, t->real.unn->size);
 			psi_decl_type_dump_args_with_layout(dump, t->real.unn->args, level);
 			return;
 		}

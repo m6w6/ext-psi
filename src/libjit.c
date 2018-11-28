@@ -215,7 +215,7 @@ static bool psi_jit_init(struct psi_context *C)
 		return false;
 	}
 
-	context->signature = jit_type_create_signature(jit_abi_cdecl, jit_type_void,
+	context->signature = jit_type_create_signature(jit_abi_fastcall, jit_type_void,
 			params, 2, 1);
 	if (!context->signature) {
 		jit_context_destroy(context->jit);
@@ -252,8 +252,9 @@ static bool psi_jit_composite_init(struct psi_context *C,
 
 	info = pecalloc(1, sizeof(*info), 1);
 	info->eles = psi_plist_init((psi_plist_dtor) psi_jit_type_free);
+	psi_context_composite_type_elements(C, darg, &info->eles);
 	info->strct = jit_type_create_struct((jit_type_t *)
-			psi_context_composite_type_elements(C, darg, &info->eles),
+			psi_plist_eles(info->eles),
 			psi_plist_count(info->eles), 0);
 
 	darg->engine.info = info;
@@ -272,7 +273,8 @@ static void psi_jit_composite_dtor(struct psi_context *C,
 		darg->engine.type = NULL;
 
 		jit_type_free(info->strct);
-		psi_plist_free(info->eles);
+		/* just free */
+		pefree(info->eles, 1);
 		pefree(info, 1);
 	}
 }
@@ -307,7 +309,7 @@ static bool psi_jit_extvar_init(struct psi_context *C,
 	jit_context_build_start(ctx->jit);
 
 	info->get.signature = jit_type_create_signature(jit_abi_cdecl,
-			psi_context_decl_arg_full_type(C, evar->getter->func), NULL, 0, 1);
+			psi_context_decl_arg_call_type(C, evar->getter->func), NULL, 0, 1);
 	if (!info->get.signature) {
 		goto failure;
 	}
@@ -319,7 +321,7 @@ static bool psi_jit_extvar_init(struct psi_context *C,
 
 	info->set.params[0] = psi_context_decl_arg_call_type(C, evar->arg);
 	info->set.signature = jit_type_create_signature(jit_abi_cdecl,
-			psi_context_decl_arg_full_type(C, evar->setter->func),
+			psi_context_decl_arg_call_type(C, evar->setter->func),
 			info->set.params, 1, 1);
 	if (!info->set.signature) {
 		goto failure;
@@ -565,6 +567,9 @@ static void psi_jit_layoutof_type(struct psi_context *C, void *orig_type,
 {
 	l->pos = jit_type_get_alignment(orig_type);
 	l->len = jit_type_get_size(orig_type);
+
+	assert(l->pos);
+	assert(l->len);
 }
 
 static struct psi_context_ops ops = {

@@ -576,7 +576,7 @@ static inline bool psi_number_validate_number(struct psi_data *data, struct psi_
 						return true;
 					}
 				}
-				break;
+				/* no break */
 			default:
 				zend_string_release(exp->data.numb);
 				exp->type = PSI_T_INT64;

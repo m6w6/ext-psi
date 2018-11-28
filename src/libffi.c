@@ -229,10 +229,15 @@ static bool psi_ffi_init(struct psi_context *C)
 {
 	ffi_status rc;
 	struct psi_ffi_context *context = pecalloc(1, sizeof(*context), 1);
+	ffi_abi abi = FFI_DEFAULT_ABI;
+
+#if HAVE_FFI_FASTCALL
+	abi = FFI_FASTCALL;
+#endif
 
 	context->params[0] = &ffi_type_pointer;
 	context->params[1] = &ffi_type_pointer;
-	rc = ffi_prep_cif(&context->signature, FFI_DEFAULT_ABI, 2, &ffi_type_void,
+	rc = ffi_prep_cif(&context->signature, abi, 2, &ffi_type_void,
 			context->params);
 
 	if (FFI_OK != rc) {
@@ -291,22 +296,6 @@ static void psi_ffi_composite_dtor(struct psi_context *C,
 	if (info) {
 		darg->engine.info = NULL;
 		darg->engine.type = NULL;
-
-		struct psi_plist *args = NULL;
-		struct psi_decl_type *dtype = psi_decl_type_get_real(darg->type);
-
-		if (dtype->type == PSI_T_STRUCT) {
-			args = dtype->real.strct->args;
-		} else if (dtype->type == PSI_T_UNION) {
-			args = dtype->real.unn->args;
-		}
-
-		size_t i = 0;
-		struct psi_decl_arg *tmp;
-
-		while (psi_plist_get(args, i++, &tmp)) {
-			psi_ffi_composite_dtor(C, tmp);
-		}
 
 		psi_plist_free(info->eles);
 		pefree(info, 1);
