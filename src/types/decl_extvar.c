@@ -151,7 +151,12 @@ struct psi_decl *psi_decl_extvar_getter(struct psi_decl_extvar *evar)
 
 void psi_decl_extvar_get(struct psi_decl_extvar *evar, void *ptr)
 {
-	memcpy(ptr, evar->sym, evar->size);
+	if (evar->arg->var->array_size) {
+		/* arrays are passed as pointer */
+		*(void **) ptr = evar->sym;
+	} else {
+		memcpy(ptr, evar->sym, evar->size);
+	}
 }
 
 

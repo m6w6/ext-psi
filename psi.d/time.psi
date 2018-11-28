@@ -124,5 +124,5 @@ function psi\tzset() : void {
 }
 
 function psi\tzname() : array {
-	return tzname_get() as to_array(tzname_get, 2, to_string(*tzname_get));
+	return tzname_get() as to_array(*tzname_get, 2, to_string(*tzname_get));
 }
