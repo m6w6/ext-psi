@@ -1,0 +1,10 @@
+const \CPP_TEST0 = __COUNTER__;
+const \CPP_TEST1 = __COUNTER__;
+const \CPP_TEST2 = __COUNTER__;
+
+#define a(x,y) x ## y
+#define b(x,y) a(x,y)
+#define c(x) b(x, __COUNTER__)
+const \CPP_TEST3 = c(300);
+const \CPP_TEST4 = c(400);
+const \CPP_TEST5 = c(500);
