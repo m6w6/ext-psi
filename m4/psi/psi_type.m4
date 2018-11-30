@@ -1,10 +1,3 @@
-# psi_add_type(type triplet)
-# Add a pre-defined type to $PSI_TYPES_H.
-psi_add_type() {
-	PSI_TYPES="$PSI_TYPES
-	$1,"
-}
-
 psi_add_stdtype() {
 	PSI_STDTYPES="$PSI_STDTYPES
 	$1,"
@@ -40,30 +33,6 @@ psi_type_pair() {
 	esac
 }
 
-dnl PSI_TYPE(type name, basic type)
-dnl Check for a specific type, optionally referring to a basic type.
-dnl Calls AC_TYPE_<TYPE> (if defined) and PSI_CHECK_SIZEOF.
-dnl If the basic type is just specified as "int" (in contrast to "sint" or
-dnl "uint"), AX_CHECK_SIGN is used to discover signedness of the type.
-dnl Defines a pre-defined type in $PSI_TYPES_H.
-AC_DEFUN(PSI_TYPE, [
-	ifdef(AS_TR_CPP(AC_TYPE_$1), AS_TR_CPP(AC_TYPE_$1))
-	PSI_CHECK_SIZEOF($1)
-	psi_basic_type=AS_TR_SH($2)
-	case $psi_basic_type in
-	int)
-		AX_CHECK_SIGN($1, :, [psi_basic_type=uint], PSI_INCLUDES)
-		;;
-	sint)
-		psi_basic_type=int
-		;;
-	esac
-	if test "$2" && PSI_SH_TEST_SIZEOF($1); then
-		AS_TR_SH(psi_basic_type_$1)=$psi_basic_type
-		psi_add_type "{`psi_type_pair $psi_basic_type PSI_SH_SIZEOF($1)`, \"$1\"}"
-	fi
-])
-
 AC_DEFUN(PSI_STDTYPE, [
 	ifdef(AS_TR_CPP(AC_TYPE_$1), AS_TR_CPP(AC_TYPE_$1))
 	PSI_CHECK_SIZEOF($1)
@@ -80,115 +49,6 @@ AC_DEFUN(PSI_STDTYPE, [
 		])
 	fi
 ])
-
-dnl PSI_SH_BASIC_TYPE(type)
-dnl Expand to the basic type (int/uint) of a distinct type
-AC_DEFUN(PSI_SH_BASIC_TYPE, [$AS_TR_SH([psi_basic_type_]$1)])
-
-dnl PSI_OPAQUE_TYPE(type name)
-dnl Checks a type for being a scalar, a struct or a pointer type.
-dnl Calls AC_TYPE_<TYPE> (if defined) and PSI_CHECK_SIZEOF.
-dnl Defines a pre-defined type in $PSI_TYPES_H and a pre-defined struct in
-dnl $PSI_STRUCTS if the type is a struct.
-AC_DEFUN(PSI_OPAQUE_TYPE, [
-	ifdef(AS_TR_CPP(AC_TYPE_$1), AS_TR_CPP(AC_TYPE_$1))
-	PSI_CHECK_SIZEOF($1)
-	if PSI_SH_TEST_SIZEOF($1); then
-		psi_type_class=
-		AC_CACHE_CHECK(kind of $1, AS_TR_SH([psi_cv_type_class_]$1), [
-			AC_TRY_COMPILE(PSI_INCLUDES, [char test@<:@($1)1@:>@;], [
-				psi_type_class=scalar
-			], [
-				AC_TRY_COMPILE(PSI_INCLUDES, [$1 test = 0;], [
-					AC_TRY_COMPILE(PSI_INCLUDES, [$1 test = (($1)0)+1;], [
-						psi_type_class="pointer of known type"
-					], [
-						psi_type_class="pointer of opaque type"
-					])
-				], [
-					psi_type_class=struct
-				])
-			])
-			AS_TR_SH([psi_cv_type_class_]$1)="$psi_type_class"
-		])
-		case "$AS_TR_SH([psi_cv_type_class_]$1)" in
-		scalar)
-			AX_CHECK_SIGN($1, [psi_basic_type=int], [psi_basic_type=uint], PSI_INCLUDES)
-			psi_add_type "{`psi_type_pair $psi_basic_type PSI_SH_SIZEOF($1)`, \"$1\"}"
-			;;
-		struct)
-			PSI_STRUCT($1)
-			;;
-		pointer*)
-			psi_add_type "{PSI_T_POINTER, \"void\", \"$1\"}"
-			;;
-		*)
-			AC_MSG_WARN(could not detect kind of $1)
-			;;
-		esac
-	fi
-])
-
-dnl PSI_FUNCTOR_TYPE(type functor_name, args)
-dnl Forwards to PSI_DECL_TYPE.
-AC_DEFUN(PSI_FUNCTOR_TYPE, [
-	dnl psi_add_type "{PSI_T_POINTER, \"void\", \"PSI_VAR_NAME($1)\"}"
-	AS_TR_SH([ac_cv_sizeof_]PSI_VAR_NAME($1))=PSI_SH_SIZEOF(void *)
-	PSI_DECL_TYPE([$1], [$2])
-	AC_CHECK_TYPE(PSI_VAR_NAME($1), [], [
-		psi_add_macro ["#undef ]PSI_VAR_NAME($1)["]
-		psi_add_macro ["typedef ]PSI_VAR_TYPE($1)[ (*]PSI_VAR_NAME($1)[)]$2;"
-	])
-])
-
-dnl PSI_VAR_TYPE(decl arg)
-dnl Extracts the type of a decl arg, e.g. dnl unsigned char* buf[16] -> unsigned char*.
-AC_DEFUN(PSI_VAR_TYPE, [m4_bregexp([$1], [^\(const \)?\(.*\) \([*]*\)[^ ]+$], [\2\3])])
-
-dnl PSI_VAR_TYPE_RETURN(decl arg)
-dnl Extracts the type of a decl arg usable for return types, e.g. dnl unsigned char* buf[16] -> unsigned char**.
-AC_DEFUN(PSI_VAR_TYPE_RETURN, [PSI_VAR_TYPE(m4_bpatsubst([$1], [\([^ ]+\) *@<:@[0-9]+@:>@], [* \1]))])
-
-dnl PSI_VAR_NAME(decl arg)
-dnl Extracts the var name of a decl arg, e.g. unsigned char* buf[16] -> buf.
-AC_DEFUN(PSI_VAR_NAME, [m4_bregexp(m4_bregexp([$1], [\([^ ]+\)$], [\1]), [\w+], [\&])])
-
-dnl PSI_TYPE_INDIRECTION(decl arg, size, pointer_level_var, array_size_var)
-dnl Calculates and assigns pointer_level and array_size of a decl arg to sh vars.
-AC_DEFUN(PSI_TYPE_INDIRECTION, [
-	m4_define([psi_pointer_level], m4_len(m4_bpatsubst([PSI_VAR_TYPE($1)], [[^*]])))
-	m4_define([psi_array_size], [m4_bregexp([PSI_VAR_TYPE($1)], [@<:@\([0-9]+\)@:>@], [\1])])
-
-	ifelse(psi_array_size.$2,0., [
-		AC_MSG_ERROR([cannot compute dynamic array size of a non-struct member])
-	], [
-		ifelse(psi_pointer_level,0,[
-			m4_define([psi_type_size],[$]AS_TR_SH([ac_cv_sizeof_]m4_bregexp(PSI_VAR_TYPE([$1]), [^\( \|\w\)+], [\&])))
-		],[
-			m4_define([psi_type_size],$ac_cv_sizeof_void_p)
-		])
-	])
-
-	m4_case(psi_array_size,,[
-		$3=psi_pointer_level
-		$4=0]
-	,0,[
-		$3=m4_incr(psi_pointer_level)
-		$4="`expr $2 / psi_type_size`"
-	], [
-		$3=m4_incr(psi_pointer_level)
-		$4=psi_array_size
-	])
-])
-
-dnl PSI_TYPE_PAIR(type)
-dnl Expand to a PSI_T_<TYPE>, \\"<TYPENAME>\\" tuple.
-dnl FIXME: There is also psi_type_pair()?
-AC_DEFUN(PSI_TYPE_PAIR, [m4_case(m4_bregexp([$1], [^\w+], [\&]),
-	[void], [PSI_T_VOID, \"void\"],
-	[struct], [PSI_T_STRUCT, \"m4_bregexp([$1], [^struct \(\w+\)], [\1])\"],
-	[union], [PSI_T_UNION, \"m4_bregexp([$1], [^union \(\w+\)], [\1])\"],
-	[PSI_T_NAME, \"m4_bregexp([$1], [^\(\w+ \)*\w+], [\&])\"])])
 
 dnl PSI_CHECK_STD_TYPES()
 dnl Checks for standard ANSI-C, stdint and stdbool types.

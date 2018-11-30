@@ -20,3 +20,4 @@
 * cache tokens of files and copy tokens if used for further processing
 
 * optimized inlines like htonl
+* real integral type of enums

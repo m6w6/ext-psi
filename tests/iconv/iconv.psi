@@ -13,7 +13,7 @@ function psi\iconv(object $iconv, string &$inbuf, string &$outbuf) : int {
 	let outbytesleft = &8192;
 	let outbuf = &calloc(1, 8192);
 	temp result = *outbuf;
-	return to_int(iconv);
+	return iconv(cd, inbuf, inbytesleft, outbuf, outbytesleft) as to_int(iconv);
 	set $inbuf = to_string(*inbuf, *inbytesleft);
 	set $outbuf = to_string(result, 8192 - *outbytesleft);
 }

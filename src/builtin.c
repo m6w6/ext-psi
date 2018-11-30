@@ -36,6 +36,7 @@ HashTable psi_builtins;
 
 static bool has_include(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
 static bool has_include_next(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
+static bool has_feature(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
 static bool builtin_constant_p(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
 static bool COUNTER__(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
 
@@ -92,7 +93,9 @@ PHP_MINIT_FUNCTION(psi_builtin)
 	zend_hash_init(&psi_builtins, 0, NULL, free_builtin, 1);
 	PSI_BUILTIN(has_include, PSI_T_CPP_HEADER);
 	PSI_BUILTIN(has_include_next, PSI_T_CPP_HEADER);
+	PSI_BUILTIN(has_feature, PSI_T_NAME);
 	PSI_BUILTIN(builtin_constant_p, PSI_T_NAME);
+
 	PSI_BUILTIN(COUNTER__, -1);
 
 	return SUCCESS;
@@ -155,6 +158,12 @@ static bool has_include_next(struct psi_cpp *cpp, struct psi_token *target,
 		cpp->parser->error(PSI_DATA(cpp->parser), target, PSI_WARNING,
 				"Erroneous usage of builtin __%s", __FUNCTION__);
 	}
+	return false;
+}
+
+static bool has_feature(struct psi_cpp *cpp, struct psi_token *target,
+		struct psi_plist **args, struct psi_plist **res_ptr)
+{
 	return false;
 }
 

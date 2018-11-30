@@ -195,23 +195,6 @@ typedef bool _Bool;
 #endif
 ])
 
-dnl PSI_LEMON()
-dnl Declare $LEMON precious, and check for a `lemon` in $PATH.
-AC_DEFUN(PSI_LEMON, [
-	AC_ARG_VAR(LEMON, The lemon parser generator of the SQLite project)
-	if test -z "$LEMON"
-	then
-		AC_PATH_PROG(LEMON, lemon, $PHP_PSI_BUILDDIR/lemon)
-		if expr + "$LEMON" : "/" >/dev/null; then
-			LEMON_PATH=
-		else
-			LEMON_PATH=$abs_builddir/
-		fi
-	fi
-	PHP_SUBST(LEMON_PATH)
-	PHP_SUBST(LEMON)
-])
-
 dnl PSI_PKG_CONFIG()
 dnl Check for `pkg-config` and add possible libjit and libffi directories to
 dnl $PKG_CONFIG_PATH, because those libs often ship with headers etc. in

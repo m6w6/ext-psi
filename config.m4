@@ -1,12 +1,3 @@
-PHP_PSI_SRCDIR=PHP_EXT_SRCDIR(psi)
-
-case "PHP_EXT_BUILDDIR(psi)" in
-""|.) PHP_PSI_BUILDDIR=$PHP_PSI_SRCDIR
-	;;
-*)    PHP_PSI_BUILDDIR=PHP_EXT_BUILDDIR(psi)
-	;;
-esac
-
 m4_foreach(incfile, [
 	[ax/ax_check_sign.m4],
 	[ax/ax_pthread.m4],
@@ -52,8 +43,16 @@ if test "$PHP_PSI" != no; then
 	])
 
 	AC_MSG_CHECKING([psi source dir])
+	PHP_PSI_SRCDIR=PHP_EXT_SRCDIR(psi)
 	AC_MSG_RESULT([$PHP_PSI_SRCDIR])
+	
 	AC_MSG_CHECKING([psi build dir])
+	case "PHP_EXT_BUILDDIR(psi)" in
+	""|.) PHP_PSI_BUILDDIR=$PHP_PSI_SRCDIR
+		;;
+	*)    PHP_PSI_BUILDDIR=PHP_EXT_BUILDDIR(psi)
+		;;
+	esac
 	AC_MSG_RESULT([$PHP_PSI_BUILDDIR])
 
 	PSI_CHECK_LIBJIT

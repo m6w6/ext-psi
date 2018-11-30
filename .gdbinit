@@ -83,12 +83,12 @@ define psi_let_calloc_dump
 	echo \n
 end
 define psi_let_exp_dump
-	call psi_let_exp_dump((void*)0, $arg0, 0)
-	 echo \n
+	call psi_let_exp_dump((void*)0, $arg0, 0, 0)
+	echo \n
 end
 define psi_let_func_dump
 	call psi_let_func_dump((void*)0, $arg0, 0)
-	 echo \n
+	echo \n
 end
 define psi_let_stmt_dump
 	call psi_let_stmt_dump((void*)0, $arg0)
@@ -108,7 +108,7 @@ define psi_return_stmt_dump
 end
 define psi_set_exp_dump
 	call psi_set_exp_dump((void*)0, $arg0, 0, 0)
-	 echo \n
+	echo \n
 end
 define psi_set_func_dump
 	call psi_set_func_dump((void*)0, $arg0, 0)
