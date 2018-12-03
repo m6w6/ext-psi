@@ -23,7 +23,9 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "php_psi_stdinc.h"
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
 #include "php.h"
 
@@ -60,8 +62,6 @@
 
 #include "token.h"
 #include "parser.h"
-
-#include "php_psi_posix.h"
 
 PHP_MINIT_FUNCTION(psi_context)
 {

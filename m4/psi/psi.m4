@@ -4,8 +4,6 @@ AC_DEFUN(PSI_CONFIG_INIT, [
 	psi_save_LIBS=$LIBS
 	LIBS=
 
-	ac_includes_default="AC_INCLUDES_DEFAULT"
-	
 	AC_MSG_CHECKING([psi source dir])
 	PHP_PSI_SRCDIR=PHP_EXT_SRCDIR(psi)
 	AC_MSG_RESULT([$PHP_PSI_SRCDIR])
@@ -22,11 +20,7 @@ AC_DEFUN(PSI_CONFIG_INIT, [
 	PSI_STDTYPES=
 	PSI_CONSTS=
 	
-	AC_CONFIG_FILES(
-		[$PHP_PSI_BUILDDIR/php_psi_stdinc.h:$PHP_PSI_SRCDIR/php_psi_stdinc.h.in]
-		[$PHP_PSI_BUILDDIR/php_psi_posix.h:$PHP_PSI_SRCDIR/php_psi_posix.h.in]
-		[$PHP_PSI_BUILDDIR/php_psi_cpp.h:$PHP_PSI_SRCDIR/php_psi_cpp.h.in]
-	)
+	AC_CONFIG_FILES([$PHP_PSI_BUILDDIR/php_psi_predef.h:$PHP_PSI_SRCDIR/php_psi_predef.h.in])
 
 ])
 
@@ -37,10 +31,7 @@ AC_DEFUN(PSI_CONFIG_DONE, [
 	LIBS=$psi_save_LIBS
 	PHP_EVAL_LIBLINE($psi_eval_LIBS, PSI_SHARED_LIBADD)
 	
-	[PSI_INCLUDES]="PSI_INCLUDES"
-	AC_SUBST([PSI_INCLUDES])
 	AC_SUBST([PSI_STDTYPES])
-	AC_SUBST([PSI_CONSTS])
 	AC_SUBST([PSI_CPP_SEARCH])
 	AC_SUBST([PSI_CPP_PREDEF])
 	
@@ -53,8 +44,8 @@ AC_DEFUN(PSI_CONFIG_DONE, [
 	PHP_ADD_BUILD_DIR($PHP_PSI_BUILDDIR/src/types)
 
 	PHP_PSI_HEADERS=" \
-		src/calc/basic.h src/calc/bin.h src/calc/bool.h src/calc/cast.h \
-		src/calc/unary.h src/calc/cmp.h src/calc/oper.h \
+		calc/basic.h calc/bin.h calc/bool.h calc/cast.h \
+		calc/unary.h calc/cmp.h calc/oper.h \
 		`(cd $PHP_PSI_SRCDIR/src && ls *.h types/*.h)` \
 	"
 	# parser_* should come first
@@ -148,6 +139,30 @@ AC_DEFUN([PSI_CHECK_MAINTAINER_MODE], [
 		PSI_DEPS=true
 		PHP_SUBST(PSI_DEPS)
 		CFLAGS="$CFLAGS -Wall -Wextra"
+		m4_foreach(flag, [
+			[fstack-protector],
+			[Wduplicate-decl-specifier],
+			[Wnull-dereference],
+			[Winit-self],
+			[Wimplicit-fallthrough=1],
+			[Wshift-overflow],
+			[Wuninitialized],
+			[Walloc-zero],
+			[Wduplicated-branches],
+			[Wduplicated-cond],
+			[Wtrampolines],
+			[Wpointer-arith],
+			[Wcast-align],
+			[Wmissing-prototypes],
+			[Wmissing-declarations],
+			[Wredundant-decls],
+			[Wdisabled-optimization],
+			[Wno-sign-compare],
+			[Wno-unused-parameter],
+			[Wno-cast-function-type]], 
+		[
+			AX_CHECK_COMPILE_FLAG([-][flag], [CFLAGS="$CFLAGS -"]flag)
+		])
 	else
 		PSI_DEPS=false
 	fi
@@ -175,110 +190,6 @@ AC_DEFUN(PSI_CHECK_PTHREAD, [
 	AC_REQUIRE([PSI_PTHREAD_ONCE])
 ])
 
-dnl PSI_INCLUDES()
-dnl Expands to a complete list of include statements including
-dnl autoconf defaults.
-AC_DEFUN(PSI_INCLUDES, [
-#ifndef _GNU_SOURCE
-# define _GNU_SOURCE
-#endif
-#ifndef _REENTRANT
-# define _REENTRANT
-#endif
-$ac_includes_default
-#ifdef HAVE_STDBOOL_H
-# include <stdbool.h>
-#else
-# ifndef HAVE__BOOL
-#  ifdef __cplusplus
-typedef bool _Bool;
-#  else
-#   define _Bool signed char
-#  endif
-# endif
-# define bool _Bool
-# define false 0
-# define true 1
-# define __bool_true_false_are_defined 1
-#endif
-#ifdef HAVE_ERRNO_H
-# include <errno.h>
-#endif
-#ifdef HAVE_GLOB_H
-# include <glob.h>
-#endif
-#ifdef HAVE_LOCALE_H
-# include <locale.h>
-#endif
-#ifdef HAVE_XLOCALE_H
-# include <xlocale.h>
-#endif
-#ifdef HAVE_NETINET_IN_H
-# include <netinet/in.h>
-#endif
-#ifdef HAVE_NETINET_TCP_H
-# include <netinet/tcp.h>
-#endif
-#ifdef HAVE_ARPA_NAMESER_H
-# include <arpa/nameser.h>
-#endif
-#ifdef HAVE_ARPA_INET_H
-# include <arpa/inet.h>
-#endif
-#ifdef HAVE_FCNTL_H
-# include <fcntl.h>
-#endif
-#ifdef HAVE_RELIC_H
-# include <relic.h>
-#elif HAVE_NDBM_H
-# include <ndbm.h>
-#elif HAVE_GDBM_NDBM_H
-# include <gdbm-ndbm.h>
-#endif
-#ifdef HAVE_NETDB_H
-# include <netdb.h>
-#endif
-#ifdef HAVE_POLL_H
-# include <poll.h>
-#endif
-#ifdef HAVE_RESOLV_H
-# include <resolv.h>
-#endif
-#ifdef HAVE_SYS_SELECT_H
-# include <sys/select.h>
-#endif
-#ifdef HAVE_SYS_SOCKET_H
-# include <sys/socket.h>
-#endif
-#ifdef HAVE_SYS_TIME_H
-# include <sys/time.h>
-#endif
-#ifdef HAVE_SYS_TIMES_H
-# include <sys/times.h>
-#endif
-#ifdef HAVE_SYS_UIO_H
-# include <sys/uio.h>
-#endif
-#ifdef HAVE_SYS_UTSNAME_H
-# include <sys/utsname.h>
-#endif
-#ifdef HAVE_TIME_H
-# include <time.h>
-#endif
-#ifdef HAVE_SIGNAL_H
-# include <signal.h>
-#endif
-#ifdef HAVE_SYSLOG_H
-# include <syslog.h>
-#endif
-#ifdef HAVE_WCHAR_H
-# include <wchar.h>
-#endif
-#ifdef HAVE_WCTYPE_H
-# include <wctype.h>
-#endif
-])
-
 dnl PSI_PKG_CONFIG()
 dnl Check for `pkg-config` and add possible libjit and libffi directories to
 dnl $PKG_CONFIG_PATH, because those libs often ship with headers etc. in
@@ -300,14 +211,9 @@ dnl `if` condition to test if $ac_cv_sizeof_$1 is greater than 0.
 AC_DEFUN([PSI_SH_TEST_SIZEOF], [test -n "$AS_TR_SH([ac_cv_sizeof_]$1)" && test "$AS_TR_SH([ac_cv_sizeof_]$1)" -gt 0])
 
 dnl PSI_CHECK_SIZEOF(type, special-includes)
-dnl AC_CHECK_SIZEOF wrapper with PSI_INCLUDES
-dnl Defines psi\\SIZEOF_<TYPE> pre-defined constant in $PSI_CONSTS_H.
 AC_DEFUN(PSI_CHECK_SIZEOF, [
-	AC_CHECK_SIZEOF($1, [], PSI_INCLUDES
+	AC_CHECK_SIZEOF($1, [],
 		$2)
-	if PSI_SH_TEST_SIZEOF($1); then
-		psi_add_int_const "AS_TR_CPP([SIZEOF_]$1)" "$AS_TR_SH([ac_cv_sizeof_]$1)"
-	fi
 ])
 
 dnl PSI_CHECK_LIBJIT()

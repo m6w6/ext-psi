@@ -23,8 +23,6 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "php_psi_stdinc.h"
-
 #include "data.h"
 #include "calc.h"
 

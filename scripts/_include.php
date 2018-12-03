@@ -66,7 +66,6 @@ function t_is_special($t) {
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "php_psi_stdinc.h"
 #include <assert.h>
 
 #include "token.h"

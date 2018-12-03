@@ -1,6 +1,15 @@
 psi_add_stdtype() {
+	if test "$2" != ""; then
+		local stdtype="
+#ifdef $2
+	$1,
+#endif
+"
+	else
+		local stdtype="	$1,"
+	fi 
 	PSI_STDTYPES="$PSI_STDTYPES
-	$1,"
+$stdtype"
 }
 
 # psi_type_pair(type, size)
@@ -35,15 +44,19 @@ psi_type_pair() {
 
 AC_DEFUN(PSI_STDTYPE, [
 	ifdef(AS_TR_CPP(AC_TYPE_$1), AS_TR_CPP(AC_TYPE_$1))
-	PSI_CHECK_SIZEOF($1)
+	PSI_CHECK_SIZEOF([$1], [ifelse([$1],bool,[
+	#ifdef HAVE_STDBOOL_H
+	# include <stdbool.h>
+	#endif
+	])])
 	if PSI_SH_TEST_SIZEOF($1); then
 		m4_case(ifelse(,[$2],[$1],[$2]),
-		[bool],[psi_add_stdtype "{PSI_T_BOOL, \"bool\", NULL}"],
+		[bool],[psi_add_stdtype "{PSI_T_BOOL, \"bool\", NULL}" HAVE_BOOL],
 		[float],[psi_add_stdtype "{PSI_T_FLOAT, \"float\", NULL}"],
 		[double],[psi_add_stdtype "{PSI_T_DOUBLE, \"double\", NULL}"],
-		[long double],[psi_add_stdtype "{PSI_T_LONG_DOUBLE, \"long double\", NULL}"],
+		[long double],[psi_add_stdtype "{PSI_T_LONG_DOUBLE, \"long double\", NULL}" HAVE_LONG_DOUBLE],
 		[
-			AX_CHECK_SIGN($1, psi_basic_type=int, psi_basic_type=uint, PSI_INCLUDES)
+			AX_CHECK_SIGN($1, psi_basic_type=int, psi_basic_type=uint)
 			AS_TR_SH(psi_basic_type_$1)=$psi_basic_type
 			psi_add_stdtype "{`psi_type_pair $psi_basic_type PSI_SH_SIZEOF($1)`, \"$1\"}"
 		])
@@ -54,7 +67,6 @@ dnl PSI_CHECK_STD_TYPES()
 dnl Checks for standard ANSI-C, stdint and stdbool types.
 AC_DEFUN(PSI_CHECK_STD_TYPES, [
 
-	AC_HEADER_STDBOOL
 
 	PSI_CHECK_SIZEOF(void *)
 	AC_CHECK_ALIGNOF(void *)
@@ -66,8 +78,13 @@ AC_DEFUN(PSI_CHECK_STD_TYPES, [
 	PSI_STDTYPE(long double)
 	AC_CHECK_ALIGNOF(long double)
 
+	AC_HEADER_STDBOOL
 	PSI_STDTYPE(bool)
-	AC_CHECK_ALIGNOF(bool, PSI_INCLUDES)
+	AC_CHECK_ALIGNOF(bool,[
+	#ifdef HAVE_STDBOOL_H
+	# include <stdbool.h>
+	#endif
+	])
 
 	PSI_STDTYPE(char, int)
 	AC_CHECK_ALIGNOF(char)

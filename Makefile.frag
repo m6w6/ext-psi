@@ -1,10 +1,14 @@
 
-# provide headers in builddir, so they do not end up in /usr/include/ext/psi/src
+# provide headers in builddir, so they do not end up in a "src" subdirectory
 
 PHP_PSI_HEADERS := $(addprefix $(PHP_PSI_BUILDDIR)/,$(PHP_PSI_HEADERS))
 PHP_PSI_SOURCES := $(addprefix $(PHP_PSI_SRCDIR)/,$(PHP_PSI_SOURCES))
 PHP_PSI_GENERATED:=$(addprefix $(PHP_PSI_SRCDIR)/,$(PHP_PSI_GENERATED))
 
+$(PHP_PSI_BUILDDIR)/calc:
+	mkdir -p $@
+$(PHP_PSI_BUILDDIR)/calc/%.h: $(PHP_PSI_SRCDIR)/src/calc/%.h | $(PHP_PSI_BUILDDIR)/calc
+	@cat >$@ <$<
 $(PHP_PSI_BUILDDIR)/types:
 	mkdir -p $@
 $(PHP_PSI_BUILDDIR)/types/%.h: $(PHP_PSI_SRCDIR)/src/types/%.h | $(PHP_PSI_BUILDDIR)/types

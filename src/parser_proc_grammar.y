@@ -2321,7 +2321,7 @@ static void psi_parser_proc_error(struct psi_parser *P, struct psi_plist *tokens
 
 	psi_plist_get(tokens, last, &T);
 	if (T) {
-		int i = (last >= 5) ? last - 5 : 0; 
+		size_t i = (last >= 5) ? last - 5 : 0; 
 		
 		P->error(PSI_DATA(P), T, PSI_WARNING, "PSI %s at col %u", msg, T->col);
 		while (i <= last || T->type != PSI_T_EOS) {

@@ -98,7 +98,7 @@ union psi_dump_arg {
 	void *hn;
 	int fd;
 };
-typedef void (*psi_dump_cb)(union psi_dump_arg, const char *msg, ...);
+typedef int (*psi_dump_cb)(union psi_dump_arg, const char *msg, ...);
 struct psi_dump {
 	union psi_dump_arg ctx;
 	psi_dump_cb fun;

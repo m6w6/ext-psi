@@ -32,7 +32,7 @@
 
 #define PSI_CPP_SEARCH
 #define PSI_CPP_PREDEF
-#include "php_psi_cpp.h"
+#include "php_psi_predef.h"
 
 #include "php_psi.h"
 

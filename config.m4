@@ -1,8 +1,8 @@
 m4_foreach(incfile, [
+	[ax/ax_check_compile_flag.m4],
 	[ax/ax_check_sign.m4],
 	[ax/ax_pthread.m4],
 	[psi/psi.m4],
-	[psi/psi_const.m4],
 	[psi/psi_type.m4]], [
 	dnl pecl build
 	sinclude([m4/]incfile)
@@ -42,6 +42,7 @@ if test "$PHP_PSI" != no; then
 	PSI_CHECK_CPP
 	PSI_CHECK_STD_TYPES
 	
+	AC_HEADER_DIRENT
 	AC_FUNC_FNMATCH
 	AC_FUNC_MMAP
 	AC_CHECK_FUNCS([mknodat eaccess])
