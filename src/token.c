@@ -46,7 +46,7 @@ struct psi_token *psi_token_init(token_t token_typ, const char *token_txt,
 	T->col = col;
 	T->line = line;
 	T->file = zend_string_copy(file);
-	T->text = zend_string_init_interned(token_txt, token_len, 1);
+	T->text = psi_string_init_interned(token_txt, token_len, 1);
 #if PSI_DEBUG_TOKEN_ALLOC
 	PSI_DEBUG_PRINT(cpp->parser, "PSI: token_init %p\n", T);
 #endif

@@ -1,59 +1,23 @@
-
 dnl PSI_CONFIG_INIT()
 dnl Creates stubs of the headers with pre-defined types etc.
-dnl These headers are included by src/context.c.
-dnl This macro must be called prior any checks for a type, struct, decl etc.
 AC_DEFUN(PSI_CONFIG_INIT, [
 	psi_save_LIBS=$LIBS
 	LIBS=
 
 	ac_includes_default="AC_INCLUDES_DEFAULT"
 	
-	AC_PROG_AWK
+	AC_MSG_CHECKING([psi source dir])
+	PHP_PSI_SRCDIR=PHP_EXT_SRCDIR(psi)
+	AC_MSG_RESULT([$PHP_PSI_SRCDIR])
 	
-	AC_MSG_CHECKING(for preprocessor defaults)
-	psi_cpp_predef=`$CPP -Wp,-dM $CPPFLAGS -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -U__BLOCKS__ - </dev/null`
-	psi_cpp_search=`$CPP -Wp,-v $CPPFLAGS -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 - </dev/null 2>&1 >/dev/null \
-		| $AWK '
-			/include.*search.*start/ { 
-				capture = 1
-				next
-			}
-			/@<:@Ee@:>@nd.*search/ {
-				capture = 0
-			}
-			{ 
-				if (capture)
-					print $1
-			}
-		' \
-	`
-	psi_cpp_predef_count=`printf %s "$psi_cpp_predef" | wc -l`
-	psi_cpp_search_count=`printf %s "$psi_cpp_search" | wc -l`
-	AC_MSG_RESULT([$psi_cpp_predef_count predefined macros, and $psi_cpp_search_count search paths])
-	PSI_CPP_PREDEF=`printf "%s\n" "$psi_cpp_predef" | \
-		$AWK '{
-			gsub(/"/, "\\\\\"");
-			printf "\"%s\\\n\"\n", $[]0
-		}' \
-	`
-	PSI_CPP_SEARCH=`printf %s "$psi_cpp_search" | \
-		$AWK '{
-			if (i) printf ":";
-			gsub(/^@<:@@<:@:space:@:>@@:>@+/,"");
-			gsub(/@<:@@<:@:space:@:>@@:>@+$/,"");
-			printf "%s", $[]0;
-			++i
-		}' \
-	`
-
-	if test "$PHP_PSI_MAINTAINER_MODE" = "yes"; then
-		PSI_DEPS=true
-		PHP_SUBST(PSI_DEPS)
-		EXTRA_CFLAGS="-Wall -Wextra $EXTRA_CFLAGS"
-	else
-		PSI_DEPS=false
-	fi
+	AC_MSG_CHECKING([psi build dir])
+	case "PHP_EXT_BUILDDIR(psi)" in
+	""|.) PHP_PSI_BUILDDIR=$PHP_PSI_SRCDIR
+		;;
+	*)    PHP_PSI_BUILDDIR=PHP_EXT_BUILDDIR(psi)
+		;;
+	esac
+	AC_MSG_RESULT([$PHP_PSI_BUILDDIR])
 	
 	PSI_STDTYPES=
 	PSI_CONSTS=
@@ -79,21 +43,141 @@ AC_DEFUN(PSI_CONFIG_DONE, [
 	AC_SUBST([PSI_CONSTS])
 	AC_SUBST([PSI_CPP_SEARCH])
 	AC_SUBST([PSI_CPP_PREDEF])
+	
+	PHP_ADD_INCLUDE($PHP_PSI_SRCDIR)
+	PHP_ADD_INCLUDE($PHP_PSI_SRCDIR/src)
+	PHP_ADD_INCLUDE($PHP_PSI_SRCDIR/src/calc)
+	PHP_ADD_INCLUDE($PHP_PSI_SRCDIR/src/types)
+	PHP_ADD_INCLUDE($PHP_PSI_BUILDDIR)
+	PHP_ADD_BUILD_DIR($PHP_PSI_BUILDDIR/src)
+	PHP_ADD_BUILD_DIR($PHP_PSI_BUILDDIR/src/types)
+
+	PHP_PSI_HEADERS=" \
+		src/calc/basic.h src/calc/bin.h src/calc/bool.h src/calc/cast.h \
+		src/calc/unary.h src/calc/cmp.h src/calc/oper.h \
+		`(cd $PHP_PSI_SRCDIR/src && ls *.h types/*.h)` \
+	"
+	# parser_* should come first
+	PHP_PSI_SOURCES=" \
+		src/parser_proc.c src/parser_scan.c \
+		`(cd $PHP_PSI_SRCDIR && ls src/*.c src/types/*.c \
+			| $EGREP -v '^src/parser_' \
+		)` \
+	"
+	PHP_PSI_GENERATED=" \
+		src/parser_proc.c src/parser_scan.c \
+		src/calc/basic.h src/calc/bin.h src/calc/bool.h src/calc/cast.h \
+		src/calc/unary.h src/calc/cmp.h src/calc/oper.h \
+	"
+
+	PHP_SUBST(PHP_PSI_GENERATED)
+	PHP_SUBST(PHP_PSI_HEADERS)
+	PHP_SUBST(PHP_PSI_SOURCES)
+
+	PHP_SUBST(PHP_PSI_SRCDIR)
+	PHP_SUBST(PHP_PSI_BUILDDIR)
+])
+
+dnl PSI_CHECK_GNU_SOURCE
+dnl Check whether _GNU_SOURCE is already defined.
+AC_DEFUN([PSI_CHECK_GNU_SOURCE], [
+	AC_MSG_CHECKING([for _GNU_SOURCE])
+	AC_EGREP_CPP([gnu_source_not_defined], [
+		#ifndef _GNU_SOURCE
+		gnu_source_not_defined
+		#endif
+	], [
+		AC_MSG_RESULT([needs define])
+		AC_DEFINE([_GNU_SOURCE], [1], [ ])
+	], [
+		AC_MSG_RESULT([already defined])
+	])
+])
+
+dnl PSI_CHECK_CPP
+dnl Queries the preprocessor about predefined macros and include search paths
+AC_DEFUN([PSI_CHECK_CPP], [
+	AC_PROG_AWK
+
+	AC_MSG_CHECKING(for preprocessor defaults)
+	psi_cpp_predef=`$CPP -Wp,-dM $CPPFLAGS -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -U__BLOCKS__ - </dev/null`
+	psi_cpp_search=`$CPP -Wp,-v $CPPFLAGS -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 - </dev/null 2>&1 >/dev/null \
+		| $AWK '
+			/include.*search.*start/ { 
+				capture = 1
+				next
+			}
+			/@<:@Ee@:>@nd.*search/ {
+				capture = 0
+			}
+			{ 
+				if (capture)
+					print $1
+			}
+		' \
+	`
+	psi_cpp_predef_count=`printf %s "$psi_cpp_predef" | wc -l`
+	psi_cpp_search_count=`printf %s "$psi_cpp_search" | wc -l`
+	
+	AC_MSG_RESULT([$psi_cpp_predef_count predefined macros, and $psi_cpp_search_count search paths])
+	
+	PSI_CPP_PREDEF=`printf "%s\n" "$psi_cpp_predef" | \
+		$AWK '{
+			gsub(/"/, "\\\\\"");
+			printf "\"%s\\\n\"\n", $[]0
+		}' \
+	`
+	PSI_CPP_SEARCH=`printf %s "$psi_cpp_search" | \
+		$AWK '
+			{
+				if (i) printf "\":\" ";
+				else   printf "    ";
+				gsub(/^@<:@@<:@:space:@:>@@:>@+/,"");
+				gsub(/@<:@@<:@:space:@:>@@:>@+$/,"");
+				printf "\"%s\"\n", $[]0;
+				++i
+			}' \
+	`
+])
+
+dnl PSI_CHECK_MAINTAINER_MODE
+dnl Check for --enable-psi-maintainer-mode
+dnl Enables Makefile dependencies and extra compile warnings
+AC_DEFUN([PSI_CHECK_MAINTAINER_MODE], [
+	if test "$PHP_PSI_MAINTAINER_MODE" = "yes"; then
+		PSI_DEPS=true
+		PHP_SUBST(PSI_DEPS)
+		CFLAGS="$CFLAGS -Wall -Wextra"
+	else
+		PSI_DEPS=false
+	fi
+])
+
+dnl PSI_CHECK_THREADED_PARSER
+dnl Check for --enable-psi-threaded-parser
+dnl Enables threaded parser if HAVE_PTHREAD && HAVE_ASPRINTF
+AC_DEFUN([PSI_CHECK_THREADED_PARSER], [
+	if test "$PHP_PSI_THREADED_PARSER" = "yes"; then
+		AC_DEFINE([PSI_THREADED_PARSER], [HAVE_PTHREAD && HAVE_ASPRINTF],
+			[whether to enable the threaded parser])
+	fi
 ])
 
 AC_DEFUN(PSI_PTHREAD_ONCE, [
 	AX_PTHREAD([
 		LIBS="$PTHREAD_LIBS $LIBS"
 		CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+		AC_DEFINE([HAVE_PTHREAD],[1],
+			[Define if you have POSIX threads libraries and header files.])
 	])
 ])
-AC_DEFUN(PSI_PTHREAD, [
+AC_DEFUN(PSI_CHECK_PTHREAD, [
 	AC_REQUIRE([PSI_PTHREAD_ONCE])
 ])
 
 dnl PSI_INCLUDES()
 dnl Expands to a complete list of include statements including
-dnl autoconf's defaults.
+dnl autoconf defaults.
 AC_DEFUN(PSI_INCLUDES, [
 #ifndef _GNU_SOURCE
 # define _GNU_SOURCE
@@ -211,21 +295,9 @@ dnl PSI_SH_SIZEOF(type)
 dnl expand to shell variable $ac_cv_sizeof_<TYPE>
 AC_DEFUN([PSI_SH_SIZEOF], [$AS_TR_SH([ac_cv_sizeof_]$1)])
 
-dnl PSI_SH_OFFSETOF(type)
-dnl Expand to shell variable $ac_cv_offsetof_<TYPE>
-AC_DEFUN([PSI_SH_OFFSETOF], [$AS_TR_SH([ac_cv_offsetof_]$1)])
-
-dnl PSI_SH_ALIGNOF(type)
-dnl Expand to shell variable $ac_cv_offsetof_<TYPE>
-AC_DEFUN([PSI_SH_ALIGNOF], [$AS_TR_SH([ac_cv_alignof_]$1)])
-
 dnl PSI_SH_TEST_SIZEOF(type)
 dnl `if` condition to test if $ac_cv_sizeof_$1 is greater than 0.
 AC_DEFUN([PSI_SH_TEST_SIZEOF], [test -n "$AS_TR_SH([ac_cv_sizeof_]$1)" && test "$AS_TR_SH([ac_cv_sizeof_]$1)" -gt 0])
-
-dnl PSI_SH_TEST_ALIGNOF(type)
-dnl `if` condition to test if $ac_cv_alignof_$1 is greater than 0.
-AC_DEFUN([PSI_SH_TEST_ALIGNOF], [test -n "$AS_TR_SH([ac_cv_alignof_]$1)" && test "$AS_TR_SH([ac_cv_alignof_]$1)" -gt 0])
 
 dnl PSI_CHECK_SIZEOF(type, special-includes)
 dnl AC_CHECK_SIZEOF wrapper with PSI_INCLUDES
@@ -236,50 +308,6 @@ AC_DEFUN(PSI_CHECK_SIZEOF, [
 	if PSI_SH_TEST_SIZEOF($1); then
 		psi_add_int_const "AS_TR_CPP([SIZEOF_]$1)" "$AS_TR_SH([ac_cv_sizeof_]$1)"
 	fi
-])
-
-dnl PSI_CHECK_ALIGNOF(type, special-includes)
-dnl AC_CHECK_ALIGNOF wrapper with PSI_INCLUDES
-dnl Defines psi\\ALIGNOF_<TYPE> pre-defined constant in $PSI_CONSTS_H.
-AC_DEFUN(PSI_CHECK_ALIGNOF, [
-	AC_CHECK_ALIGNOF($1, PSI_INCLUDES
-		$2)
-	if PSI_SH_TEST_ALIGNOF($1); then
-		psi_add_int_const "AS_TR_CPP([ALIGNOF_]$1)" "$AS_TR_SH([ac_cv_alignof_]$1)"
-	fi
-])
-
-dnl PSI_CHECK_OFFSETOF(struct, element)
-dnl Check the offset of a struct element, implemented in the similar manner
-dnl like AC_CHECK_SIZEOF.
-dnl AC_DEFINEs OFFSETOF_<STRUCT>_<ELEMENT>.
-AC_DEFUN(PSI_CHECK_OFFSETOF, [
-	_AC_CACHE_CHECK_INT(
-		[offset of $2 in $1],
-		[AS_TR_SH([ac_cv_offsetof_$1_$2])],
-		[(long int) (offsetof ($1, $2))],
-		PSI_INCLUDES,
-		[AC_MSG_FAILURE([cannot compute offsetof ($1, $2)])]
-	)
-	AC_DEFINE_UNQUOTED(
-		AS_TR_CPP(offsetof_$1_$2),
-		$AS_TR_SH([ac_cv_offsetof_$1_$2]),
-		[The offset of `$2' in `$1', as computed by offsetof.]
-	)
-])
-
-
-dnl PSI_COMPUTE_STR(variable, string or expression)
-dnl Compute a string constant value in a similar manner like AC_COMPUTE_INT.
-AC_DEFUN(PSI_COMPUTE_STR, [
-	AC_TRY_RUN(
-		PSI_INCLUDES
-		[int main() {
-			return EOF == fputs($2, fopen("conftest.out", "w"));
-		}
-	], [
-		eval $1=\\\"`cat conftest.out`\\\"
-	])
 ])
 
 dnl PSI_CHECK_LIBJIT()
@@ -331,8 +359,8 @@ AC_DEFUN(PSI_CHECK_LIBFFI, [
 		AC_MSG_CHECKING(for libffi)
 		psi_cv_libffi_dir=`$PKG_CONFIG --variable=prefix libffi`
 		AC_MSG_RESULT($psi_cv_libffi_dir)
-		PHP_EVAL_INCLINE(`$PKG_CONFIG --cflags libffi`)
-		PHP_EVAL_LIBLINE(`$PKG_CONFIG --libs libffi`, PSI_SHARED_LIBADD)
+		PHP_EVAL_INCLINE([`$PKG_CONFIG --cflags libffi`])
+		PHP_EVAL_LIBLINE([`$PKG_CONFIG --libs libffi`], PSI_SHARED_LIBADD) dnl `
 		AC_DEFINE(HAVE_LIBFFI, 1, Have libffi)
 		AC_DEFINE_UNQUOTED([PHP_PSI_LIBFFI_VERSION], ["`$PKG_CONFIG --modversion libffi`"], [libffi version])
 	else

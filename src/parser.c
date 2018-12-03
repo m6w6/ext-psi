@@ -98,7 +98,7 @@ struct psi_parser_input *psi_parser_open_file(struct psi_parser *P,
 	memset(fb->buffer + sb.st_size, 0, psi_parser_maxfill());
 
 	fb->length = sb.st_size;
-	fb->file = zend_string_init_interned(filename, strlen(filename), 1);
+	fb->file = psi_string_init_interned(filename, strlen(filename), 1);
 
 	return fb;
 }
@@ -119,7 +119,7 @@ struct psi_parser_input *psi_parser_open_string(struct psi_parser *P,
 	memset(sb->buffer + length, 0, psi_parser_maxfill());
 
 	sb->length = length;
-	sb->file = zend_string_init_interned("<stdin>", strlen("<stdin>"), 1);
+	sb->file = psi_string_init_interned("<stdin>", strlen("<stdin>"), 1);
 
 	return sb;
 }
@@ -150,23 +150,44 @@ static inline zend_string *macro_to_constant(struct psi_parser *parser,
 	size_t i = 0;
 	struct psi_token *tok;
 
+#if HAVE_ASPRINTF
+	int persistent = 1;
+
+	smart_str_appendl_ex(&str, ZEND_STRL("const psi\\"), 1);
+	smart_str_append_ex(&str, name, 1);
+	smart_str_appendl_ex(&str, ZEND_STRL(" = "), 1);
+#else
+	int persistent = 0;
+
 	smart_str_append_printf(&str, "const psi\\%s = ", name->val);
+#endif
 	if (scope->macro->exp) {
+#if HAVE_ASPRINTF
+		char *astr = NULL;
+		struct psi_dump dump = {{.hn = &astr},
+				.fun = (psi_dump_cb) asprintf};
+#else
 		struct psi_dump dump = {{.hn = &str},
 				.fun = (psi_dump_cb) smart_str_append_printf};
+#endif
 
 		psi_num_exp_dump(&dump, scope->macro->exp);
+
+#if HAVE_ASPRINTF
+		smart_str_appends_ex(&str, astr, 1);
+		free(astr);
+#endif
 	} else while (psi_plist_get(scope->macro->tokens, i++, &tok)) {
 		if (tok->type == PSI_T_QUOTED_STRING) {
-			smart_str_appendc(&str, '"');
+			smart_str_appendc_ex(&str, '"', persistent);
 		}
-		smart_str_append(&str, tok->text);
+		smart_str_append_ex(&str, tok->text, persistent);
 		if (tok->type == PSI_T_QUOTED_STRING) {
-			smart_str_appendc(&str, '"');
+			smart_str_appendc_ex(&str, '"', persistent);
 		}
-		smart_str_appendc(&str, ' ');
+		smart_str_appendc_ex(&str, ' ', persistent);
 	}
-	smart_str_appendl(&str, ";\n", 2);
+	smart_str_appendl_ex(&str, ";\n", 2, persistent);
 	return smart_str_extract(&str);
 }
 

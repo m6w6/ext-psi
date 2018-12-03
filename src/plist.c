@@ -148,6 +148,14 @@ bool psi_plist_unset(struct psi_plist *list, size_t index) {
 	return false;
 }
 
+bool psi_plist_set(struct psi_plist *list, size_t index, void *ptr) {
+	if (list && list->count > index) {
+		PLIST_CPY(list, PLIST_ELE(list, index), ptr);
+		return true;
+	}
+	return false;
+}
+
 bool psi_plist_del(struct psi_plist *list, size_t index, void *ptr) {
 	if (list && list->count > index) {
 		if (ptr) {

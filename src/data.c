@@ -28,9 +28,39 @@
 #include "data.h"
 
 #include "php_globals.h"
+#include "zend_types.h"
 
 #include <dlfcn.h>
 #include <ctype.h>
+
+#if PSI_THREADED_PARSER
+# include <pthread.h>
+
+pthread_mutex_t psi_string_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+zend_string *psi_string_init_interned(const char *buf, size_t len, int p)
+{
+	zend_string *str;
+
+	pthread_mutex_lock(&psi_string_mutex);
+	str = zend_string_init_interned(buf, len, p);
+	pthread_mutex_unlock(&psi_string_mutex);
+
+	return str;
+}
+
+zend_string *psi_new_interned_string(zend_string *str)
+{
+	zend_string *new_str;
+
+	pthread_mutex_lock(&psi_string_mutex);
+	new_str = zend_new_interned_string(str);
+	pthread_mutex_unlock(&psi_string_mutex);
+
+	return new_str;
+}
+
+#endif
 
 static void psi_data_ctor_internal(struct psi_data *data,
 		psi_error_cb error, unsigned flags)

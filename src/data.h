@@ -44,6 +44,14 @@
 # define RTLD_DEFAULT ((void *) 0)
 #endif
 
+#if PSI_THREADED_PARSER
+zend_string *psi_string_init_interned(const char *buf, size_t len, int p);
+zend_string *psi_new_interned_string(zend_string *str);
+#else
+# define psi_string_init_interned zend_string_init_interned
+# define psi_new_interned_string zend_new_interned_string
+#endif
+
 static inline void *psi_dlsym(struct psi_plist *dllist, const char *name, const char *redir)
 {
 	void *dl, *sym = NULL;

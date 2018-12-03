@@ -202,7 +202,7 @@ static bool psi_cpp_stage1(struct psi_cpp *cpp)
 
 					no_ws->type = PSI_T_NO_WHITESPACE;
 					zend_string_release(no_ws->text);
-					no_ws->text = zend_string_init_interned("\xA0", 1, 1);
+					no_ws->text = psi_string_init_interned("\xA0", 1, 1);
 					psi_cpp_tokiter_add(cpp, no_ws);
 					continue;
 				}
