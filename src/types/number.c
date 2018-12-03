@@ -23,7 +23,11 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "php_psi_stdinc.h"
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#else
+# include "php_config.h"
+#endif
 
 #include <assert.h>
 #include <math.h>
@@ -675,7 +679,6 @@ bool psi_number_validate(struct psi_data *data, struct psi_number *exp,
 
 	case PSI_T_DEFINE:
 		if (scope && scope->cpp && zend_hash_exists(&scope->cpp->defs, exp->data.numb)) {
-	define: ;
 			if (!scope->macro || !zend_string_equals(scope->macro->token->text, exp->data.numb)) {
 				return true;
 			}

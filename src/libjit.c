@@ -23,13 +23,18 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
-#include "php_psi_stdinc.h"
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#else
+# include "php_config.h"
+#endif
 #include "context.h"
 #include "call.h"
 #include "php.h"
 
 #ifdef HAVE_LIBJIT
 
+#include "libjit.h"
 #include <jit/jit.h>
 
 #if HAVE_INT128

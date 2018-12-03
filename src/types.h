@@ -26,6 +26,8 @@
 #ifndef PSI_TYPES_H
 #define PSI_TYPES_H
 
+#include <stdbool.h>
+
 #include "token.h"
 #include "types/impl_val.h"
 #include "types/decl_type.h"

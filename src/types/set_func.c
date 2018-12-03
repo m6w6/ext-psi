@@ -23,7 +23,11 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
-#include "php_psi_stdinc.h"
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#else
+# include "php_config.h"
+#endif
 #include "data.h"
 
 struct psi_set_func *psi_set_func_init(token_t type, zend_string *name,

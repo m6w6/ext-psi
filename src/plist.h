@@ -26,6 +26,9 @@
 #ifndef PSI_PLIST_H
 #define PSI_PLIST_H
 
+#include <stdbool.h>
+#include <stddef.h>
+
 struct psi_plist;
 
 typedef void (*psi_plist_dtor)(void *);

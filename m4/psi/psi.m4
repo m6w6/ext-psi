@@ -138,7 +138,7 @@ AC_DEFUN([PSI_CHECK_MAINTAINER_MODE], [
 	if test "$PHP_PSI_MAINTAINER_MODE" = "yes"; then
 		PSI_DEPS=true
 		PHP_SUBST(PSI_DEPS)
-		CFLAGS="$CFLAGS -Wall -Wextra"
+		CFLAGS="$CFLAGS -Wall"
 		m4_foreach(flag, [
 			[fstack-protector],
 			[Wduplicate-decl-specifier],
@@ -155,11 +155,7 @@ AC_DEFUN([PSI_CHECK_MAINTAINER_MODE], [
 			[Wcast-align],
 			[Wmissing-prototypes],
 			[Wmissing-declarations],
-			[Wredundant-decls],
-			[Wdisabled-optimization],
-			[Wno-sign-compare],
-			[Wno-unused-parameter],
-			[Wno-cast-function-type]], 
+			[Wdisabled-optimization]], 
 		[
 			AX_CHECK_COMPILE_FLAG([-][flag], [CFLAGS="$CFLAGS -"]flag)
 		])

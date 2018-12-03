@@ -33,6 +33,7 @@
 
 #include <stdarg.h>
 #include <dlfcn.h>
+#include <unistd.h>
 
 #define PSI_DEBUG 0x1
 #define PSI_SILENT 0x2

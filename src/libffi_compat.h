@@ -26,7 +26,11 @@
 #ifndef PSI_LIBFFI_COMPAT_H
 #define PSI_LIBFFI_COMPAT_H
 
-#include "php_psi_stdinc.h"
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#else
+# include "php_config.h"
+#endif
 
 #undef PACKAGE
 #undef PACKAGE_BUGREPORT
@@ -102,6 +106,7 @@ static inline void psi_ffi_prep_va(ffi_cif *base, ffi_cif *signature, size_t arg
 #endif
 
 	assert(FFI_OK == rc);
+	(void) rc;
 }
 
 

@@ -23,14 +23,19 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "php_psi_stdinc.h"
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#else
+# include "php_config.h"
+#endif
+
+#include <stdbool.h>
+#include <stdarg.h>
 
 #include "php_psi.h"
 #include "builtin.h"
 #include "parser.h"
 #include "cpp.h"
-
-#include <stdarg.h>
 
 HashTable psi_builtins;
 
@@ -76,6 +81,7 @@ static void free_builtin(zval *p)
 	}
 }
 
+PHP_MINIT_FUNCTION(psi_builtin);
 PHP_MINIT_FUNCTION(psi_builtin)
 {
 #define PSI_BUILTIN(builtin, ...) do { \
@@ -101,6 +107,7 @@ PHP_MINIT_FUNCTION(psi_builtin)
 	return SUCCESS;
 }
 
+PHP_MSHUTDOWN_FUNCTION(psi_builtin);
 PHP_MSHUTDOWN_FUNCTION(psi_builtin)
 {
 	zend_hash_destroy(&psi_builtins);

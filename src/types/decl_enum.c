@@ -23,7 +23,11 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
-#include "php_psi_stdinc.h"
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#else
+# include "php_config.h"
+#endif
 #include "data.h"
 
 struct psi_decl_enum *psi_decl_enum_init(zend_string *name, struct psi_plist *l)

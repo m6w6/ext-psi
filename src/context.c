@@ -63,6 +63,7 @@
 #include "token.h"
 #include "parser.h"
 
+PHP_MINIT_FUNCTION(psi_context);
 PHP_MINIT_FUNCTION(psi_context)
 {
 	unsigned flags = 0;
@@ -100,6 +101,7 @@ PHP_MINIT_FUNCTION(psi_context)
 	return SUCCESS;
 }
 
+PHP_MSHUTDOWN_FUNCTION(psi_context);
 PHP_MSHUTDOWN_FUNCTION(psi_context)
 {
 	if (psi_check_env("PSI_DUMP")) {

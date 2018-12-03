@@ -1,5 +1,4 @@
 %code top {
-#include "php_psi_stdinc.h"
 }
 
 %code {

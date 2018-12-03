@@ -23,7 +23,11 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
-#include "php_psi_stdinc.h"
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#else
+# include "php_config.h"
+#endif
 #include "php_psi.h"
 
 #include <dlfcn.h>
@@ -34,7 +38,7 @@
 #include "data.h"
 
 #define PSI_FUNC_REDIRS
-#include "php_psi_posix.h"
+#include "php_psi_predef.h"
 
 struct psi_decl *psi_decl_init(struct psi_decl_arg *func, struct psi_plist *args)
 {

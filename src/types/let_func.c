@@ -23,7 +23,11 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
-#include "php_psi_stdinc.h"
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#else
+# include "php_config.h"
+#endif
 #include "data.h"
 #include "call.h"
 #include "marshal.h"
@@ -221,7 +225,7 @@ bool psi_let_func_validate(struct psi_data *data, struct psi_let_func *func,
 	return 1;
 }
 
-void exec_let_func_arrval_inner(struct psi_let_func *func,
+static void exec_let_func_arrval_inner(struct psi_let_func *func,
 		struct psi_decl_arg *darg, struct psi_decl_arg *inner_decl_arg,
 		struct psi_call_frame_argument *frame_arg,
 		struct psi_let_exp *inner_let_exp, void *container,
@@ -263,7 +267,7 @@ static void *exec_let_func_arrval(struct psi_let_exp *val,
 		struct psi_let_func *func, struct psi_decl_arg *darg,
 		struct psi_call_frame *frame);
 
-void exec_let_func_arrval_seq(struct psi_let_func *func,
+static void exec_let_func_arrval_seq(struct psi_let_func *func,
 		struct psi_decl_arg *darg,
 		struct psi_call_frame_argument *frame_arg,
 		struct psi_let_exp *inner_let_exp, void *container,
@@ -305,6 +309,7 @@ void exec_let_func_arrval_seq(struct psi_let_func *func,
 					inner_let_exp->data.func, darg, frame);
 		} else {
 			assert(0);
+			return;
 		}
 
 		sub = deref_impl_val(ptr, dvar);

@@ -23,7 +23,11 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "php_psi_stdinc.h"
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#else
+# include "php_config.h"
+#endif
 #include "data.h"
 #include "calc.h"
 
@@ -294,7 +298,7 @@ static inline impl_val *psi_val_intval(impl_val *tmp, token_t real_type, zend_lo
 }
 
 #if HAVE_INT128
-void psi_strto_i128(char *ptr, char *end, token_t real_type, impl_val *val) {
+static void psi_strto_i128(char *ptr, char *end, token_t real_type, impl_val *val) {
 	unsigned __int128 i = 0;
 	bool oct = false, hex = false, sign = false;
 

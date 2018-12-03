@@ -67,6 +67,7 @@ struct psi_parser_input *psi_parser_open_string(struct psi_parser *P, const char
 size_t psi_parser_maxfill(void);
 struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input *I);
 struct psi_plist *psi_parser_preprocess(struct psi_parser *P, struct psi_plist **tokens);
+void psi_parser_postprocess(struct psi_parser *P);
 bool psi_parser_process(struct psi_parser *P, struct psi_plist *tokens, size_t *processed);
 bool psi_parser_parse(struct psi_parser *P, struct psi_parser_input *I);
 void psi_parser_dtor(struct psi_parser *P);

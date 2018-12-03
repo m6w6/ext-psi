@@ -23,7 +23,11 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "php_psi_stdinc.h"
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#else
+# include "php_config.h"
+#endif
 
 #include <libgen.h>
 
@@ -38,6 +42,7 @@
 
 HashTable psi_cpp_defaults;
 
+PHP_MINIT_FUNCTION(psi_cpp);
 PHP_MINIT_FUNCTION(psi_cpp)
 {
 	struct psi_parser parser;
@@ -70,6 +75,7 @@ PHP_MINIT_FUNCTION(psi_cpp)
 	return SUCCESS;
 }
 
+PHP_MSHUTDOWN_FUNCTION(psi_cpp);
 PHP_MSHUTDOWN_FUNCTION(psi_cpp)
 {
 	struct psi_cpp_macro_decl *macro;

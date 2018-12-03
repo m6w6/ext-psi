@@ -23,12 +23,16 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
-#include "php_psi_stdinc.h"
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#else
+# include "php_config.h"
+#endif
 #include "token.h"
 #include "data.h"
 
 #define PSI_STD_TYPES
-#include "php_psi_posix.h"
+#include "php_psi_predef.h"
 
 struct psi_decl_type *psi_decl_type_init(token_t type, zend_string *name)
 {
