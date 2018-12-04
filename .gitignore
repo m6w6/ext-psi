@@ -38,7 +38,7 @@ tests/*/*.php
 tests/*/*.exp
 tests/*/*.log
 tests/*/*.sh
-/tests/*/*.mem
+tests/*/*.mem
 /config.cache
 /*.c
 /*.diff
@@ -59,8 +59,7 @@ tests/*/*.sh
 /token.h
 /types.h
 /src/parser_proc.output
-/php_psi_stdinc.h
-/php_psi_posix.h
+/php_psi_predef.h
 /types/
 /calc/
 *.bak
