@@ -17,8 +17,10 @@ addons:
 
 env:
  matrix:
-  - PHP=master enable_debug=no enable_psi=yes enable_psi_posix=all
-  - PHP=master enable_debug=yes enable_psi=yes enable_psi_posix=all
+  - PHP=master enable_debug=no enable_psi=yes enable_psi_threaded_parser=no
+  - PHP=master enable_debug=yes enable_psi=yes enable_psi_threaded_parser=no
+  - PHP=master enable_debug=no enable_psi=yes enable_psi_threaded_parser=yes
+  - PHP=master enable_debug=yes enable_psi=yes enable_psi_threaded_parser=yes
 
 before_install:
  # make sure we do not try to regenerate files with broken bison or old re2c

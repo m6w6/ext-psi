@@ -26,7 +26,7 @@ $env = $gen([
 	"enable_debug",
 	#"enable_maintainer_zts",
 	"enable_psi" => ["yes"],
-	"enable_psi_posix" => ["all"],
+	"enable_psi_threaded_parser",
 ]);
 foreach ($env as $e) {
 	printf("  - %s\n", $e);
