@@ -1,4 +1,4 @@
-#ifdef linux
+#ifdef __linux__
 lib "crypt";
 #endif
 

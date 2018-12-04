@@ -1,7 +1,7 @@
 #include <errno.h>
 
 #ifdef __GNUC__
-# ifdef linux
+# ifdef __linux__
 function psi\errno() : int {
 	return __errno_location() as to_int(*__errno_location);
 }

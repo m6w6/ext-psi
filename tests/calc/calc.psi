@@ -1,3 +1,7 @@
+#ifdef __linux__
+lib "crypt";
+#endif
+
 #include <stdlib.h>
 
 function test\calc1() : array {

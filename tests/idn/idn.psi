@@ -1,7 +1,10 @@
-// libidn
-lib "idn";
+#ifdef __linux__
+lib "crypt";
+#endif
 
 #include <stdlib.h>
+
+lib "idn";
 #include <idna.h>
 
 function idn\utf8_to_ascii(string $host, string &$result, int $flags = 0) : int {
