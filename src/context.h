@@ -26,6 +26,7 @@
 #ifndef PSI_CONTEXT_H
 #define PSI_CONTEXT_H
 
+#include <stdbool.h>
 #include "token.h"
 
 /* zend_function_entry */
@@ -99,7 +100,7 @@ void **psi_context_composite_type_elements(struct psi_context *C,
 void *psi_context_decl_arg_call_type(struct psi_context *C, struct psi_decl_arg *arg);
 void *psi_context_decl_arg_full_type(struct psi_context *C, struct psi_decl_arg *arg);
 
-ZEND_RESULT_CODE psi_context_call(struct psi_context *C, zend_execute_data *execute_data, zval *return_value, struct psi_impl *impl);
+bool psi_context_call(struct psi_context *C, zend_execute_data *execute_data, zval *return_value, struct psi_impl *impl);
 void psi_context_dump(struct psi_dump *dump, struct psi_context *C);
 void psi_context_dtor(struct psi_context *C);
 void psi_context_free(struct psi_context **C);

@@ -146,41 +146,45 @@ bool psi_parser_process(struct psi_parser *P, struct psi_plist *tokens,
 	return true;
 }
 
+#if PSI_THREADED_PARSER
+static void psi_smart_str_printf(smart_str *ss, const char *fmt, ...)
+{
+	va_list argv;
+	char *buf;
+	int len;
+
+	va_start(argv, fmt);
+	len = vasprintf(&buf, fmt, argv);
+	va_end(argv);
+
+	if (len != -1) {
+		smart_str_appendl_ex(ss, buf, len, 1);
+		free(buf);
+	}
+}
+#else
+# define psi_smart_str_printf smart_str_append_printf
+#endif
+
 static inline zend_string *macro_to_constant(struct psi_parser *parser,
 		zend_string *name, struct psi_validate_scope *scope)
 {
 	smart_str str = {0};
-
 	size_t i = 0;
 	struct psi_token *tok;
-
-#if HAVE_ASPRINTF
+#if PSI_THREADED_PARSER
 	int persistent = 1;
-
-	smart_str_appendl_ex(&str, ZEND_STRL("const psi\\"), 1);
-	smart_str_append_ex(&str, name, 1);
-	smart_str_appendl_ex(&str, ZEND_STRL(" = "), 1);
 #else
 	int persistent = 0;
+#endif
 
-	smart_str_append_printf(&str, "const psi\\%s = ", name->val);
-#endif
+	psi_smart_str_printf(&str, "const psi\\%s = ", name->val);
 	if (scope->macro->exp) {
-#if HAVE_ASPRINTF
-		char *astr = NULL;
-		struct psi_dump dump = {{.hn = &astr},
-				.fun = (psi_dump_cb) asprintf};
-#else
 		struct psi_dump dump = {{.hn = &str},
-				.fun = (psi_dump_cb) smart_str_append_printf};
-#endif
+				.fun = (psi_dump_cb) psi_smart_str_printf};
 
 		psi_num_exp_dump(&dump, scope->macro->exp);
 
-#if HAVE_ASPRINTF
-		smart_str_appends_ex(&str, astr, 1);
-		free(astr);
-#endif
 	} else while (psi_plist_get(scope->macro->tokens, i++, &tok)) {
 		if (tok->type == PSI_T_QUOTED_STRING) {
 			smart_str_appendc_ex(&str, '"', persistent);

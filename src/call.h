@@ -26,6 +26,7 @@
 #ifndef PSI_CALL_H
 #define PSI_CALL_H
 
+#include <stdbool.h>
 #include "Zend/zend_types.h"
 
 #include "data.h"
@@ -71,7 +72,7 @@ struct psi_call_frame {
 
 struct psi_call_frame *psi_call_frame_init(struct psi_context *context, struct psi_decl *decl, struct psi_impl *impl);
 
-ZEND_RESULT_CODE psi_call_frame_parse_args(struct psi_call_frame *frame, zend_execute_data *execute_data);
+bool psi_call_frame_parse_args(struct psi_call_frame *frame, zend_execute_data *execute_data);
 
 size_t psi_call_frame_num_var_args(struct psi_call_frame *frame);
 size_t psi_call_frame_num_fixed_args(struct psi_call_frame *frame);
@@ -92,8 +93,8 @@ struct psi_impl *psi_call_frame_get_impl(struct psi_call_frame *frame);
 void **psi_call_frame_get_arg_pointers(struct psi_call_frame *frame);
 void *psi_call_frame_get_rpointer(struct psi_call_frame *frame);
 
-ZEND_RESULT_CODE psi_call_frame_do_let(struct psi_call_frame *frame);
-ZEND_RESULT_CODE psi_call_frame_do_assert(struct psi_call_frame *frame, enum psi_assert_kind kind);
+bool psi_call_frame_do_let(struct psi_call_frame *frame);
+bool psi_call_frame_do_assert(struct psi_call_frame *frame, enum psi_assert_kind kind);
 void psi_call_frame_do_call(struct psi_call_frame *frame);
 void psi_call_frame_do_callback(struct psi_call_frame *frame, struct psi_call_frame_callback *cb);
 void psi_call_frame_do_return(struct psi_call_frame *frame, zval *return_value);

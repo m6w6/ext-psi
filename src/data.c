@@ -40,7 +40,7 @@
 #if PSI_THREADED_PARSER
 # include <pthread.h>
 
-pthread_mutex_t psi_string_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t psi_string_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 zend_string *psi_string_init_interned(const char *buf, size_t len, int p)
 {

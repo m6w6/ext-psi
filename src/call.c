@@ -28,9 +28,12 @@
 #else
 # include "php_config.h"
 #endif
+
 #include "context.h"
 #include "data.h"
 #include "call.h"
+
+#include "php_psi.h"
 
 #include "php.h"
 #include "zend_exceptions.h"
@@ -259,7 +262,7 @@ struct psi_context *psi_call_frame_get_context(struct psi_call_frame *frame) {
 #else
 #	define PARAM_PROLOGUE(separate) Z_PARAM_PROLOGUE(1, separate)
 #endif
-ZEND_RESULT_CODE psi_call_frame_parse_args(struct psi_call_frame *frame,
+bool psi_call_frame_parse_args(struct psi_call_frame *frame,
 		zend_execute_data *execute_data) {
 	size_t i, argc = psi_plist_count(frame->impl->func->args);
 	zend_error_handling zeh;
@@ -271,7 +274,7 @@ ZEND_RESULT_CODE psi_call_frame_parse_args(struct psi_call_frame *frame,
 
 		rv = zend_parse_parameters_none();
 		zend_restore_error_handling(&zeh);
-		return rv;
+		return rv == SUCCESS;
 	}
 
 	ZEND_PARSE_PARAMETERS_START(
@@ -337,7 +340,7 @@ ZEND_RESULT_CODE psi_call_frame_parse_args(struct psi_call_frame *frame,
 	}
 	ZEND_PARSE_PARAMETERS_END_EX(
 		zend_restore_error_handling(&zeh);
-		return FAILURE;
+		return false;
 	);
 
 	/* set up defaults */
@@ -352,7 +355,7 @@ ZEND_RESULT_CODE psi_call_frame_parse_args(struct psi_call_frame *frame,
 	}
 
 	zend_restore_error_handling(&zeh);
-	return SUCCESS;
+	return true;
 }
 
 void psi_call_frame_enter(struct psi_call_frame *frame) {
@@ -374,7 +377,7 @@ void psi_call_frame_enter(struct psi_call_frame *frame) {
 	frame->rpointer = rv_sym->ptr = rv_sym->ival_ptr;
 }
 
-ZEND_RESULT_CODE psi_call_frame_do_let(struct psi_call_frame *frame) {
+bool psi_call_frame_do_let(struct psi_call_frame *frame) {
 	size_t i;
 	struct psi_let_stmt *let;
 	struct psi_decl_arg *arg;
@@ -420,10 +423,10 @@ ZEND_RESULT_CODE psi_call_frame_do_let(struct psi_call_frame *frame) {
 		}
 	}
 
-	return SUCCESS;
+	return true;
 }
 
-ZEND_RESULT_CODE psi_call_frame_do_assert(struct psi_call_frame *frame, enum psi_assert_kind kind) {
+bool psi_call_frame_do_assert(struct psi_call_frame *frame, enum psi_assert_kind kind) {
 	size_t i = 0;
 	struct psi_assert_stmt *ass;
 
@@ -431,12 +434,12 @@ ZEND_RESULT_CODE psi_call_frame_do_assert(struct psi_call_frame *frame, enum psi
 		if (ass->kind == kind) {
 			if (!psi_assert_stmt_exec(ass, frame)) {
 				psi_assert_stmt_throw(ass);
-				return FAILURE;
+				return false;
 			}
 		}
 	}
 
-	return SUCCESS;
+	return true;
 }
 
 void psi_call_frame_do_call(struct psi_call_frame *frame) {
@@ -535,8 +538,6 @@ static void psi_call_frame_local_auto_dtor(void *auto_list)
 	zend_llist_destroy(auto_list);
 	efree(auto_list);
 }
-
-#include "php_psi.h"
 
 void psi_call_frame_free(struct psi_call_frame *frame) {
 	zend_hash_destroy(&frame->arguments);

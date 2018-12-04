@@ -154,10 +154,12 @@ static bool psi_context_add(struct psi_context *C, struct psi_parser *P)
 }
 
 struct psi_context_build_worker {
+#if PSI_THREADED_PARSER
 	pthread_t tid;
+#endif
 	struct psi_parser parser;
 	struct psi_parser_input *input;
-	char psi_file[MAXPATHLEN];
+	char psi_file[PATH_MAX];
 };
 
 static struct psi_context_build_worker *psi_context_build_worker_init(
@@ -165,7 +167,7 @@ static struct psi_context_build_worker *psi_context_build_worker_init(
 {
 	struct psi_context_build_worker *w = pecalloc(1, sizeof(*w), 1);
 
-	if (MAXPATHLEN <= slprintf(w->psi_file, MAXPATHLEN, "%s/%s", dir, file)) {
+	if (PATH_MAX <= slprintf(w->psi_file, PATH_MAX, "%s/%s", dir, file)) {
 		C->error(PSI_DATA(C), NULL, PSI_WARNING, "Path to PSI file too long: %s/%s",
 			dir, file);
 		pefree(w, 1);
@@ -370,7 +372,9 @@ void psi_context_build(struct psi_context *C, const char *paths)
 				}
 			}
 		}
+		psi_plist_free(running);
 	}
+	psi_plist_free(workers);
 
 	psi_context_compile(C);
 }
@@ -712,46 +716,6 @@ void **psi_context_composite_type_elements(struct psi_context *C,
 	return psi_plist_eles(*eles);
 }
 
-/*
-void psi_context_decl_func_array_elements(struct psi_context *C,
-		struct psi_decl *fn, struct psi_plist **els)
-{
-	void *type;
-	size_t i;
-
-	if (fn->func->var->pointer_level > 1) {
-		type = C->ops->typeof_decl(C, PSI_T_POINTER);
-	} else {
-		type = psi_context_decl_type(C, fn->func->type);
-	}
-
-	for (i = 0; i < fn->func->var->array_size; ++i) {
-		void *copy = C->ops->copyof_type(C, type);
-		*els = psi_plist_add(*els, &copy);
-	}
-}
-
-void *psi_context_decl_func_type(struct psi_context *C, struct psi_decl *fn)
-{
-	struct psi_decl_arg *darg = fn->func;
-
-	if (darg->engine.type) {
-		return darg->engine.type;
-	}
-
-	if (darg->var->pointer_level) {
-		if (!darg->var->array_size) {
-			return C->ops->typeof_decl(C, PSI_T_POINTER);
-		} else {
-			C->ops->composite_init(C, darg);
-			return darg->engine.type;
-		}
-	}
-
-	return psi_context_decl_type(C, darg->type);
-}
-*/
-
 void psi_context_compile(struct psi_context *C)
 {
 	psi_context_consts_init(C);
@@ -767,32 +731,32 @@ void psi_context_compile(struct psi_context *C)
 	EG(current_module) = NULL;
 }
 
-ZEND_RESULT_CODE psi_context_call(struct psi_context *C, zend_execute_data *execute_data, zval *return_value, struct psi_impl *impl)
+bool psi_context_call(struct psi_context *C, zend_execute_data *execute_data, zval *return_value, struct psi_impl *impl)
 {
 	struct psi_call_frame *frame;
 
 	frame = psi_call_frame_init(C, impl->decl, impl);
 
-	if (SUCCESS != psi_call_frame_parse_args(frame, execute_data)) {
+	if (!psi_call_frame_parse_args(frame, execute_data)) {
 		psi_call_frame_free(frame);
 
-		return FAILURE;
+		return false;
 	}
 
 	psi_call_frame_enter(frame);
 
-	if (SUCCESS != psi_call_frame_do_let(frame)) {
+	if (!psi_call_frame_do_let(frame)) {
 		psi_call_frame_do_return(frame, return_value);
 		psi_call_frame_free(frame);
 
-		return FAILURE;
+		return false;
 	}
 
-	if (SUCCESS != psi_call_frame_do_assert(frame, PSI_ASSERT_PRE)) {
+	if (!psi_call_frame_do_assert(frame, PSI_ASSERT_PRE)) {
 		psi_call_frame_do_return(frame, return_value);
 		psi_call_frame_free(frame);
 
-		return FAILURE;
+		return false;
 	}
 
 	if (psi_call_frame_num_var_args(frame)) {
@@ -801,11 +765,11 @@ ZEND_RESULT_CODE psi_context_call(struct psi_context *C, zend_execute_data *exec
 		C->ops->call(frame);
 	}
 
-	if (SUCCESS != psi_call_frame_do_assert(frame, PSI_ASSERT_POST)) {
+	if (!psi_call_frame_do_assert(frame, PSI_ASSERT_POST)) {
 		psi_call_frame_do_return(frame, return_value);
 		psi_call_frame_free(frame);
 
-		return FAILURE;
+		return false;
 	}
 
 	psi_call_frame_do_return(frame, return_value);
@@ -813,7 +777,7 @@ ZEND_RESULT_CODE psi_context_call(struct psi_context *C, zend_execute_data *exec
 	psi_call_frame_do_free(frame);
 	psi_call_frame_free(frame);
 
-	return SUCCESS;
+	return true;
 }
 
 
