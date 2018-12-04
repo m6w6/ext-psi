@@ -30,6 +30,8 @@
 #include "error.h"
 #include "plist.h"
 #include "validate.h"
+#include "dump.h"
+#include "debug.h"
 
 #include <stdarg.h>
 #include <dlfcn.h>
@@ -37,13 +39,6 @@
 
 #define PSI_DEBUG 0x1
 #define PSI_SILENT 0x2
-
-#ifndef RTLD_NEXT
-# define RTLD_NEXT ((void *) -1l)
-#endif
-#ifndef RTLD_DEFAULT
-# define RTLD_DEFAULT ((void *) 0)
-#endif
 
 #if PSI_THREADED_PARSER
 zend_string *psi_string_init_interned(const char *buf, size_t len, int p);
@@ -53,66 +48,6 @@ zend_string *psi_new_interned_string(zend_string *str);
 # define psi_new_interned_string zend_new_interned_string
 #endif
 
-static inline void *psi_dlsym(struct psi_plist *dllist, const char *name, const char *redir)
-{
-	void *dl, *sym = NULL;
-	const char *test = redir ?: name;
-
-again:
-	if (dllist) {
-		size_t i = 0;
-
-		while (!sym && psi_plist_get(dllist, i++, &dl)) {
-			sym = dlsym(dl, test);
-		}
-	}
-	if (!sym) {
-		sym = dlsym(RTLD_DEFAULT, test);
-	}
-	if (!sym && test == redir) {
-		test = name;
-		goto again;
-	}
-
-	return sym;
-}
-
-#define PSI_DEBUG_PRINT(ctx, ...) do { \
-	if ((ctx) && (PSI_DATA(ctx)->flags & PSI_DEBUG)) { \
-		dprintf(PSI_DATA(ctx)->debug_fd, __VA_ARGS__); \
-	} \
-} while(0)
-#define PSI_DEBUG_PRINTV(ctx, msg, argv) do { \
-	if ((ctx) && (PSI_DATA(ctx)->flags & PSI_DEBUG)) { \
-		vdprintf(PSI_DATA(ctx)->debug_fd, msg, argv); \
-	} \
-} while(0)
-#define PSI_DEBUG_DUMP(ctx, dump_func, ...) do { \
-	if ((ctx) && (PSI_DATA(ctx)->flags & PSI_DEBUG)) { \
-		struct psi_dump dump_ = {{ .fd = PSI_DATA(ctx)->debug_fd}, \
-				.fun = (psi_dump_cb) dprintf}; \
-		dump_func(&dump_, __VA_ARGS__); \
-	} \
-} while (0)
-
-union psi_dump_arg {
-	void *hn;
-	int fd;
-};
-typedef int (*psi_dump_cb)(union psi_dump_arg, const char *msg, ...);
-struct psi_dump {
-	union psi_dump_arg ctx;
-	psi_dump_cb fun;
-};
-#define PSI_DUMP(dump, ...) do { \
-	struct psi_dump _dump_tmp, *_dump_ptr = dump; \
-	if (!_dump_ptr) { \
-		_dump_ptr = &_dump_tmp; \
-		_dump_tmp.ctx.fd = STDOUT_FILENO; \
-		_dump_tmp.fun = (psi_dump_cb) dprintf; \
-	} \
-	_dump_ptr->fun(_dump_ptr->ctx, __VA_ARGS__); \
-} while(0)
 
 #define PSI_DATA(D) ((struct psi_data *) (D))
 

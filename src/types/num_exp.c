@@ -35,6 +35,7 @@
 #include "context.h"
 #include "call.h"
 #include "calc.h"
+#include "debug.h"
 
 struct psi_num_exp *psi_num_exp_init_ternary(token_t op,
 		struct psi_num_exp *cond, struct psi_num_exp *truthy,

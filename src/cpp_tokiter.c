@@ -32,6 +32,7 @@
 #include "cpp.h"
 #include "parser.h"
 
+void psi_cpp_tokiter_dump(struct psi_dump *dump, struct psi_cpp *cpp);
 void psi_cpp_tokiter_dump(struct psi_dump *dump, struct psi_cpp *cpp)
 {
 	size_t i = cpp->index;

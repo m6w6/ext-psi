@@ -29,16 +29,17 @@
 # include "php_config.h"
 #endif
 
+#include "php_psi.h"
+
 #include <libgen.h>
 
 #include "cpp.h"
 #include "parser.h"
+#include "debug.h"
 
 #define PSI_CPP_SEARCH
 #define PSI_CPP_PREDEF
 #include "php_psi_predef.h"
-
-#include "php_psi.h"
 
 HashTable psi_cpp_defaults;
 

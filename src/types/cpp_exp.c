@@ -33,6 +33,7 @@
 
 #include "data.h"
 #include "cpp.h"
+#include "debug.h"
 
 struct psi_cpp_exp *psi_cpp_exp_init(token_t type, void *data)
 {

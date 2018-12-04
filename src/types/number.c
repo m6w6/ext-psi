@@ -36,6 +36,7 @@
 #include "calc.h"
 #include "call.h"
 #include "parser.h"
+#include "debug.h"
 
 #include "Zend/zend_constants.h"
 #include "Zend/zend_operators.h"

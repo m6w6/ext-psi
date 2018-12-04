@@ -21,3 +21,5 @@
 
 * optimized inlines like htonl
 * real integral type of enums
+
+* #pragma lib "foo" instead of lib "foo";

@@ -28,14 +28,13 @@
 #else
 # include "php_config.h"
 #endif
-#include "php_psi.h"
 
-#include <dlfcn.h>
 #include <fnmatch.h>
-
 #include <Zend/zend_smart_str.h>
 
+#include "php_psi.h"
 #include "data.h"
+#include "dl.h"
 
 #define PSI_FUNC_REDIRS
 #include "php_psi_predef.h"
@@ -65,7 +64,7 @@ void psi_decl_free(struct psi_decl **d_ptr)
 		if (d->redir) {
 			zend_string_release(d->redir);
 		}
-		free(d);
+		pefree(d, 1);
 	}
 }
 
@@ -127,7 +126,7 @@ static inline bool psi_decl_validate_func(struct psi_data *data,
 				"Failed to locate symbol '%s(%s)': %s",
 				func->var->name->val,
 				decl->redir ? decl->redir->val : "",
-				dlerror() ?: "not found");
+				psi_dlerror() ?: "not found");
 		return false;
 	}
 	return true;

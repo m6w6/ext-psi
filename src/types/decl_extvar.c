@@ -29,12 +29,12 @@
 # include "php_config.h"
 #endif
 
-#include "php_psi.h"
-
 #include <fnmatch.h>
 #include <Zend/zend_smart_str.h>
 
+#include "php_psi.h"
 #include "data.h"
+#include "dl.h"
 
 struct psi_decl_extvar *psi_decl_extvar_init(struct psi_decl_arg *arg)
 {

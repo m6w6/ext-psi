@@ -121,6 +121,7 @@ PHP_INI_END();
 static zend_object_handlers psi_object_handlers;
 static zend_class_entry *psi_class_entry;
 
+zend_class_entry *psi_object_get_class_entry();
 zend_class_entry *psi_object_get_class_entry()
 {
 	return psi_class_entry;
@@ -288,6 +289,7 @@ static PHP_FUNCTION(psi_validate_string)
 	psi_parser_input_free(&I);
 }
 
+PHP_MINIT_FUNCTION(psi_debug);
 PHP_MINIT_FUNCTION(psi_cpp);
 PHP_MINIT_FUNCTION(psi_builtin);
 PHP_MINIT_FUNCTION(psi_context);
@@ -309,6 +311,9 @@ static PHP_MINIT_FUNCTION(psi)
 	psi_object_handlers.free_obj = psi_object_free;
 	psi_object_handlers.clone_obj = NULL;
 
+	if (SUCCESS != PHP_MINIT(psi_debug)(type, module_number)) {
+		return FAILURE;
+	}
 	if (SUCCESS != PHP_MINIT(psi_builtin)(type, module_number)) {
 		return FAILURE;
 	}
@@ -325,11 +330,13 @@ static PHP_MINIT_FUNCTION(psi)
 PHP_MSHUTDOWN_FUNCTION(psi_cpp);
 PHP_MSHUTDOWN_FUNCTION(psi_builtin);
 PHP_MSHUTDOWN_FUNCTION(psi_context);
+PHP_MSHUTDOWN_FUNCTION(psi_debug);
 static PHP_MSHUTDOWN_FUNCTION(psi)
 {
 	PHP_MSHUTDOWN(psi_context)(type, module_number);
 	PHP_MSHUTDOWN(psi_cpp)(type, module_number);
 	PHP_MSHUTDOWN(psi_builtin)(type, module_number);
+	PHP_MSHUTDOWN(psi_debug)(type, module_number);
 
 	UNREGISTER_INI_ENTRIES();
 

@@ -476,6 +476,7 @@ void psi_call_frame_do_callback(struct psi_call_frame *frame, struct psi_call_fr
 	rc = zend_fcall_info_call(&frame_arg->ival_ptr->zend.cb->fci,
 			&frame_arg->ival_ptr->zend.cb->fcc,	&return_value, NULL);
 	assert(rc == SUCCESS);
+	(void) rc;
 
 	/* marshal return value of the userland call */
 	frame_arg->zval_ptr = &return_value;

@@ -30,6 +30,7 @@
 #endif
 
 #include "data.h"
+#include "debug.h"
 
 typedef bool (*psi_validate_list_entry)(struct psi_validate_scope *scope,
 		struct psi_data *dst, void *ptr);

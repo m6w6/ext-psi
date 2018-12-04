@@ -306,11 +306,17 @@ void psi_context_build(struct psi_context *C, const char *paths)
 		n = php_scandir(ptr, &entries, psi_select_dirent, alphasort);
 
 		if (n < 0) {
+			char cwd[PATH_MAX];
 			C->error(PSI_DATA(C), NULL, PSI_WARNING,
-					"Failed to scan PSI directory '%s':%s", strerror(errno));
+					"Failed to scan PSI directory '%s%s%s': %s",
+					*ptr == '/' ? "" : getcwd(cwd, PATH_MAX),
+					*ptr != '/' && *ptr != '.' ? "/" : "",
+					ptr, strerror(errno));
 		} else {
 			for (i = 0; i < n; ++i) {
 				worker = psi_context_build_worker_init(C, ptr, entries[i]->d_name);
+				PSI_DEBUG_PRINT(C, "PSI: init worker(%p) for %s/%s\n",
+						worker, ptr, entries[i]->d_name);
 				if (worker) {
 					workers = psi_plist_add(workers, &worker);
 				}
@@ -335,6 +341,7 @@ void psi_context_build(struct psi_context *C, const char *paths)
 
 		while (psi_plist_count(workers) && active < pool) {
 			if (psi_plist_pop(workers, &worker)) {
+				PSI_DEBUG_PRINT(C, "PSI: starting worker %p\n", worker);
 				if (psi_context_build_worker_exec(worker)) {
 					running = psi_plist_add(running, &worker);
 					++active;
@@ -346,13 +353,17 @@ void psi_context_build(struct psi_context *C, const char *paths)
 
 			while (psi_plist_get(running, i++, &worker)) {
 				if (psi_context_build_worker_done(worker)) {
+					PSI_DEBUG_PRINT(C, "PSI: collecting worker %p\n", worker);
 					psi_context_add(C, &worker->parser);
 
 					psi_plist_del(running, --i, NULL);
 					psi_context_build_worker_free(&worker);
 
 					if (psi_plist_pop(workers, &worker)) {
-						psi_plist_add(running, &worker);
+						PSI_DEBUG_PRINT(C, "PSI: starting worker %p\n", worker);
+						if (psi_context_build_worker_exec(worker)) {
+							running = psi_plist_add(running, &worker);
+						}
 					} else {
 						--active;
 					}

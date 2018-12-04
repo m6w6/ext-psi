@@ -29,8 +29,7 @@
 # include "php_config.h"
 #endif
 #include "data.h"
-
-#include <dlfcn.h>
+#include "dl.h"
 
 void psi_decl_file_dtor(struct psi_decl_file *file)
 {
@@ -48,24 +47,23 @@ void psi_decl_file_dtor(struct psi_decl_file *file)
 
 static inline bool validate_lib(struct psi_data *dst, const char *libname, void **dlopened)
 {
-	char lib[MAXPATHLEN];
-	size_t len;
+	char lib[PATH_MAX];
+	size_t len = PATH_MAX;
 
 	if (!libname) {
 		/* FIXME: assume stdlib */
 		return true;
-	} else if (!strchr(libname, '/')) {
-		len = snprintf(lib, MAXPATHLEN, "lib%s.%s", libname, PHP_PSI_SHLIB_SUFFIX);
-		if (MAXPATHLEN == len) {
-			dst->error(dst, NULL, PSI_WARNING, "Library name too long: '%s'",
-					libname);
-		}
-		lib[len] = 0;
-		libname = lib;
 	}
-	if (!(*dlopened = dlopen(libname, RTLD_LAZY | RTLD_LOCAL))) {
-		dst->error(dst, NULL, PSI_WARNING, "Could not open library '%s': %s.",
-				libname, dlerror());
+
+	if (PATH_MAX == psi_dlname(&lib, &len, libname)) {
+		dst->error(dst, NULL, PSI_WARNING, "Library name too long: '%s'",
+				libname);
+		return false;
+	}
+
+	if (!(*dlopened = psi_dlopen(lib))) {
+		dst->error(dst, NULL, PSI_WARNING, "Could not open library '%s': %s",
+				libname, psi_dlerror());
 		return false;
 	}
 
@@ -95,7 +93,7 @@ bool psi_decl_file_validate(struct psi_data *dst, struct psi_data *src)
 
 void psi_libs_free(void **dlopened) {
 	if (*dlopened) {
-		dlclose(*dlopened);
+		psi_dlclose(*dlopened);
 	}
 }
 
