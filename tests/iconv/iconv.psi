@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 extern void *iconv_open(char *tocode, char *fromcode);
 function psi\iconv_open(string $to, string $from) : object {
 	let tocode = strval($to);
