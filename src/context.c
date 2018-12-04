@@ -691,6 +691,7 @@ void **psi_context_composite_type_elements(struct psi_context *C,
 	struct psi_decl_type *dtype;
 	struct psi_decl_arg *tmp;
 	void *type, *copy;
+	size_t i;
 
 	dtype = psi_decl_type_get_real(darg->type);
 
@@ -707,7 +708,7 @@ void **psi_context_composite_type_elements(struct psi_context *C,
 		break;
 	default:
 		type = psi_context_decl_arg_type(C, darg);
-		for (size_t i = 0; i < darg->var->array_size; ++i) {
+		for (i = 0; i < darg->var->array_size; ++i) {
 			copy = C->ops->copyof_type(C, type);
 			*eles = psi_plist_add(*eles, &copy);
 		}
