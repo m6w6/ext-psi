@@ -1,6 +1,7 @@
 // libidn
 lib "idn";
 
+#include <stdlib.h>
 #include <idna.h>
 
 function idn\utf8_to_ascii(string $host, string &$result, int $flags = 0) : int {
