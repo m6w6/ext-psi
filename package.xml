@@ -38,14 +38,14 @@ The acronym PSI may be read as:
    <file role="doc" name="README.md"/>
    <file role="doc" name="THANKS"/>
    <file role="doc" name="TODO"/>
+   <file role="src" name=".gdbinit"/>
    <file role="src" name="config.m4"/>
    <file role="src" name="Makefile.frag"/>
    <file role="src" name="php_psi.h"/>
-   <file role="src" name="php_psi_cpp.h.in"/>
-   <file role="src" name="php_psi_posix.h.in"/>
-   <file role="src" name="php_psi_stdinc.h.in"/>
+   <file role="src" name="php_psi_predef.h.in"/>
    <dir name="m4">
     <dir name="ax">
+     <file role="src" name="ax_check_compile_flag.m4"/>
      <file role="src" name="ax_check_sign.m4"/>
      <file role="src" name="ax_pthread.m4"/>
     </dir>
@@ -82,28 +82,38 @@ The acronym PSI may be read as:
     <file role="src" name="gen_travis_yml.php"/>
    </dir>
    <dir name="src">
+    <file role="src" name="builtin.c"/>
     <file role="src" name="call.c"/>
     <file role="src" name="context.c"/>
     <file role="src" name="cpp.c"/>
     <file role="src" name="cpp_tokiter.c"/>
     <file role="src" name="data.c"/>
+    <file role="src" name="debug.c"/>
+    <file role="src" name="dump.c"/>
     <file role="src" name="error.c"/>
     <file role="src" name="libffi.c"/>
     <file role="src" name="libjit.c"/>
     <file role="src" name="marshal.c"/>
     <file role="src" name="module.c"/>
     <file role="src" name="parser.c"/>
+    <file role="src" name="parser_scan.c"/>
+    <file role="src" name="parser_scan.re"/>
     <file role="src" name="parser_proc.c"/>
     <file role="src" name="plist.c"/>
     <file role="src" name="token.c"/>
     <file role="src" name="validate.c"/>
+    <file role="src" name="builtin.h"/>
     <file role="src" name="calc.h"/>
     <file role="src" name="call.h"/>
     <file role="src" name="context.h"/>
     <file role="src" name="cpp.h"/>
     <file role="src" name="data.h"/>
+    <file role="src" name="debug.h"/>
+    <file role="src" name="dl.h"/>
+    <file role="src" name="dump.h"/>
     <file role="src" name="error.h"/>
     <file role="src" name="libffi.h"/>
+    <file role="src" name="libffi_compat.h"/>
     <file role="src" name="libjit.h"/>
     <file role="src" name="marshal.h"/>
     <file role="src" name="parser.h"/>
@@ -113,7 +123,6 @@ The acronym PSI may be read as:
     <file role="src" name="types.h"/>
     <file role="src" name="validate.h"/>
     <file role="src" name="parser_proc_grammar.y"/>
-    <file role="src" name="parser.re"/>
     <dir name="calc">
      <file role="src" name="basic.h"/>
      <file role="src" name="bin.h"/>
@@ -248,6 +257,9 @@ The acronym PSI may be read as:
     </dir>
     <dir name="parser">
      <file role="test" name="cpp001.phpt"/>
+     <file role="test" name="cpp002.phpt"/>
+     <file role="test" name="cpp003.phpt"/>
+     <file role="test" name="cpp004.phpt"/>
      <file role="test" name="dump001.phpt"/>
      <file role="test" name="enum001.phpt"/>
      <file role="test" name="validate001.phpt"/>
@@ -257,12 +269,19 @@ The acronym PSI may be read as:
      <file role="test" name="validate005.phpt"/>
      <file role="test" name="validate006.phpt"/>
      <file role="test" name="validate007.phpt"/>
+     <dir name="cpp003">
+      <file role="test" name="prescan.psi"/>
+     </dir>
+     <dir name="cpp004">
+      <file role="test" name="builtins.psi"/>
+     </dir>
     </dir>
     <dir name="pipe">
      <file role="test" name="pipe001.phpt"/>
      <file role="test" name="pipe.psi"/>
     </dir>
     <dir name="sqlite">
+     <file role="test" name="sqlite001.db"/>
      <file role="test" name="sqlite001.phpt"/>
      <file role="test" name="sqlite.psi"/>
     </dir>
@@ -275,6 +294,7 @@ The acronym PSI may be read as:
      <file role="test" name="printf001.phpt"/>
     </dir>
     <dir name="time">
+     <file role="test" name="tzname001.phpt"/>
      <file role="test" name="asc_gmtime001.phpt"/>
      <file role="test" name="gettimeofday001.phpt"/>
      <file role="test" name="nanosleep001.phpt"/>
