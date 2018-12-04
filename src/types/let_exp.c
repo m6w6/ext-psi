@@ -247,9 +247,11 @@ void *psi_let_exp_exec(struct psi_let_exp *val, struct psi_decl_arg *darg,
 			struct psi_impl *impl = psi_call_frame_get_impl(frame);
 			struct psi_let_stmt *let_temp = psi_impl_get_let(impl, val->data.var);
 			struct psi_call_frame_symbol *temp_arg;
+			impl_val *src;
 
 			temp_arg = psi_call_frame_fetch_symbol(frame, let_temp->exp->var);
-			frame_sym->temp_val = *deref_impl_val(temp_arg->ptr, val->data.var);
+			src = deref_impl_val(temp_arg->ptr, val->data.var);
+			memcpy(&frame_sym->temp_val, src, psi_decl_var_get_size(let_temp->exp->var));
 		}
 		break;
 
