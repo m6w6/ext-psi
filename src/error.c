@@ -75,11 +75,13 @@ void psi_error_wrapper(struct psi_data *context, struct psi_token *t, int type, 
 
 	va_start(argv, msg);
 	psi_verror(type, fn, ln, msg, argv);
-#ifdef __clang__
 	va_end(argv);
+
 	va_start(argv, msg);
-#endif
+	psi_debug_lock(context);
 	PSI_DEBUG_PRINTV(context, msg, argv);
+	PSI_DEBUG_PRINT(context, "\n");
+	psi_debug_unlock(context);
 	va_end(argv);
 
 	if (context) {

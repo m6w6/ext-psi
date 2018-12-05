@@ -22,7 +22,8 @@ The acronym PSI may be read as:
 ## Installing
 
 > **WARNING:**  
-> This is heavy WIP. Installation only works from a source checkout with php-src@master yet.
+> This is heavy WIP. Installation only works from a source checkout 
+> with php-src@master on x86_64-linux yet.
 
 ### PECL
 

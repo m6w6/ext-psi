@@ -73,12 +73,14 @@ void psi_cpp_tokiter_reset(struct psi_cpp *cpp)
 	cpp->skip = 0;
 	cpp->seen = 0;
 	cpp->level = 0;
+	cpp->do_cpp = false;
 
 	if (cpp->tokens.next) {
 		free(cpp->tokens.iter);
 		cpp->tokens.iter = cpp->tokens.next;
 	}
 	cpp->tokens.next = psi_plist_init((psi_plist_dtor) psi_token_free);
+	cpp->tokens.exec = psi_plist_init((psi_plist_dtor) psi_token_free);
 }
 
 bool psi_cpp_tokiter_seek(struct psi_cpp *cpp, size_t index)
@@ -110,19 +112,21 @@ bool psi_cpp_tokiter_add_cur(struct psi_cpp *cpp)
 	struct psi_token *cur = NULL;
 
 	if (psi_plist_get(cpp->tokens.iter, cpp->index, &cur)) {
-		struct psi_plist *tokens = psi_plist_add(cpp->tokens.next, &cur);
-
-		if (tokens) {
-			cpp->tokens.next = tokens;
+		if (cpp->do_cpp) {
+			cpp->tokens.exec = psi_plist_add(cpp->tokens.exec, &cur);
+		} else {
+			cpp->tokens.next = psi_plist_add(cpp->tokens.next, &cur);
+		}
 
 #if PSI_CPP_DEBUG
-			PSI_DEBUG_PRINT(cpp->parser, "PSI: CPP add_cur -> index=%zu, iter.count=%zu, next.count=%zu	",
-					cpp->index, psi_plist_count(cpp->tokens.iter), psi_plist_count(cpp->tokens.next));
-			PSI_DEBUG_DUMP(cpp->parser, psi_token_dump, cur);
+		PSI_DEBUG_PRINT(cpp->parser,
+				"PSI: CPP add_cur -> index=%zu, iter.count=%zu, next.count=%zu, exec.count=%zu	",
+				cpp->index, psi_plist_count(cpp->tokens.iter), psi_plist_count(cpp->tokens.next),
+				psi_plist_count(cpp->tokens.exec));
+		PSI_DEBUG_DUMP(cpp->parser, psi_token_dump, cur);
 #endif
 
-			return true;
-		}
+		return true;
 	}
 
 	return false;
@@ -130,16 +134,17 @@ bool psi_cpp_tokiter_add_cur(struct psi_cpp *cpp)
 
 bool psi_cpp_tokiter_add(struct psi_cpp *cpp, struct psi_token *tok)
 {
-	struct psi_plist *tokens = psi_plist_add(cpp->tokens.next, &tok);
-
-	if (!tokens) {
-		return false;
+	if (cpp->do_cpp) {
+		cpp->tokens.exec = psi_plist_add(cpp->tokens.exec, &tok);
+	} else {
+		cpp->tokens.next = psi_plist_add(cpp->tokens.next, &tok);
 	}
-	cpp->tokens.next = tokens;
 
 #if PSI_CPP_DEBUG
-	PSI_DEBUG_PRINT(cpp->parser, "PSI: CPP add -> index=%zu, iter.count=%zu, next.count=%zu	",
-			cpp->index, psi_plist_count(cpp->tokens.iter), psi_plist_count(cpp->tokens.next));
+	PSI_DEBUG_PRINT(cpp->parser,
+			"PSI: CPP add -> index=%zu, iter.count=%zu, next.count=%zu, exec.count=%zu	",
+			cpp->index, psi_plist_count(cpp->tokens.iter), psi_plist_count(cpp->tokens.next),
+			psi_plist_count(cpp->tokens.exec));
 	PSI_DEBUG_DUMP(cpp->parser, psi_token_dump, tok);
 #endif
 
@@ -155,15 +160,17 @@ bool psi_cpp_tokiter_add_range(struct psi_cpp *cpp, size_t num_eles, void **eles
 		return true;
 	}
 
-	tokens = psi_plist_add_r(cpp->tokens.next, num_eles, eles);
-	if (!tokens) {
-		return false;
+	if (cpp->do_cpp) {
+		cpp->tokens.exec = psi_plist_add_r(cpp->tokens.exec, num_eles, eles);
+	} else {
+		cpp->tokens.next = psi_plist_add_r(cpp->tokens.next, num_eles, eles);
 	}
-	cpp->tokens.next = tokens;
 
 #if PSI_CPP_DEBUG
-	PSI_DEBUG_PRINT(cpp->parser, "PSI: CPP add_range -> index=%zu, num_eles=%zu, iter.count=%zu, next.count=%zu\n",
-			cpp->index, num_eles, psi_plist_count(cpp->tokens.iter), psi_plist_count(cpp->tokens.next));
+	PSI_DEBUG_PRINT(cpp->parser,
+			"PSI: CPP add_range -> index=%zu, num_eles=%zu, iter.count=%zu, next.count=%zu, exec.count=%zu\n",
+			cpp->index, num_eles, psi_plist_count(cpp->tokens.iter), psi_plist_count(cpp->tokens.next),
+			psi_plist_count(cpp->tokens.exec));
 #endif
 
 	return true;
@@ -193,27 +200,39 @@ bool psi_cpp_tokiter_del_prev(struct psi_cpp *cpp, bool free_token)
 	struct psi_token *cur = NULL;
 
 #if PSI_CPP_DEBUG
-	PSI_DEBUG_PRINT(cpp->parser, "PSI: CPP del_prev -> index=%zu, iter.count=%zu, next.count=%zu\n",
-			cpp->index, psi_plist_count(cpp->tokens.iter), psi_plist_count(cpp->tokens.next));
+	PSI_DEBUG_PRINT(cpp->parser,
+			"PSI: CPP del_prev -> index=%zu, iter.count=%zu, next.count=%zu, exec.count=%zu\n",
+			cpp->index, psi_plist_count(cpp->tokens.iter), psi_plist_count(cpp->tokens.next),
+			psi_plist_count(cpp->tokens.exec));
 #endif
 
-	if (psi_plist_pop(cpp->tokens.next, NULL) && psi_plist_get(cpp->tokens.iter, cpp->index - 1, &cur)) {
-		psi_plist_unset(cpp->tokens.iter, cpp->index - 1);
-		if (free_token && cur) {
-			psi_token_free(&cur);
+	if (cpp->do_cpp) {
+		if (!psi_plist_pop(cpp->tokens.exec, NULL)) {
+			return false;
 		}
-		return true;
+	} else if (!psi_plist_pop(cpp->tokens.next, NULL)) {
+		return false;
 	}
 
-	return false;
+	if (!psi_plist_get(cpp->tokens.iter, cpp->index - 1, &cur)) {
+		return false;
+	}
+	psi_plist_unset(cpp->tokens.iter, cpp->index - 1);
+	if (free_token && cur) {
+		psi_token_free(&cur);
+	}
+	return true;
 }
+
 bool psi_cpp_tokiter_del_cur(struct psi_cpp *cpp, bool free_token)
 {
 	struct psi_token *cur = NULL;
 
 #if PSI_CPP_DEBUG
-	PSI_DEBUG_PRINT(cpp->parser, "PSI: CPP del_cur -> index=%zu, iter.count=%zu, next.count=%zu	",
-			cpp->index, psi_plist_count(cpp->tokens.iter), psi_plist_count(cpp->tokens.next));
+	PSI_DEBUG_PRINT(cpp->parser,
+			"PSI: CPP del_cur -> index=%zu, iter.count=%zu, next.count=%zu, exec.count=%zu	",
+			cpp->index, psi_plist_count(cpp->tokens.iter), psi_plist_count(cpp->tokens.next),
+			psi_plist_count(cpp->tokens.exec));
 #endif
 
 	if (psi_plist_get(cpp->tokens.iter, cpp->index, &cur)) {
@@ -237,8 +256,10 @@ bool psi_cpp_tokiter_del_range(struct psi_cpp *cpp, size_t offset, size_t num_el
 	size_t i;
 
 #if PSI_CPP_DEBUG
-	PSI_DEBUG_PRINT(cpp->parser, "PSI: CPP del_range -> index=%zu, offset=%zu, num_eles=%zu, iter.count=%zu, next.count=%zu\n",
-			cpp->index, offset, num_eles, psi_plist_count(cpp->tokens.iter), psi_plist_count(cpp->tokens.next));
+	PSI_DEBUG_PRINT(cpp->parser,
+			"PSI: CPP del_range -> index=%zu, offset=%zu, num_eles=%zu, iter.count=%zu, next.count=%zu, exec.count=%zu\n",
+			cpp->index, offset, num_eles, psi_plist_count(cpp->tokens.iter), psi_plist_count(cpp->tokens.next),
+			psi_plist_count(cpp->tokens.exec));
 #endif
 
 	for (i = offset; i < offset + num_eles; ++i) {
@@ -267,15 +288,13 @@ bool psi_cpp_tokiter_ins_range(struct psi_cpp *cpp, size_t num_eles, void **eles
 		return true;
 	}
 
-	tokens = psi_plist_ins_r(cpp->tokens.iter, cpp->index, num_eles, eles);
-	if (!tokens) {
-		return false;
-	}
-	cpp->tokens.iter = tokens;
+	cpp->tokens.iter = psi_plist_ins_r(cpp->tokens.iter, cpp->index, num_eles, eles);
 
 #if PSI_CPP_DEBUG
-	PSI_DEBUG_PRINT(cpp->parser, "PSI: CPP ins_range -> index=%zu, num_eles=%zu, iter.count=%zu, next.count=%zu\n",
-			cpp->index, num_eles, psi_plist_count(cpp->tokens.iter), psi_plist_count(cpp->tokens.next));
+	PSI_DEBUG_PRINT(cpp->parser,
+			"PSI: CPP ins_range -> index=%zu, num_eles=%zu, iter.count=%zu, next.count=%zu, exec.count=%zu\n",
+			cpp->index, num_eles, psi_plist_count(cpp->tokens.iter), psi_plist_count(cpp->tokens.next),
+			psi_plist_count(cpp->tokens.exec));
 #endif
 
 	return true;
@@ -377,8 +396,11 @@ static inline size_t psi_cpp_tokiter_expand_tokens(struct psi_cpp *cpp,
 		stringify = false;
 	}
 
+	bool processed = psi_cpp_process(cpp, &exp, target);
+	assert(processed);
+
 	n = psi_plist_count(exp);
-	psi_cpp_tokiter_ins_range(cpp, n, psi_plist_eles(exp));
+	psi_cpp_tokiter_add_range(cpp, n, psi_plist_eles(exp));
 	free(exp);
 
 	return n;
@@ -497,7 +519,8 @@ static inline void psi_cpp_tokiter_expand_call_tokens(struct psi_cpp *cpp,
 			for (s = 0; psi_plist_get(macro->sig, s, &arg_name); ++s) {
 				if (zend_string_equals(arg_name->text, tok->text)) {
 					if (prescan) {
-						bool processed = psi_cpp_process(cpp, &arg_tokens_list[s]);
+						bool processed = psi_cpp_process(cpp,
+								&arg_tokens_list[s], target);
 
 						assert(processed);
 					}
@@ -555,7 +578,8 @@ static inline void psi_cpp_tokiter_expand_builtin_tokens(struct psi_cpp *cpp,
 
 	/* prescan */
 	for (s = 0; s < argc; ++s) {
-		bool processed = psi_cpp_process(cpp, &arg_tokens_list[s]);
+		bool processed = psi_cpp_process(cpp, &arg_tokens_list[s],
+				target);
 		assert(processed);
 	}
 
@@ -563,11 +587,11 @@ static inline void psi_cpp_tokiter_expand_builtin_tokens(struct psi_cpp *cpp,
 	if (!builtin->func(cpp, target, arg_tokens_list, &res)) {
 		struct psi_token *zero = psi_token_init(PSI_T_NUMBER, "0", 1,
 				target->col, target->line, target->file);
-		psi_cpp_tokiter_ins_range(cpp, 1, (void *) &zero);
+		psi_cpp_tokiter_add(cpp, zero);
 	} else if (!res) {
 		struct psi_token *one = psi_token_init(PSI_T_NUMBER, "1", 1,
 				target->col, target->line, target->file);
-		psi_cpp_tokiter_ins_range(cpp, 1, (void *) &one);
+		psi_cpp_tokiter_add(cpp, one);
 	} else {
 		psi_cpp_tokiter_expand_tokens(cpp, target, res);
 		psi_plist_free(res);
@@ -608,11 +632,20 @@ static inline bool psi_cpp_tokiter_expand_def(struct psi_cpp *cpp,
 {
 	/* delete current token from stream */
 	psi_cpp_tokiter_del_cur(cpp, false);
-	/* replace with tokens from macro */
-	psi_cpp_tokiter_expand_tokens(cpp, target, macro->tokens);
+
+	if (macro->tokens) {
+		struct psi_plist *tokens = psi_plist_copy(macro->tokens,
+					(void (*)(void *)) psi_token_copy_ctor);
+		bool processed = psi_cpp_process(cpp, &tokens, target);
+
+		if (processed) {
+			/* replace with tokens from macro */
+			psi_cpp_tokiter_expand_tokens(cpp, target, tokens);
+		}
+		++cpp->expanded;
+	}
 
 	psi_token_free(&target);
-	++cpp->expanded;
 	return true;
 }
 
@@ -637,9 +670,10 @@ static inline bool psi_cpp_tokiter_expand_decl(struct psi_cpp *cpp,
 	}
 
 	/* don't expand itself */
-	if (macro->token == target) {
-		return false;
-	}
+//	if (zend_string_equals(macro->token->text, target->text)) {
+//		PSI_DEBUG_PRINT(cpp->parser, "PSI: CPP expand ~ skipping self token\n");
+//		return false;
+//	}
 
 	if (macro->sig) {
 		return psi_cpp_tokiter_expand_call(cpp, target, macro);

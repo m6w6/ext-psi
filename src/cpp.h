@@ -29,7 +29,7 @@
 #include "data.h"
 
 #ifndef PSI_CPP_DEBUG
-# define PSI_CPP_DEBUG 0
+# define PSI_CPP_DEBUG 1
 #endif
 
 struct psi_cpp {
@@ -39,7 +39,9 @@ struct psi_cpp {
 	struct {
 		struct psi_plist *iter;
 		struct psi_plist *next;
+		struct psi_plist *exec;
 	} tokens;
+	HashTable expanding;
 	const char *search;
 	size_t index;
 	unsigned level;
@@ -47,10 +49,12 @@ struct psi_cpp {
 	unsigned seen;
 	unsigned expanded;
 	unsigned counter;
+	bool do_cpp;
 };
 
 struct psi_cpp *psi_cpp_init(struct psi_parser *parser);
-bool psi_cpp_process(struct psi_cpp *cpp, struct psi_plist **tokens);
+bool psi_cpp_process(struct psi_cpp *cpp, struct psi_plist **tokens,
+		struct psi_token *expanding);
 void psi_cpp_free(struct psi_cpp **cpp_ptr);
 
 bool psi_cpp_if(struct psi_cpp *cpp, struct psi_cpp_exp *exp);

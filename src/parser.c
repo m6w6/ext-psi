@@ -131,7 +131,7 @@ struct psi_parser_input *psi_parser_open_string(struct psi_parser *P,
 struct psi_plist *psi_parser_preprocess(struct psi_parser *P,
 		struct psi_plist **tokens)
 {
-	if (psi_cpp_process(P->preproc, tokens)) {
+	if (psi_cpp_process(P->preproc, tokens, NULL)) {
 		return *tokens;
 	}
 	return NULL;
@@ -238,7 +238,7 @@ void psi_parser_postprocess(struct psi_parser *P)
 		if (!cnst) {
 			continue;
 		}
-//fprintf(stderr, "PARSE: %s", ZSTR_VAL(cnst));
+
 		I = psi_parser_open_string(P, ZSTR_VAL(cnst), ZSTR_LEN(cnst));
 		zend_string_release(cnst);
 
