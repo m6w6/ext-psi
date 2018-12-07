@@ -390,7 +390,7 @@ struct psi_parser;
 %type		<struct psi_token **>				impl_stmt
 %destructor	{psi_impl_stmt_free(&$$);}			impl_stmt
 %type		<struct psi_token *>				impl_type_token impl_type_restricted_token impl_type_extended_token callback_rval let_func_token set_func_token assert_stmt_token
-%destructor	{psi_token_free(&$$);}				impl_type_token impl_type_restricted_token impl_type_extended_token callback_rval let_func_token set_func_token assert_stmt_token
+%destructor	{}									impl_type_token impl_type_restricted_token impl_type_extended_token callback_rval let_func_token set_func_token assert_stmt_token
 %type		<struct psi_plist *>				impl_args impl_stmts let_exps let_func_exps callback_arg_list callback_args set_exps set_func_exps free_exps
 %destructor	{psi_plist_free($$);}				impl_args impl_stmts let_exps let_func_exps callback_arg_list callback_args set_exps set_func_exps free_exps
 

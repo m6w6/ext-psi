@@ -7581,19 +7581,19 @@ yydestruct (const char *yymsg, int yytype, YYSTYPE *yyvaluep, struct psi_parser 
 
     case 248: /* impl_type_token  */
 #line 393 "src/parser_proc_grammar.y" /* glr.c:851  */
-      {psi_token_free(&(*(struct psi_token **)(&(*yyvaluep))));}
+      {}
 #line 7586 "src/parser_proc.c" /* glr.c:851  */
         break;
 
     case 249: /* impl_type_restricted_token  */
 #line 393 "src/parser_proc_grammar.y" /* glr.c:851  */
-      {psi_token_free(&(*(struct psi_token **)(&(*yyvaluep))));}
+      {}
 #line 7592 "src/parser_proc.c" /* glr.c:851  */
         break;
 
     case 250: /* impl_type_extended_token  */
 #line 393 "src/parser_proc_grammar.y" /* glr.c:851  */
-      {psi_token_free(&(*(struct psi_token **)(&(*yyvaluep))));}
+      {}
 #line 7598 "src/parser_proc.c" /* glr.c:851  */
         break;
 
@@ -7653,7 +7653,7 @@ yydestruct (const char *yymsg, int yytype, YYSTYPE *yyvaluep, struct psi_parser 
 
     case 260: /* let_func_token  */
 #line 393 "src/parser_proc_grammar.y" /* glr.c:851  */
-      {psi_token_free(&(*(struct psi_token **)(&(*yyvaluep))));}
+      {}
 #line 7658 "src/parser_proc.c" /* glr.c:851  */
         break;
 
@@ -7671,7 +7671,7 @@ yydestruct (const char *yymsg, int yytype, YYSTYPE *yyvaluep, struct psi_parser 
 
     case 263: /* callback_rval  */
 #line 393 "src/parser_proc_grammar.y" /* glr.c:851  */
-      {psi_token_free(&(*(struct psi_token **)(&(*yyvaluep))));}
+      {}
 #line 7676 "src/parser_proc.c" /* glr.c:851  */
         break;
 
@@ -7725,7 +7725,7 @@ yydestruct (const char *yymsg, int yytype, YYSTYPE *yyvaluep, struct psi_parser 
 
     case 272: /* set_func_token  */
 #line 393 "src/parser_proc_grammar.y" /* glr.c:851  */
-      {psi_token_free(&(*(struct psi_token **)(&(*yyvaluep))));}
+      {}
 #line 7730 "src/parser_proc.c" /* glr.c:851  */
         break;
 
@@ -7749,7 +7749,7 @@ yydestruct (const char *yymsg, int yytype, YYSTYPE *yyvaluep, struct psi_parser 
 
     case 276: /* assert_stmt_token  */
 #line 393 "src/parser_proc_grammar.y" /* glr.c:851  */
-      {psi_token_free(&(*(struct psi_token **)(&(*yyvaluep))));}
+      {}
 #line 7754 "src/parser_proc.c" /* glr.c:851  */
         break;
 
