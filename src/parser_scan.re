@@ -53,10 +53,10 @@ size_t psi_parser_maxfill(void) {
 		token = psi_token_init(t, tok, cur - tok, tok - eol + 1, I->lines, I->file); \
 	} \
 	tokens = psi_plist_add(tokens, &token); \
-	psi_debug_lock(PSI_DATA(P)); \
-	PSI_DEBUG_PRINT(P, "PSI: scanned < "); \
-	PSI_DEBUG_DUMP(P, psi_token_dump, token); \
-	psi_debug_unlock(PSI_DATA(P)); \
+	PSI_DEBUG_LOCK(P, \
+			PSI_DEBUG_PRINT(P, "PSI: scanned < "); \
+			PSI_DEBUG_DUMP(P, psi_token_dump, token); \
+	); \
 } while(0)
 
 #define CHECKEOF() if (cur >= lim - YYMAXFILL) goto done

@@ -39,6 +39,14 @@ void psi_debug_unlock(struct psi_data *data);
 # define psi_debug_unlock(ctx)
 #endif
 
+#define PSI_DEBUG_LOCK(ctx, group_actions) do { \
+	if ((ctx) && (PSI_DATA(ctx)->flags & PSI_DEBUG)) { \
+		psi_debug_lock(PSI_DATA(ctx)); \
+		group_actions; \
+		psi_debug_unlock(PSI_DATA(ctx)); \
+	} \
+} while(0)
+
 #define PSI_DEBUG_PRINT(ctx, ...) do { \
 	if ((ctx) && (PSI_DATA(ctx)->flags & PSI_DEBUG)) { \
 		psi_debug_lock(PSI_DATA(ctx)); \

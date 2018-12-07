@@ -2296,7 +2296,7 @@ static int psi_parser_proc_lex(YYSTYPE *lvalp, struct psi_parser *P, struct psi_
 #if PSI_DEBUG_LEX
 	PSI_DEBUG_PRINT(P, "PSI: LEX index %4zu ", *index);
 #endif
-	if (psi_plist_get(tokens, (*index)++, &token)) {
+	if (psi_plist_get(tokens, (*index)++, &token) && token) {
 #if PSI_DEBUG_LEX	
 		PSI_DEBUG_DUMP(P, psi_token_dump, token);
 #endif

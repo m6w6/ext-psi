@@ -52,7 +52,8 @@ struct psi_token *psi_token_init(token_t token_typ, const char *token_txt,
 	T->file = zend_string_copy(file);
 	T->text = psi_string_init_interned(token_txt, token_len, 1);
 #if PSI_DEBUG_TOKEN_ALLOC
-	PSI_DEBUG_PRINT(cpp->parser, "PSI: token_init %p\n", T);
+	fprintf(stderr, "PSI: token_init %p\t", T);
+	psi_token_dump(NULL, T);
 #endif
 	return T;
 }
@@ -61,7 +62,8 @@ void psi_token_free(struct psi_token **token_ptr) {
 	if (*token_ptr) {
 		struct psi_token *token = *token_ptr;
 #if PSI_DEBUG_TOKEN_ALLOC
-		PSI_DEBUG_PRINT(cpp->parser, "PSI: token_free %p\n", token);
+		fprintf(stderr, "PSI: token_free %p\t", token);
+		psi_token_dump(NULL, token);
 #endif
 		*token_ptr = NULL;
 		zend_string_release(token->text);
@@ -75,7 +77,8 @@ struct psi_token *psi_token_copy(struct psi_token *src) {
 
 	*ptr = *src;
 #if PSI_DEBUG_TOKEN_ALLOC
-	PSI_DEBUG_PRINT(cpp->parser, "PSI: token_copy %p <= %p\n", ptr, src);
+	fprintf(stderr, "PSI: token_copy %p\t", ptr);
+	psi_token_dump(NULL, src);
 #endif
 	ptr->text = zend_string_copy(ptr->text);
 	ptr->file = zend_string_copy(ptr->file);
@@ -114,7 +117,7 @@ struct psi_token *psi_token_cat(const char *sep, unsigned argc, ...) {
 	T->text = smart_str_extract(&text);
 
 #if PSI_DEBUG_TOKEN_ALLOC
-	PSI_DEBUG_PRINT(cpp->parser, "PSI: token_cat  %p\n", T);
+	fprintf(stderr, "PSI: token_cat  %p\n", T);
 #endif
 	return T;
 }

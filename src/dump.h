@@ -48,7 +48,7 @@ const struct psi_dump psi_dump_stderr;
 #define PSI_DUMP(dump, ...) do { \
 	const struct psi_dump *_dump_ptr = dump; \
 	if (!_dump_ptr) { \
-		_dump_ptr = &psi_dump_stdout; \
+		_dump_ptr = &psi_dump_stderr; \
 	} \
 	_dump_ptr->fun(_dump_ptr->ctx, __VA_ARGS__); \
 } while(0)
