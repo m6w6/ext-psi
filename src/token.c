@@ -196,6 +196,11 @@ void psi_token_dump(struct psi_dump *dump, struct psi_token *t)
 {
 	size_t i;
 
+	if (!t) {
+		PSI_DUMP(dump, "TOKEN deleted\n");
+		return;
+	}
+
 	PSI_DUMP(dump, "TOKEN %p (%u) ", t, t->type);
 	if (t->type == PSI_T_EOF) {
 		PSI_DUMP(dump, "EOF");

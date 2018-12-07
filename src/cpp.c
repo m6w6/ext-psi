@@ -317,12 +317,7 @@ static bool psi_cpp_stage2(struct psi_cpp *cpp)
 		}
 
 		if (do_expansion && psi_cpp_defined(cpp, current)) {
-			bool expanded = false;
-
 			if (psi_cpp_tokiter_expand(cpp)) {
-				expanded = true;
-			}
-			if (expanded) {
 				continue;
 			}
 		}
@@ -334,13 +329,7 @@ static bool psi_cpp_stage2(struct psi_cpp *cpp)
 			bool parsed;
 
 			cpp->do_cpp = false;
-
 			parsed = psi_parser_process(cpp->parser, cpp->tokens.exec, &processed);
-
-			/* leave EOLs in the input stream, else we might end up
-			 * with a hash not preceded with a new line after include */
-			psi_cpp_tokiter_add(cpp, current);
-			psi_plist_pop(cpp->tokens.exec, NULL);
 			psi_plist_clean(cpp->tokens.exec);
 
 			if (!parsed) {
