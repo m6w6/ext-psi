@@ -56,7 +56,7 @@ struct psi_call_frame_callback {
 struct psi_call_frame_argument *psi_call_frame_argument_init(struct psi_impl_arg *spec, impl_val *ival, zval *zptr, int is_vararg);
 void psi_call_frame_argument_free(struct psi_call_frame_argument *arg);
 
-struct psi_call_frame_symbol *psi_call_frame_symbol_init();
+struct psi_call_frame_symbol *psi_call_frame_symbol_init(struct psi_decl_var *dvar);
 void psi_call_frame_symbol_free(struct psi_call_frame_symbol *arg);
 
 struct psi_call_frame {
