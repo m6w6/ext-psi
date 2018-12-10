@@ -21,3 +21,4 @@
 * real integral type of enums
 
 * #pragma PSI lib "foo" instead of lib "foo";
+* #line directive

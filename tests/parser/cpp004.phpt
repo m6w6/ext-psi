@@ -12,7 +12,7 @@ LC_TIME=C
 ===TEST===
 <?php 
 var_dump(CPP_TEST0, CPP_TEST1, CPP_TEST2, CPP_TEST3, CPP_TEST4, CPP_TEST5);
-var_dump(base_file, include_level, timestamp, file, line);
+var_dump(base_file, include_level, timestamp, file, line, date, time);
 ?>
 ===DONE===
 --EXPECTF--
@@ -28,4 +28,6 @@ int(2)
 string(24) "%s %s %w%d %d:%d:%d %d"
 string(54) "/%s/tests/parser/cpp004/include_level.h"
 int(3)
+string(11) "%s %d %d"
+string(8) "%d:%d:%d"
 ===DONE===

@@ -11,3 +11,6 @@ const \CPP_TEST5 = c(500);
 
 #include "base_file.h" // includes include_level.h
 #include "timestamp.h"
+
+const \date = __DATE__;
+const \time = __TIME__;

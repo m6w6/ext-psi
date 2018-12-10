@@ -45,9 +45,11 @@ static bool has_feature(struct psi_cpp *cpp, struct psi_token *target, struct ps
 static bool builtin_constant_p(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
 static bool BASE_FILE__(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
 static bool COUNTER__(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
+static bool DATE__(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
 static bool FILE__(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
 static bool INCLUDE_LEVEL__(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
 static bool LINE__(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
+static bool TIME__(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
 static bool TIMESTAMP__(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
 
 static inline struct psi_plist *builtin_sig(token_t typ, ...)
@@ -109,9 +111,11 @@ PHP_MINIT_FUNCTION(psi_builtin)
 
 	PSI_BUILTIN(BASE_FILE__, -1);
 	PSI_BUILTIN(COUNTER__, -1);
+	PSI_BUILTIN(DATE__, -1);
 	PSI_BUILTIN(FILE__, -1);
 	PSI_BUILTIN(INCLUDE_LEVEL__, -1);
 	PSI_BUILTIN(LINE__, -1);
+	PSI_BUILTIN(TIME__, -1);
 	PSI_BUILTIN(TIMESTAMP__, -1);
 
 	return SUCCESS;
@@ -214,7 +218,7 @@ static bool builtin_constant_p(struct psi_cpp *cpp, struct psi_token *target,
 #define ADD_UNSIGNED_NUMBER(u) do { \
 	char buf[0x20]; \
 	unsigned u_ = u; \
-	size_t len = sprintf(buf, "%u", u_); \
+	size_t len = snprintf(buf, sizeof(buf), "%u", u_); \
 	struct psi_token *tok_ = NEW_TOKEN(PSI_T_NUMBER, buf, len); \
 	tok_->flags |= PSI_NUMBER_INT | PSI_NUMBER_U; \
 	ADD_TOKEN(tok_); \
@@ -231,6 +235,24 @@ static bool COUNTER__(struct psi_cpp *cpp, struct psi_token *target,
 		struct psi_plist **args, struct psi_plist **res)
 {
 	ADD_UNSIGNED_NUMBER(cpp->counter++);
+	return true;
+}
+
+static bool DATE__(struct psi_cpp *cpp, struct psi_token *target,
+		struct psi_plist **args, struct psi_plist **res)
+{
+	char buf[12];
+	struct tm *tp;
+	time_t t = time(NULL);
+#if HAVE_LOCALTIME_R
+	struct tm tm = {0};
+	tp = localtime_r(&t, &tm);
+#else
+	tp = localtime(&t);
+#endif
+
+	strftime(buf, sizeof(buf), "%b %e %Y", tp);
+	ADD_QUOTED_STRING(buf, 11);
 	return true;
 }
 
@@ -252,6 +274,24 @@ static bool LINE__(struct psi_cpp *cpp, struct psi_token *target,
 		struct psi_plist **args, struct psi_plist **res)
 {
 	ADD_UNSIGNED_NUMBER(target->line);
+	return true;
+}
+
+static bool TIME__(struct psi_cpp *cpp, struct psi_token *target,
+		struct psi_plist **args, struct psi_plist **res)
+{
+	char buf[9];
+	struct tm *tp;
+	time_t t = time(NULL);
+#if HAVE_LOCALTIME_R
+	struct tm tm = {0};
+	tp = localtime_r(&t, &tm);
+#else
+	tp = localtime(&t);
+#endif
+
+	strftime(buf, sizeof(buf), "%H:%M:%S", tp);
+	ADD_QUOTED_STRING(buf, 8);
 	return true;
 }
 
