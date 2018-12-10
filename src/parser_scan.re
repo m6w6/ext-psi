@@ -218,7 +218,6 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input 
 		'CALLBACK'		{ NEWTOKEN(PSI_T_CALLBACK); goto start; }
 		'STATIC'		{ NEWTOKEN(PSI_T_STATIC); goto start; }
 		'FUNCTION'		{ NEWTOKEN(PSI_T_FUNCTION); goto start; }
-		'LIB'			{ NEWTOKEN(PSI_T_LIB); goto start; }
 		'LET'			{ NEWTOKEN(PSI_T_LET); goto start; }
 		'SET'			{ NEWTOKEN(PSI_T_SET); goto start; }
 		'PRE_ASSERT'	{ NEWTOKEN(PSI_T_PRE_ASSERT); goto start; }

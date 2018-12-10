@@ -54,13 +54,14 @@ static bool psi_cpp_pragma_once(struct psi_cpp *cpp, struct psi_cpp_macro_decl *
 static bool psi_cpp_pragma_lib(struct psi_cpp *cpp, struct psi_cpp_macro_decl *decl)
 {
 	struct psi_token *lib = NULL;
-	char *libname;
+	zend_string *libname;
 
 	if (!psi_plist_get(decl->tokens, 0, &lib)
 			|| !lib || lib->type != PSI_T_QUOTED_STRING) {
 		return false;
 	}
 
+	libname = zend_string_copy(lib->text);
 	cpp->parser->file.libnames = psi_plist_add(cpp->parser->file.libnames,
 			&libname);
 	return true;
@@ -499,7 +500,7 @@ bool psi_cpp_if(struct psi_cpp *cpp, struct psi_cpp_exp *exp)
 
 bool psi_cpp_pragma(struct psi_cpp *cpp, struct psi_cpp_macro_decl *decl)
 {
-	psi_cpp_pragma_func *fn;
+	psi_cpp_pragma_func fn;
 
 	fn = zend_hash_find_ptr(&psi_cpp_pragmas, decl->token->text);
 	if (!fn) {

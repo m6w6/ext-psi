@@ -45,7 +45,7 @@ void psi_decl_file_dtor(struct psi_decl_file *file)
 	memset(file, 0, sizeof(*file));
 }
 
-static inline bool validate_lib(struct psi_data *dst, const char *libname, void **dlopened)
+static inline bool validate_lib(struct psi_data *dst, const zend_string *libname, void **dlopened)
 {
 	char lib[PATH_MAX];
 	size_t len = PATH_MAX;
@@ -55,15 +55,15 @@ static inline bool validate_lib(struct psi_data *dst, const char *libname, void 
 		return true;
 	}
 
-	if (PATH_MAX == psi_dlname(&lib, &len, libname)) {
+	if (PATH_MAX == psi_dlname(&lib, &len, libname->val)) {
 		dst->error(dst, NULL, PSI_WARNING, "Library name too long: '%s'",
-				libname);
+				libname->val);
 		return false;
 	}
 
 	if (!(*dlopened = psi_dlopen(lib))) {
 		dst->error(dst, NULL, PSI_WARNING, "Could not open library '%s': %s",
-				libname, psi_dlerror());
+				libname->val, psi_dlerror());
 		return false;
 	}
 
@@ -73,7 +73,7 @@ static inline bool validate_lib(struct psi_data *dst, const char *libname, void 
 bool psi_decl_file_validate(struct psi_data *dst, struct psi_data *src)
 {
 	size_t i = 0;
-	char *libname;
+	zend_string *libname;
 	void *dlopened;
 
 	while (psi_plist_get(src->file.libnames, i++, &libname)) {
@@ -94,11 +94,13 @@ bool psi_decl_file_validate(struct psi_data *dst, struct psi_data *src)
 void psi_libs_free(void **dlopened) {
 	if (*dlopened) {
 		psi_dlclose(*dlopened);
+		*dlopened = NULL;
 	}
 }
 
-void psi_names_free(char **name) {
+void psi_names_free(zend_string **name) {
 	if (*name) {
-		free(*name);
+		zend_string_release(*name);
+		*name = NULL;
 	}
 }

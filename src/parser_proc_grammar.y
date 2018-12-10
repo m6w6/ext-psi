@@ -87,10 +87,6 @@ static inline void psi_parser_proc_add_impl(struct psi_parser *P, struct psi_imp
 	}
 	P->impls = psi_plist_add(P->impls, &impl);
 }
-static inline void psi_parser_proc_add_lib(struct psi_parser *P, zend_string *lib) {
-	char *libname = strdup(lib->val);
-	P->file.libnames = psi_plist_add(P->file.libnames, &libname);
-}
 
 /* end code */
 }
@@ -196,7 +192,6 @@ struct psi_parser;
 %token <struct psi_token *> IIF			"?"
 
 %token <struct psi_token *> PRAGMA
-%token <struct psi_token *> PRAGMA_ONCE
 %token <struct psi_token *> LINE
 %token <struct psi_token *> ERROR
 %token <struct psi_token *> WARNING
@@ -218,7 +213,6 @@ struct psi_parser;
 %token <struct psi_token *> UNION
 %token <struct psi_token *> ENUM
 %token <struct psi_token *> CONST
-%token <struct psi_token *> LIB
 %token <struct psi_token *> STATIC
 %token <struct psi_token *> CALLBACK
 %token <struct psi_token *> FUNCTION
@@ -288,11 +282,11 @@ struct psi_parser;
 %precedence BINARY
 %precedence UNARY
 
-%type		<struct psi_token *>				lib optional_name enum_name struct_name union_name
-%destructor	{psi_token_free(&$$);}				lib optional_name enum_name struct_name union_name
+%type		<struct psi_token *>				optional_name enum_name struct_name union_name
+%destructor	{psi_token_free(&$$);}				optional_name enum_name struct_name union_name
 
-%type		<struct psi_token *>				cpp_message_token cpp_include_token cpp_header_token cpp_no_arg_token cpp_name_arg_token cpp_exp_arg_token
-%destructor	{}									cpp_message_token cpp_include_token cpp_header_token cpp_no_arg_token cpp_name_arg_token cpp_exp_arg_token
+%type		<struct psi_token *>				cpp_message_token cpp_include_token cpp_header_token cpp_no_arg_token cpp_name_arg_token cpp_exp_arg_token cpp_macro_decl_arg_token
+%destructor	{}									cpp_message_token cpp_include_token cpp_header_token cpp_no_arg_token cpp_name_arg_token cpp_exp_arg_token cpp_macro_decl_arg_token
 
 %type		<struct psi_token *>				name_token any_noeol_token binary_op_token unary_op_token
 %destructor	{}									name_token any_noeol_token binary_op_token unary_op_token
@@ -415,9 +409,9 @@ struct psi_parser;
 
 binary_op_token: PIPE | CARET | AMPERSAND | LSHIFT | RSHIFT | PLUS | MINUS | ASTERISK | SLASH | MODULO | RCHEVR | LCHEVR | CMP_GE | CMP_LE | OR | AND | CMP_EQ | CMP_NE ;
 unary_op_token: TILDE | NOT | PLUS | MINUS ;
-name_token: NAME | FUNCTION | TEMP | FREE | SET | LET | CALLOC | CALLBACK | LIB | BOOL | STRING | MIXED | ARRAY | OBJECT | ERROR | WARNING | LINE | PRAGMA_ONCE | PRAGMA | AS | let_func_token | set_func_token;
-any_noeol_token: BOOL | CHAR | SHORT | INT | SIGNED | UNSIGNED | LONG | FLOAT | DOUBLE | STRING | MIXED | ARRAY | OBJECT | CALLABLE | VOID | ZVAL | NULL | TRUE | FALSE | NAME | NSNAME | DOLLAR_NAME | NUMBER | QUOTED_STRING | QUOTED_CHAR | EOF | EOS | LPAREN | RPAREN | COMMA | COLON | LBRACE | RBRACE | LBRACKET | RBRACKET | EQUALS | HASH | PIPE | CARET | AMPERSAND | LSHIFT | RSHIFT | PLUS | MINUS | ASTERISK | SLASH | MODULO | LCHEVR | RCHEVR | CMP_GE | CMP_LE | OR | AND | CMP_EQ | CMP_NE | TILDE | NOT | PERIOD | BACKSLASH | ELLIPSIS | ERROR | WARNING | LINE | PRAGMA | PRAGMA_ONCE | IIF | IF | IFDEF | IFNDEF | ELSE | ELIF | ENDIF | DEFINE | DEFINED | UNDEF | INCLUDE | TYPEDEF | STRUCT | UNION | ENUM | CONST | LIB | STATIC | CALLBACK | FUNCTION | LET | SET | TEMP | FREE | RETURN | PRE_ASSERT | POST_ASSERT | BOOLVAL | INTVAL | STRVAL | PATHVAL | STRLEN | FLOATVAL | ARRVAL | OBJVAL | COUNT | CALLOC | TO_BOOL | TO_INT | TO_STRING | TO_FLOAT | TO_ARRAY | TO_OBJECT | COMMENT | CPP_HEADER | CPP_PASTE | CPP_INLINE | CPP_RESTRICT | CPP_EXTENSION | CPP_ASM | SIZEOF | VOLATILE | AS;
-any_nobrace_token: BOOL | CHAR | SHORT | INT | SIGNED | UNSIGNED | LONG | FLOAT | DOUBLE | STRING | MIXED | ARRAY | OBJECT | CALLABLE | VOID | ZVAL | NULL | TRUE | FALSE | NAME | NSNAME | DOLLAR_NAME | NUMBER | QUOTED_STRING | QUOTED_CHAR | EOF | EOS | LPAREN | RPAREN | COMMA | COLON | LBRACKET | RBRACKET | EQUALS | HASH | PIPE | CARET | AMPERSAND | LSHIFT | RSHIFT | PLUS | MINUS | ASTERISK | SLASH | MODULO | LCHEVR | RCHEVR | CMP_GE | CMP_LE | OR | AND | CMP_EQ | CMP_NE | TILDE | NOT | PERIOD | BACKSLASH | ELLIPSIS | ERROR | WARNING | LINE | PRAGMA | PRAGMA_ONCE | IIF | IF | IFDEF | IFNDEF | ELSE | ELIF | ENDIF | DEFINE | DEFINED | UNDEF | INCLUDE | TYPEDEF | STRUCT | UNION | ENUM | CONST | LIB | STATIC | CALLBACK | FUNCTION | LET | SET | TEMP | FREE | RETURN | PRE_ASSERT | POST_ASSERT | BOOLVAL | INTVAL | STRVAL | PATHVAL | STRLEN | FLOATVAL | ARRVAL | OBJVAL | COUNT | CALLOC | TO_BOOL | TO_INT | TO_STRING | TO_FLOAT | TO_ARRAY | TO_OBJECT | COMMENT | CPP_HEADER | CPP_PASTE | CPP_INLINE | CPP_RESTRICT | CPP_EXTENSION | CPP_ASM | SIZEOF | VOLATILE | AS;
+name_token: NAME | FUNCTION | TEMP | FREE | SET | LET | CALLOC | CALLBACK | BOOL | STRING | MIXED | ARRAY | OBJECT | ERROR | WARNING | LINE | PRAGMA | AS | let_func_token | set_func_token;
+any_noeol_token: BOOL | CHAR | SHORT | INT | SIGNED | UNSIGNED | LONG | FLOAT | DOUBLE | STRING | MIXED | ARRAY | OBJECT | CALLABLE | VOID | ZVAL | NULL | TRUE | FALSE | NAME | NSNAME | DOLLAR_NAME | NUMBER | QUOTED_STRING | QUOTED_CHAR | EOF | EOS | LPAREN | RPAREN | COMMA | COLON | LBRACE | RBRACE | LBRACKET | RBRACKET | EQUALS | HASH | PIPE | CARET | AMPERSAND | LSHIFT | RSHIFT | PLUS | MINUS | ASTERISK | SLASH | MODULO | LCHEVR | RCHEVR | CMP_GE | CMP_LE | OR | AND | CMP_EQ | CMP_NE | TILDE | NOT | PERIOD | BACKSLASH | ELLIPSIS | ERROR | WARNING | LINE | PRAGMA | IIF | IF | IFDEF | IFNDEF | ELSE | ELIF | ENDIF | DEFINE | DEFINED | UNDEF | INCLUDE | TYPEDEF | STRUCT | UNION | ENUM | CONST | STATIC | CALLBACK | FUNCTION | LET | SET | TEMP | FREE | RETURN | PRE_ASSERT | POST_ASSERT | BOOLVAL | INTVAL | STRVAL | PATHVAL | STRLEN | FLOATVAL | ARRVAL | OBJVAL | COUNT | CALLOC | TO_BOOL | TO_INT | TO_STRING | TO_FLOAT | TO_ARRAY | TO_OBJECT | COMMENT | CPP_HEADER | CPP_PASTE | CPP_INLINE | CPP_RESTRICT | CPP_EXTENSION | CPP_ASM | SIZEOF | VOLATILE | AS;
+any_nobrace_token: BOOL | CHAR | SHORT | INT | SIGNED | UNSIGNED | LONG | FLOAT | DOUBLE | STRING | MIXED | ARRAY | OBJECT | CALLABLE | VOID | ZVAL | NULL | TRUE | FALSE | NAME | NSNAME | DOLLAR_NAME | NUMBER | QUOTED_STRING | QUOTED_CHAR | EOF | EOS | LPAREN | RPAREN | COMMA | COLON | LBRACKET | RBRACKET | EQUALS | HASH | PIPE | CARET | AMPERSAND | LSHIFT | RSHIFT | PLUS | MINUS | ASTERISK | SLASH | MODULO | LCHEVR | RCHEVR | CMP_GE | CMP_LE | OR | AND | CMP_EQ | CMP_NE | TILDE | NOT | PERIOD | BACKSLASH | ELLIPSIS | ERROR | WARNING | LINE | PRAGMA | IIF | IF | IFDEF | IFNDEF | ELSE | ELIF | ENDIF | DEFINE | DEFINED | UNDEF | INCLUDE | TYPEDEF | STRUCT | UNION | ENUM | CONST | STATIC | CALLBACK | FUNCTION | LET | SET | TEMP | FREE | RETURN | PRE_ASSERT | POST_ASSERT | BOOLVAL | INTVAL | STRVAL | PATHVAL | STRLEN | FLOATVAL | ARRVAL | OBJVAL | COUNT | CALLOC | TO_BOOL | TO_INT | TO_STRING | TO_FLOAT | TO_ARRAY | TO_OBJECT | COMMENT | CPP_HEADER | CPP_PASTE | CPP_INLINE | CPP_RESTRICT | CPP_EXTENSION | CPP_ASM | SIZEOF | VOLATILE | AS;
 
 
 file:
@@ -437,9 +431,6 @@ block:
 		psi_cpp_exp_exec($cpp, P->preproc, PSI_DATA(P));
 		psi_cpp_exp_free(&$cpp);
 	}
-}
-|	lib {
-	psi_parser_proc_add_lib(P, $lib->text);
 }
 |	constant {
 	psi_parser_proc_add_const(P, $constant);
@@ -470,15 +461,6 @@ block:
 }
 |	impl {
 	psi_parser_proc_add_impl(P, $impl);
-}
-;
-
-lib:
-	LIB QUOTED_STRING EOS {
-	$lib = $QUOTED_STRING;
-}
-|	HASH PRAGMA LIB QUOTED_STRING EOS {
-	$lib = $QUOTED_STRING;
 }
 ;
 
@@ -528,17 +510,13 @@ cpp_exp[exp]:
 	$exp = psi_cpp_exp_init($cpp_name_arg_token->type, psi_token_copy($name_token));
 	$exp->token = psi_token_copy($cpp_name_arg_token);
 }
-|	DEFINE cpp_macro_decl {
-	$exp = psi_cpp_exp_init($DEFINE->type, $cpp_macro_decl);
-	$exp->token = psi_token_copy($DEFINE);
+|	cpp_macro_decl_arg_token cpp_macro_decl {
+	$exp = psi_cpp_exp_init($cpp_macro_decl_arg_token->type, $cpp_macro_decl);
+	$exp->token = psi_token_copy($cpp_macro_decl_arg_token);
 }
 |	cpp_exp_arg_token cpp_macro_exp {
 	$exp = psi_cpp_exp_init($cpp_exp_arg_token->type, $cpp_macro_exp);
 	$exp->token = psi_token_copy($cpp_exp_arg_token);
-}
-| 	PRAGMA_ONCE {
-	$exp = psi_cpp_exp_init($PRAGMA_ONCE->type, NULL);
-	$exp->token = psi_token_copy($PRAGMA_ONCE);
 }
 |	cpp_ignored_token cpp_macro_decl_tokens[tokens] {
 	psi_plist_free($tokens);
@@ -546,9 +524,13 @@ cpp_exp[exp]:
 }
 ;
 
+cpp_macro_decl_arg_token:
+	DEFINE
+|	PRAGMA
+;
+
 cpp_ignored_token:
 	LINE
-|	PRAGMA
 ;
 
 cpp_message_token:

@@ -38,6 +38,6 @@ void psi_decl_file_dtor(struct psi_decl_file *file);
 bool psi_decl_file_validate(struct psi_data *dst, struct psi_data *src);
 
 void psi_libs_free(void **dlopened);
-void psi_names_free(char **name);
+void psi_names_free(zend_string **name);
 
 #endif

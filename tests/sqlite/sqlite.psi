@@ -1,4 +1,4 @@
-#pragma lib "sqlite3";
+#pragma lib "sqlite3"
 
 #define NDEBUG 1
 

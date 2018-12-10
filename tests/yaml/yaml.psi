@@ -1,4 +1,4 @@
-#pragma lib "yaml";
-#pragma lib "crypt";
+#pragma lib "yaml"
+#pragma lib "crypt"
 
 #include <yaml.h>

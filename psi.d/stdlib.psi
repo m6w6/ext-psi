@@ -1,5 +1,5 @@
 #ifdef __linux__
-#pragma lib "crypt";
+#pragma lib "crypt"
 #endif
 
 #include <stdlib.h>

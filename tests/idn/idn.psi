@@ -1,10 +1,10 @@
 #ifdef __linux__
-#pragma lib "crypt";
+#pragma lib "crypt"
 #endif
 
 #include <stdlib.h>
 
-#pragma lib "idn";
+#pragma lib "idn"
 #include <idna.h>
 
 function idn\utf8_to_ascii(string $host, string &$result, int $flags = 0) : int {

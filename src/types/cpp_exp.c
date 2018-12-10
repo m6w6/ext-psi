@@ -96,7 +96,6 @@ void psi_cpp_exp_free(struct psi_cpp_exp **exp_ptr)
 			break;
 		case PSI_T_ENDIF:
 		case PSI_T_ELSE:
-		case PSI_T_PRAGMA_ONCE:
 			break;
 		default:
 			assert(0);
@@ -141,7 +140,6 @@ void psi_cpp_exp_dump(struct psi_dump *dump, struct psi_cpp_exp *exp)
 		break;
 	case PSI_T_ENDIF:
 	case PSI_T_ELSE:
-	case PSI_T_PRAGMA_ONCE:
 		break;
 	default:
 		assert(0);
@@ -328,11 +326,6 @@ void psi_cpp_exp_exec(struct psi_cpp_exp *exp, struct psi_cpp *cpp, struct psi_d
 				D->error(D, exp->token, PSI_WARNING, "Failed to include once %s: %s",
 						exp->data.tok->text->val, strerror(errno));
 			}
-		}
-		break;
-	case PSI_T_PRAGMA_ONCE:
-		if (!cpp->skip) {
-			zend_hash_add_empty_element(&cpp->once, exp->token->file);
 		}
 		break;
 	default:

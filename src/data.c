@@ -215,13 +215,13 @@ void psi_data_dtor(struct psi_data *data)
 void psi_data_dump(struct psi_dump *dump, struct psi_data *D)
 {
 	size_t i = 0;
-	char *libname;
+	zend_string *libname;
 
 	if (D->file.filename) {
 		PSI_DUMP(dump, "// filename=%s (%u errors)\n", D->file.filename->val, D->errors);
 	}
 	while (psi_plist_get(D->file.libnames, i++, &libname)) {
-		PSI_DUMP(dump, "lib \"%s\";\n", libname);
+		PSI_DUMP(dump, "#pragma lib \"%s\"\n", libname->val);
 	}
 	if (psi_plist_count(D->types)) {
 		size_t i = 0;

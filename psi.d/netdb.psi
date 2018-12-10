@@ -1,5 +1,5 @@
 #ifdef __linux__
-#pragma lib "anl";
+# pragma lib "anl"
 #endif
 
 #include <netdb.h>

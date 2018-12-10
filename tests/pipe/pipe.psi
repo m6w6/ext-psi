@@ -1,4 +1,4 @@
-#pragma lib "crypt";
+#pragma lib "crypt"
 
 #include <unistd.h>
 

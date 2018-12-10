@@ -1,6 +1,6 @@
 #include <fcntl.h>
 
-#pragma lib "gdbm_compat";
+#pragma lib "gdbm_compat"
 #include <ndbm.h>
 
 
