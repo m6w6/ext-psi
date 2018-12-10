@@ -26,7 +26,7 @@ int(5005)
 string(%d) "%s/tests/parser/cpp004/builtins.psi"
 int(2)
 string(24) "%s %s %w%d %d:%d:%d %d"
-string(54) "/%s/tests/parser/cpp004/include_level.h"
+string(%d) "/%s/tests/parser/cpp004/include_level.h"
 int(3)
 string(11) "%s %d %d"
 string(8) "%d:%d:%d"
