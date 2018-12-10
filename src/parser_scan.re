@@ -66,9 +66,8 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input 
 	struct psi_plist *tokens;
 	struct psi_token *token;
 	const char *tok, *cur, *lim, *mrk, *eol, *ctxmrk;
-	unsigned parens, lines = 1;
+	unsigned char_width, parens, lines = 1;
 	bool escaped;
-	token_t char_width;
 
 	PSI_DEBUG_PRINT(P, "PSI: scanning %s\n", I->file->val);
 
