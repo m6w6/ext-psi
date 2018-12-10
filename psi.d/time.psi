@@ -1,5 +1,5 @@
 #ifdef __linux__ /* old, anyway */
-lib "rt";
+#pragma lib "rt";
 #endif
 
 #include <sys/time.h>

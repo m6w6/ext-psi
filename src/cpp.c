@@ -41,7 +41,30 @@
 #define PSI_CPP_PREDEF
 #include "php_psi_predef.h"
 
-HashTable psi_cpp_defaults;
+static HashTable psi_cpp_defaults;
+static HashTable psi_cpp_pragmas;
+
+typedef bool (*psi_cpp_pragma_func)(struct psi_cpp *cpp, struct psi_cpp_macro_decl *decl);
+
+static bool psi_cpp_pragma_once(struct psi_cpp *cpp, struct psi_cpp_macro_decl *decl)
+{
+	return NULL != zend_hash_add_empty_element(&cpp->once, decl->token->file);
+}
+
+static bool psi_cpp_pragma_lib(struct psi_cpp *cpp, struct psi_cpp_macro_decl *decl)
+{
+	struct psi_token *lib = NULL;
+	char *libname;
+
+	if (!psi_plist_get(decl->tokens, 0, &lib)
+			|| !lib || lib->type != PSI_T_QUOTED_STRING) {
+		return false;
+	}
+
+	cpp->parser->file.libnames = psi_plist_add(cpp->parser->file.libnames,
+			&libname);
+	return true;
+}
 
 PHP_MINIT_FUNCTION(psi_cpp);
 PHP_MINIT_FUNCTION(psi_cpp)
@@ -72,6 +95,12 @@ PHP_MINIT_FUNCTION(psi_cpp)
 	zend_hash_copy(&psi_cpp_defaults, &parser.preproc->defs, NULL);
 
 	psi_parser_dtor(&parser);
+
+#define PSI_CPP_PRAGMA(name) \
+	zend_hash_str_add_ptr(&psi_cpp_pragmas, #name, strlen(#name), psi_cpp_pragma_ ## name)
+	zend_hash_init(&psi_cpp_pragmas, 0, NULL, NULL, 1);
+	PSI_CPP_PRAGMA(once);
+	PSI_CPP_PRAGMA(lib);
 
 	return SUCCESS;
 }
@@ -466,6 +495,18 @@ bool psi_cpp_if(struct psi_cpp *cpp, struct psi_cpp_exp *exp)
 		return false;
 	}
 	return true;
+}
+
+bool psi_cpp_pragma(struct psi_cpp *cpp, struct psi_cpp_macro_decl *decl)
+{
+	psi_cpp_pragma_func *fn;
+
+	fn = zend_hash_find_ptr(&psi_cpp_pragmas, decl->token->text);
+	if (!fn) {
+		return false;
+	}
+
+	return fn(cpp, decl);
 }
 
 bool psi_cpp_include(struct psi_cpp *cpp, const struct psi_token *file, unsigned flags)

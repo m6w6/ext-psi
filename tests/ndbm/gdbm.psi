@@ -1,2 +1,2 @@
-lib "gdbm";
+#pragma lib "gdbm";
 #include <gdbm.h>

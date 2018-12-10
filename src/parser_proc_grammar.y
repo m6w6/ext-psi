@@ -87,6 +87,10 @@ static inline void psi_parser_proc_add_impl(struct psi_parser *P, struct psi_imp
 	}
 	P->impls = psi_plist_add(P->impls, &impl);
 }
+static inline void psi_parser_proc_add_lib(struct psi_parser *P, zend_string *lib) {
+	char *libname = strdup(lib->val);
+	P->file.libnames = psi_plist_add(P->file.libnames, &libname);
+}
 
 /* end code */
 }
@@ -435,8 +439,7 @@ block:
 	}
 }
 |	lib {
-	char *libname = strdup($lib->text->val);
-	P->file.libnames = psi_plist_add(P->file.libnames, &libname);
+	psi_parser_proc_add_lib(P, $lib->text);
 }
 |	constant {
 	psi_parser_proc_add_const(P, $constant);
@@ -472,6 +475,9 @@ block:
 
 lib:
 	LIB QUOTED_STRING EOS {
+	$lib = $QUOTED_STRING;
+}
+|	HASH PRAGMA LIB QUOTED_STRING EOS {
 	$lib = $QUOTED_STRING;
 }
 ;

@@ -51,6 +51,7 @@ struct psi_cpp_exp *psi_cpp_exp_init(token_t type, void *data)
 		exp->data.tok = data;
 		break;
 	case PSI_T_DEFINE:
+	case PSI_T_PRAGMA:
 		exp->data.decl = data;
 		break;
 	case PSI_T_IF:
@@ -59,7 +60,6 @@ struct psi_cpp_exp *psi_cpp_exp_init(token_t type, void *data)
 		break;
 	case PSI_T_ENDIF:
 	case PSI_T_ELSE:
-	case PSI_T_PRAGMA_ONCE:
 		break;
 	default:
 		assert(0);
@@ -87,6 +87,7 @@ void psi_cpp_exp_free(struct psi_cpp_exp **exp_ptr)
 			psi_token_free(&exp->data.tok);
 			break;
 		case PSI_T_DEFINE:
+		case PSI_T_PRAGMA:
 			psi_cpp_macro_decl_free(&exp->data.decl);
 			break;
 		case PSI_T_IF:
@@ -131,6 +132,7 @@ void psi_cpp_exp_dump(struct psi_dump *dump, struct psi_cpp_exp *exp)
 		}
 		break;
 	case PSI_T_DEFINE:
+	case PSI_T_PRAGMA:
 		psi_cpp_macro_decl_dump(dump, exp->data.decl);
 		break;
 	case PSI_T_IF:
@@ -216,6 +218,11 @@ void psi_cpp_exp_exec(struct psi_cpp_exp *exp, struct psi_cpp *cpp, struct psi_d
 			psi_cpp_define(cpp, exp->data.decl);
 			/* FIXME: copy */
 			exp->data.decl = NULL;
+		}
+		break;
+	case PSI_T_PRAGMA:
+		if (!cpp->skip) {
+			psi_cpp_pragma(cpp, exp->data.decl);
 		}
 		break;
 	case PSI_T_IFDEF:

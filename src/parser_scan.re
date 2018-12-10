@@ -172,7 +172,6 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input 
 		"..."			{ NEWTOKEN(PSI_T_ELLIPSIS); goto start; }
 		"?"				{ NEWTOKEN(PSI_T_IIF); goto start; }
 		"pragma"		{ NEWTOKEN(PSI_T_PRAGMA); goto start; }
-		"pragma" W+ "once"	{ NEWTOKEN(PSI_T_PRAGMA_ONCE); goto start; }
 		"__"? "inline"	{ NEWTOKEN(PSI_T_CPP_INLINE); goto start; }
 		"__restrict"	{ NEWTOKEN(PSI_T_CPP_RESTRICT); goto start; }
 		"__extension__"	{ NEWTOKEN(PSI_T_CPP_EXTENSION); goto start; }
