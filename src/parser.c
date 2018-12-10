@@ -102,7 +102,7 @@ struct psi_parser_input *psi_parser_open_file(struct psi_parser *P,
 
 	memset(fb->buffer + sb.st_size, 0, psi_parser_maxfill());
 
-	fb->lmod = sb.st_mtim.tv_sec;
+	fb->lmod = sb.st_mtime;
 	fb->length = sb.st_size;
 	fb->file = psi_string_init_interned(filename, strlen(filename), 1);
 
