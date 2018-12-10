@@ -44,13 +44,13 @@ size_t psi_parser_maxfill(void) {
 
 #define NEWLINE() \
 	eol = cur; \
-	++I->lines
+	++lines
 
 #define NEWTOKEN(t) do { \
 	if (t == PSI_T_COMMENT || t == PSI_T_WHITESPACE) { \
-		token = psi_token_init(t, "", 0, tok - eol + 1, I->lines, I->file); \
+		token = psi_token_init(t, "", 0, tok - eol + 1, lines, I->file); \
 	} else { \
-		token = psi_token_init(t, tok, cur - tok, tok - eol + 1, I->lines, I->file); \
+		token = psi_token_init(t, tok, cur - tok, tok - eol + 1, lines, I->file); \
 	} \
 	tokens = psi_plist_add(tokens, &token); \
 	PSI_DEBUG_LOCK(P, \
@@ -66,7 +66,7 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input 
 	struct psi_plist *tokens;
 	struct psi_token *token;
 	const char *tok, *cur, *lim, *mrk, *eol, *ctxmrk;
-	unsigned parens;
+	unsigned parens, lines = 1;
 	bool escaped;
 	token_t char_width;
 
@@ -74,7 +74,6 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input 
 
 	tok = mrk = eol = cur = I->buffer;
 	lim = I->buffer + I->length + YYMAXFILL;
-	I->lines = 1;
 	tokens = psi_plist_init((psi_plist_dtor) psi_token_free);
 
 	start: ;
@@ -121,8 +120,8 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input 
 		INT_CONST / ('llu' | 'ull')	{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_INT | PSI_NUMBER_ULL; cur += 3; goto start; }
 
 		FLT_CONST					{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_FLT; goto start; }
-		FLT_CONST / 'f'				{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_FLT | PSI_NUMBER_F; cur += 1; goto start; }
-		FLT_CONST / 'l'				{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_FLT | PSI_NUMBER_L; cur += 1; goto start; }
+		FLT_CONST	/ 'f'			{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_FLT | PSI_NUMBER_F; cur += 1; goto start; }
+		FLT_CONST	/ 'l'			{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_FLT | PSI_NUMBER_L; cur += 1; goto start; }
 		FLT_CONST	/ 'df'			{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_FLT | PSI_NUMBER_DF; cur += 2; goto start; }
 		FLT_CONST	/ 'dd'			{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_FLT | PSI_NUMBER_DD; cur += 2; goto start; }
 		FLT_CONST	/ 'dl'			{ NEWTOKEN(PSI_T_NUMBER); token->flags = PSI_NUMBER_FLT | PSI_NUMBER_DL; cur += 2; goto start; }
@@ -132,7 +131,7 @@ struct psi_plist *psi_parser_scan(struct psi_parser *P, struct psi_parser_input 
 		"u8" / "\""		{ char_width = 1; }
 		"u" / ['"]		{ char_width = 2; }
 		"U" / ['"]		{ char_width = 4; }
-		"L" / ['"]		{ char_width = sizeof(wchar_t)/8; }
+		"L" / ['"]		{ char_width = sizeof(wchar_t); }
 
 		"/*"			{ goto comment; }
 		"//"			{ goto comment_sl; }

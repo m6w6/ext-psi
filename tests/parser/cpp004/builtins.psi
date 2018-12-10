@@ -8,3 +8,6 @@ const \CPP_TEST2 = __COUNTER__;
 const \CPP_TEST3 = c(300);
 const \CPP_TEST4 = c(400);
 const \CPP_TEST5 = c(500);
+
+#include "base_file.h" // includes include_level.h
+#include "timestamp.h"

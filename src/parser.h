@@ -38,17 +38,18 @@ struct psi_parser;
 
 struct psi_cpp;
 
+struct psi_parser_input {
+	size_t length;
+	zend_string *file;
+	time_t lmod;
+	char buffer[1];
+};
+
 struct psi_parser {
 	PSI_DATA_MEMBERS;
 
 	struct psi_cpp *preproc;
-};
-
-struct psi_parser_input {
-	size_t length;
-	zend_string *file;
-	unsigned lines;
-	char buffer[1];
+	struct psi_parser_input *input;
 };
 
 static inline void psi_parser_input_free(struct psi_parser_input **I) {

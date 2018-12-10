@@ -49,6 +49,7 @@ struct psi_cpp {
 	unsigned seen;
 	unsigned expanded;
 	unsigned counter;
+	unsigned include_level;
 	bool do_cpp;
 };
 

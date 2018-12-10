@@ -504,7 +504,10 @@ bool psi_cpp_include(struct psi_cpp *cpp, const struct psi_token *file, unsigned
 		return false;
 	}
 
+	++cpp->include_level;
 	parsed = psi_cpp_process(cpp, &tokens, NULL);
+	--cpp->include_level;
+
 	if (!parsed) {
 		psi_plist_free(tokens);
 		return false;

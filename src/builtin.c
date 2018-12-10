@@ -43,7 +43,10 @@ static bool has_include(struct psi_cpp *cpp, struct psi_token *target, struct ps
 static bool has_include_next(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
 static bool has_feature(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
 static bool builtin_constant_p(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
+static bool BASE_FILE__(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
 static bool COUNTER__(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
+static bool INCLUDE_LEVEL__(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
+static bool TIMESTAMP__(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
 
 static inline struct psi_plist *builtin_sig(token_t typ, ...)
 {
@@ -102,7 +105,10 @@ PHP_MINIT_FUNCTION(psi_builtin)
 	PSI_BUILTIN(has_feature, PSI_T_NAME);
 	PSI_BUILTIN(builtin_constant_p, PSI_T_NAME);
 
+	PSI_BUILTIN(BASE_FILE__, -1);
 	PSI_BUILTIN(COUNTER__, -1);
+	PSI_BUILTIN(INCLUDE_LEVEL__, -1);
+	PSI_BUILTIN(TIMESTAMP__, -1);
 
 	return SUCCESS;
 }
@@ -181,19 +187,72 @@ static bool builtin_constant_p(struct psi_cpp *cpp, struct psi_token *target,
 	return false;
 }
 
+#define NEW_TOKEN(typ, str, len) \
+	psi_token_init((typ), (str), (len), (target)->col, (target)->line, (target)->file)
+
+#define ADD_TOKEN(tok) do { \
+	struct psi_token *tok__ = tok; \
+	if (!*res) { \
+		*res = psi_plist_init((psi_plist_dtor) psi_token_free); \
+	} \
+	*res = psi_plist_add(*res, &tok__); \
+} while (0)
+
+#define ADD_QUOTED_STRING(buf, len) do { \
+	ADD_TOKEN(NEW_TOKEN(PSI_T_QUOTED_STRING, buf, len)); \
+} while(0)
+
+#define ADD_QUOTED_ZSTRING(zs) do { \
+	zend_string *zs_ = zs; \
+	ADD_QUOTED_STRING(zs_->val, zs_->len); \
+} while (0)
+
+#define ADD_UNSIGNED_NUMBER(u) do { \
+	char buf[0x20]; \
+	unsigned u_ = u; \
+	size_t len = sprintf(buf, "%u", u_); \
+	struct psi_token *tok_ = NEW_TOKEN(PSI_T_NUMBER, buf, len); \
+	tok_->flags |= PSI_NUMBER_INT | PSI_NUMBER_U; \
+	ADD_TOKEN(tok_); \
+} while (0)
+
+static bool BASE_FILE__(struct psi_cpp *cpp, struct psi_token *target,
+		struct psi_plist **args, struct psi_plist **res)
+{
+	ADD_QUOTED_ZSTRING(cpp->parser->input->file);
+	return true;
+}
+
 static bool COUNTER__(struct psi_cpp *cpp, struct psi_token *target,
 		struct psi_plist **args, struct psi_plist **res)
 {
-	struct psi_token *tok;
-	char buf[0x20];
-	size_t len = sprintf(buf, "%u", cpp->counter++);
-
-	tok = psi_token_init(PSI_T_NUMBER, buf, len, target->col, target->line, target->file);
-	*res = psi_plist_init((psi_plist_dtor) psi_token_free);
-	*res = psi_plist_add(*res, &tok);
-
+	ADD_UNSIGNED_NUMBER(cpp->counter++);
 	return true;
 }
+
+static bool INCLUDE_LEVEL__(struct psi_cpp *cpp, struct psi_token *target,
+		struct psi_plist **args, struct psi_plist **res)
+{
+	ADD_UNSIGNED_NUMBER(cpp->include_level);
+	return true;
+}
+
+static bool TIMESTAMP__(struct psi_cpp *cpp, struct psi_token *target,
+		struct psi_plist **args, struct psi_plist **res)
+{
+	char *str;
+#ifdef HAVE_CTIME_R
+	char buf[26];
+	str = ctime_r(&cpp->parser->input->lmod, buf);
+#else
+	str = ctime(&cpp->parser->input->lmod);
+#endif
+
+	/* kill EOL */
+	ADD_QUOTED_STRING(str, 24);
+	return true;
+}
+
 
 #ifdef __APPLE__
 #include <libkern/OSByteOrder.h>

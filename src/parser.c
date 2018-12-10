@@ -32,6 +32,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <stdarg.h>
+#include <time.h>
 
 #include <Zend/zend_smart_str.h>
 
@@ -101,6 +102,7 @@ struct psi_parser_input *psi_parser_open_file(struct psi_parser *P,
 
 	memset(fb->buffer + sb.st_size, 0, psi_parser_maxfill());
 
+	fb->lmod = sb.st_mtim.tv_sec;
 	fb->length = sb.st_size;
 	fb->file = psi_string_init_interned(filename, strlen(filename), 1);
 
@@ -122,6 +124,7 @@ struct psi_parser_input *psi_parser_open_string(struct psi_parser *P,
 	memcpy(sb->buffer, string, length);
 	memset(sb->buffer + length, 0, psi_parser_maxfill());
 
+	sb->lmod = time(NULL);
 	sb->length = length;
 	sb->file = psi_string_init_interned("<stdin>", strlen("<stdin>"), 1);
 
@@ -270,16 +273,21 @@ bool psi_parser_parse(struct psi_parser *P, struct psi_parser_input *I)
 	struct psi_plist *scanned, *preproc;
 	size_t processed = 0;
 
+	P->input = I;
+
 	if (!(scanned = psi_parser_scan(P, I))) {
+		P->input = NULL;
 		return false;
 	}
 
 	if (!(preproc = psi_parser_preprocess(P, &scanned))) {
+		P->input = NULL;
 		psi_plist_free(scanned);
 		return false;
 	}
 
 	if (!psi_parser_process(P, preproc, &processed)) {
+		P->input = NULL;
 		psi_plist_free(preproc);
 		return false;
 	}
@@ -287,6 +295,7 @@ bool psi_parser_parse(struct psi_parser *P, struct psi_parser_input *I)
 	psi_parser_postprocess(P);
 
 	psi_plist_free(preproc);
+	P->input = NULL;
 	return true;
 }
 
