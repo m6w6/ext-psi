@@ -45,7 +45,9 @@ static bool has_feature(struct psi_cpp *cpp, struct psi_token *target, struct ps
 static bool builtin_constant_p(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
 static bool BASE_FILE__(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
 static bool COUNTER__(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
+static bool FILE__(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
 static bool INCLUDE_LEVEL__(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
+static bool LINE__(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
 static bool TIMESTAMP__(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
 
 static inline struct psi_plist *builtin_sig(token_t typ, ...)
@@ -107,7 +109,9 @@ PHP_MINIT_FUNCTION(psi_builtin)
 
 	PSI_BUILTIN(BASE_FILE__, -1);
 	PSI_BUILTIN(COUNTER__, -1);
+	PSI_BUILTIN(FILE__, -1);
 	PSI_BUILTIN(INCLUDE_LEVEL__, -1);
+	PSI_BUILTIN(LINE__, -1);
 	PSI_BUILTIN(TIMESTAMP__, -1);
 
 	return SUCCESS;
@@ -230,10 +234,24 @@ static bool COUNTER__(struct psi_cpp *cpp, struct psi_token *target,
 	return true;
 }
 
+static bool FILE__(struct psi_cpp *cpp, struct psi_token *target,
+		struct psi_plist **args, struct psi_plist **res)
+{
+	ADD_QUOTED_ZSTRING(target->file);
+	return true;
+}
+
 static bool INCLUDE_LEVEL__(struct psi_cpp *cpp, struct psi_token *target,
 		struct psi_plist **args, struct psi_plist **res)
 {
 	ADD_UNSIGNED_NUMBER(cpp->include_level);
+	return true;
+}
+
+static bool LINE__(struct psi_cpp *cpp, struct psi_token *target,
+		struct psi_plist **args, struct psi_plist **res)
+{
+	ADD_UNSIGNED_NUMBER(target->line);
 	return true;
 }
 
