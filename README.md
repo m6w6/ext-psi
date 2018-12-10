@@ -24,8 +24,11 @@ The acronym PSI may be read as:
 > **WARNING:**  
 > This is heavy WIP. Installation only works from a source checkout 
 > with php-src@master on x86_64-linux yet.
+> Sort of works on x64_64-darwin, too, roughly.
 
 ### PECL
+
+> Not implemented yet.
 
 This extension is distributed through [PECL](http://pecl.php.net) and can be
 installed with [PEAR](http://pear.php.net)'s pecl command:
@@ -33,6 +36,8 @@ installed with [PEAR](http://pear.php.net)'s pecl command:
 	pecl install psi
 
 ### PHARext
+
+> Not implemented yet.
 
 Watch out for [PECL replicates](https://replicator.pharext.org?psi)
 and [pharext](https://github.com/pharext) packages attached to
@@ -93,111 +98,25 @@ A comma separated list of C variable declarations to ignore.
 
 ## PSI files
 
-### CPP
+PSI files are augmented C header files. So, everything usually found in C
+headers including comments, preprocessor directives, typedefs, structs, 
+unions, enums, function and variable declarations should work.
 
-* conditional parsing
-* including headers
-
-```c
-#include <string.h>
-```
-
-### Comments
-
-* C style multi line comments
-* C++ style single line comments
+That means, that you can just include C headers in the usual way:
 
 ```c
-// this is a one line comment
-/* followed
-   by a multi
-   line comment
-*/
+#include <stdlib.h>
 ```
 
-### Typedefs
+### Dynamic Libraries
+
+PSI needs to know which library it should `dlopen` unless the declared functions
+are provided by the standard C library. Therefore the PSI preprocessor
+understands a special pragma:
 
 ```c
-typedef unsigned char xmlChar;
+#pragma lib "crypt"
 ```
-
-They follow the basic C-style `typedef` syntax.
-
-```c
-typedef struct str {
-    char *p;
-    size_t l;
-} str_t;
-```
-You can also `typedef` unions and enums that way.
-
-### Structs
-
-The following example results in exactly the same interpretation as the previous:
-
-```c
-typedef struct str str_t;
-struct str {
-    char *p;
-    size_t l;
-}
-```
-
-A struct will have the size of all its elements plus padding combined and an
-alignment equal to that of the largest element's alignment.
-
-### Enums
-
-Enums are considered to be of type `int`.
-
-```c
-enum STATUS {
- FAILURE = -1,
- SUCCESS
-}
-```
-
-Enums will be registered as userland constants with the following pattern:
-
-* `psi\STATUS\FAILURE` with value -1
-* `psi\STATUS\SUCCESS` with value 0
-
-### Unions
-
-```c
-union anyval {
-    char c;
-    short s;
-    int i;
-    long l;
-    float f;
-    double d;
-    str_t str;
-}
-```
-
-Unions will have the size and alignment of the largest element they contain.
-
-### Lib
-
-```c
-lib "awesome";
-```
-
-These statements define what library should be `dlopen()`-ed to look up symbols from declarations.
-When a `lib` statement is omitted, stdlib is assumed.
-
-### Declarations
-
-Declarations provide all information needed to make a foreign function call.
-
-```c
-extern char *strerror(int errnum);
-```
-
-You may specify a non-standard calling convention in place of `extern`, where `default` and `cdecl` have the same meaning as `extern`.
-
-Additionally recognized calling conventions include: `stdcall` and `fastcall`.
 
 ### Constants
 
@@ -206,7 +125,10 @@ const int num\ZERO = 0;
 const string pwd\TOKEN = "4WlOjXGL";
 ```
 
-Constants must have a namespaced identifiers and are registered as userland constants.
+Constants must have namespaced identifiers and are registered as userland constants.
+
+C enums and preprocessor macros with numerical or string expressions are
+automatically discovered and registered as constants.
 
 ### Implementations
 
@@ -215,38 +137,25 @@ Implementations are the userland visible interfaces to the foreign function inte
 ```php
 function str\error(int $num) : string {
     let errnum = intval($num);
-    return to_string(strerror);
+    return strerror(errnum) as to_string(strerror);
 }
 ```
 
-Each implementation refers to exactly one declared foreign function referenced in its `return` statement. Each declaration, on the other hand, may have any number of implementations.
+Each implementation refers to exactly one declared foreign function referenced in its `return` statement. Each native function, on the other hand, may have any number of implementations.
 
 ## Complete example
 
 ```c
-// all declarations in this file should be looked up in libidn
-lib "idn";
+#ifdef __linux__
+/* needed for setkey() in stdlib.h */
+# pragma lib "crypt"
+#endif
 
-// IDNA errors
-const int \IDNA_SUCCESS = 0;
-const int \IDNA_STRINGPREP_ERROR = 1;
-const int \IDNA_PUNYCODE_ERROR = 2;
-const int \IDNA_CONTAINS_NON_LDH = 3;
-const int \IDNA_CONTAINS_LDH = 3;
-const int \IDNA_CONTAINS_MINUS = 4;
-const int \IDNA_INVALID_LENGTH = 5;
-const int \IDNA_NO_ACE_PREFIX = 6;
-const int \IDNA_ROUNDTRIP_VERIFY_ERROR = 7;
-const int \IDNA_CONTAINS_ACE_PREFIX = 8;
-const int \IDNA_ICONV_ERROR = 9;
-const int \IDNA_MALLOC_ERROR = 201;
-const int \IDNA_DLOPEN_ERROR = 202;
-// IDNA flags
-const int \IDNA_ALLOW_UNASSIGNED = 1;
-const int \IDNA_USE_STD3_ASCII_RULES = 2;
-
-// nothing special about the declaration here
-default int idna_to_ascii_8z(char *host, char **buffer, int flags);
+/* for free() */
+#include <stdlib.h>
+ 
+#pragma lib "idn"
+#include <idna.h>
 
 function idn\utf8_to_ascii(string $host, string &$result, int $flags = 0) : int {
     // there must be a `let` statement for each
@@ -263,9 +172,10 @@ function idn\utf8_to_ascii(string $host, string &$result, int $flags = 0) : int 
 
 	// the function to call is referenced in
 	// the return statement, along with the
-	// neccessary cast how to interpred the
+	// necessary cast how to interpret the
 	// returned native value
-	return to_int(idna_to_ascii_8z);
+	return idna_to_ascii_8z(host, buffer, flags) 
+	           as to_int(idna_to_ascii_8z);
 
 	// by-ref vars might receive output values
 	// through `set` statments, which also
@@ -282,7 +192,6 @@ function idn\utf8_to_ascii(string $host, string &$result, int $flags = 0) : int 
 	// in our `free` statement for brevity
 }
 
-default char *idna_strerror(int rc);
 function idn\strerror(int $rc) : string {
 	return to_string(idna_strerror);
 	let rc = intval($rc);
@@ -308,13 +217,6 @@ Success
 <>
 Non-digit/letter/hyphen in input
 ```
-
-## ChangeLog
-
-A comprehensive list of changes can be obtained from the
-[PECL website](https://pecl.php.net/package-changelog.php?package=psi).
-
-Known issues are listed in [BUGS](./BUGS) and future ideas can be found in [TODO](./TODO).
 
 ## License
 
