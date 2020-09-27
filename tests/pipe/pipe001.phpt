@@ -1,9 +1,5 @@
 --TEST--
 pipe
---SKIPIF--
-<?php
-extension_loaded("psi") or die("skip - need ext/psi");
-?>
 --INI--
 psi.directory={PWD}
 --FILE--

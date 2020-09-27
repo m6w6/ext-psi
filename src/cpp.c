@@ -67,6 +67,32 @@ static bool psi_cpp_pragma_lib(struct psi_cpp *cpp, struct psi_cpp_macro_decl *d
 	return true;
 }
 
+static bool psi_cpp_pragma_blacklist_decl(struct psi_cpp *cpp, struct psi_cpp_macro_decl *decl)
+{
+	struct psi_token *name;
+
+	if (!psi_plist_get(decl->tokens, 0, &name)
+			|| !name || name->type != PSI_T_QUOTED_STRING) {
+		return false;
+	}
+
+	psi_blacklist_add_decl(name->text->val, name->text->len);
+	return true;
+}
+
+static bool psi_cpp_pragma_blacklist_var(struct psi_cpp *cpp, struct psi_cpp_macro_decl *decl)
+{
+	struct psi_token *name;
+
+	if (!psi_plist_get(decl->tokens, 0, &name)
+			|| !name || name->type != PSI_T_QUOTED_STRING) {
+		return false;
+	}
+
+	psi_blacklist_add_var(name->text->val, name->text->len);
+	return true;
+}
+
 PHP_MINIT_FUNCTION(psi_cpp);
 PHP_MINIT_FUNCTION(psi_cpp)
 {
@@ -102,6 +128,8 @@ PHP_MINIT_FUNCTION(psi_cpp)
 	zend_hash_init(&psi_cpp_pragmas, 0, NULL, NULL, 1);
 	PSI_CPP_PRAGMA(once);
 	PSI_CPP_PRAGMA(lib);
+	PSI_CPP_PRAGMA(blacklist_decl);
+	PSI_CPP_PRAGMA(blacklist_var);
 
 	return SUCCESS;
 }
@@ -487,11 +515,15 @@ bool psi_cpp_undef(struct psi_cpp *cpp, struct psi_token *tok)
 bool psi_cpp_if(struct psi_cpp *cpp, struct psi_cpp_exp *exp)
 {
 	struct psi_validate_scope scope = {0};
+	unsigned flags = cpp->parser->flags;
 
 	scope.cpp = cpp;
+	cpp->parser->flags |= PSI_SILENT;
 	if (!psi_num_exp_validate(PSI_DATA(cpp->parser), exp->data.num, &scope)) {
+		cpp->parser->flags = flags;
 		return false;
 	}
+	cpp->parser->flags = flags;
 	if (!psi_num_exp_get_long(exp->data.num, NULL, cpp)) {
 		return false;
 	}

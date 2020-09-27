@@ -3,11 +3,6 @@ lldiv
 --INI--
 psi.directory={PWD}:{PWD}/../../psi.d
 display_startup_errors=0
---SKIPIF--
-<?php 
-extension_loaded("psi") or die("skip - need ext/psi");
-function_exists("psi\\lldiv") or die("skip - need psi\\lldiv()");
-?>
 --FILE--
 ===TEST===
 <?php

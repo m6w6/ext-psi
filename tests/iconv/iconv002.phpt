@@ -2,11 +2,6 @@
 iconv abstraction
 --INI--
 psi.directory={PWD}/../../psi.d:{PWD}
---SKIPIF--
-<?php 
-extension_loaded("psi") or die("skip - need ext/psi");
-function_exists("psi\\iconv_open") or die("skip - need iconv");
-?>
 --FILE--
 ===TEST===
 <?php 

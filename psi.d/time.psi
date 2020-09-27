@@ -13,16 +13,13 @@ function psi\time() : int {
 }
 
 // extern int gettimeofday(struct timeval *tp, struct timezone *tz);
-function psi\gettimeofday(array &$tv = NULL, array &$tz = NULL) : int {
+function psi\gettimeofday(array &$tv = NULL) : int {
 	let tp = calloc(1, sizeof(struct timeval));
-	let tz = calloc(1, sizeof(struct timezone));
+	let tz = NULL;
 	return gettimeofday(tp, tz) as to_int(gettimeofday);
 	set $tv = to_array(*tp,
 		to_int(tv_sec),
 		to_int(tv_usec));
-	set $tz = to_array(*tz,
-		to_int(tz_minuteswest),
-		to_int(tz_dsttime));
 }
 
 // extern char *asctime(struct tm *tm);

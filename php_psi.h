@@ -117,6 +117,9 @@ PHP_PSI_API zend_object *psi_object_init(zend_class_entry *ce);
 PHP_PSI_API zend_object *psi_object_init_ex(zend_class_entry *ce, void *data, void (*dtor)(void *));
 PHP_PSI_API zend_class_entry *psi_object_get_class_entry();
 
+void psi_blacklist_add_decl(const char *pattern, size_t len);
+void psi_blacklist_add_var(const char *pattern, size_t len);
+
 ZEND_BEGIN_MODULE_GLOBALS(psi)
 	char *engine;
 	char *directory;

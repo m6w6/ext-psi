@@ -1,9 +1,5 @@
 --TEST--
 nanosleep
---SKIPIF--
-<?php
-extension_loaded("psi") or die("skip - need ext/psi");
-?>
 --ENV--
 TZ=UTC
 --INI--

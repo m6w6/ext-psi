@@ -2,12 +2,7 @@
 sqlite3
 --INI--
 psi.directory={PWD}:{PWD}/../../psi.d
-psi.blacklist.decls="sqlite3_str*,sqlite3_*serialize,sqlite3_stmt_scanstatus*,sqlite3_snapshot*,sqlite3_win32*"
---SKIPIF--
-<?php
-extension_loaded("psi") or printf("%s\n", "skip - need ext/psi");
-function_exists("sqlite3\\open") or printf("%s\n", "skip - need libsqlite3");
-?>
+psi.blacklist.decls="sqlite3_str*,sqlite3_*serialize,sqlite3_stmt_scanstatus*,sqlite3_snapshot*,sqlite3_win32*,sqlite_normalize*"
 --FILE--
 ===TEST===
 <?php

@@ -164,14 +164,14 @@ static bool psi_validate_impl(struct psi_validate_scope *scope,
 bool psi_validate(struct psi_validate_scope *scope,
 		struct psi_data *dst, struct psi_data *src)
 {
-	struct psi_validate_list types = {src->types, &dst->types};
-	struct psi_validate_list structs = {src->structs, &dst->structs};
-	struct psi_validate_list unions = {src->unions, &dst->unions};
-	struct psi_validate_list enums = {src->enums, &dst->enums};
-	struct psi_validate_list vars = {src->vars, &dst->vars};
-	struct psi_validate_list decls = {src->decls, &dst->decls};
-	struct psi_validate_list consts = {src->consts, &dst->consts};
-	struct psi_validate_list impls = {src->impls, &dst->impls};
+	struct psi_validate_list types = {src->types, &dst->types, NULL, NULL};
+	struct psi_validate_list structs = {src->structs, &dst->structs, NULL, NULL};
+	struct psi_validate_list unions = {src->unions, &dst->unions, NULL, NULL};
+	struct psi_validate_list enums = {src->enums, &dst->enums, NULL, NULL};
+	struct psi_validate_list vars = {src->vars, &dst->vars, NULL, NULL};
+	struct psi_validate_list decls = {src->decls, &dst->decls, NULL, NULL};
+	struct psi_validate_list consts = {src->consts, &dst->consts, NULL, NULL};
+	struct psi_validate_list impls = {src->impls, &dst->impls, NULL, NULL};
 	unsigned flags = dst->flags;
 	size_t check_count = ~0;
 

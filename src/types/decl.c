@@ -74,8 +74,13 @@ void psi_decl_dump(struct psi_dump *dump, struct psi_decl *decl)
 		psi_decl_abi_dump(dump, decl->abi);
 	}
 	PSI_DUMP(dump, " ");
-	/* FIXME: functions returning arrays */
-	psi_decl_arg_dump(dump, decl->func, 0);
+
+	psi_decl_type_dump(dump, decl->func->type, 0);
+	PSI_DUMP(dump, " ");
+	PSI_DUMP(dump, "%s%s",
+			psi_t_indirection(decl->func->var->pointer_level - !!decl->func->var->array_size),
+			decl->func->var->name->val);
+
 	PSI_DUMP(dump, "(");
 	if (decl->args) {
 		size_t i;
@@ -93,11 +98,13 @@ void psi_decl_dump(struct psi_dump *dump, struct psi_decl *decl)
 	}
 	if (decl->func->var->array_size) {
 		PSI_DUMP(dump, ")[%u]", decl->func->var->array_size);
+	} else {
+		PSI_DUMP(dump, ")");
 	}
 	if (decl->redir) {
-		PSI_DUMP(dump, ") __asm__ (\"%s\");", decl->redir->val);
+		PSI_DUMP(dump, " __asm__ (\"%s\");", decl->redir->val);
 	} else {
-		PSI_DUMP(dump, ");");
+		PSI_DUMP(dump, ";");
 	}
 }
 

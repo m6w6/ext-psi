@@ -56,13 +56,13 @@ zend_long psi_zval_count(zval *zvalue)
 	case IS_OBJECT:
 		count = 1;
 		if (Z_OBJ_HT_P(zvalue)->count_elements) {
-			if (SUCCESS == Z_OBJ_HT_P(zvalue)->count_elements(zvalue, &count)) {
+			if (SUCCESS == Z_OBJ_HT_P(zvalue)->count_elements(Z_OBJ_P(zvalue), &count)) {
 				break;
 			}
 		}
 
 		if (instanceof_function(Z_OBJCE_P(zvalue), spl_ce_Countable)) {
-			zend_call_method_with_0_params(zvalue, NULL, NULL, "count", &retval);
+			zend_call_method_with_0_params(Z_OBJ_P(zvalue), NULL, NULL, "count", &retval);
 			if (Z_TYPE(retval) != IS_UNDEF) {
 				count = zval_get_long(&retval);
 				zval_ptr_dtor(&retval);
@@ -99,49 +99,29 @@ zend_internal_arg_info *psi_internal_arginfo(struct psi_impl *impl)
 	zend_internal_arg_info *aip;
 	zend_internal_function_info *fi;
 	struct psi_impl_arg *iarg;
+	zend_type rtyp = ZEND_TYPE_INIT_CODE(psi_internal_type(impl->func->return_type), 1, _ZEND_ARG_INFO_FLAGS(impl->func->return_reference, impl->func->vararg));
 
 	aip = pecalloc(argc + 1 + !!impl->func->vararg, sizeof(*aip), 1);
 
 	fi = (zend_internal_function_info *) &aip[0];
-#ifdef ZEND_TYPE_ENCODE
-	fi->type = ZEND_TYPE_ENCODE(psi_internal_type(impl->func->return_type), 1);
-#else
-	fi->allow_null = 1;
-	fi->type_hint = psi_internal_type(impl->func->return_type);
-#endif
 	fi->required_num_args = psi_impl_num_min_args(impl);
-	fi->return_reference = impl->func->return_reference;
+	fi->type = rtyp;
 
 	if (impl->func->vararg) {
 		struct psi_impl_arg *vararg = impl->func->vararg;
 		zend_internal_arg_info *ai = &aip[argc];
+		zend_type atyp = ZEND_TYPE_INIT_CODE(psi_internal_type(vararg->type), 1, _ZEND_ARG_INFO_FLAGS(vararg->var->reference, 1));
 
-		ai->name = vararg->var->name->val;
-#ifdef ZEND_TYPE_ENCODE
-		ai->type = ZEND_TYPE_ENCODE(psi_internal_type(vararg->type), 1);
-#else
-		ai->allow_null = 1;
-		ai->type_hint = psi_internal_type(vararg->type);
-#endif
-		if (vararg->var->reference) {
-			ai->pass_by_reference = 1;
-		}
-		ai->is_variadic = 1;
+		ai->name = &vararg->var->name->val[1];
+		ai->type = atyp;
 	}
 
 	while (psi_plist_get(impl->func->args, i++, &iarg)) {
 		zend_internal_arg_info *ai = &aip[i];
+		zend_type atyp = ZEND_TYPE_INIT_CODE(psi_internal_type(iarg->type), 1, _ZEND_ARG_INFO_FLAGS(iarg->var->reference, 0));
 
-		ai->name = iarg->var->name->val;
-#ifdef ZEND_TYPE_ENCODE
-		ai->type = ZEND_TYPE_ENCODE(psi_internal_type(iarg->type), 1);
-#else
-		ai->allow_null = 1;
-		ai->type_hint = psi_internal_type(iarg->type);
-#endif
-		if (iarg->var->reference) {
-			ai->pass_by_reference = 1;
-		}
+		ai->name = &iarg->var->name->val[1];
+		ai->type = atyp;
 	}
 
 	return aip;

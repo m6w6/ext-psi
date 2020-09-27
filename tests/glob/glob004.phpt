@@ -4,7 +4,6 @@ glob err
 psi.directory={PWD}/../../psi.d:{PWD}
 --SKIPIF--
 <?php
-extension_loaded("psi") or die("skip - need ext/psi");
 is_dir("/etc/sudoers.d") and !is_readable("/etc/sudoers.d") or die("skip - only for Linux with unreadable sudoers.d");
 ?>
 --FILE--

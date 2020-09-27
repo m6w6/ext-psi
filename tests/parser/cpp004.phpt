@@ -1,9 +1,5 @@
 --TEST--
 CPP builtins
---SKIPIF--
-<?php 
-extension_loaded("psi") or die("skip - need ext/psi");
-?>
 --INI--
 psi.directory={PWD}/cpp004
 --ENV--

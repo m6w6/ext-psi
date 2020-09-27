@@ -43,6 +43,7 @@ static bool has_include(struct psi_cpp *cpp, struct psi_token *target, struct ps
 static bool has_include_next(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
 static bool has_feature(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
 static bool builtin_constant_p(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
+static bool signed__(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
 static bool BASE_FILE__(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
 static bool COUNTER__(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
 static bool DATE__(struct psi_cpp *cpp, struct psi_token *target, struct psi_plist **args, struct psi_plist **res);
@@ -108,6 +109,8 @@ PHP_MINIT_FUNCTION(psi_builtin)
 	PSI_BUILTIN(has_include_next, PSI_T_CPP_HEADER);
 	PSI_BUILTIN(has_feature, PSI_T_NAME);
 	PSI_BUILTIN(builtin_constant_p, PSI_T_NAME);
+
+	PSI_BUILTIN(signed__, -1);
 
 	PSI_BUILTIN(BASE_FILE__, -1);
 	PSI_BUILTIN(COUNTER__, -1);
@@ -223,6 +226,13 @@ static bool builtin_constant_p(struct psi_cpp *cpp, struct psi_token *target,
 	tok_->flags |= PSI_NUMBER_INT | PSI_NUMBER_U; \
 	ADD_TOKEN(tok_); \
 } while (0)
+
+static bool signed__(struct psi_cpp *cpp, struct psi_token *target,
+		struct psi_plist **args, struct psi_plist **res)
+{
+	ADD_TOKEN(NEW_TOKEN(PSI_T_SIGNED, "signed", 8));
+	return true;
+}
 
 static bool BASE_FILE__(struct psi_cpp *cpp, struct psi_token *target,
 		struct psi_plist **args, struct psi_plist **res)

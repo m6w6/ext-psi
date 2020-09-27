@@ -85,7 +85,7 @@ void psi_error_wrapper(struct psi_data *context, struct psi_token *t, int type, 
 	va_end(argv);
 
 	if (context) {
-		strlcpy(context->last_error, PG(last_error_message),
+		strlcpy(context->last_error, PG(last_error_message)->val,
 				sizeof(context->last_error));
 	}
 }
@@ -101,5 +101,7 @@ void psi_error(int type, const char *fn, unsigned ln, const char *msg, ...)
 
 void psi_verror(int type, const char *fn, unsigned ln, const char *msg, va_list argv)
 {
-	zend_error_cb(type, fn, ln, msg, argv);
+	zend_string *message = zend_vstrpprintf(0, msg, argv);
+	zend_error_cb(type, fn, ln, message);
+	zend_string_release(message);
 }

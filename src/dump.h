@@ -30,6 +30,8 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#include <Zend/zend_smart_str.h>
+
 union psi_dump_arg {
 	void *hn;
 	int fd;
@@ -42,8 +44,8 @@ struct psi_dump {
 	psi_dump_cb fun;
 };
 
-const struct psi_dump psi_dump_stdout;
-const struct psi_dump psi_dump_stderr;
+extern const struct psi_dump psi_dump_stdout;
+extern const struct psi_dump psi_dump_stderr;
 
 #define PSI_DUMP(dump, ...) do { \
 	const struct psi_dump *_dump_ptr = dump; \
@@ -52,6 +54,12 @@ const struct psi_dump psi_dump_stderr;
 	} \
 	_dump_ptr->fun(_dump_ptr->ctx, __VA_ARGS__); \
 } while(0)
+
+#if PSI_THREADED_PARSER
+void psi_smart_str_printf(smart_str *ss, const char *fmt, ...);
+#else
+# define psi_smart_str_printf smart_str_append_printf
+#endif
 
 
 #endif /* PSI_DUMP_H */

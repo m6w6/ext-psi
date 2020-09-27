@@ -1,9 +1,5 @@
 --TEST--
 printf
---SKIPIF--
-<?php 
-extension_loaded("psi") or die("skip - need ext/psi");
-?>
 --ENV--
 LC_ALL=C
 --INI--

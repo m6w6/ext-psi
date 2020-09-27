@@ -149,26 +149,6 @@ bool psi_parser_process(struct psi_parser *P, struct psi_plist *tokens,
 	return true;
 }
 
-#if PSI_THREADED_PARSER
-static void psi_smart_str_printf(smart_str *ss, const char *fmt, ...)
-{
-	va_list argv;
-	char *buf;
-	int len;
-
-	va_start(argv, fmt);
-	len = vasprintf(&buf, fmt, argv);
-	va_end(argv);
-
-	if (len != -1) {
-		smart_str_appendl_ex(ss, buf, len, 1);
-		free(buf);
-	}
-}
-#else
-# define psi_smart_str_printf smart_str_append_printf
-#endif
-
 static inline zend_string *macro_to_constant(struct psi_parser *parser,
 		zend_string *name, struct psi_validate_scope *scope)
 {
@@ -235,6 +215,13 @@ void psi_parser_postprocess(struct psi_parser *P)
 			}
 		} else if (!psi_num_exp_validate(PSI_DATA(P), scope.macro->exp, &scope)) {
 			continue;
+		} else if (psi_plist_count(scope.macro->tokens) == 1) {
+			struct psi_token *tok;
+			if (!psi_plist_get(scope.macro->tokens, 0, &tok)) {
+				continue;
+			} else if (zend_string_equals(name, tok->text)) {
+				continue;
+			}
 		}
 
 		cnst = macro_to_constant(P, name, &scope);

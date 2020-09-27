@@ -41,3 +41,18 @@ const struct psi_dump psi_dump_stderr = {
 		.fun = (psi_dump_cb) dprintf
 };
 
+void psi_smart_str_printf(smart_str *ss, const char *fmt, ...)
+{
+	va_list argv;
+	char *buf;
+	int len;
+
+	va_start(argv, fmt);
+	len = vasprintf(&buf, fmt, argv);
+	va_end(argv);
+
+	if (len != -1) {
+		smart_str_appendl_ex(ss, buf, len, 1);
+		free(buf);
+	}
+}

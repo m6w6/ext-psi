@@ -1,9 +1,5 @@
 --TEST--
 parse dump
---SKIPIF--
-<?php
-extension_loaded("psi") or die("skip - need ext/psi");
-?>
 --INI--
 psi.directory={PWD}/../../psi.d
 --FILE--

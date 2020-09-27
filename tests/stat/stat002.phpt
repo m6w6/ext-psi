@@ -4,7 +4,6 @@ stat
 psi.directory={PWD}/../../psi.d:{PWD}
 --SKIPIF--
 <?php
-extension_loaded("psi") or die("skip - need ext/psi");
 PHP_OS === "Darwin" or die("skip - only for OSX");
 ?>
 --FILE--

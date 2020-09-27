@@ -1,9 +1,5 @@
 --TEST--
 CPP argument prescan
---SKIPIF--
-<?php 
-extension_loaded("psi") or die("skip - need ext/psi");
-?>
 --INI--
 psi.directory={PWD}/cpp003
 --FILE--

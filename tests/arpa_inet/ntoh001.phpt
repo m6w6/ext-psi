@@ -2,11 +2,6 @@
 arpa/inet
 --INI--
 psi.directory={PWD}/../../psi.d:{PWD}
---SKIPIF--
-<?php
-extension_loaded("psi") or die("skip - need ext/psi");
-function_exists("psi\\ntohs") or die("skip - need ntohs()");
-?>
 --FILE--
 ===TEST===
 <?php

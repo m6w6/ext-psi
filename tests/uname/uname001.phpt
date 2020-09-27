@@ -4,9 +4,7 @@ uname
 psi.directory={PWD}/../../psi.d:{PWD}
 --SKIPIF--
 <?php
-extension_loaded("psi") or die("skip - need ext/psi");
 PHP_OS === "Linux" or die("skip - only for Linux");
-defined("psi\\_UTSNAME_DOMAIN_LENGTH") or die("skip - only for systems with utsname.domainname");
 ?>
 --FILE--
 ===TEST===

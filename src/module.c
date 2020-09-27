@@ -76,14 +76,12 @@ static void OnUpdateBlacklist(const char *str, void (*cb)(const char*, size_t))
 	} while (end);
 }
 
-static void psi_blacklist_add_decl(const char *pattern, size_t len);
 static ZEND_INI_MH(OnUpdateBlacklistedDecls)
 {
 	OnUpdateBlacklist(new_value->val, psi_blacklist_add_decl);
 	return SUCCESS;
 }
 
-static void psi_blacklist_add_var(const char *pattern, size_t len);
 static ZEND_INI_MH(OnUpdateBlacklistedVars)
 {
 	OnUpdateBlacklist(new_value->val, psi_blacklist_add_var);
@@ -387,7 +385,7 @@ static void ptr_free(void *ptr)
 	free(*(void **) ptr);
 }
 
-static void psi_blacklist_add_decl(const char *pattern, size_t len)
+void psi_blacklist_add_decl(const char *pattern, size_t len)
 {
 	char *tmp = strndup(pattern, len);
 	struct psi_plist **decls = &PSI_G(blacklist).decls;
@@ -395,7 +393,7 @@ static void psi_blacklist_add_decl(const char *pattern, size_t len)
 	*decls = psi_plist_add(*decls, &tmp);
 }
 
-static void psi_blacklist_add_var(const char *pattern, size_t len)
+void psi_blacklist_add_var(const char *pattern, size_t len)
 {
 	char *tmp = strndup(pattern, len);
 	struct psi_plist **vars = &PSI_G(blacklist).vars;

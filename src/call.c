@@ -225,7 +225,8 @@ struct psi_call_frame_argument *psi_call_frame_get_argument(
 }
 
 size_t psi_call_frame_num_var_args(struct psi_call_frame *frame) {
-	return zend_hash_next_free_element(&frame->arguments);
+	zend_long nfe = zend_hash_next_free_element(&frame->arguments);
+	return nfe > 0 ? nfe : 0;
 }
 
 size_t psi_call_frame_num_fixed_args(struct psi_call_frame *frame) {
@@ -327,7 +328,7 @@ bool psi_call_frame_parse_args(struct psi_call_frame *frame,
 				ival.zend.cb->fcc = fcc;
 			}
 		} else {
-			error_code = ZPP_ERROR_FAILURE;
+			_error_code = ZPP_ERROR_FAILURE;
 			break;
 		}
 
@@ -403,6 +404,9 @@ bool psi_call_frame_do_let(struct psi_call_frame *frame) {
 			void *temp = NULL;
 
 			frame_arg = psi_call_frame_get_var_argument(frame, i);
+			if (!frame_arg) {
+				return false;
+			}
 			switch (frame_arg->va_type) {
 			case PSI_T_BOOL:	let_fn = psi_let_boolval;	break;
 			case PSI_T_INT:		let_fn = psi_let_intval;	break;
@@ -411,6 +415,7 @@ bool psi_call_frame_do_let(struct psi_call_frame *frame) {
 			case PSI_T_STRING:	let_fn = psi_let_strval;	break;
 			default:
 				assert(0);
+				return false;
 			}
 
 			frame_arg->ival_ptr = let_fn(&frame_arg->temp_val, NULL, frame_arg->va_type,
@@ -472,6 +477,9 @@ void psi_call_frame_do_callback(struct psi_call_frame *frame, struct psi_call_fr
 	}
 
 	frame_arg = psi_call_frame_get_argument(frame, cb->func->var->fqn);
+	if (!frame_arg) {
+		return;
+	}
 
 	/* callback into userland */
 	ZVAL_UNDEF(&return_value);

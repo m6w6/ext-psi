@@ -4,9 +4,7 @@ getopt
 psi.directory={PWD}:{PWD}/../../psi.d
 --SKIPIF--
 <?php
-extension_loaded("psi") or die("skip - need ext/psi");
 PHP_OS === "Linux" or die("skip - only for Linux");
-function_exists("psi\\getopt") or die("skip - need psi\\getopt()");
 ?>
 --ENV--
 POSIXLY_CORRECT=

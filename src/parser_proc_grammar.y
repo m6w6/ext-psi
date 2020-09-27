@@ -527,6 +527,7 @@ cpp_exp[exp]:
 cpp_macro_decl_arg_token:
 	DEFINE
 |	PRAGMA
+
 ;
 
 cpp_ignored_token:

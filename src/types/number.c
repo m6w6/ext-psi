@@ -602,6 +602,7 @@ bool psi_number_validate(struct psi_data *data, struct psi_number *exp,
 	size_t i = 0;
 	struct psi_const *cnst;
 	struct psi_decl_enum *enm;
+	struct psi_decl_extvar *evar;
 
 	switch (exp->type) {
 	case PSI_T_NULL:
@@ -647,13 +648,21 @@ bool psi_number_validate(struct psi_data *data, struct psi_number *exp,
 		if (exp->data.dvar->arg) {
 			return true;
 		}
+		for (i = 0; psi_plist_get(data->vars, i, &evar); ++i) {
+			if (zend_string_equals(exp->data.dvar->name, evar->arg->var->name)) {
+				exp->data.dvar->arg = evar->arg;
+				return true;
+			}
+		}
 		if (psi_decl_var_validate(data, exp->data.dvar, scope)) {
 			return true;
+		} else {
+			data->error(data, exp->token, PSI_WARNING,
+					"Unknown variable '%s' in numeric expression",
+					exp->data.dvar->name->val);
+			return false;
 		}
-		data->error(data, exp->token, PSI_WARNING,
-				"Unknown variable '%s' in numeric expression",
-				exp->data.dvar->name->val);
-		return false;
+		break;
 
 	case PSI_T_FUNCTION:
 		if (scope && scope->cpp && zend_hash_exists(&scope->cpp->defs, exp->data.call->name)) {
@@ -692,6 +701,7 @@ bool psi_number_validate(struct psi_data *data, struct psi_number *exp,
 				return true;
 			}
 		}
+		/* undefined */
 		return false;
 
 	case PSI_T_SIZEOF:
@@ -805,10 +815,13 @@ static inline token_t psi_number_eval_decl_var(struct psi_number *exp,
 	var = exp->data.dvar;
 	real = psi_decl_type_get_real(var->arg->type);
 	size = psi_decl_arg_get_size(var->arg);
-	sym = psi_call_frame_fetch_symbol(frame, var);
-	ref = deref_impl_val(sym->ptr, var);
 
-	memcpy(res, ref, size);
+	if (frame) {
+		sym = psi_call_frame_fetch_symbol(frame, var);
+		ref = deref_impl_val(sym->ptr, var);
+
+		memcpy(res, ref, size);
+	}
 
 	if (var->arg->var->pointer_level > var->pointer_level) {
 		switch (SIZEOF_VOID_P) {

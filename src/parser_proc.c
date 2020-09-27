@@ -400,39 +400,39 @@ static const unsigned short yyrline[] =
      414,   414,   414,   414,   418,   419,   422,   423,   426,   427,
      428,   429,   435,   438,   441,   444,   450,   453,   456,   459,
      462,   468,   471,   477,   500,   504,   508,   513,   517,   521,
-     528,   529,   533,   537,   538,   542,   543,   544,   548,   549,
-     553,   554,   558,   559,   560,   564,   565,   569,   574,   579,
-     584,   593,   596,   599,   600,   606,   611,   619,   622,   626,
-     630,   637,   641,   645,   649,   654,   665,   676,   681,   686,
-     690,   696,   707,   710,   714,   722,   726,   732,   736,   743,
-     747,   751,   758,   759,   760,   764,   778,   784,   787,   793,
-     796,   802,   803,   811,   822,   831,   843,   844,   848,   858,
-     867,   879,   880,   883,   889,   890,   894,   898,   902,   907,
-     912,   920,   921,   922,   925,   931,   934,   937,   943,   944,
-     948,   951,   954,   960,   963,   966,   974,   986,   989,   992,
-     995,  1002,  1005,  1015,  1018,  1021,  1024,  1025,  1026,  1030,
-    1033,  1036,  1047,  1054,  1064,  1067,  1073,  1076,  1083,  1119,
-    1122,  1128,  1131,  1137,  1143,  1144,  1145,  1146,  1147,  1148,
-    1152,  1156,  1157,  1161,  1162,  1166,  1167,  1174,  1175,  1179,
-    1186,  1197,  1204,  1212,  1236,  1265,  1272,  1283,  1329,  1370,
-    1385,  1388,  1391,  1397,  1400,  1406,  1421,  1424,  1453,  1461,
-    1489,  1494,  1502,  1512,  1522,  1525,  1529,  1535,  1549,  1566,
-    1569,  1575,  1582,  1589,  1597,  1608,  1615,  1618,  1624,  1629,
-    1637,  1641,  1645,  1649,  1653,  1657,  1664,  1668,  1672,  1676,
-    1680,  1684,  1690,  1694,  1701,  1704,  1716,  1720,  1724,  1731,
-    1744,  1757,  1770,  1773,  1780,  1781,  1785,  1788,  1791,  1794,
-    1800,  1804,  1811,  1814,  1817,  1832,  1833,  1834,  1835,  1839,
-    1842,  1848,  1849,  1855,  1858,  1864,  1865,  1869,  1870,  1880,
-    1883,  1890,  1895,  1900,  1910,  1913,  1919,  1922,  1928,  1935,
-    1942,  1949,  1950,  1954,  1955,  1956,  1957,  1958,  1962,  1963,
-    1964,  1965,  1969,  1972,  1978,  1981,  1984,  1987,  1990,  1996,
-    2000,  2008,  2009,  2013,  2020,  2023,  2026,  2029,  2033,  2036,
-    2042,  2046,  2054,  2061,  2066,  2074,  2082,  2083,  2084,  2085,
-    2086,  2087,  2088,  2089,  2090,  2091,  2095,  2098,  2104,  2107,
-    2113,  2114,  2118,  2121,  2127,  2130,  2136,  2143,  2147,  2154,
-    2157,  2160,  2166,  2173,  2176,  2179,  2186,  2191,  2199,  2200,
-    2201,  2202,  2203,  2204,  2205,  2206,  2210,  2213,  2219,  2222,
-    2228,  2235,  2236,  2240,  2247,  2250,  2256,  2264,  2267,  2273
+     528,   529,   534,   538,   539,   543,   544,   545,   549,   550,
+     554,   555,   559,   560,   561,   565,   566,   570,   575,   580,
+     585,   594,   597,   600,   601,   607,   612,   620,   623,   627,
+     631,   638,   642,   646,   650,   655,   666,   677,   682,   687,
+     691,   697,   708,   711,   715,   723,   727,   733,   737,   744,
+     748,   752,   759,   760,   761,   765,   779,   785,   788,   794,
+     797,   803,   804,   812,   823,   832,   844,   845,   849,   859,
+     868,   880,   881,   884,   890,   891,   895,   899,   903,   908,
+     913,   921,   922,   923,   926,   932,   935,   938,   944,   945,
+     949,   952,   955,   961,   964,   967,   975,   987,   990,   993,
+     996,  1003,  1006,  1016,  1019,  1022,  1025,  1026,  1027,  1031,
+    1034,  1037,  1048,  1055,  1065,  1068,  1074,  1077,  1084,  1120,
+    1123,  1129,  1132,  1138,  1144,  1145,  1146,  1147,  1148,  1149,
+    1153,  1157,  1158,  1162,  1163,  1167,  1168,  1175,  1176,  1180,
+    1187,  1198,  1205,  1213,  1237,  1266,  1273,  1284,  1330,  1371,
+    1386,  1389,  1392,  1398,  1401,  1407,  1422,  1425,  1454,  1462,
+    1490,  1495,  1503,  1513,  1523,  1526,  1530,  1536,  1550,  1567,
+    1570,  1576,  1583,  1590,  1598,  1609,  1616,  1619,  1625,  1630,
+    1638,  1642,  1646,  1650,  1654,  1658,  1665,  1669,  1673,  1677,
+    1681,  1685,  1691,  1695,  1702,  1705,  1717,  1721,  1725,  1732,
+    1745,  1758,  1771,  1774,  1781,  1782,  1786,  1789,  1792,  1795,
+    1801,  1805,  1812,  1815,  1818,  1833,  1834,  1835,  1836,  1840,
+    1843,  1849,  1850,  1856,  1859,  1865,  1866,  1870,  1871,  1881,
+    1884,  1891,  1896,  1901,  1911,  1914,  1920,  1923,  1929,  1936,
+    1943,  1950,  1951,  1955,  1956,  1957,  1958,  1959,  1963,  1964,
+    1965,  1966,  1970,  1973,  1979,  1982,  1985,  1988,  1991,  1997,
+    2001,  2009,  2010,  2014,  2021,  2024,  2027,  2030,  2034,  2037,
+    2043,  2047,  2055,  2062,  2067,  2075,  2083,  2084,  2085,  2086,
+    2087,  2088,  2089,  2090,  2091,  2092,  2096,  2099,  2105,  2108,
+    2114,  2115,  2119,  2122,  2128,  2131,  2137,  2144,  2148,  2155,
+    2158,  2161,  2167,  2174,  2177,  2180,  2187,  2192,  2200,  2201,
+    2202,  2203,  2204,  2205,  2206,  2207,  2211,  2214,  2220,  2223,
+    2229,  2236,  2237,  2241,  2248,  2251,  2257,  2265,  2268,  2274
 };
 #endif
 
@@ -4529,7 +4529,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 317:
-#line 569 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 570 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_cpp_macro_decl **)(&(*yyvalp))) = psi_cpp_macro_decl_init(NULL, (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)), NULL);
@@ -4539,7 +4539,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 318:
-#line 574 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 575 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-5)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_cpp_macro_decl **)(&(*yyvalp))) = psi_cpp_macro_decl_init((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)), NULL);
@@ -4549,7 +4549,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 319:
-#line 579 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 580 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_cpp_macro_decl **)(&(*yyvalp))) = psi_cpp_macro_decl_init(NULL, psi_num_exp_tokens((*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)), NULL), (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -4559,7 +4559,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 320:
-#line 584 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 585 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	struct psi_plist *list = psi_plist_init((psi_plist_dtor) psi_token_free);
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
@@ -4570,7 +4570,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 321:
-#line 593 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 594 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_init(NULL);
 }
@@ -4578,7 +4578,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 322:
-#line 596 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 597 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_init(NULL); /* FIXME */
 }
@@ -4586,7 +4586,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 324:
-#line 600 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 601 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval));
 }
@@ -4594,7 +4594,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 325:
-#line 606 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 607 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
@@ -4604,7 +4604,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 326:
-#line 611 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 612 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
@@ -4614,7 +4614,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 327:
-#line 619 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 620 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = NULL;
 }
@@ -4622,7 +4622,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 329:
-#line 626 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 627 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_token_free), &(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -4631,7 +4631,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 330:
-#line 630 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 631 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)), &(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -4640,7 +4640,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 331:
-#line 637 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 638 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_num_exp **)(&(*yyvalp))) = psi_num_exp_init_unary((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval))->type, (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	(*(struct psi_num_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)));
@@ -4649,7 +4649,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 332:
-#line 641 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 642 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_num_exp **)(&(*yyvalp))) = psi_num_exp_init_unary((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type, (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_num_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
@@ -4658,7 +4658,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 333:
-#line 645 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 646 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_num_exp **)(&(*yyvalp))) = psi_num_exp_init_binary((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type, (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_num_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
@@ -4667,7 +4667,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 334:
-#line 649 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 650 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_num_exp **)(&(*yyvalp))) = psi_num_exp_init_ternary((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->type, (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval)), (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_num_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)));
@@ -4676,7 +4676,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 335:
-#line 654 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 655 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	{
 		uint8_t exists;
@@ -4692,7 +4692,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 336:
-#line 665 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 666 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	{
 		uint8_t exists;
@@ -4708,7 +4708,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 337:
-#line 676 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 677 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_num_exp **)(&(*yyvalp))) = psi_num_exp_init_num(psi_number_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->flags));
 	(*(struct psi_num_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -4718,7 +4718,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 338:
-#line 681 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 682 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_num_exp **)(&(*yyvalp))) = psi_num_exp_init_num(psi_number_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text, 0));
 	(*(struct psi_num_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -4728,7 +4728,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 339:
-#line 686 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 687 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_num_exp **)(&(*yyvalp))) = psi_num_exp_init_num((*(struct psi_number **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_num_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_number **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->token);
@@ -4737,7 +4737,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 340:
-#line 690 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 691 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_num_exp **)(&(*yyvalp))) = psi_num_exp_init_num(psi_number_init(PSI_T_DEFINE, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text, 0));
@@ -4748,7 +4748,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 341:
-#line 696 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 697 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_num_exp **)(&(*yyvalp))) = psi_num_exp_init_num(psi_number_init(PSI_T_FUNCTION,
@@ -4761,7 +4761,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 342:
-#line 707 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 708 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = NULL;
 }
@@ -4769,7 +4769,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 344:
-#line 714 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 715 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	/* TODO: clang include test macros */
 	uint8_t no = 1;
@@ -4782,7 +4782,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 345:
-#line 722 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 723 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_num_exp_free),
 		&(*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -4791,7 +4791,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 346:
-#line 726 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 727 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), &(*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -4799,7 +4799,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 347:
-#line 732 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 733 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_const **)(&(*yyvalp))) = psi_const_init((*(struct psi_impl_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval)), (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->text, (*(struct psi_impl_def_val **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	(*(struct psi_const **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)));
@@ -4808,7 +4808,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 348:
-#line 736 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 737 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_const **)(&(*yyvalp))) = psi_const_init(NULL, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->text, (*(struct psi_impl_def_val **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	(*(struct psi_const **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)));
@@ -4817,7 +4817,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 349:
-#line 743 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 744 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_impl_def_val **)(&(*yyvalp))) = psi_impl_def_val_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text);
 	(*(struct psi_impl_def_val **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -4826,7 +4826,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 350:
-#line 747 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 748 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_impl_def_val **)(&(*yyvalp))) = psi_impl_def_val_init(PSI_T_NUMBER, (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_impl_def_val **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->token);
@@ -4835,7 +4835,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 351:
-#line 751 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 752 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_impl_def_val **)(&(*yyvalp))) = psi_impl_def_val_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text);
 	(*(struct psi_impl_def_val **)(&(*yyvalp)))->token = (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
@@ -4844,7 +4844,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 355:
-#line 764 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 765 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = (*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval));
 }
@@ -4852,7 +4852,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 356:
-#line 778 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 779 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = (*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval));
 }
@@ -4860,7 +4860,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 357:
-#line 784 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 785 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = (*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
@@ -4868,7 +4868,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 358:
-#line 787 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 788 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = (*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
@@ -4876,7 +4876,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 359:
-#line 793 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 794 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = (*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
@@ -4884,7 +4884,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 360:
-#line 796 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 797 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = (*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
@@ -4892,7 +4892,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 362:
-#line 803 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 804 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = psi_decl_arg_init(
 		psi_decl_type_init(PSI_T_FUNCTION, (*(struct psi_decl **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->func->var->name),
@@ -4905,7 +4905,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 363:
-#line 811 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 812 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = psi_decl_arg_init(
@@ -4921,7 +4921,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 364:
-#line 822 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 823 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = psi_decl_arg_init(psi_decl_type_init(PSI_T_STRUCT, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->text), (*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->type->token = (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval));
@@ -4935,7 +4935,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 365:
-#line 831 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 832 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = psi_decl_arg_init(psi_decl_type_init(PSI_T_UNION, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->text), (*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->type->token = (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval));
@@ -4949,7 +4949,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 367:
-#line 844 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 845 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = psi_decl_arg_init((*(struct psi_decl_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)), psi_decl_var_init(NULL, 0, 0));
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->var->token = psi_token_copy((*(struct psi_decl_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->token);
@@ -4958,7 +4958,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 368:
-#line 848 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 849 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = psi_decl_arg_init(
 		psi_decl_type_init(PSI_T_ENUM, (*(struct psi_decl_enum **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->name),
@@ -4973,7 +4973,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 369:
-#line 858 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 859 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = psi_decl_arg_init(psi_decl_type_init(PSI_T_STRUCT, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval))->text), psi_decl_var_init(NULL, 0, 0));
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->type->token = (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval));
@@ -4987,7 +4987,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 370:
-#line 867 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 868 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = psi_decl_arg_init(psi_decl_type_init(PSI_T_UNION, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval))->text), psi_decl_var_init(NULL, 0, 0));
 	(*(struct psi_decl_arg **)(&(*yyvalp)))->type->token = (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval));
@@ -5001,7 +5001,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 372:
-#line 880 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 881 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl_type **)(&(*yyvalp))) = (*(struct psi_decl_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
@@ -5009,7 +5009,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 373:
-#line 883 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 884 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl_type **)(&(*yyvalp))) = (*(struct psi_decl_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval));
 }
@@ -5017,7 +5017,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 376:
-#line 894 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 895 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl_type **)(&(*yyvalp))) = psi_decl_type_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text);
 	(*(struct psi_decl_type **)(&(*yyvalp)))->token = (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
@@ -5026,7 +5026,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 378:
-#line 902 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 903 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_decl_type **)(&(*yyvalp))) = psi_decl_type_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text);
@@ -5036,7 +5036,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 379:
-#line 907 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 908 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_decl_type **)(&(*yyvalp))) = psi_decl_type_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text);
@@ -5046,7 +5046,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 380:
-#line 912 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 913 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_decl_type **)(&(*yyvalp))) = psi_decl_type_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text);
@@ -5056,7 +5056,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 383:
-#line 922 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 923 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -5064,7 +5064,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 384:
-#line 925 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 926 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -5072,7 +5072,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 385:
-#line 931 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 932 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -5080,7 +5080,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 386:
-#line 934 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 935 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -5088,7 +5088,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 387:
-#line 937 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 938 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = psi_token_cat(" ", 2, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)), (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -5096,7 +5096,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 390:
-#line 948 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 949 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -5104,7 +5104,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 391:
-#line 951 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 952 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -5112,7 +5112,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 392:
-#line 954 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 955 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = psi_token_cat(" ", 2, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)), (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -5120,7 +5120,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 393:
-#line 960 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 961 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -5128,7 +5128,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 394:
-#line 963 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 964 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -5136,7 +5136,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 395:
-#line 966 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 967 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	if ((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))) {
 		(*(struct psi_token **)(&(*yyvalp))) = psi_token_cat(" ", 2, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)), (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -5149,7 +5149,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 396:
-#line 974 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 975 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	if ((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))) {
 		(*(struct psi_token **)(&(*yyvalp))) = psi_token_cat(" ", 2, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)), (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -5163,7 +5163,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 397:
-#line 986 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 987 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = NULL;
 }
@@ -5171,7 +5171,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 398:
-#line 989 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 990 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -5179,7 +5179,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 399:
-#line 992 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 993 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -5187,7 +5187,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 400:
-#line 995 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 996 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	if ((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))) {
 		(*(struct psi_token **)(&(*yyvalp))) = psi_token_cat(" ", 2, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)), (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -5199,7 +5199,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 401:
-#line 1002 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1003 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -5207,7 +5207,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 402:
-#line 1005 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1006 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	if ((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))) {
 		(*(struct psi_token **)(&(*yyvalp))) = psi_token_cat(" ", 2, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)), (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -5219,7 +5219,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 403:
-#line 1015 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1016 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = NULL;
 }
@@ -5227,7 +5227,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 405:
-#line 1021 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1022 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = NULL;
 }
@@ -5235,7 +5235,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 409:
-#line 1030 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1031 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = NULL;
 }
@@ -5243,7 +5243,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 410:
-#line 1033 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1034 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -5251,7 +5251,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 411:
-#line 1036 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1037 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	if ((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))) {
 		(*(struct psi_token **)(&(*yyvalp))) = psi_token_cat(" ", 2, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)), (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -5264,7 +5264,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 412:
-#line 1047 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1048 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl **)(&(*yyvalp))) = (*(struct psi_decl **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval));
 	if ((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))) {
@@ -5276,7 +5276,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 413:
-#line 1054 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1055 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl **)(&(*yyvalp))) = (*(struct psi_decl **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval));
 	if ((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))) {
@@ -5288,7 +5288,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 414:
-#line 1064 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1065 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = NULL;
 }
@@ -5296,7 +5296,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 415:
-#line 1067 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1068 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval));
 }
@@ -5304,7 +5304,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 416:
-#line 1073 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1074 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -5312,7 +5312,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 417:
-#line 1076 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1077 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = psi_token_cat("", 2, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)), (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	psi_token_free(&(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
@@ -5321,7 +5321,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 418:
-#line 1083 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1084 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	struct psi_plist *list = psi_plist_init((psi_plist_dtor) psi_decl_extvar_free);
 
@@ -5359,7 +5359,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 419:
-#line 1119 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1120 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = NULL;
 }
@@ -5367,7 +5367,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 420:
-#line 1122 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1123 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
@@ -5375,7 +5375,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 421:
-#line 1128 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1129 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_decl_var_free), &(*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -5383,7 +5383,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 422:
-#line 1131 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1132 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), &(*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -5391,7 +5391,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 423:
-#line 1137 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1138 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl **)(&(*yyvalp))) = (*(struct psi_decl **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval));
 }
@@ -5399,7 +5399,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 436:
-#line 1167 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1168 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl **)(&(*yyvalp))) = (*(struct psi_decl **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 	(*(struct psi_decl **)(&(*yyvalp)))->abi = psi_decl_abi_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->text);
@@ -5408,7 +5408,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 439:
-#line 1179 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1180 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl **)(&(*yyvalp))) = psi_decl_init((*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval)), (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)));
 	if ((*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))) {
@@ -5420,7 +5420,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 440:
-#line 1186 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1187 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl **)(&(*yyvalp))) = psi_decl_init((*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-6)].yystate.yysemantics.yysval)), (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval)));
 	(*(struct psi_decl **)(&(*yyvalp)))->varargs = 1;
@@ -5433,7 +5433,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 441:
-#line 1197 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1198 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl **)(&(*yyvalp))) = psi_decl_init((*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval)), (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)));
 	if ((*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))) {
@@ -5445,7 +5445,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 442:
-#line 1204 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1205 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl **)(&(*yyvalp))) = psi_decl_init((*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-6)].yystate.yysemantics.yysval)), (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval)));
 	(*(struct psi_decl **)(&(*yyvalp)))->varargs = 1;
@@ -5458,7 +5458,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 443:
-#line 1212 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1213 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(void) (*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-9)].yystate.yysemantics.yysval));
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-8)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
@@ -5487,7 +5487,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 444:
-#line 1236 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1237 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(void) (*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-12)].yystate.yysemantics.yysval));
 	(void) (*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-10)].yystate.yysemantics.yysval));
@@ -5518,7 +5518,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 445:
-#line 1265 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1266 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl **)(&(*yyvalp))) = psi_decl_init((*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval)), (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)));
 	if ((*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))) {
@@ -5530,7 +5530,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 446:
-#line 1272 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1273 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl **)(&(*yyvalp))) = psi_decl_init((*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-6)].yystate.yysemantics.yysval)), (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval)));
 	(*(struct psi_decl **)(&(*yyvalp)))->varargs = 1;
@@ -5543,7 +5543,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 447:
-#line 1283 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1284 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(void) (*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval));
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
@@ -5555,7 +5555,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 448:
-#line 1329 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1330 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(void) (*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval));
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = psi_decl_arg_init((*(struct psi_decl_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval)), psi_decl_var_init(NULL, (*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)), 0));
@@ -5566,7 +5566,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 450:
-#line 1385 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1386 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = NULL;
 }
@@ -5574,7 +5574,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 451:
-#line 1388 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1389 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = NULL;
 }
@@ -5582,7 +5582,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 452:
-#line 1391 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1392 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
@@ -5590,7 +5590,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 453:
-#line 1397 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1398 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_decl_arg_free), &(*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -5598,7 +5598,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 454:
-#line 1400 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1401 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), &(*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -5606,7 +5606,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 455:
-#line 1406 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1407 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	char digest[17];
 	struct psi_token *name;
@@ -5626,7 +5626,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 456:
-#line 1421 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1422 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = (*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
@@ -5634,7 +5634,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 457:
-#line 1424 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1425 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = psi_decl_arg_init(
 		(*(struct psi_decl_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)),
@@ -5645,7 +5645,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 458:
-#line 1453 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1454 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = psi_decl_arg_init(
 		psi_decl_type_init(PSI_T_FUNCTION, (*(struct psi_decl **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->func->var->name),
@@ -5658,7 +5658,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 459:
-#line 1461 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1462 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl_arg **)(&(*yyvalp))) = psi_decl_arg_init((*(struct psi_decl_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)), (*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -5666,7 +5666,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 460:
-#line 1489 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1490 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_decl_var **)(&(*yyvalp))) = psi_decl_var_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->text, (*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)) + !! (*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)), (*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -5676,7 +5676,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 461:
-#line 1494 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1495 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_decl_var **)(&(*yyvalp))) = psi_decl_var_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->text, !! (*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)), (*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -5686,7 +5686,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 462:
-#line 1502 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1503 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_decl_union **)(&(*yyvalp))) = psi_decl_union_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval))->text, (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -5698,7 +5698,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 463:
-#line 1512 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1513 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_decl_struct **)(&(*yyvalp))) = psi_decl_struct_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval))->text, (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -5710,7 +5710,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 464:
-#line 1522 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1523 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = NULL;
 }
@@ -5718,7 +5718,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 466:
-#line 1529 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1530 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval));
 }
@@ -5726,7 +5726,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 467:
-#line 1535 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1536 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->layout = (*(struct psi_layout **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval));
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_decl_arg_free), &(*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)));
@@ -5745,7 +5745,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 468:
-#line 1549 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1550 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->layout = (*(struct psi_layout **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval));
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval)), &(*(struct psi_decl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)));
@@ -5764,7 +5764,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 469:
-#line 1566 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1567 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = NULL;
 }
@@ -5772,7 +5772,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 470:
-#line 1569 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1570 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
@@ -5780,7 +5780,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 471:
-#line 1575 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1576 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	{
 		struct psi_decl_arg *arg = psi_decl_arg_init(NULL, (*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
@@ -5792,7 +5792,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 472:
-#line 1582 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1583 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	{
 		struct psi_decl_arg *arg = psi_decl_arg_init(NULL, (*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
@@ -5804,7 +5804,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 473:
-#line 1589 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1590 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	{
 		struct psi_decl_var *var = psi_decl_var_init(NULL, 0, 0);
@@ -5817,7 +5817,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 474:
-#line 1597 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1598 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	{
 		struct psi_decl_var *var = psi_decl_var_init(NULL, 0, 0);
@@ -5830,7 +5830,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 475:
-#line 1608 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1609 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_decl_enum **)(&(*yyvalp))) = psi_decl_enum_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval))->text, (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)));
 	(*(struct psi_decl_enum **)(&(*yyvalp)))->token = (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval));
@@ -5839,7 +5839,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 476:
-#line 1615 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1616 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_decl_enum_item_free), &(*(struct psi_decl_enum_item **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -5847,7 +5847,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 477:
-#line 1618 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1619 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), &(*(struct psi_decl_enum_item **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -5855,7 +5855,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 478:
-#line 1624 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1625 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_decl_enum_item **)(&(*yyvalp))) = psi_decl_enum_item_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text, NULL);
@@ -5865,7 +5865,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 479:
-#line 1629 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1630 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_decl_enum_item **)(&(*yyvalp))) = psi_decl_enum_item_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval))->text, (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -5875,7 +5875,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 480:
-#line 1637 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1638 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_num_exp **)(&(*yyvalp))) = psi_num_exp_init_num((*(struct psi_number **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_num_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_number **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->token);
@@ -5884,7 +5884,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 481:
-#line 1641 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1642 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_num_exp **)(&(*yyvalp))) = psi_num_exp_init_cast((*(struct psi_decl_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_num_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_decl_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval))->token);
@@ -5893,7 +5893,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 482:
-#line 1645 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1646 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_num_exp **)(&(*yyvalp))) = psi_num_exp_init_unary(PSI_T_LPAREN, (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	(*(struct psi_num_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)));
@@ -5902,7 +5902,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 483:
-#line 1649 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1650 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_num_exp **)(&(*yyvalp))) = psi_num_exp_init_binary((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type, (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_num_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
@@ -5911,7 +5911,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 484:
-#line 1653 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1654 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_num_exp **)(&(*yyvalp))) = psi_num_exp_init_unary((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->type, (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_num_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
@@ -5920,7 +5920,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 485:
-#line 1657 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1658 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_num_exp **)(&(*yyvalp))) = psi_num_exp_init_ternary((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->type, (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval)), (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_num_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)));
@@ -5929,7 +5929,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 486:
-#line 1664 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1665 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_number **)(&(*yyvalp))) = psi_number_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->flags);
 	(*(struct psi_number **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -5938,7 +5938,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 487:
-#line 1668 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1669 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_number **)(&(*yyvalp))) = psi_number_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text, 0);
 	(*(struct psi_number **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -5947,7 +5947,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 488:
-#line 1672 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1673 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_number **)(&(*yyvalp))) = psi_number_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text, 0);
 	(*(struct psi_number **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -5956,7 +5956,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 489:
-#line 1676 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1677 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_number **)(&(*yyvalp))) = psi_number_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text, 0);
 	(*(struct psi_number **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -5965,7 +5965,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 490:
-#line 1680 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1681 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_number **)(&(*yyvalp))) = psi_number_init(PSI_T_NAME, (*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)), 0);
 	(*(struct psi_number **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->token);
@@ -5974,7 +5974,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 491:
-#line 1684 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1685 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_number **)(&(*yyvalp))) = (*(struct psi_number **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
@@ -5982,7 +5982,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 492:
-#line 1690 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1691 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_number **)(&(*yyvalp))) = (*(struct psi_number **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval));
 	(*(struct psi_number **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)));
@@ -5991,7 +5991,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 493:
-#line 1694 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1695 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_number **)(&(*yyvalp))) = (*(struct psi_number **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 	(*(struct psi_number **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
@@ -6000,7 +6000,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 494:
-#line 1701 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1702 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_number **)(&(*yyvalp))) = (*(struct psi_number **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
@@ -6008,7 +6008,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 495:
-#line 1704 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1705 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	if ((*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))) {
 		int8_t sizeof_void_p = sizeof(void *);
@@ -6022,7 +6022,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 496:
-#line 1716 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1717 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	int8_t sizeof_void_p = sizeof(void *);
 	(*(struct psi_number **)(&(*yyvalp))) = psi_number_init(PSI_T_INT8, &sizeof_void_p, 0);
@@ -6031,7 +6031,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 497:
-#line 1720 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1721 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	int8_t sizeof_a = sizeof('a');
 	(*(struct psi_number **)(&(*yyvalp))) = psi_number_init(PSI_T_INT8, &sizeof_a, 0);
@@ -6040,7 +6040,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 498:
-#line 1724 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1725 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	uint64_t len = (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text->len + 1;
 	(*(struct psi_number **)(&(*yyvalp))) = psi_number_init(PSI_T_UINT64, &len, 0);
@@ -6049,7 +6049,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 499:
-#line 1731 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1732 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	if ((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))) {
 		(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -6064,7 +6064,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 500:
-#line 1744 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1745 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	if ((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))) {
 		(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -6079,7 +6079,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 501:
-#line 1757 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1758 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	if ((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))) {
 		(*(struct psi_token **)(&(*yyvalp))) = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -6094,7 +6094,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 502:
-#line 1770 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1771 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = NULL;
 }
@@ -6102,7 +6102,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 503:
-#line 1773 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1774 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&(*yyvalp))) = (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 	(*(struct psi_token **)(&(*yyvalp)))->type = PSI_T_NAME;
@@ -6111,7 +6111,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 506:
-#line 1785 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1786 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_layout **)(&(*yyvalp))) = NULL;
 }
@@ -6119,7 +6119,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 507:
-#line 1788 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1789 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_layout **)(&(*yyvalp))) = psi_layout_init(0, 0, psi_layout_init(0, atol((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text->val), NULL));
 }
@@ -6127,7 +6127,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 508:
-#line 1791 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1792 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_layout **)(&(*yyvalp))) = psi_layout_init(atol((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->text->val), atol((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->text->val), NULL);
 }
@@ -6135,7 +6135,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 509:
-#line 1794 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1795 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_layout **)(&(*yyvalp))) = psi_layout_init(atol((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->text->val), atol((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->text->val), psi_layout_init(0, atol((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-7)].yystate.yysemantics.yysval))->text->val), NULL));
 }
@@ -6143,7 +6143,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 510:
-#line 1800 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1801 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_layout*)(&(*yyvalp))).pos = 0;
 	(*(struct psi_layout*)(&(*yyvalp))).len = 0;
@@ -6152,7 +6152,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 511:
-#line 1804 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1805 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_layout*)(&(*yyvalp))).pos = atol((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->text->val);
 	(*(struct psi_layout*)(&(*yyvalp))).len = atol((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))->text->val);
@@ -6161,7 +6161,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 512:
-#line 1811 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1812 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(size_t*)(&(*yyvalp))) = 0;
 }
@@ -6169,7 +6169,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 513:
-#line 1814 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1815 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(size_t*)(&(*yyvalp))) = 0;
 }
@@ -6177,7 +6177,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 514:
-#line 1817 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1818 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	struct psi_validate_scope scope = {0};
 	psi_validate_scope_ctor(&scope);
@@ -6194,7 +6194,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 519:
-#line 1839 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1840 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(size_t*)(&(*yyvalp))) = 0;
 }
@@ -6202,7 +6202,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 520:
-#line 1842 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1843 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(size_t*)(&(*yyvalp))) = (*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
@@ -6210,7 +6210,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 522:
-#line 1849 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1850 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(size_t*)(&(*yyvalp))) = (*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval));
 }
@@ -6218,7 +6218,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 523:
-#line 1855 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1856 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(size_t*)(&(*yyvalp))) = 1;
 }
@@ -6226,7 +6226,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 524:
-#line 1858 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1859 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(size_t*)(&(*yyvalp))) = (*(size_t*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)) + 1;
 }
@@ -6234,7 +6234,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 529:
-#line 1880 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1881 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_impl **)(&(*yyvalp))) = psi_impl_init((*(struct psi_impl_func **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)), (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 }
@@ -6242,7 +6242,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 530:
-#line 1883 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1884 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_impl **)(&(*yyvalp))) = psi_impl_init((*(struct psi_impl_func **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)), (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	(*(struct psi_impl_func **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->static_memory = 1;
@@ -6251,7 +6251,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 531:
-#line 1890 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1891 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_impl_func **)(&(*yyvalp))) = psi_impl_func_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval))->text, NULL, (*(struct psi_impl_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_impl_func **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval)));
@@ -6261,7 +6261,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 532:
-#line 1895 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1896 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_impl_func **)(&(*yyvalp))) = psi_impl_func_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-5)].yystate.yysemantics.yysval))->text, (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)), (*(struct psi_impl_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_impl_func **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-5)].yystate.yysemantics.yysval)));
@@ -6271,7 +6271,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 533:
-#line 1900 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1901 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_impl_func **)(&(*yyvalp))) = psi_impl_func_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-10)].yystate.yysemantics.yysval))->text, (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-8)].yystate.yysemantics.yysval)), (*(struct psi_impl_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_impl_func **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-10)].yystate.yysemantics.yysval)));
@@ -6283,7 +6283,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 534:
-#line 1910 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1911 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_impl_arg_free), &(*(struct psi_impl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -6291,7 +6291,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 535:
-#line 1913 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1914 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), &(*(struct psi_impl_arg **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -6299,7 +6299,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 536:
-#line 1919 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1920 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_impl_arg **)(&(*yyvalp))) = psi_impl_arg_init((*(struct psi_impl_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)), (*(struct psi_impl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)), NULL);
 }
@@ -6307,7 +6307,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 537:
-#line 1922 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1923 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_impl_arg **)(&(*yyvalp))) = psi_impl_arg_init((*(struct psi_impl_type **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)), (*(struct psi_impl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), (*(struct psi_impl_def_val **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -6315,7 +6315,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 538:
-#line 1928 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1929 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_impl_var **)(&(*yyvalp))) = psi_impl_var_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text, (*(bool*)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	(*(struct psi_impl_var **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -6324,7 +6324,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 539:
-#line 1935 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1936 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_impl_type **)(&(*yyvalp))) = psi_impl_type_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text);
 	(*(struct psi_impl_type **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -6333,7 +6333,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 540:
-#line 1942 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1943 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_impl_type **)(&(*yyvalp))) = psi_impl_type_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->text);
 	(*(struct psi_impl_type **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
@@ -6342,7 +6342,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 552:
-#line 1969 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1970 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_impl_stmt_free), &(*(struct psi_token ***)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -6350,7 +6350,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 553:
-#line 1972 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1973 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)), &(*(struct psi_token ***)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -6358,7 +6358,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 554:
-#line 1978 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1979 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token ***)(&(*yyvalp))) = (struct psi_token **) (*(struct psi_return_stmt **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
@@ -6366,7 +6366,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 555:
-#line 1981 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1982 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token ***)(&(*yyvalp))) = (struct psi_token **) (*(struct psi_let_stmt **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
@@ -6374,7 +6374,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 556:
-#line 1984 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1985 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token ***)(&(*yyvalp))) = (struct psi_token **) (*(struct psi_set_stmt **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
@@ -6382,7 +6382,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 557:
-#line 1987 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1988 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token ***)(&(*yyvalp))) = (struct psi_token **) (*(struct psi_assert_stmt **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
@@ -6390,7 +6390,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 558:
-#line 1990 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1991 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token ***)(&(*yyvalp))) = (struct psi_token **) (*(struct psi_free_stmt **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
@@ -6398,7 +6398,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 559:
-#line 1996 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 1997 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_let_stmt **)(&(*yyvalp))) = psi_let_stmt_init((*(struct psi_let_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	(*(struct psi_let_stmt **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)));
@@ -6407,7 +6407,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 560:
-#line 2000 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2001 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_let_stmt **)(&(*yyvalp))) = psi_let_stmt_init(psi_let_exp_init_ex((*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval)), PSI_LET_TMP, (*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval))));
 	(*(struct psi_let_stmt **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-5)].yystate.yysemantics.yysval)));
@@ -6417,7 +6417,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 562:
-#line 2009 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2010 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_let_exp **)(&(*yyvalp))) = (*(struct psi_let_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 	(*(struct psi_let_exp **)(&(*yyvalp)))->is_reference = true;
@@ -6426,7 +6426,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 563:
-#line 2013 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2014 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_let_exp **)(&(*yyvalp))) = (*(struct psi_let_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 	(*(struct psi_let_exp **)(&(*yyvalp)))->is_reference = false;
@@ -6435,7 +6435,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 564:
-#line 2020 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2021 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_let_exp **)(&(*yyvalp))) = psi_let_exp_init(PSI_LET_NULL, NULL);
 }
@@ -6443,7 +6443,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 565:
-#line 2023 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2024 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_let_exp **)(&(*yyvalp))) = psi_let_exp_init_ex(NULL, PSI_LET_NUMEXP, (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -6451,7 +6451,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 566:
-#line 2026 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2027 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_let_exp **)(&(*yyvalp))) = psi_let_exp_init(PSI_LET_CALLOC, (*(struct psi_let_calloc **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -6459,7 +6459,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 567:
-#line 2029 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2030 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_let_exp **)(&(*yyvalp))) = psi_let_exp_init(PSI_LET_CALLOC, (*(struct psi_let_calloc **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 	(*(struct psi_let_calloc **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->static_memory = 1;
@@ -6468,7 +6468,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 568:
-#line 2033 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2034 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_let_exp **)(&(*yyvalp))) = psi_let_exp_init(PSI_LET_CALLBACK, (*(struct psi_let_callback **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -6476,7 +6476,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 569:
-#line 2036 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2037 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_let_exp **)(&(*yyvalp))) = psi_let_exp_init_ex(NULL, PSI_LET_FUNC, (*(struct psi_let_func **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -6484,7 +6484,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 570:
-#line 2042 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2043 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_let_exp **)(&(*yyvalp))) = (*(struct psi_let_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 	(*(struct psi_let_exp **)(&(*yyvalp)))->var = (*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval));
@@ -6493,7 +6493,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 571:
-#line 2046 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2047 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_let_exp **)(&(*yyvalp))) = (*(struct psi_let_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 	(*(struct psi_let_exp **)(&(*yyvalp)))->is_reference = 1;
@@ -6503,7 +6503,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 572:
-#line 2054 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2055 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_let_calloc **)(&(*yyvalp))) = psi_let_calloc_init((*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)), (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	(*(struct psi_let_calloc **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-5)].yystate.yysemantics.yysval)));
@@ -6512,7 +6512,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 573:
-#line 2061 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2062 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_let_callback **)(&(*yyvalp))) = psi_let_callback_init(psi_let_func_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-6)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-6)].yystate.yysemantics.yysval))->text, (*(struct psi_impl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval))), (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), NULL);
 	(*(struct psi_let_callback **)(&(*yyvalp)))->func->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-6)].yystate.yysemantics.yysval)));
@@ -6522,7 +6522,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 574:
-#line 2066 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2067 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_let_callback **)(&(*yyvalp))) = psi_let_callback_init(psi_let_func_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-6)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-6)].yystate.yysemantics.yysval))->text, (*(struct psi_impl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval))), (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-9)].yystate.yysemantics.yysval)));
 	(*(struct psi_let_callback **)(&(*yyvalp)))->func->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-6)].yystate.yysemantics.yysval)));
@@ -6532,7 +6532,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 575:
-#line 2074 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2075 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_let_func **)(&(*yyvalp))) = psi_let_func_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval))->text, (*(struct psi_impl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)));
 	(*(struct psi_let_func **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval)));
@@ -6542,7 +6542,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 586:
-#line 2095 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2096 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = NULL;
 }
@@ -6550,7 +6550,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 587:
-#line 2098 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2099 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
@@ -6558,7 +6558,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 588:
-#line 2104 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2105 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_let_exp_free), &(*(struct psi_let_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -6566,7 +6566,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 589:
-#line 2107 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2108 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), &(*(struct psi_let_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -6574,7 +6574,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 592:
-#line 2118 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2119 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = NULL;
 }
@@ -6582,7 +6582,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 593:
-#line 2121 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2122 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
@@ -6590,7 +6590,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 594:
-#line 2127 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2128 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_set_exp_free), &(*(struct psi_set_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -6598,7 +6598,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 595:
-#line 2130 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2131 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), &(*(struct psi_set_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -6606,7 +6606,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 596:
-#line 2136 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2137 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_return_stmt **)(&(*yyvalp))) = psi_return_stmt_init((*(struct psi_return_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	(*(struct psi_return_stmt **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)));
@@ -6615,7 +6615,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 597:
-#line 2143 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2144 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_return_exp **)(&(*yyvalp))) = psi_return_exp_init((*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-5)].yystate.yysemantics.yysval)), (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)), psi_set_exp_init(PSI_SET_FUNC, (*(struct psi_set_func **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))));
 	(*(struct psi_return_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-5)].yystate.yysemantics.yysval))->token);
@@ -6624,7 +6624,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 598:
-#line 2147 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2148 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_return_exp **)(&(*yyvalp))) = psi_return_exp_init(NULL, NULL, psi_set_exp_init(PSI_SET_FUNC, (*(struct psi_set_func **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))));
 	(*(struct psi_return_exp **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_set_func **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval))->token);
@@ -6633,7 +6633,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 599:
-#line 2154 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2155 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = NULL;
 }
@@ -6641,7 +6641,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 600:
-#line 2157 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2158 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = NULL;
 }
@@ -6649,7 +6649,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 601:
-#line 2160 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2161 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
@@ -6657,7 +6657,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 602:
-#line 2166 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2167 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_set_stmt **)(&(*yyvalp))) = psi_set_stmt_init((*(struct psi_set_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	(*(struct psi_set_stmt **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)));
@@ -6666,7 +6666,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 603:
-#line 2173 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2174 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_set_exp **)(&(*yyvalp))) = psi_set_exp_init(PSI_SET_FUNC, (*(struct psi_set_func **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -6674,7 +6674,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 604:
-#line 2176 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2177 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_set_exp **)(&(*yyvalp))) = psi_set_exp_init(PSI_SET_NUMEXP, (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -6682,7 +6682,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 605:
-#line 2179 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2180 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_set_exp **)(&(*yyvalp))) = (*(struct psi_set_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 	(*(struct psi_set_exp **)(&(*yyvalp)))->var = (*(struct psi_impl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval));
@@ -6691,7 +6691,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 606:
-#line 2186 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2187 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_set_func **)(&(*yyvalp))) = psi_set_func_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval))->text, (*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)));
 	(*(struct psi_set_func **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-4)].yystate.yysemantics.yysval)));
@@ -6701,7 +6701,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 607:
-#line 2191 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2192 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_set_func **)(&(*yyvalp))) = psi_set_func_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-5)].yystate.yysemantics.yysval))->type, (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-5)].yystate.yysemantics.yysval))->text, (*(struct psi_decl_var **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval)));
 	(*(struct psi_set_func **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-5)].yystate.yysemantics.yysval)));
@@ -6711,7 +6711,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 616:
-#line 2210 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2211 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = NULL;
 }
@@ -6719,7 +6719,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 617:
-#line 2213 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2214 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval));
 }
@@ -6727,7 +6727,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 618:
-#line 2219 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2220 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_set_exp_free), &(*(struct psi_set_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -6735,7 +6735,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 619:
-#line 2222 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2223 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), &(*(struct psi_set_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -6743,7 +6743,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 620:
-#line 2228 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2229 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_assert_stmt **)(&(*yyvalp))) = psi_assert_stmt_init((enum psi_assert_kind) (*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval))->type, (*(struct psi_num_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	(*(struct psi_assert_stmt **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)));
@@ -6752,7 +6752,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 623:
-#line 2240 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2241 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_free_stmt **)(&(*yyvalp))) = psi_free_stmt_init((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
 	(*(struct psi_free_stmt **)(&(*yyvalp)))->token = psi_token_copy((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)));
@@ -6761,7 +6761,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 624:
-#line 2247 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2248 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add(psi_plist_init((psi_plist_dtor) psi_free_exp_free), &(*(struct psi_free_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -6769,7 +6769,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 625:
-#line 2250 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2251 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_plist **)(&(*yyvalp))) = psi_plist_add((*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-2)].yystate.yysemantics.yysval)), &(*(struct psi_free_exp **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval)));
 }
@@ -6777,7 +6777,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 626:
-#line 2256 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2257 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->type = PSI_T_NAME;
 	(*(struct psi_free_exp **)(&(*yyvalp))) = psi_free_exp_init((*(struct psi_token **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval))->text, (*(struct psi_plist **)(&((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval)));
@@ -6787,7 +6787,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 627:
-#line 2264 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2265 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(bool*)(&(*yyvalp))) = false;
 }
@@ -6795,7 +6795,7 @@ yyuserAction (yyRuleNum yyn, int yyrhslen, yyGLRStackItem* yyvsp,
     break;
 
   case 628:
-#line 2267 "src/parser_proc_grammar.y" /* glr.c:821  */
+#line 2268 "src/parser_proc_grammar.y" /* glr.c:821  */
     {
 	(*(bool*)(&(*yyvalp))) = true;
 }
@@ -9260,7 +9260,7 @@ yypdumpstack (yyGLRStack* yystackp)
 #define yydebug psi_parser_proc_debug
 #define yynerrs psi_parser_proc_nerrs
 
-#line 2276 "src/parser_proc_grammar.y" /* glr.c:2578  */
+#line 2277 "src/parser_proc_grammar.y" /* glr.c:2578  */
 
 
 /* epilogue */

@@ -1,9 +1,5 @@
 --TEST--
 validate types
---SKIPIF--
-<?php 
-extension_loaded("psi") or die("skip - need ext/psi");
-?>
 --FILE--
 ===TEST===
 <?php 
@@ -22,4 +18,6 @@ PSI
 ===TEST===
 
 Warning: Unknown variable 'X' in numeric expression in %s on line 4
+
+Warning: Invalid numeric expression: 'X' in %s on line 4
 ===DONE===

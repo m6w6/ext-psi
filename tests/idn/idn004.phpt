@@ -2,11 +2,6 @@
 libidn
 --INI--
 psi.directory={PWD}/../../psi.d:{PWD}
---SKIPIF--
-<?php
-extension_loaded("psi") or die("skip - need ext/psi");
-function_exists("idn\\strerror") or die("skip - need libidn");
-?>
 --FILE--
 ===TEST===
 <?php

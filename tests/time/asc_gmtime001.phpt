@@ -1,9 +1,5 @@
 --TEST--
 asctime/gmtime
---SKIPIF--
-<?php
-extension_loaded("psi") or die("skip - need ext/psi");
-?>
 --ENV--
 TZ=UTC
 --INI--
@@ -23,7 +19,7 @@ var_dump(psi\asctime_r(psi\gmtime_r(1234567890)));
 ===DONE===
 --EXPECT--
 ===TEST===
-psi\asctime() expects parameter 1 to be array, null given
+psi\asctime(): Argument #1 ($tm) must be of type array, null given
 array(9) {
   ["tm_sec"]=>
   int(1)

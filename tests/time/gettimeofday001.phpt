@@ -2,10 +2,6 @@
 gettimeofday
 --INI--
 psi.directory = {PWD}/../../psi.d:{PWD}
---SKIPIF--
-<?php
-extension_loaded("psi") or die("skip - need ext/psi");
-?>
 --ENV--
 TZ=UTC
 --FILE--
@@ -16,7 +12,6 @@ var_dump($ar = gettimeofday());
 
 var_dump(psi\gettimeofday());
 var_dump(psi\gettimeofday($tv), $tv);
-var_dump(psi\gettimeofday($tv, $tz), $tv, $tz);
 
 var_dump(abs($ar["sec"] - $tv["tv_sec"]) <= 1);
 
@@ -41,19 +36,6 @@ array(2) {
   int(1%d)
   ["tv_usec"]=>
   int(%d)
-}
-int(0)
-array(2) {
-  ["tv_sec"]=>
-  int(1%d)
-  ["tv_usec"]=>
-  int(%d)
-}
-array(2) {
-  ["tz_minuteswest"]=>
-  int(%i)
-  ["tz_dsttime"]=>
-  int(%i)
 }
 bool(true)
 ===DONE===

@@ -374,7 +374,6 @@ struct psi_plist *psi_num_exp_tokens(struct psi_num_exp *exp,
 		psi_plist_top(list, &ntoken);
 		ntoken = psi_token_init(PSI_T_COLON, ":", 1, ntoken->col+ntoken->text->len, ntoken->line, ntoken->file);
 		list = psi_plist_add(list, &ntoken);
-		list = psi_plist_add(list, &ntoken);
 		list = psi_num_exp_tokens(exp->data.t.falsy, list);
 		break;
 
@@ -541,7 +540,19 @@ bool psi_num_exp_validate(struct psi_data *data, struct psi_num_exp *exp,
 
 	switch (exp->op) {
 	case PSI_T_NUMBER:
-		return psi_number_validate(data, exp->data.n, scope);
+		if (!psi_number_validate(data, exp->data.n, scope)) {
+			smart_str str = {0};
+			struct psi_dump dump = {{.hn = &str},
+					.fun = (psi_dump_cb) psi_smart_str_printf};
+
+			psi_num_exp_dump(&dump, exp);
+			smart_str_0(&str);
+			data->error(data, exp->token, PSI_WARNING,
+					"Invalid numeric expression: '%s'",
+					str.s->val);
+			return false;
+		}
+		return true;
 
 	case PSI_T_CAST:
 		return psi_num_exp_validate(data, exp->data.c.num, scope)

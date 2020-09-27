@@ -2,11 +2,6 @@
 inet_ntop/inet_pton
 --INI--
 psi.directory={PWD}/../../psi.d:{PWD}
---SKIPIF--
-<?php
-extension_loaded("psi") or die("skip - need ext/psi");
-function_exists("psi\\inet_pton") or die("skip - need inet_pton()");
-?>
 --FILE--
 ===TEST===
 <?php
